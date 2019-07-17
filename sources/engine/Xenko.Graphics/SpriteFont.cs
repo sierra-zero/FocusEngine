@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -566,50 +567,225 @@ namespace Xenko.Graphics
             var key = 0;
             var x = startX;
             var y = startY;
+
+            // color tags
+            var escaping = false;
+            var tagStack = new List<Color4>();
             for (var i = forStart; i < forEnd; i++)
             {
                 var character = text[i];
 
-                switch (character)
+                if (StartsColorTag(ref text, ref i, out Color4 color) && !escaping)
                 {
-                    case '\r':
-                        // Skip carriage returns.
-                        key |= character;
-                        continue;
-
-                    case '\n':
-                        // New line.
-                        x = 0;
-                        y += fontSizeY;
-                        key |= character;
-                        break;
-
-                    default:
-                        // Output this character.
-                        Vector2 auxiliaryScaling;
-                        var glyph = GetGlyph(commandList, character, ref fontSize, updateGpuResources, out auxiliaryScaling);
-                        if (glyph == null && !IgnoreUnkownCharacters && DefaultCharacter.HasValue)
-                            glyph = GetGlyph(commandList, DefaultCharacter.Value, ref fontSize, updateGpuResources, out auxiliaryScaling);
-                        if (glyph == null)
+                    tagStack.Add(color);
+                }
+                else if (EndsColorTag(ref text, ref i) && !escaping)
+                {
+                    if (tagStack.Count > 0)
+                    {
+                        tagStack.RemoveAt(tagStack.Count - 1);
+                    }
+                }
+                else
+                {
+                    switch (character)
+                    {
+                        case '\r':
+                            // Skip carriage returns.
+                            key |= character;
                             continue;
 
-                        key |= character;
+                        case '\n':
+                            // New line.
+                            x = 0;
+                            y += fontSizeY;
+                            key |= character;
+                            break;
 
-                        var dx = glyph.Offset.X;
+                        case '\\':
+                            // Skip next escapable character.
+                            escaping = true;
+                            key |= character; //? what is this for
+                            break;
 
-                        float kerningOffset;
-                        if (KerningMap != null && KerningMap.TryGetValue(key, out kerningOffset))
-                            dx += kerningOffset;
+                        default:
+                            // Output this character.
+                            escaping = false;
+                            Vector2 auxiliaryScaling;
+                            var glyph = GetGlyph(commandList, character, ref fontSize, updateGpuResources, out auxiliaryScaling);
+                            if (glyph == null && !IgnoreUnkownCharacters && DefaultCharacter.HasValue)
+                                glyph = GetGlyph(commandList, DefaultCharacter.Value, ref fontSize, updateGpuResources, out auxiliaryScaling);
+                            if (glyph == null)
+                                continue;
 
-                        float nextX = x + (glyph.XAdvance + GetExtraSpacing(fontSize.X)) * auxiliaryScaling.X;
-                        action(ref parameters, ref fontSize, ref glyph, x + dx * auxiliaryScaling.X, y, nextX, ref auxiliaryScaling);
-                        x = nextX;
-                        break;
+                            key |= character;
+
+                            var dx = glyph.Offset.X;
+
+                            float kerningOffset;
+                            if (KerningMap != null && KerningMap.TryGetValue(key, out kerningOffset))
+                                dx += kerningOffset;
+
+                            float nextX = x + (glyph.XAdvance + GetExtraSpacing(fontSize.X)) * auxiliaryScaling.X;
+                            // TODO: bad hack, please fix
+                            if (typeof(InternalDrawCommand) == typeof(T) && tagStack.Count > 0)
+                            {
+                                var idc = (InternalDrawCommand)(object)parameters;
+                                idc.Color = tagStack[tagStack.Count - 1];
+                                var idcT = (T)(object)idc;
+                                action(ref idcT, ref fontSize, ref glyph, x + dx * auxiliaryScaling.X, y, nextX, ref auxiliaryScaling);
+                            }
+                            else if (typeof(InternalUIDrawCommand) == typeof(T) && tagStack.Count > 0)
+                            {
+                                var idc = (InternalUIDrawCommand)(object)parameters;
+                                idc.Color = Color.FromRgba(tagStack[tagStack.Count - 1].ToRgba());
+                                var idcT = (T)(object)idc;
+                                action(ref idcT, ref fontSize, ref glyph, x + dx * auxiliaryScaling.X, y, nextX, ref auxiliaryScaling);
+                            }
+                            else
+                            {
+                                action(ref parameters, ref fontSize, ref glyph, x + dx * auxiliaryScaling.X, y, nextX, ref auxiliaryScaling);
+                            }
+                            x = nextX;
+                            break;
+                    }
+
+                    // Shift the kerning key
+                    key = (key << 16);
                 }
-
-                // Shift the kerning key
-                key = (key << 16);
             }
+        }
+
+        private bool StartsColorTag(ref StringProxy text, ref int pos, out Color4 color)
+        {
+            color = Color4.Black;
+            string tagStart = "<color=";
+            for (int i = 0; i < tagStart.Length; i++)
+            {
+                if (text[i + pos] != tagStart[i])
+                {
+                    return false;
+                }
+            }
+            var colorValueStart = pos + tagStart.Length;
+            StringBuilder colorValue = new StringBuilder();
+            for (int i = 0; i < text.Length; i++)
+            {
+                var curChar = text[colorValueStart + i];
+                if (curChar != '>')
+                {
+                    colorValue.Append(curChar);
+                }
+                else
+                {
+                    if (colorValue.Length > 0)
+                    {
+                        if (colorValue[0] == '#')
+                        {
+                            // read as hex
+                            if (colorValue.Length == 7)
+                            {
+                                // rgb
+                                if (uint.TryParse(colorValue.Substring(1, 6), NumberStyles.HexNumber, null, out uint rgb))
+                                {
+                                    color.R = (rgb >> 16 & 0xff) / 255f;
+                                    color.G = (rgb >>  8 & 0xff) / 255f;
+                                    color.B = (rgb >>  0 & 0xff) / 255f;
+                                }
+                                else
+                                {
+                                    return false;
+                                }
+                            }
+                            else if (colorValue.Length == 9)
+                            {
+                                // rgba
+                                if (uint.TryParse(colorValue.Substring(1, 8), NumberStyles.HexNumber, null, out uint rgba))
+                                {
+                                    color.R = (rgba >> 24 & 0xff) / 255f;
+                                    color.G = (rgba >> 16 & 0xff) / 255f;
+                                    color.B = (rgba >>  8 & 0xff) / 255f;
+                                    color.A = (rgba >>  0 & 0xff) / 255f;
+                                }
+                                else
+                                {
+                                    return false;
+                                }
+                            }
+                            else
+                            {
+                                return false;
+                            }
+                        }
+                        else
+                        {
+                            // read as comma separated color ints
+                            string[] colorValues = colorValue.ToString().Split(',');
+                            if (colorValues.Length == 3)
+                            {
+                                // rgb
+                                if (byte.TryParse(colorValues[0], out byte r) &&
+                                    byte.TryParse(colorValues[1], out byte g) &&
+                                    byte.TryParse(colorValues[2], out byte b))
+                                {
+                                    color.R = r / 255f;
+                                    color.G = g / 255f;
+                                    color.B = b / 255f;
+                                    color.A = 1f;
+                                }
+                                else
+                                {
+                                    return false;
+                                }
+                            }
+                            else if (colorValues.Length == 4)
+                            {
+                                // rgba
+                                if (byte.TryParse(colorValues[0], out byte r) &&
+                                    byte.TryParse(colorValues[1], out byte g) &&
+                                    byte.TryParse(colorValues[2], out byte b) &&
+                                    byte.TryParse(colorValues[3], out byte a))
+                                {
+                                    color.R = r / 255f;
+                                    color.G = g / 255f;
+                                    color.B = b / 255f;
+                                    color.A = a / 255f;
+                                }
+                                else
+                                {
+                                    return false;
+                                }
+                            }
+                            else
+                            {
+                                return false;
+                            }
+                        }
+                        // TODO: add color names? (what identifier for comma separated colors?)
+                        pos = colorValueStart + i;
+                        return true;
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }
+            }
+            return false;
+        }
+
+        private bool EndsColorTag(ref StringProxy text, ref int pos)
+        {
+            string tagStart = "</color>";
+            for (int i = 0; i < tagStart.Length; i++)
+            {
+                if (text[i + pos] != tagStart[i])
+                {
+                    return false;
+                }
+            }
+            pos += tagStart.Length - 1;
+            return true;
         }
 
         [StructLayout(LayoutKind.Sequential)]
