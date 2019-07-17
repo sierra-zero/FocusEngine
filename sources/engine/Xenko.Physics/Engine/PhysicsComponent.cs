@@ -50,6 +50,16 @@ namespace Xenko.Engine
         [DataMemberIgnore]
         internal BulletSharp.CollisionObject NativeCollisionObject;
 
+        /// <summary>
+        /// Is this physics component initialized interally and ready to be used?
+        /// </summary>
+        [DataMemberIgnore]
+        public bool InternallyPrepared {
+            get {
+                return NativeCollisionObject != null;
+            }
+        }
+
         /// <userdoc>
         /// The reference to the collider shape of this element.
         /// </userdoc>
@@ -634,7 +644,7 @@ namespace Xenko.Engine
 
             if (ColliderShape != null)
             {
-                if (!ColliderShape.DoNotDispose)
+                if (!ColliderShape.DoNotDispose && !ColliderShape.DoNotDisposeAnyOnNextDetach)
                 {
                     ColliderShape.Dispose();
                     ColliderShape = null;
@@ -736,7 +746,7 @@ namespace Xenko.Engine
             // Actually call the detach
             OnDetach();
 
-            if (ColliderShape != null && !ColliderShape.DoNotDispose)
+            if (ColliderShape != null && !ColliderShape.DoNotDispose && !ColliderShape.DoNotDisposeAnyOnNextDetach)
             {
                 ColliderShape.Dispose();
                 ColliderShape = null;

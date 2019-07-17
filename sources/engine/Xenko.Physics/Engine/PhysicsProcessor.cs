@@ -254,6 +254,9 @@ namespace Xenko.Physics
             }
 
             currentFrameRemovals.Clear();
+
+            // reset flag after removals/detaches
+            ColliderShape.DoNotDisposeAnyOnNextDetach = false;
         }
     }
 }
