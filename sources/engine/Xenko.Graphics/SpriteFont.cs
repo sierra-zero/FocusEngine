@@ -793,7 +793,7 @@ namespace Xenko.Graphics
 
             public int LineCount {
                 get {
-                    if (linecount == -1) linecount = textString.Split('\n').Length;
+                    if (linecount == -1 && textString != null) linecount = textString.Split('\n').Length;
                     return linecount;
                 }
             }
@@ -801,33 +801,33 @@ namespace Xenko.Graphics
             public StringProxy(string text)
             {
                 linecount = -1;
-                textString = text;
+                textString = text?.Replace("<br>", "\n");
                 textBuilder = null;
-                Length = text.Length;
+                Length = textString.Length;
             }
 
             public StringProxy(StringBuilder text)
             {
                 linecount = -1;
-                textBuilder = text;
+                textBuilder = text?.Replace("<br>", "\n");
                 textString = null;
-                Length = text.Length;
+                Length = textBuilder.Length;
             }
             
             public StringProxy(string text, int length)
             {
                 linecount = -1;
-                textString = text;
+                textString = text?.Replace("<br>", "\n");
                 textBuilder = null;
-                Length = Math.Max(0, Math.Min(length, text.Length));
+                Length = Math.Max(0, Math.Min(length, textString.Length));
             }
 
             public StringProxy(StringBuilder text, int length)
             {
                 linecount = -1;
-                textBuilder = text;
+                textBuilder = text?.Replace("<br>", "\n");
                 textString = null;
-                Length = Math.Max(0, Math.Min(length, text.Length));
+                Length = Math.Max(0, Math.Min(length, textBuilder.Length));
             }
 
             public bool IsNull => textString == null && textBuilder == null;
