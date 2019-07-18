@@ -603,6 +603,7 @@ namespace Xenko.Graphics
 
                         case '\\':
                             // Skip next escapable character.
+                            if (escaping) goto default;
                             escaping = true;
                             key |= character; //? what is this for
                             break;
