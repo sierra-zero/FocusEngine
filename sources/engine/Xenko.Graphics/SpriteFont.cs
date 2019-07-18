@@ -2,6 +2,7 @@
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Runtime.InteropServices;
@@ -560,6 +561,7 @@ namespace Xenko.Graphics
             }
         }
 
+        private Stack<Color4> colorStack = new Stack<Color4>();
         private void ForGlyph<T>(CommandList commandList, ref StringProxy text, ref Vector2 fontSize, GlyphAction<T> action, 
                                  ref T parameters, int forStart, int forEnd, bool updateGpuResources, float startX = 0, float startY = 0,
                                  TextVerticalAlignment vertAlign = TextVerticalAlignment.Top, float fontSizeY = 0f)
@@ -568,22 +570,19 @@ namespace Xenko.Graphics
             var x = startX;
             var y = startY;
 
-            // color tags
+            // tag management
             var escaping = false;
-            var tagStack = new List<Color4>();
+            colorStack.Clear();
             for (var i = forStart; i < forEnd; i++)
             {
                 var character = text[i];
 
-                if (StartsColorTag(ref text, ref i, out Color4 color) && !escaping)
-                {
-                    tagStack.Add(color);
-                }
-                else if (EndsColorTag(ref text, ref i) && !escaping)
-                {
-                    if (tagStack.Count > 0)
-                    {
-                        tagStack.RemoveAt(tagStack.Count - 1);
+                if (!escaping && character == '<') {
+                    // check tags
+                    if(CheckAndProcessColorTag(ref text, ref i, out Color4 color)) {
+                        colorStack.Push(color);
+                    } else if(colorStack.Count > 0 && EndsTag("</color>", ref text, ref i)) {
+                        colorStack.Pop();
                     }
                 }
                 else
@@ -627,25 +626,23 @@ namespace Xenko.Graphics
                                 dx += kerningOffset;
 
                             float nextX = x + (glyph.XAdvance + GetExtraSpacing(fontSize.X)) * auxiliaryScaling.X;
-                            // TODO: bad hack, please fix
-                            if (typeof(InternalDrawCommand) == typeof(T) && tagStack.Count > 0)
-                            {
-                                var idc = (InternalDrawCommand)(object)parameters;
-                                idc.Color = tagStack[tagStack.Count - 1];
-                                var idcT = (T)(object)idc;
-                                action(ref idcT, ref fontSize, ref glyph, x + dx * auxiliaryScaling.X, y, nextX, ref auxiliaryScaling);
-                            }
-                            else if (typeof(InternalUIDrawCommand) == typeof(T) && tagStack.Count > 0)
-                            {
-                                var idc = (InternalUIDrawCommand)(object)parameters;
-                                idc.Color = Color.FromRgba(tagStack[tagStack.Count - 1].ToRgba());
-                                var idcT = (T)(object)idc;
-                                action(ref idcT, ref fontSize, ref glyph, x + dx * auxiliaryScaling.X, y, nextX, ref auxiliaryScaling);
-                            }
-                            else
-                            {
-                                action(ref parameters, ref fontSize, ref glyph, x + dx * auxiliaryScaling.X, y, nextX, ref auxiliaryScaling);
-                            }
+
+                            // process color we will use, if any
+                            if (colorStack.Count > 0) {
+                                // we have colors, but what kind of command do we have?
+                                if (parameters is InternalDrawCommand) {
+                                    var idc = (InternalDrawCommand)(object)parameters;
+                                    idc.Color = colorStack.Peek();
+                                    var idcT = (T)(object)idc;
+                                    action(ref idcT, ref fontSize, ref glyph, x + dx * auxiliaryScaling.X, y, nextX, ref auxiliaryScaling);
+                                } else if (parameters is InternalUIDrawCommand) {
+                                    var idc = (InternalUIDrawCommand)(object)parameters;
+                                    idc.Color = Color.FromRgba(colorStack.Peek().ToRgba());
+                                    var idcT = (T)(object)idc;
+                                    action(ref idcT, ref fontSize, ref glyph, x + dx * auxiliaryScaling.X, y, nextX, ref auxiliaryScaling);
+                                } else action(ref parameters, ref fontSize, ref glyph, x + dx * auxiliaryScaling.X, y, nextX, ref auxiliaryScaling);
+                            } else action(ref parameters, ref fontSize, ref glyph, x + dx * auxiliaryScaling.X, y, nextX, ref auxiliaryScaling);
+
                             x = nextX;
                             break;
                     }
@@ -656,22 +653,34 @@ namespace Xenko.Graphics
             }
         }
 
-        private bool StartsColorTag(ref StringProxy text, ref int pos, out Color4 color)
-        {
-            color = Color4.Black;
-            string tagStart = "<color=";
-            for (int i = 0; i < tagStart.Length; i++)
-            {
-                if (text[i + pos] != tagStart[i])
-                {
+        private bool HasTag(string tag, ref StringProxy text, ref int pos) {
+            if (text.Length - pos <= tag.Length) return false;
+            for (int i=0; i<tag.Length;i++) {
+                if (text[i + pos + 1] != tag[i]) return false;
+            }
+            pos += tag.Length + 2;
+            return true;
+        }
+
+        private bool EndsTag(string tagEnd, ref StringProxy text, ref int pos) {
+            if (text.Length - pos < tagEnd.Length) return false;
+            for (int i = 0; i < tagEnd.Length; i++) {
+                if (text[i + pos] != tagEnd[i]) {
                     return false;
                 }
             }
-            var colorValueStart = pos + tagStart.Length;
+            pos += tagEnd.Length - 1;
+            return true;
+        }
+
+        private bool CheckAndProcessColorTag(ref StringProxy text, ref int pos, out Color4 color)
+        {
+            color = Color4.Black;
+            if (HasTag("color", ref text, ref pos) == false) return false;
             StringBuilder colorValue = new StringBuilder();
-            for (int i = 0; i < text.Length; i++)
+            for (int i = pos; i < text.Length; i++)
             {
-                var curChar = text[colorValueStart + i];
+                var curChar = text[i];
                 if (curChar != '>')
                 {
                     colorValue.Append(curChar);
@@ -762,7 +771,7 @@ namespace Xenko.Graphics
                             }
                         }
                         // TODO: add color names? (what identifier for comma separated colors?)
-                        pos = colorValueStart + i;
+                        pos = i;
                         return true;
                     }
                     else
@@ -772,20 +781,6 @@ namespace Xenko.Graphics
                 }
             }
             return false;
-        }
-
-        private bool EndsColorTag(ref StringProxy text, ref int pos)
-        {
-            string tagStart = "</color>";
-            for (int i = 0; i < tagStart.Length; i++)
-            {
-                if (text[i + pos] != tagStart[i])
-                {
-                    return false;
-                }
-            }
-            pos += tagStart.Length - 1;
-            return true;
         }
 
         [StructLayout(LayoutKind.Sequential)]
