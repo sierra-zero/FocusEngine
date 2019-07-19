@@ -1,8 +1,7 @@
 // Copyright (c) Xenko contributors (https://xenko.com) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
-namespace Xenko.Input
-{
+namespace Xenko.Input {
     /// <summary>
     /// Enumeration for keys.
     /// </summary>
@@ -744,94 +743,59 @@ namespace Xenko.Input
         LaunchApplication2 = 139,
 
         /// <summary>
-        /// The 'oem1' key.
-        /// </summary>
-        Oem1 = 140,
-
-        /// <summary>
         /// The 'oemsemicolon' key.
         /// </summary>
-        OemSemicolon = 140,
+        Semicolon = 140,
 
         /// <summary>
         /// The 'oemplus' key.
         /// </summary>
-        OemPlus = 141,
+        Plus = 141,
 
         /// <summary>
         /// The 'oemcomma' key.
         /// </summary>
-        OemComma = 142,
+        Comma = 142,
 
         /// <summary>
         /// The 'oemminus' key.
         /// </summary>
-        OemMinus = 143,
+        Minus = 143,
 
         /// <summary>
         /// The 'oemperiod' key.
         /// </summary>
-        OemPeriod = 144,
-
-        /// <summary>
-        /// The 'oem2' key.
-        /// </summary>
-        Oem2 = 145,
+        Period = 144,
 
         /// <summary>
         /// The 'oemquestion' key.
         /// </summary>
-        OemQuestion = 145,
-
-        /// <summary>
-        /// The 'oem3' key.
-        /// </summary>
-        Oem3 = 146,
+        Question = 145,
 
         /// <summary>
         /// The 'oemtilde' key.
         /// </summary>
-        OemTilde = 146,
-
-        /// <summary>
-        /// The 'oem4' key.
-        /// </summary>
-        Oem4 = 149,
+        Tilde = 146,
 
         /// <summary>
         /// The 'oemopenbrackets' key.
         /// </summary>
-        OemOpenBrackets = 149,
-
-        /// <summary>
-        /// The 'oem5' key.
-        /// </summary>
-        Oem5 = 150,
+        OpenBrackets = 149,
 
         /// <summary>
         /// The 'oempipe' key.
         /// </summary>
-        OemPipe = 150,
-
-        /// <summary>
-        /// The 'oem6' key.
-        /// </summary>
-        Oem6 = 151,
+        Pipe = 150,
 
         /// <summary>
         /// The 'oemclosebrackets' key.
         /// </summary>
-        OemCloseBrackets = 151,
-
-        /// <summary>
-        /// The 'oem7' key.
-        /// </summary>
-        Oem7 = 152,
+        CloseBrackets = 151,
 
         /// <summary>
         /// The 'oemquotes' key.
         /// </summary>
-        OemQuotes = 152,
+        Quotes = 152,
 
         /// <summary>
         /// The 'oem8' key.
@@ -839,14 +803,9 @@ namespace Xenko.Input
         Oem8 = 153,
 
         /// <summary>
-        /// The 'oem102' key.
-        /// </summary>
-        Oem102 = 154,
-
-        /// <summary>
         /// The 'oembackslash' key.
         /// </summary>
-        OemBackslash = 154,
+        Backslash = 154,
 
         /// <summary>
         /// The 'attn' key.
@@ -902,5 +861,30 @@ namespace Xenko.Input
         /// The 'numpad decimal' key.
         /// </summary>
         NumPadDecimal = 181,
+
+        /// <summary>
+        /// The 'equals' key
+        /// </summary>
+        Equals = 182,
+
+        /// <summary>
+        /// The ':' key
+        /// </summary>
+        Colon = 183,
+
+        /// <summary>
+        /// The '/' key
+        /// </summary>
+        ForwardSlash = 184,
+
+        /// <summary>
+        /// The ' key
+        /// </summary>
+        SingleQuote = 185,
+
+        /// <summary>
+        /// The ` key
+        /// </summary>
+        BackQuote = 186
     }
 }

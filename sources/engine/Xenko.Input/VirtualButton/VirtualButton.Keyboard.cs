@@ -748,109 +748,64 @@ namespace Xenko.Input
             public static readonly VirtualButton LaunchApplication2 = new Keyboard("launchapplication2", (int)Keys.LaunchApplication2);
 
             /// <summary>
-            /// The 'oem1' key.
-            /// </summary>
-            public static readonly VirtualButton Oem1 = new Keyboard("oem1", (int)Keys.Oem1);
-
-            /// <summary>
             /// The 'oemsemicolon' key.
             /// </summary>
-            public static readonly VirtualButton OemSemicolon = new Keyboard("oemsemicolon", (int)Keys.OemSemicolon);
+            public static readonly VirtualButton Semicolon = new Keyboard("semicolon", (int)Keys.Semicolon);
 
             /// <summary>
             /// The 'oemplus' key.
             /// </summary>
-            public static readonly VirtualButton OemPlus = new Keyboard("oemplus", (int)Keys.OemPlus);
+            public static readonly VirtualButton Plus = new Keyboard("plus", (int)Keys.Plus);
 
             /// <summary>
             /// The 'oemcomma' key.
             /// </summary>
-            public static readonly VirtualButton OemComma = new Keyboard("oemcomma", (int)Keys.OemComma);
+            public static readonly VirtualButton Comma = new Keyboard("comma", (int)Keys.Comma);
 
             /// <summary>
             /// The 'oemminus' key.
             /// </summary>
-            public static readonly VirtualButton OemMinus = new Keyboard("oemminus", (int)Keys.OemMinus);
+            public static readonly VirtualButton Minus = new Keyboard("minus", (int)Keys.Minus);
 
             /// <summary>
             /// The 'oemperiod' key.
             /// </summary>
-            public static readonly VirtualButton OemPeriod = new Keyboard("oemperiod", (int)Keys.OemPeriod);
-
-            /// <summary>
-            /// The 'oem2' key.
-            /// </summary>
-            public static readonly VirtualButton Oem2 = new Keyboard("oem2", (int)Keys.Oem2);
+            public static readonly VirtualButton Period = new Keyboard("period", (int)Keys.Period);
 
             /// <summary>
             /// The 'oemquestion' key.
             /// </summary>
-            public static readonly VirtualButton OemQuestion = new Keyboard("oemquestion", (int)Keys.OemQuestion);
-
-            /// <summary>
-            /// The 'oem3' key.
-            /// </summary>
-            public static readonly VirtualButton Oem3 = new Keyboard("oem3", (int)Keys.Oem3);
+            public static readonly VirtualButton Question = new Keyboard("question", (int)Keys.Question);
 
             /// <summary>
             /// The 'oemtilde' key.
             /// </summary>
-            public static readonly VirtualButton OemTilde = new Keyboard("oemtilde", (int)Keys.OemTilde);
-
-            /// <summary>
-            /// The 'oem4' key.
-            /// </summary>
-            public static readonly VirtualButton Oem4 = new Keyboard("oem4", (int)Keys.Oem4);
+            public static readonly VirtualButton Tilde = new Keyboard("tilde", (int)Keys.Tilde);
 
             /// <summary>
             /// The 'oemopenbrackets' key.
             /// </summary>
-            public static readonly VirtualButton OemOpenBrackets = new Keyboard("oemopenbrackets", (int)Keys.OemOpenBrackets);
-
-            /// <summary>
-            /// The 'oem5' key.
-            /// </summary>
-            public static readonly VirtualButton Oem5 = new Keyboard("oem5", (int)Keys.Oem5);
+            public static readonly VirtualButton OpenBrackets = new Keyboard("openbrackets", (int)Keys.OpenBrackets);
 
             /// <summary>
             /// The 'oempipe' key.
             /// </summary>
-            public static readonly VirtualButton OemPipe = new Keyboard("oempipe", (int)Keys.OemPipe);
-
-            /// <summary>
-            /// The 'oem6' key.
-            /// </summary>
-            public static readonly VirtualButton Oem6 = new Keyboard("oem6", (int)Keys.Oem6);
+            public static readonly VirtualButton Pipe = new Keyboard("pipe", (int)Keys.Pipe);
 
             /// <summary>
             /// The 'oemclosebrackets' key.
             /// </summary>
-            public static readonly VirtualButton OemCloseBrackets = new Keyboard("oemclosebrackets", (int)Keys.OemCloseBrackets);
-
-            /// <summary>
-            /// The 'oem7' key.
-            /// </summary>
-            public static readonly VirtualButton Oem7 = new Keyboard("oem7", (int)Keys.Oem7);
+            public static readonly VirtualButton CloseBrackets = new Keyboard("closebrackets", (int)Keys.CloseBrackets);
 
             /// <summary>
             /// The 'oemquotes' key.
             /// </summary>
-            public static readonly VirtualButton OemQuotes = new Keyboard("oemquotes", (int)Keys.OemQuotes);
-
-            /// <summary>
-            /// The 'oem8' key.
-            /// </summary>
-            public static readonly VirtualButton Oem8 = new Keyboard("oem8", (int)Keys.Oem8);
-
-            /// <summary>
-            /// The 'oem102' key.
-            /// </summary>
-            public static readonly VirtualButton Oem102 = new Keyboard("oem102", (int)Keys.Oem102);
+            public static readonly VirtualButton Quotes = new Keyboard("quotes", (int)Keys.Quotes);
 
             /// <summary>
             /// The 'oembackslash' key.
             /// </summary>
-            public static readonly VirtualButton OemBackslash = new Keyboard("oembackslash", (int)Keys.OemBackslash);
+            public static readonly VirtualButton Backslash = new Keyboard("backslash", (int)Keys.Backslash);
 
             /// <summary>
             /// The 'attn' key.
