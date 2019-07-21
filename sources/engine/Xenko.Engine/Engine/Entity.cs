@@ -101,8 +101,12 @@ namespace Xenko.Engine
 
             set
             {
-                if (this.GetParent() != null)
-                    throw new InvalidOperationException("This entity is another entity's child. Detach it before changing its scene.");
+                if (this.GetParent() != null) {
+                    if (value == null) {
+                        // if we are detaching, take care of removing the parent if we had one
+                        this.Transform.Parent = null;
+                    } else throw new InvalidOperationException("This entity is another entity's child. Detach it before changing its scene.");
+                }
 
                 var oldScene = SceneValue;
                 if (oldScene == value)
