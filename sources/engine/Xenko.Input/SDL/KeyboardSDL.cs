@@ -306,13 +306,13 @@ namespace Xenko.Input
                 case SDL.SDL_Keycode.SDLK_KP_MULTIPLY:
                     return Keys.Multiply;
                 case SDL.SDL_Keycode.SDLK_PLUS:
-                    return Keys.Add;
+                    return Keys.Equals;
                 case SDL.SDL_Keycode.SDLK_KP_PLUS:
                     return Keys.Add;
                 case SDL.SDL_Keycode.SDLK_SEPARATOR:
                     return Keys.Separator;
                 case SDL.SDL_Keycode.SDLK_MINUS:
-                    return Keys.Subtract;
+                    return Keys.Minus;
                 case SDL.SDL_Keycode.SDLK_KP_MINUS:
                     return Keys.Subtract;
                 case SDL.SDL_Keycode.SDLK_DECIMALSEPARATOR:
