@@ -188,7 +188,10 @@ namespace Xenko.Graphics
                     {
                         var uploadMemory = GraphicsDevice.NativeDevice.MapMemory(NativeMemory, 0, (ulong)SizeInBytes, MemoryMapFlags.None);
                         Utilities.CopyMemory(uploadMemory, dataPointer, SizeInBytes);
-                        GraphicsDevice.NativeDevice.UnmapMemory(NativeMemory);
+                        lock (GraphicsDevice.QueueLock)
+                        {
+                            GraphicsDevice.NativeDevice.UnmapMemory(NativeMemory);
+                        }
                     }
                     else
                     {
@@ -210,7 +213,10 @@ namespace Xenko.Graphics
                             DestinationOffset = 0,
                             Size = (uint)sizeInBytes
                         };
-                        commandBuffer.CopyBuffer(uploadResource, NativeBuffer, 1, &bufferCopy);
+                        lock (GraphicsDevice.QueueLock)
+                        {
+                            commandBuffer.CopyBuffer(uploadResource, NativeBuffer, 1, &bufferCopy);
+                        }
                     }
                 }
                 else
@@ -232,11 +238,16 @@ namespace Xenko.Graphics
                     CommandBuffers = new IntPtr(&commandBuffer),
                 };
 
+                var fenceCreateInfo = new FenceCreateInfo { StructureType = StructureType.FenceCreateInfo };
+                var fence = GraphicsDevice.NativeDevice.CreateFence(ref fenceCreateInfo);                
+
                 lock (GraphicsDevice.QueueLock) {
-                    GraphicsDevice.NativeCommandQueue.Submit(1, &submitInfo, Fence.Null);
-                    GraphicsDevice.NativeCommandQueue.WaitIdle();
-                    GraphicsDevice.NativeDevice.FreeCommandBuffers(GraphicsDevice.NativeCopyCommandPool, 1, &commandBuffer);
+                    GraphicsDevice.NativeCommandQueue.Submit(1, &submitInfo, fence);
+                    GraphicsDevice.NativeDevice.WaitForFences(1, &fence, true, ulong.MaxValue);
                 }
+
+                GraphicsDevice.NativeDevice.FreeCommandBuffers(GraphicsDevice.NativeCopyCommandPool, 1, &commandBuffer);
+                GraphicsDevice.NativeDevice.DestroyFence(fence);
 
                 InitializeViews();
             }

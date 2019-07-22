@@ -299,88 +299,86 @@ namespace Xenko.Graphics
             };
             CommandBuffer commandBuffer;
 
-            lock (GraphicsDevice.QueueLock)
-            {
+            lock (GraphicsDevice.QueueLock) {
+
                 GraphicsDevice.NativeDevice.AllocateCommandBuffers(ref commandBufferAllocateInfo, &commandBuffer);
-            }
 
-            var beginInfo = new CommandBufferBeginInfo { StructureType = StructureType.CommandBufferBeginInfo, Flags = CommandBufferUsageFlags.OneTimeSubmit };
-            commandBuffer.Begin(ref beginInfo);
+                var beginInfo = new CommandBufferBeginInfo { StructureType = StructureType.CommandBufferBeginInfo, Flags = CommandBufferUsageFlags.OneTimeSubmit };
+                commandBuffer.Begin(ref beginInfo);
 
-            if (dataBoxes != null && dataBoxes.Length > 0)
-            {
-                // Buffer-to-image copies need to be aligned to the pixel size and 4 (always a power of 2)
-                var blockSize = Format.IsCompressed() ? NativeFormat.BlockSizeInBytes() : TexturePixelSize;
-                var alignmentMask = (blockSize < 4 ? 4 : blockSize) - 1;
-
-                int totalSize = dataBoxes.Length * alignmentMask;
-                for (int i = 0; i < dataBoxes.Length; i++)
+                if (dataBoxes != null && dataBoxes.Length > 0)
                 {
-                    totalSize += dataBoxes[i].SlicePitch;
-                }
+                    // Buffer-to-image copies need to be aligned to the pixel size and 4 (always a power of 2)
+                    var blockSize = Format.IsCompressed() ? NativeFormat.BlockSizeInBytes() : TexturePixelSize;
+                    var alignmentMask = (blockSize < 4 ? 4 : blockSize) - 1;
 
-                SharpVulkan.Buffer uploadResource;
-                int uploadOffset;
-                var uploadMemory = GraphicsDevice.AllocateUploadBuffer(totalSize, out uploadResource, out uploadOffset);
-
-                // Upload buffer barrier
-                var bufferMemoryBarrier = new BufferMemoryBarrier(uploadResource, AccessFlags.None, AccessFlags.TransferRead, (ulong)uploadOffset, (ulong)totalSize);
-
-                // Image barrier
-                NativeLayout = ImageLayout.TransferDestinationOptimal;
-                var initialBarrier = new ImageMemoryBarrier(NativeImage, ImageLayout.Undefined, NativeLayout, AccessFlags.None, AccessFlags.TransferWrite, new ImageSubresourceRange(NativeImageAspect));
-                commandBuffer.PipelineBarrier(PipelineStageFlags.TopOfPipe, PipelineStageFlags.Transfer, DependencyFlags.None, 0, null, 1, &bufferMemoryBarrier, 1, &initialBarrier);
-
-                // Copy data boxes to upload buffer
-                var copies = new BufferImageCopy[dataBoxes.Length];
-                for (int i = 0; i < copies.Length; i++)
-                {
-                    var slicePitch = dataBoxes[i].SlicePitch;
-
-                    int arraySlice = i / MipLevels;
-                    int mipSlice = i % MipLevels;
-                    var mipMapDescription = GetMipMapDescription(mipSlice);
-
-                    var alignment = ((uploadOffset + alignmentMask) & ~alignmentMask) - uploadOffset;
-                    uploadMemory += alignment;
-                    uploadOffset += alignment;
-
-                    Utilities.CopyMemory(uploadMemory, dataBoxes[i].DataPointer, slicePitch);
-
-                    // TODO VULKAN: Check if pitches are valid
-                    copies[i] = new BufferImageCopy
+                    int totalSize = dataBoxes.Length * alignmentMask;
+                    for (int i = 0; i < dataBoxes.Length; i++)
                     {
-                        BufferOffset = (ulong)uploadOffset,
-                        ImageSubresource = new ImageSubresourceLayers(ImageAspectFlags.Color, (uint)arraySlice, 1, (uint)mipSlice),
-                        BufferRowLength = 0, //(uint)(dataBoxes[i].RowPitch / pixelSize),
-                        BufferImageHeight = 0, //(uint)(dataBoxes[i].SlicePitch / dataBoxes[i].RowPitch),
-                        ImageOffset = new Offset3D(0, 0, 0),
-                        ImageExtent = new Extent3D((uint)mipMapDescription.Width, (uint)mipMapDescription.Height, (uint)mipMapDescription.Depth)
-                    };
+                        totalSize += dataBoxes[i].SlicePitch;
+                    }
 
-                    uploadMemory += slicePitch;
-                    uploadOffset += slicePitch;
-                }
+                    SharpVulkan.Buffer uploadResource;
+                    int uploadOffset;
+                    var uploadMemory = GraphicsDevice.AllocateUploadBuffer(totalSize, out uploadResource, out uploadOffset);
 
-                // Copy from upload buffer to image
-                fixed (BufferImageCopy* copiesPointer = &copies[0])
-                {
-                    lock (GraphicsDevice.QueueLock) {
+                    // Upload buffer barrier
+                    var bufferMemoryBarrier = new BufferMemoryBarrier(uploadResource, AccessFlags.None, AccessFlags.TransferRead, (ulong)uploadOffset, (ulong)totalSize);
+
+                    // Image barrier
+                    NativeLayout = ImageLayout.TransferDestinationOptimal;
+                    var initialBarrier = new ImageMemoryBarrier(NativeImage, ImageLayout.Undefined, NativeLayout, AccessFlags.None, AccessFlags.TransferWrite, new ImageSubresourceRange(NativeImageAspect));
+                    commandBuffer.PipelineBarrier(PipelineStageFlags.TopOfPipe, PipelineStageFlags.Transfer, DependencyFlags.None, 0, null, 1, &bufferMemoryBarrier, 1, &initialBarrier);
+
+                    // Copy data boxes to upload buffer
+                    var copies = new BufferImageCopy[dataBoxes.Length];
+                    for (int i = 0; i < copies.Length; i++)
+                    {
+                        var slicePitch = dataBoxes[i].SlicePitch;
+
+                        int arraySlice = i / MipLevels;
+                        int mipSlice = i % MipLevels;
+                        var mipMapDescription = GetMipMapDescription(mipSlice);
+
+                        var alignment = ((uploadOffset + alignmentMask) & ~alignmentMask) - uploadOffset;
+                        uploadMemory += alignment;
+                        uploadOffset += alignment;
+
+                        Utilities.CopyMemory(uploadMemory, dataBoxes[i].DataPointer, slicePitch);
+
+                        // TODO VULKAN: Check if pitches are valid
+                        copies[i] = new BufferImageCopy
+                        {
+                            BufferOffset = (ulong)uploadOffset,
+                            ImageSubresource = new ImageSubresourceLayers(ImageAspectFlags.Color, (uint)arraySlice, 1, (uint)mipSlice),
+                            BufferRowLength = 0, //(uint)(dataBoxes[i].RowPitch / pixelSize),
+                            BufferImageHeight = 0, //(uint)(dataBoxes[i].SlicePitch / dataBoxes[i].RowPitch),
+                            ImageOffset = new Offset3D(0, 0, 0),
+                            ImageExtent = new Extent3D((uint)mipMapDescription.Width, (uint)mipMapDescription.Height, (uint)mipMapDescription.Depth)
+                        };
+
+                        uploadMemory += slicePitch;
+                        uploadOffset += slicePitch;
+                    }
+
+                    // Copy from upload buffer to image
+                    fixed (BufferImageCopy* copiesPointer = copies)
+                    {
                         commandBuffer.CopyBufferToImage(uploadResource, NativeImage, ImageLayout.TransferDestinationOptimal, (uint)copies.Length, copiesPointer);
                     }
+
+                    IsInitialized = true;
                 }
 
-                IsInitialized = true;
+                // Transition to default layout
+                var imageMemoryBarrier = new ImageMemoryBarrier(NativeImage,
+                    dataBoxes == null || dataBoxes.Length == 0 ? ImageLayout.Undefined : ImageLayout.TransferDestinationOptimal, NativeLayout,
+                    dataBoxes == null || dataBoxes.Length == 0 ? AccessFlags.None : AccessFlags.TransferWrite, NativeAccessMask, new ImageSubresourceRange(NativeImageAspect));
+                commandBuffer.PipelineBarrier(PipelineStageFlags.Transfer, PipelineStageFlags.AllCommands, DependencyFlags.None, 0, null, 0, null, 1, &imageMemoryBarrier);
+
+                // Close and submit
+                commandBuffer.End();
             }
-
-            // Transition to default layout
-            var imageMemoryBarrier = new ImageMemoryBarrier(NativeImage,
-                dataBoxes == null || dataBoxes.Length == 0 ? ImageLayout.Undefined : ImageLayout.TransferDestinationOptimal, NativeLayout,
-                dataBoxes == null || dataBoxes.Length == 0 ? AccessFlags.None : AccessFlags.TransferWrite, NativeAccessMask, new ImageSubresourceRange(NativeImageAspect));
-            commandBuffer.PipelineBarrier(PipelineStageFlags.Transfer, PipelineStageFlags.AllCommands, DependencyFlags.None, 0, null, 0, null, 1, &imageMemoryBarrier);
-
-            // Close and submit
-            commandBuffer.End();
 
             var submitInfo = new SubmitInfo
             {
@@ -389,12 +387,17 @@ namespace Xenko.Graphics
                 CommandBuffers = new IntPtr(&commandBuffer),
             };
 
+            var fenceCreateInfo = new FenceCreateInfo { StructureType = StructureType.FenceCreateInfo };
+            var fence = GraphicsDevice.NativeDevice.CreateFence(ref fenceCreateInfo);                
+
             lock (GraphicsDevice.QueueLock)
             {
-                GraphicsDevice.NativeCommandQueue.Submit(1, &submitInfo, Fence.Null);
-                GraphicsDevice.NativeCommandQueue.WaitIdle();
-                GraphicsDevice.NativeDevice.FreeCommandBuffers(GraphicsDevice.NativeCopyCommandPool, 1, &commandBuffer);
+                GraphicsDevice.NativeCommandQueue.Submit(1, &submitInfo, fence);
+                GraphicsDevice.NativeDevice.WaitForFences(1, &fence, true, ulong.MaxValue);
             }
+
+            GraphicsDevice.NativeDevice.FreeCommandBuffers(GraphicsDevice.NativeCopyCommandPool, 1, &commandBuffer);
+            GraphicsDevice.NativeDevice.DestroyFence(fence);
         }
 
         /// <inheritdoc/>
