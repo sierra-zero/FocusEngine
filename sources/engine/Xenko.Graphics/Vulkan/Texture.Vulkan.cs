@@ -299,11 +299,19 @@ namespace Xenko.Graphics
             };
             CommandBuffer commandBuffer;
 
-            lock (GraphicsDevice.QueueLock) {
+            // do some setup outside of the lock
+            var beginInfo = new CommandBufferBeginInfo { StructureType = StructureType.CommandBufferBeginInfo, Flags = CommandBufferUsageFlags.OneTimeSubmit };
+            var fenceCreateInfo = new FenceCreateInfo { StructureType = StructureType.FenceCreateInfo };
+            var fence = GraphicsDevice.NativeDevice.CreateFence(ref fenceCreateInfo);        
+            var submitInfo = new SubmitInfo
+            {
+                StructureType = StructureType.SubmitInfo,
+                CommandBufferCount = 1,
+            };     
 
+            lock (GraphicsDevice.QueueLock) {
                 GraphicsDevice.NativeDevice.AllocateCommandBuffers(ref commandBufferAllocateInfo, &commandBuffer);
 
-                var beginInfo = new CommandBufferBeginInfo { StructureType = StructureType.CommandBufferBeginInfo, Flags = CommandBufferUsageFlags.OneTimeSubmit };
                 commandBuffer.Begin(ref beginInfo);
 
                 if (dataBoxes != null && dataBoxes.Length > 0)
@@ -378,20 +386,9 @@ namespace Xenko.Graphics
 
                 // Close and submit
                 commandBuffer.End();
-            }
 
-            var submitInfo = new SubmitInfo
-            {
-                StructureType = StructureType.SubmitInfo,
-                CommandBufferCount = 1,
-                CommandBuffers = new IntPtr(&commandBuffer),
-            };
+                submitInfo.CommandBuffers = new IntPtr(&commandBuffer);
 
-            var fenceCreateInfo = new FenceCreateInfo { StructureType = StructureType.FenceCreateInfo };
-            var fence = GraphicsDevice.NativeDevice.CreateFence(ref fenceCreateInfo);                
-
-            lock (GraphicsDevice.QueueLock)
-            {
                 GraphicsDevice.NativeCommandQueue.Submit(1, &submitInfo, fence);
                 GraphicsDevice.NativeDevice.WaitForFences(1, &fence, true, ulong.MaxValue);
             }
