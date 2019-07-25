@@ -19,6 +19,7 @@ using Xenko.Core.Serialization.Contents;
 using Xenko.Assets.Textures;
 using VHACDSharp;
 using Buffer = Xenko.Graphics.Buffer;
+using Xenko.Graphics;
 
 namespace Xenko.Assets.Physics {
     [AssetCompiler(typeof(ColliderShapeAsset), typeof(AssetCompilationContext))]
@@ -32,6 +33,10 @@ namespace Xenko.Assets.Physics {
                 yield return new BuildDependencyInfo(type, typeof(AssetCompilationContext), BuildDependencyType.CompileContent);
             }
             foreach (var type in AssetRegistry.GetAssetTypes(typeof(Skeleton))) {
+                yield return new BuildDependencyInfo(type, typeof(AssetCompilationContext), BuildDependencyType.CompileContent);
+            }
+            foreach (var type in AssetRegistry.GetAssetTypes(typeof(Heightmap)))
+            {
                 yield return new BuildDependencyInfo(type, typeof(AssetCompilationContext), BuildDependencyType.CompileContent);
             }
         }
@@ -53,6 +58,20 @@ namespace Xenko.Assets.Physics {
                         var url = AttachedReferenceManager.GetUrl(convexHullDesc.Model);
 
                         if (!string.IsNullOrEmpty(url)) {
+                            yield return new ObjectUrl(UrlType.Content, url);
+                        }
+                    }
+                }
+                else if (desc is HeightfieldColliderShapeDesc)
+                {
+                    var heightfieldDesc = desc as HeightfieldColliderShapeDesc;
+
+                    if (heightfieldDesc.InitialHeights?.GetSource() != null)
+                    {
+                        var url = AttachedReferenceManager.GetUrl(heightfieldDesc.InitialHeights.GetSource());
+
+                        if (!string.IsNullOrEmpty(url))
+                        {
                             yield return new ObjectUrl(UrlType.Content, url);
                         }
                     }
