@@ -33,6 +33,9 @@ namespace Xenko.Graphics
         // threading synchronization
         public static object PipeLock = new object();
 
+        // GLSL converter always outputs entry point main()
+        private static readonly byte[] defaultEntryPoint = Encoding.UTF8.GetBytes("main\0");
+
         // State exposed by the CommandList
         private static readonly DynamicState[] dynamicStates =
         {
@@ -81,6 +84,9 @@ namespace Xenko.Graphics
 
                 // Create shader stages
                 Dictionary<int, string> inputAttributeNames;
+
+                // Note: important to pin this so that stages[x].Name is valid during this whole function
+                void* defaultEntryPointData = Interop.Fixed(defaultEntryPoint);
                 stages = CreateShaderStages(Description, out inputAttributeNames);
 
                 var inputAttributes = new VertexInputAttributeDescription[Description.InputElements.Length];
@@ -449,16 +455,13 @@ namespace Xenko.Graphics
 
             inputAttributeNames = null;
 
-            // GLSL converter always outputs entry point main()
-            var entryPoint = Encoding.UTF8.GetBytes("main\0");
-
             for (int i = 0; i < stages.Length; i++)
             {
                 var shaderBytecode = BinarySerialization.Read<ShaderInputBytecode>(stages[i].Data);
                 if (stages[i].Stage == ShaderStage.Vertex)
                     inputAttributeNames = shaderBytecode.InputAttributeNames;
 
-                fixed (byte* entryPointPointer = &entryPoint[0])
+                fixed (byte* entryPointPointer = &defaultEntryPoint[0])
                 fixed (byte* codePointer = &shaderBytecode.Data[0])
                 {
                     // Create shader module
