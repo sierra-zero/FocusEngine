@@ -808,6 +808,42 @@ namespace Xenko.Particles
             }
         }
 
+        private struct SpecificParticle
+        {
+            public Vector3 _position;
+            public Color4 _color;
+            public Quaternion _rotation;
+            public Vector3 _velocity;
+            public float _lifetime, _size;
+            public uint _seed;
+        }
+
+        private List<SpecificParticle> SpawnIndividuals = new List<SpecificParticle>();
+
+        /// <summary>
+        /// Emit a single particle with specific parameters. Values provided as arguments here will be replaced by initializers,
+        /// so only set what isn't being initialized by the particle system.
+        /// </summary>
+        public void EmitSpecificParticle(Vector3 pos, Color4? color = null, Quaternion? rotation = null, float? size = null,
+                                         float life = 1f, Vector3? velocity = null, uint? seed = null)
+        {
+            if (color.HasValue) pool.AddField(ParticleFields.Color);
+            if (rotation.HasValue) pool.AddField(ParticleFields.Quaternion);
+            if (size.HasValue) pool.AddField(ParticleFields.Size);
+            if (velocity.HasValue) pool.AddField(ParticleFields.Velocity);
+
+            SpawnIndividuals.Add(new SpecificParticle()
+            {
+                _position = pos,
+                _color = color ?? Color4.White,
+                _rotation = rotation ?? Quaternion.Identity,
+                _size = size ?? 1f,
+                _velocity = velocity ?? Vector3.Zero,
+                _lifetime = life,
+                _seed = seed ?? (uint)System.Environment.TickCount
+            });
+        }
+
         /// <summary>
         /// Spawns new particles and in general should be one of the last methods to call from the <see cref="Update"/> method
         /// </summary>
@@ -827,6 +863,10 @@ namespace Xenko.Particles
                 return;
             }
 
+            // handle spawning specific ones first
+            int specificParticles = SpawnIndividuals.Count;
+            particlesToSpawn += specificParticles;
+
             // Sometimes particles will be spawned when there is no available space
             // In such occasions we have to buffer them and spawn them when space becomes available
             particlesToSpawn = Math.Min(pool.AvailableParticles, particlesToSpawn);
@@ -842,6 +882,51 @@ namespace Xenko.Particles
 
             var startIndex = pool.NextFreeIndex % capacity;
 
+            if (specificParticles > 0)
+            {
+                var posField = pool.GetField(ParticleFields.Position);
+                var oldposField = pool.GetField(ParticleFields.OldPosition);
+                var rotField = pool.GetField(ParticleFields.Quaternion);
+                var velField = pool.GetField(ParticleFields.Velocity);
+                var clrField = pool.GetField(ParticleFields.Color);
+                var dirField = pool.GetField(ParticleFields.Direction);
+                var angField = pool.GetField(ParticleFields.Rotation);
+                var totallifeField = pool.GetField(ParticleFields.Life);
+                var sizeField = pool.GetField(ParticleFields.Size);
+
+                for (int i = 0; i < specificParticles && particlesToSpawn > 0; i++)
+                {
+                    SpecificParticle sp = SpawnIndividuals[i];
+                    Particle particle = pool.AddParticle();
+
+                    if (dirField.IsValid()) *((Vector3*)particle[dirField]) = Vector3.Zero;
+                    if (posField.IsValid()) *((Vector3*)particle[posField]) = sp._position;
+                    if (oldposField.IsValid()) *((Vector3*)particle[oldposField]) = sp._position;
+                    if (rotField.IsValid()) *((Quaternion*)particle[rotField]) = sp._rotation;
+                    if (velField.IsValid()) *((Vector3*)particle[velField]) = sp._velocity;
+                    if (clrField.IsValid()) *((Color4*)particle[clrField]) = sp._color;
+                    if (totallifeField.IsValid()) *((float*)particle[totallifeField]) = sp._lifetime;
+                    if (sizeField.IsValid()) *((float*)particle[sizeField]) = sp._size;
+                    if (lifeField.IsValid()) *((float*)particle[lifeField]) = 1f;
+                    if (angField.IsValid()) *((float*)particle[angField]) = 0f;
+                    if (randField.IsValid()) *((RandomSeed*)particle[randField]) = new RandomSeed(sp._seed);
+
+                    for (int j = 0; j < ParticleFields.ChildrenFlags.Length; j++)
+                    {
+                        var flagField = pool.GetField(ParticleFields.ChildrenFlags[j]);
+                        if (flagField.IsValid())
+                        {
+                            (*((uint*)particle[flagField])) = 0;
+                        }
+
+                    }
+
+                    particlesToSpawn--;
+                }
+
+                SpawnIndividuals.Clear();
+            }
+
             for (var i = 0; i < particlesToSpawn; i++)
             {
                 var particle = pool.AddParticle();
@@ -850,7 +935,7 @@ namespace Xenko.Particles
 
                 *((RandomSeed*)particle[randField]) = randSeed;
 
-                *((float*)particle[lifeField]) = 1; // Start at 100% normalized lifetime                
+                *((float*)particle[lifeField]) = 1f; // Start at 100% normalized lifetime                
             }
 
             var endIndex = pool.NextFreeIndex % capacity;
@@ -865,7 +950,7 @@ namespace Xenko.Particles
 
             particlesToSpawn = 0;
 
-            initialDefaultFields.Initialize(pool, startIndex, endIndex, capacity);
+            initialDefaultFields.Initialize(pool, startIndex + specificParticles, endIndex, capacity);
 
             foreach (var initializer in Initializers)
             {
