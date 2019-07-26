@@ -275,8 +275,10 @@ namespace Xenko.Core.BuildEngine
                 if (outputObject.ObjectId != outputObjectId && outputObject.Counter == mergeCounter)
                 {
                     var error = $"Commands {command} and {outputObject.Command} are both writing {outputObjectUrl} at the same time";
-                    executeContext.Logger.Error(error);
-                    throw new InvalidOperationException(error);
+                    executeContext.Logger.Warning(error);
+                    // let's continue and allow the developer to determine if this is a big problem or not
+                    // outputs might actually be the same
+                    //throw new InvalidOperationException(error);
                 }
 
                 // Update new ObjectId

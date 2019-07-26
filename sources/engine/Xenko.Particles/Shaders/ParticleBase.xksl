@@ -26,7 +26,7 @@ shader ParticleBase : DepthBase, ShaderBase, Texturing, ParticleUtilities
     // -------------------------------------
     // conditional streams - may or may not be present depending on existing particle fields
     // -------------------------------------
-    //stage stream float4 Color : COLOR;
+    stage stream float4 Color : COLOR;
     nointerpolation stage stream float Lifetime : BATCH_LIFETIME;
     nointerpolation stage stream float RandomSeed : BATCH_RANDOMSEED; // Ideally should be uint. Note! The xksl doesn't support nointerpolation, so cast the float as int before using it
 
@@ -126,7 +126,7 @@ shader ParticleBase : DepthBase, ShaderBase, Texturing, ParticleUtilities
     
     stage float4 Shading()
     {
-        return ColorScale;
+        return ColorScale * streams.Color;
     }
 
 };
