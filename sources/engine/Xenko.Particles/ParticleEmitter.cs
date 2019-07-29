@@ -832,7 +832,13 @@ namespace Xenko.Particles
         public void EmitSpecificParticle(Vector3 pos, Color4? color = null, Quaternion? rotation = null, float? size = null,
                                          float life = 1f, Vector3? velocity = null, uint? seed = null)
         {
-            if (color.HasValue) pool.AddField(ParticleFields.Color);
+            if (color.HasValue)
+            {
+                pool.AddField(ParticleFields.Color);
+                if (pool.SpecificColors == null ||
+                    pool.SpecificColors.Length < pool.ParticleCapacity)
+                    pool.SpecificColors = new Color4[pool.ParticleCapacity];
+            }
             if (rotation.HasValue) pool.AddField(ParticleFields.Quaternion);
             if (size.HasValue) pool.AddField(ParticleFields.Size);
             if (velocity.HasValue) pool.AddField(ParticleFields.Velocity);
@@ -902,14 +908,15 @@ namespace Xenko.Particles
                 for (int i = 0; i < specificParticles && particlesToSpawn > 0; i++)
                 {
                     SpecificParticle sp = SpawnIndividuals[i];
-                    Particle particle = pool.AddParticle();
+                    int particleIndex = pool.AddParticleIndex();
+                    Particle particle = pool.FromIndex(particleIndex);
 
                     if (dirField.IsValid()) *((Vector3*)particle[dirField]) = Vector3.Zero;
                     if (posField.IsValid()) *((Vector3*)particle[posField]) = sp._position;
                     if (oldposField.IsValid()) *((Vector3*)particle[oldposField]) = sp._position;
                     if (rotField.IsValid()) *((Quaternion*)particle[rotField]) = sp._rotation;
                     if (velField.IsValid()) *((Vector3*)particle[velField]) = sp._velocity;
-                    if (clrField.IsValid()) { *((Color4*)particle[clrField]) = sp._color; pool.SpecificColors[particle.Pointer] = sp._color; }
+                    if (clrField.IsValid()) { *((Color4*)particle[clrField]) = sp._color; pool.SpecificColors[particleIndex] = sp._color; }
                     if (totallifeField.IsValid()) *((float*)particle[totallifeField]) = sp._lifetime;
                     if (sizeField.IsValid()) *((float*)particle[sizeField]) = sp._size;
                     if (lifeField.IsValid()) *((float*)particle[lifeField]) = 1f;

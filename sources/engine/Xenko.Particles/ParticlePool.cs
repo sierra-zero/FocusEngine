@@ -53,7 +53,7 @@ namespace Xenko.Particles
 
         private readonly List<ParticleFieldDescription> fieldDescriptions = new List<ParticleFieldDescription>(DefaultMaxFielsPerPool);
 
-        public Dictionary<IntPtr, Color4> SpecificColors = new Dictionary<IntPtr, Color4>();
+        public Color4[] SpecificColors;
 
         /// <summary>
         /// <see cref="ParticlePool"/> constructor
@@ -240,6 +240,10 @@ namespace Xenko.Particles
             var dstParticle = FromIndex(dst);
             var srcParticle = FromIndex(src);
 
+            if (SpecificColors != null)
+            {
+                SpecificColors[dst] = SpecificColors[src];
+            }
 #if PARTICLES_SOA
             foreach (var field in fields.Values)
             {
@@ -286,6 +290,21 @@ namespace Xenko.Particles
 
             nextFreeIndex = 0;
             return FromIndex(nextFreeIndex++);
+        }
+
+        public int AddParticleIndex()
+        {
+            if (nextFreeIndex != ParticleCapacity)
+            {
+                nextFreeIndex++;
+                return nextFreeIndex - 1;
+            }
+
+            if (listPolicy != ListPolicy.Ring || ParticleCapacity == 0)
+                return -1;
+
+            nextFreeIndex = 1;
+            return 0;
         }
 
         public void RemoveAt(int index)

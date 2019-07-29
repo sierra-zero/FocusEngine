@@ -105,19 +105,10 @@ namespace Xenko.Particles.Updaters
                 var color = SamplerMain.Evaluate(life);
                 
                 // preserve any colors?
-                if (color.A < 0f ||
-                    color.R < 0f ||
-                    color.G < 0f ||
-                    color.B < 0f)
-                {
-                    if (pool.SpecificColors.TryGetValue(particle.Pointer, out Color4 data))
-                    {
-                        if (color.A < 0f) color.A = data.A;
-                        if (color.R < 0f) color.R = data.R;
-                        if (color.G < 0f) color.G = data.G;
-                        if (color.B < 0f) color.B = data.B;
-                    }
-                }
+                if (color.A < 0f) color.A = pool.SpecificColors[i].A;
+                if (color.R < 0f) color.R = pool.SpecificColors[i].R;
+                if (color.G < 0f) color.G = pool.SpecificColors[i].G;
+                if (color.B < 0f) color.B = pool.SpecificColors[i].B;
 
                 // Premultiply alpha
                 color.R *= color.A;
@@ -153,19 +144,10 @@ namespace Xenko.Particles.Updaters
                 var color    =  Color4.Lerp(colorMin, colorMax, lerp);
 
                 // preserve any colors?
-                if (color.A < 0f ||
-                    color.R < 0f ||
-                    color.G < 0f ||
-                    color.B < 0f)
-                {
-                    if (pool.SpecificColors.TryGetValue(particle.Pointer, out Color4 data))
-                    {
-                        if (color.A < 0f) color.A = data.A;
-                        if (color.R < 0f) color.R = data.R;
-                        if (color.G < 0f) color.G = data.G;
-                        if (color.B < 0f) color.B = data.B;
-                    }
-                }
+                if (color.A < 0f) color.A = pool.SpecificColors[i].A;
+                if (color.R < 0f) color.R = pool.SpecificColors[i].R;
+                if (color.G < 0f) color.G = pool.SpecificColors[i].G;
+                if (color.B < 0f) color.B = pool.SpecificColors[i].B;
 
                 // Premultiply alpha
                 color.R *= color.A;
