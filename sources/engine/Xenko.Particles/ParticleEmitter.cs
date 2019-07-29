@@ -839,7 +839,13 @@ namespace Xenko.Particles
                     pool.SpecificColors = new Color4[pool.ParticleCapacity];
             }
             if (rotation.HasValue) pool.AddField(ParticleFields.Quaternion);
-            if (size.HasValue) pool.AddField(ParticleFields.Size);
+            if (size.HasValue)
+            {
+                pool.AddField(ParticleFields.Size);
+                if (pool.SpecificSizes == null ||
+                    pool.SpecificSizes.Length < pool.ParticleCapacity)
+                    pool.SpecificSizes = new float[pool.ParticleCapacity];
+            }
             if (velocity.HasValue) pool.AddField(ParticleFields.Velocity);
 
             SpawnIndividuals.Add(new SpecificParticle()
@@ -892,6 +898,8 @@ namespace Xenko.Particles
 
             var startIndex = pool.NextFreeIndex % capacity;
 
+            // if we have specific particles to make, make them first
+            // apply all of the specific parameters to these particles
             if (specificParticles > 0)
             {
                 var posField = pool.GetField(ParticleFields.Position);
@@ -914,12 +922,16 @@ namespace Xenko.Particles
                     if (oldposField.IsValid()) *((Vector3*)particle[oldposField]) = sp._position;
                     if (rotField.IsValid()) *((Quaternion*)particle[rotField]) = sp._rotation;
                     if (velField.IsValid()) *((Vector3*)particle[velField]) = sp._velocity;
-                    if (clrField.IsValid()) { *((Color4*)particle[clrField]) = sp._color; pool.SpecificColors[particleIndex] = sp._color; }
+                    if (clrField.IsValid()) *((Color4*)particle[clrField]) = sp._color;
                     if (sizeField.IsValid()) *((float*)particle[sizeField]) = sp._size;
                     if (angField.IsValid()) *((float*)particle[angField]) = 0f;
 
+                    if (pool.SpecificColors != null) pool.SpecificColors[particleIndex] = sp._color;
+                    if (pool.SpecificSizes != null) pool.SpecificSizes[particleIndex] = sp._size;
+
                     *((RandomSeed*)particle[randField]) = new RandomSeed(sp._seed);
                     *((float*)particle[lifeField]) = 1f;
+
                     pool.SpecificLives[particleIndex] = sp._lifetime;
 
                     for (int j = 0; j < ParticleFields.ChildrenFlags.Length; j++)
@@ -945,7 +957,11 @@ namespace Xenko.Particles
 
                 var randSeed = RandomSeedGenerator.GetNextSeed();
 
+                // precalculate the life of this particle
                 pool.SpecificLives[index] = particleLifetime.X + randSeed.GetFloat(0) * (particleLifetime.Y - particleLifetime.X);
+
+                // if some are specific sizes, just use these at the default 100% size
+                if (pool.SpecificSizes != null) pool.SpecificSizes[index] = 1f;
 
                 *((RandomSeed*)particle[randField]) = randSeed;
 

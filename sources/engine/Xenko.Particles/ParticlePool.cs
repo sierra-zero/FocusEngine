@@ -53,8 +53,13 @@ namespace Xenko.Particles
 
         private readonly List<ParticleFieldDescription> fieldDescriptions = new List<ParticleFieldDescription>(DefaultMaxFielsPerPool);
 
+        /// <summary>
+        /// Specific values are primarily for specifically emitted particles, used to keep track of original
+        /// states that might be adjusted by updaters
+        /// </summary>
         public float[] SpecificLives;
         public Color4[] SpecificColors;
+        public float[] SpecificSizes;
 
         /// <summary>
         /// <see cref="ParticlePool"/> constructor
@@ -243,10 +248,9 @@ namespace Xenko.Particles
             var dstParticle = FromIndex(dst);
             var srcParticle = FromIndex(src);
 
-            if (SpecificColors != null)
-            {
-                SpecificColors[dst] = SpecificColors[src];
-            }
+            if (SpecificColors != null) SpecificColors[dst] = SpecificColors[src];
+            if (SpecificSizes != null) SpecificSizes[dst] = SpecificSizes[src];
+
             SpecificLives[dst] = SpecificLives[src];
 
 #if PARTICLES_SOA

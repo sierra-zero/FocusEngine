@@ -96,11 +96,21 @@ namespace Xenko.Particles.Updaters
             var sizeField = pool.GetField(ParticleFields.Size);
             var lifeField = pool.GetField(ParticleFields.Life);
 
-            foreach (var particle in pool)
+            int count = pool.NextFreeIndex;
+            for(int i = 0; i < count; i++)
             {
+                Particle particle = pool.FromIndex(i);
+
                 var life = 1f - (*((float*)particle[lifeField]));   // The Life field contains remaining life, so for sampling we take (1 - life)
 
-                (*((float*)particle[sizeField])) = WorldScale.X * SamplerMain.Evaluate(life);
+                if (pool.SpecificSizes != null)
+                {
+                    (*((float*)particle[sizeField])) = WorldScale.X * SamplerMain.Evaluate(life) * pool.SpecificSizes[i];
+                }
+                else
+                {
+                    (*((float*)particle[sizeField])) = WorldScale.X * SamplerMain.Evaluate(life);
+                }
             }
         }
 
@@ -114,8 +124,11 @@ namespace Xenko.Particles.Updaters
             var lifeField = pool.GetField(ParticleFields.Life);
             var randField = pool.GetField(ParticleFields.RandomSeed);
 
-            foreach (var particle in pool)
+            int count = pool.NextFreeIndex;
+            for (int i = 0; i < count; i++)
             {
+                Particle particle = pool.FromIndex(i);
+
                 var life = 1f - (*((float*)particle[lifeField]));   // The Life field contains remaining life, so for sampling we take (1 - life)
 
                 var randSeed = particle.Get(randField);
@@ -124,7 +137,14 @@ namespace Xenko.Particles.Updaters
                 var size1 = SamplerMain.Evaluate(life);
                 var size2 = SamplerOptional.Evaluate(life);
 
-                (*((float*)particle[sizeField])) = WorldScale.X * (size1 + (size2 - size1) * lerp);
+                if (pool.SpecificSizes != null)
+                {
+                    (*((float*)particle[sizeField])) = WorldScale.X * (size1 + (size2 - size1) * lerp) * pool.SpecificSizes[i];
+                }
+                else
+                {
+                    (*((float*)particle[sizeField])) = WorldScale.X * (size1 + (size2 - size1) * lerp);
+                }
             }
         }
 
