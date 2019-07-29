@@ -53,6 +53,7 @@ namespace Xenko.Particles
 
         private readonly List<ParticleFieldDescription> fieldDescriptions = new List<ParticleFieldDescription>(DefaultMaxFielsPerPool);
 
+        public float[] SpecificLives;
         public Color4[] SpecificColors;
 
         /// <summary>
@@ -161,6 +162,8 @@ namespace Xenko.Particles
 
             var newMemoryBlockSize = newCapacity * newSize;
 
+            SpecificLives = new float[newCapacity];
+
             if (newMemoryBlockSize > 0)
                 newParticleData = Utilities.AllocateMemory(newMemoryBlockSize);
 
@@ -244,6 +247,8 @@ namespace Xenko.Particles
             {
                 SpecificColors[dst] = SpecificColors[src];
             }
+            SpecificLives[dst] = SpecificLives[src];
+
 #if PARTICLES_SOA
             foreach (var field in fields.Values)
             {
