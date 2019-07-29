@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Xenko.Core;
+using Xenko.Core.Mathematics;
 
 namespace Xenko.Particles
 {
@@ -52,7 +53,7 @@ namespace Xenko.Particles
 
         private readonly List<ParticleFieldDescription> fieldDescriptions = new List<ParticleFieldDescription>(DefaultMaxFielsPerPool);
 
-
+        public Dictionary<IntPtr, Color4> SpecificColors = new Dictionary<IntPtr, Color4>();
 
         /// <summary>
         /// <see cref="ParticlePool"/> constructor
@@ -285,6 +286,15 @@ namespace Xenko.Particles
 
             nextFreeIndex = 0;
             return FromIndex(nextFreeIndex++);
+        }
+
+        public void RemoveAt(int index)
+        {
+            if (index < nextFreeIndex - 1)
+            {
+                CopyParticleData(index, nextFreeIndex - 1);
+            }
+            --nextFreeIndex;
         }
 
         /// <summary>

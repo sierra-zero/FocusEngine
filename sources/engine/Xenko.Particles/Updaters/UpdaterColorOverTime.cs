@@ -95,11 +95,29 @@ namespace Xenko.Particles.Updaters
             var colorField = pool.GetField(ParticleFields.Color);
             var lifeField  = pool.GetField(ParticleFields.Life);
 
-            foreach (var particle in pool)
+            int count = pool.NextFreeIndex;
+            for(int i = 0; i < count; i++)
             {
+                Particle particle = pool.FromIndex(i);
+
                 var life = 1f - (*((float*)particle[lifeField]));   // The Life field contains remaining life, so for sampling we take (1 - life)
 
                 var color = SamplerMain.Evaluate(life);
+                
+                // preserve any colors?
+                if (color.A < 0f ||
+                    color.R < 0f ||
+                    color.G < 0f ||
+                    color.B < 0f)
+                {
+                    if (pool.SpecificColors.TryGetValue(particle.Pointer, out Color4 data))
+                    {
+                        if (color.A < 0f) color.A = data.A;
+                        if (color.R < 0f) color.R = data.R;
+                        if (color.G < 0f) color.G = data.G;
+                        if (color.B < 0f) color.B = data.B;
+                    }
+                }
 
                 // Premultiply alpha
                 color.R *= color.A;
@@ -120,8 +138,11 @@ namespace Xenko.Particles.Updaters
             var lifeField  = pool.GetField(ParticleFields.Life);
             var randField  = pool.GetField(ParticleFields.RandomSeed);
 
-            foreach (var particle in pool)
+            int count = pool.NextFreeIndex;
+            for (int i = 0; i < count; i++)
             {
+                Particle particle = pool.FromIndex(i);
+
                 var life = 1f - (*((float*)particle[lifeField]));   // The Life field contains remaining life, so for sampling we take (1 - life)
 
                 var randSeed = particle.Get(randField);
@@ -130,6 +151,21 @@ namespace Xenko.Particles.Updaters
                 var colorMin = SamplerMain.Evaluate(life);
                 var colorMax = SamplerOptional.Evaluate(life);                
                 var color    =  Color4.Lerp(colorMin, colorMax, lerp);
+
+                // preserve any colors?
+                if (color.A < 0f ||
+                    color.R < 0f ||
+                    color.G < 0f ||
+                    color.B < 0f)
+                {
+                    if (pool.SpecificColors.TryGetValue(particle.Pointer, out Color4 data))
+                    {
+                        if (color.A < 0f) color.A = data.A;
+                        if (color.R < 0f) color.R = data.R;
+                        if (color.G < 0f) color.G = data.G;
+                        if (color.B < 0f) color.B = data.B;
+                    }
+                }
 
                 // Premultiply alpha
                 color.R *= color.A;

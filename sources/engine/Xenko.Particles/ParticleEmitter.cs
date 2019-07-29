@@ -721,10 +721,9 @@ namespace Xenko.Particles
                 var randField = pool.GetField(ParticleFields.RandomSeed);
                 var lifeStep = particleLifetime.Y - particleLifetime.X;
 
-                var particleEnumerator = pool.GetEnumerator();
-                while (particleEnumerator.MoveNext())
+                for (int i = 0; i < pool.NextFreeIndex; i++)
                 {
-                    var particle = particleEnumerator.Current;
+                    var particle = pool.FromIndex(i);
 
                     var randSeed = *(RandomSeed*)(particle[randField]);
                     var life = (float*)particle[lifeField];
@@ -736,7 +735,8 @@ namespace Xenko.Particles
 
                     if (*life <= MathUtil.ZeroTolerance)
                     {
-                        particleEnumerator.RemoveCurrent(ref particle);
+                        pool.RemoveAt(i);
+                        i--;
                     }
                     else
                     if ((*life -= (dt / startingLife)) <= MathUtil.ZeroTolerance)
@@ -747,7 +747,8 @@ namespace Xenko.Particles
                         }
                         else
                         {
-                            particleEnumerator.RemoveCurrent(ref particle);
+                            pool.RemoveAt(i);
+                            i--;
                         }
                     }
                 }
@@ -760,8 +761,10 @@ namespace Xenko.Particles
                 var posField = pool.GetField(ParticleFields.Position);
                 var oldField = pool.GetField(ParticleFields.OldPosition);
 
-                foreach (var particle in pool)
+                for (int i=0; i<pool.NextFreeIndex; i++)
                 {
+                    Particle particle = pool.FromIndex(i);
+
                     (*((Vector3*)particle[oldField])) = (*((Vector3*)particle[posField]));
                 }
             }
@@ -772,8 +775,10 @@ namespace Xenko.Particles
                 var posField = pool.GetField(ParticleFields.Position);
                 var velField = pool.GetField(ParticleFields.Velocity);
 
-                foreach (var particle in pool)
+                for (int i = 0; i < pool.NextFreeIndex; i++)
                 {
+                    Particle particle = pool.FromIndex(i);
+
                     var pos = ((Vector3*)particle[posField]);
                     var vel = ((Vector3*)particle[velField]);
 
@@ -904,7 +909,7 @@ namespace Xenko.Particles
                     if (oldposField.IsValid()) *((Vector3*)particle[oldposField]) = sp._position;
                     if (rotField.IsValid()) *((Quaternion*)particle[rotField]) = sp._rotation;
                     if (velField.IsValid()) *((Vector3*)particle[velField]) = sp._velocity;
-                    if (clrField.IsValid()) *((Color4*)particle[clrField]) = sp._color;
+                    if (clrField.IsValid()) { *((Color4*)particle[clrField]) = sp._color; pool.SpecificColors[particle.Pointer] = sp._color; }
                     if (totallifeField.IsValid()) *((float*)particle[totallifeField]) = sp._lifetime;
                     if (sizeField.IsValid()) *((float*)particle[sizeField]) = sp._size;
                     if (lifeField.IsValid()) *((float*)particle[lifeField]) = 1f;
