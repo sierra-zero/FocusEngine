@@ -14,9 +14,6 @@ namespace Xenko.Graphics
     /// <note>Non thread-safe. You should have one such allocator per thread.</note>
     public class ResourceGroupAllocator : ComponentBase
     {
-        public static int PREALLOCATE_RESOURCE_COUNT = 1;
-        public static bool HadEnoughPreallocated { private set; get; } = true;
-
         private readonly GraphicsDevice graphicsDevice;
         private readonly GraphicsResourceAllocator allocator;
         private readonly List<DescriptorPool> descriptorPools = new List<DescriptorPool>();
@@ -41,13 +38,7 @@ namespace Xenko.Graphics
 
             SetupNextDescriptorPool();
 
-            // prepare some buffers now, so we don't need to worry about threading issues later
-            PreallocateBuffers(PREALLOCATE_RESOURCE_COUNT);
-        }
-
-        private void PreallocateBuffers(int count) {
-            for (int i=0;i<count;i++)
-                bufferPools.Add(currentBufferPool = BufferPool.New(allocator, graphicsDevice, 1024 * 1024, commandList));
+            bufferPools.Add(currentBufferPool = BufferPool.New(allocator, graphicsDevice, 1024 * 1024, commandList));
         }
 
         protected override void Destroy()
@@ -142,7 +133,6 @@ namespace Xenko.Graphics
             if (currentBufferPoolIndex >= bufferPools.Count)
             {
                 bufferPools.Add(currentBufferPool = BufferPool.New(allocator, graphicsDevice, 1024 * 1024));
-                HadEnoughPreallocated = false;
             }
             else
             {
