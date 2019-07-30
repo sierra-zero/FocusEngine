@@ -980,7 +980,7 @@ namespace Xenko.Particles
 
             particlesToSpawn = 0;
 
-            initialDefaultFields.Initialize(pool, startIndex + specificParticles, endIndex, capacity);
+            initialDefaultFields.Initialize(pool, Math.Min(capacity - 1, startIndex + specificParticles), endIndex, capacity);
 
             foreach (var initializer in Initializers)
             {
