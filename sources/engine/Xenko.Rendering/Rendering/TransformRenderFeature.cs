@@ -18,6 +18,7 @@ namespace Xenko.Rendering
         internal ObjectPropertyKey<RenderModelFrameInfo> RenderModelObjectInfoKey;
         internal ViewObjectPropertyKey<RenderModelViewInfo> RenderModelViewInfoKey;
 
+        private float scaledTimeAccumulator;
         private ConstantBufferOffsetReference time; // TODO: Move this at a more global level so that it applies on everything? (i.e. RootEffectRenderFeature)
         private ConstantBufferOffsetReference view;
         private ConstantBufferOffsetReference world;
@@ -77,6 +78,8 @@ namespace Xenko.Rendering
 
             // Update PerFrame (time)
             // TODO Move that to RootEffectRenderFeature?
+            float timeStep = (float)Context.Time.Elapsed.TotalSeconds * GlobalKeys.TimeScale;
+            scaledTimeAccumulator += timeStep;
             foreach (var frameLayout in ((RootEffectRenderFeature)RootRenderFeature).FrameLayouts)
             {
                 var timeOffset = frameLayout.GetConstantBufferOffset(time);
@@ -87,8 +90,8 @@ namespace Xenko.Rendering
                 var mappedCB = resourceGroup.ConstantBuffer.Data;
 
                 var perFrameTime = (PerFrameTime*)((byte*)mappedCB + timeOffset);
-                perFrameTime->Time = (float)Context.Time.Total.TotalSeconds;
-                perFrameTime->TimeStep = (float)Context.Time.Elapsed.TotalSeconds;
+                perFrameTime->TimeStep = timeStep;
+                perFrameTime->Time = scaledTimeAccumulator;
             }
 
             // Update PerView (View, Proj, etc...)
