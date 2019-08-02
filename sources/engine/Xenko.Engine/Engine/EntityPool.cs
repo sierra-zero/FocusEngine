@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using Xenko.Core.Mathematics;
 using Xenko.Engine;
 
@@ -77,8 +77,8 @@ public static class EntityPool {
 
                 obj.UsingPool.active = true;
             }
-            obj.Transform.Position = pos ?? Vector3.Zero;
-            obj.Transform.Rotation = rot ?? Quaternion.Identity;
+            if (pos.HasValue) obj.Transform.Position = pos.Value;
+            if (rot.HasValue) obj.Transform.Rotation = rot.Value;
             return obj;
         }
 
