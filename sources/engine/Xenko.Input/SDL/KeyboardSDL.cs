@@ -57,6 +57,8 @@ namespace Xenko.Input
 
         private void OnKeyEvent(SDL.SDL_KeyboardEvent e)
         {
+            // wait, do we want to filter repeating keys?
+            if (e.repeat > 0 && KeyEvent.DisableRepeats) return;
             // Try to map to a xenko key
             Keys key = ConvertSDLKey(e.keysym.sym);
             if (key != Keys.None)

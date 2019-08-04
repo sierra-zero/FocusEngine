@@ -9,6 +9,11 @@ namespace Xenko.Input
     public class KeyEvent : ButtonEvent
     {
         /// <summary>
+        /// Should we filter out keyboard repeating? Defaults to true. Currently implemented for SDL input only
+        /// </summary>
+        public static bool DisableRepeats = true;
+
+        /// <summary>
         /// The key that is being pressed or released.
         /// </summary>
         public Keys Key;
