@@ -302,6 +302,20 @@ namespace Xenko.Core.Mathematics
         }
 
         /// <summary>
+        /// Converts the color into a byte Color
+        /// </summary>
+        /// <returns>A Color object</returns>
+        public Color ToColor()
+        {
+            byte a = (byte)(A * 255.0f);
+            byte r = (byte)(R * 255.0f);
+            byte g = (byte)(G * 255.0f);
+            byte b = (byte)(B * 255.0f);
+
+            return new Color(r, g, b, a);
+        }
+
+        /// <summary>
         /// Converts the color into a three component vector.
         /// </summary>
         /// <returns>A three component vector containing the red, green, and blue components of the color.</returns>
