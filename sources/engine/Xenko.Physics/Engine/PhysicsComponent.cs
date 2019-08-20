@@ -404,6 +404,9 @@ namespace Xenko.Engine
         public bool IgnorePhysicsRotation = false;
 
         [DataMemberIgnore]
+        public Vector3? LocalPhysicsOffset = null;
+
+        [DataMemberIgnore]
         protected ColliderShape colliderShape;
 
         [DataMemberIgnore]
@@ -575,7 +578,8 @@ namespace Xenko.Engine
             entity.Transform.UpdateLocalFromWorld();
 
             entity.Transform.Position = entity.Transform.LocalMatrix.TranslationVector;
-            if ( IgnorePhysicsRotation == false ) entity.Transform.LocalMatrix.GetRotationQuaternion(out entity.Transform.Rotation);
+            if (LocalPhysicsOffset.HasValue) entity.Transform.Position += LocalPhysicsOffset.Value;
+            if (IgnorePhysicsRotation == false) entity.Transform.LocalMatrix.GetRotationQuaternion(out entity.Transform.Rotation);
 
             if (DebugEntity == null) return;
 
