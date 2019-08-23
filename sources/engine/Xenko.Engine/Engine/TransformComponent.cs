@@ -10,6 +10,7 @@ using Xenko.Core.Mathematics;
 using Xenko.Core.Serialization;
 using Xenko.Engine.Design;
 using Xenko.Engine.Processors;
+using Xenko.VirtualReality;
 
 namespace Xenko.Engine
 {
@@ -80,6 +81,12 @@ namespace Xenko.Engine
         /// <userdoc>The scale of the entity with regard to its parent</userdoc>
         [DataMember(30)]
         public Vector3 Scale;
+
+        /// <summary>
+        /// Should this entity track with a VR hand?
+        /// </summary>
+        [DataMember(40)]
+        public VirtualReality.TouchControllerHand TrackVRHand = TouchControllerHand.None;
 
         [DataMemberIgnore]
         public TransformLink TransformLink;
@@ -243,6 +250,18 @@ namespace Xenko.Engine
         /// </summary>
         public void UpdateLocalMatrix()
         {
+            // do we need to update with a VR hand?
+            if (TrackVRHand != VirtualReality.TouchControllerHand.None && VRDeviceSystem.VRActive)
+            {
+                TouchController vrController = VRDeviceSystem.GetSystem.GetController(TrackVRHand);
+
+                if (vrController != null && vrController.State != DeviceState.Invalid)
+                {
+                    Position = vrController.Position;
+                    Rotation = vrController.Rotation;
+                }
+            }
+
             if (UseTRS)
             {
                 Matrix.Transformation(ref Scale, ref Rotation, ref Position, out LocalMatrix);

@@ -132,6 +132,20 @@ namespace Xenko.Input
             return virtualButton;
         }
 
+        /// <summary>
+        /// Scans all registered virtual buttons for one pressed this frame. Can be useful to grab an input option from a user during runtime
+        /// </summary>
+        /// <param name="manager">Your game's InputManager</param>
+        /// <returns>A pressed VirtualButton, null if nothing was pressed</returns>
+        public static VirtualButton GetAnyPressed(InputManager manager)
+        {
+            foreach (VirtualButton vb in Registered)
+            {
+                if (vb.IsPressed(manager)) return vb;
+            }
+            return null;
+        }
+
         public abstract float GetValue(InputManager manager);
 
         public abstract bool IsDown(InputManager manager);
@@ -151,8 +165,22 @@ namespace Xenko.Input
                 {
                     RegisterFromType(typeof(Keyboard));
                     RegisterFromType(typeof(GamePad));
+                    RegisterFromType(typeof(Mouse));
                     registeredReadOnly = registered;
                 }
+            }
+        }
+
+        /// <summary>
+        /// Add another set of virtual buttons. Useful for say, VR buttons via VRDeviceSystem.
+        /// </summary>
+        /// <param name="VirtualButtonType"></param>
+        public static void RegisterExternalVirtualButtonType(Type VirtualButtonType)
+        {
+            lock (mapIp)
+            {
+                RegisterFromType(VirtualButtonType);
+                registeredReadOnly = registered;
             }
         }
 

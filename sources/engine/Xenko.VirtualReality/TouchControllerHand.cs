@@ -6,5 +6,6 @@ namespace Xenko.VirtualReality
     {
         Left,
         Right,
+        None
     }
 }

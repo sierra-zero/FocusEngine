@@ -49,27 +49,27 @@ namespace Xenko.Input
             /// <summary>
             /// The current state of pointers.
             /// </summary>
-            public static readonly Pointer State = new Pointer("State", 0, false);
+            public static readonly VirtualButton State = new Pointer("State", 0, false);
 
             /// <summary>
             /// The X component of the Pointer <see cref="PointerPoint.Position"/>.
             /// </summary>
-            public static readonly Pointer PositionX = new Pointer("PositionX", 1, true);
+            public static readonly VirtualButton PositionX = new Pointer("PositionX", 1, true);
 
             /// <summary>
             /// The Y component of the Pointer <see cref="PointerPoint.Position"/>.
             /// </summary>
-            public static readonly Pointer PositionY = new Pointer("PositionY", 2, true);
+            public static readonly VirtualButton PositionY = new Pointer("PositionY", 2, true);
 
             /// <summary>
             /// The X component of the Pointer <see cref="PointerPoint.Delta"/>.
             /// </summary>
-            public static readonly Pointer DeltaX = new Pointer("DeltaX", 3, true);
+            public static readonly VirtualButton DeltaX = new Pointer("DeltaX", 3, true);
 
             /// <summary>
             /// The Y component of the Pointer <see cref="PointerPoint.Delta"/>.
             /// </summary>
-            public static readonly Pointer DeltaY = new Pointer("DeltaY", 4, true);
+            public static readonly VirtualButton DeltaY = new Pointer("DeltaY", 4, true);
 
             protected override string BuildButtonName()
             {

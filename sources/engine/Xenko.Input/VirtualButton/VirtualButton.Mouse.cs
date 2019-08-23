@@ -20,47 +20,47 @@ namespace Xenko.Input
             /// <summary>
             /// Equivalent to <see cref="MouseButton.Left"/>.
             /// </summary>
-            public static readonly Mouse Left = new Mouse("Left", 0, false);
+            public static readonly VirtualButton Left = new Mouse("Left", 0, false);
 
             /// <summary>
             /// Equivalent to <see cref="MouseButton.Middle"/>.
             /// </summary>
-            public static readonly Mouse Middle = new Mouse("Middle", 1, false);
+            public static readonly VirtualButton Middle = new Mouse("Middle", 1, false);
 
             /// <summary>
             /// Equivalent to <see cref="MouseButton.Right"/>.
             /// </summary>
-            public static readonly Mouse Right = new Mouse("Right", 2, false);
+            public static readonly VirtualButton Right = new Mouse("Right", 2, false);
 
             /// <summary>
             /// Equivalent to <see cref="MouseButton.Extended1"/>.
             /// </summary>
-            public static readonly Mouse Extended1 = new Mouse("Extended1", 3, false);
+            public static readonly VirtualButton Extended1 = new Mouse("Extended1", 3, false);
 
             /// <summary>
             /// Equivalent to <see cref="MouseButton.Extended2"/>.
             /// </summary>
-            public static readonly Mouse Extended2 = new Mouse("Extended2", 4, false);
+            public static readonly VirtualButton Extended2 = new Mouse("Extended2", 4, false);
 
             /// <summary>
             /// Equivalent to X Axis of <see cref="InputManager.MousePosition"/>.
             /// </summary>
-            public static readonly Mouse PositionX = new Mouse("PositionX", 5, true);
+            public static readonly VirtualButton PositionX = new Mouse("PositionX", 5, true);
 
             /// <summary>
             /// Equivalent to Y Axis of <see cref="InputManager.MousePosition"/>.
             /// </summary>
-            public static readonly Mouse PositionY = new Mouse("PositionY", 6, true);
+            public static readonly VirtualButton PositionY = new Mouse("PositionY", 6, true);
 
             /// <summary>
             /// Equivalent to X Axis delta of <see cref="InputManager.MousePosition"/>.
             /// </summary>
-            public static readonly Mouse DeltaX = new Mouse("DeltaX", 7, true);
+            public static readonly VirtualButton DeltaX = new Mouse("DeltaX", 7, true);
 
             /// <summary>
             /// Equivalent to Y Axis delta of <see cref="InputManager.MousePosition"/>.
             /// </summary>
-            public static readonly Mouse DeltaY = new Mouse("DeltaY", 8, true);
+            public static readonly VirtualButton DeltaY = new Mouse("DeltaY", 8, true);
 
             public override float GetValue(InputManager manager)
             {

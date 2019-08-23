@@ -26,5 +26,10 @@ namespace Xenko.Input
         /// A gamepad virtual button.
         /// </summary>
         GamePad = 4 << 28,
+
+        /// <summary>
+        /// Virtual Reality input button.
+        /// </summary>
+        VR = 5 << 28
     }
 }

@@ -11,10 +11,46 @@ namespace Xenko.VirtualReality
 {
     public class VRDeviceSystem : GameSystemBase
     {
+        /// <summary>
+        /// An active instance of the VRDeviceSystem
+        /// </summary>
+        public static VRDeviceSystem GetSystem { get; private set; }
+
+        /// <summary>
+        /// Is VR active and enabled?
+        /// </summary>
+        public static bool VRActive
+        {
+            get
+            {
+                return GetSystem != null && GetSystem.Enabled && GetSystem.Device != null;
+            }
+        }
+
+        /// <summary>
+        /// Shortcut to getting VR hands
+        /// </summary>
+        /// <param name="hand">Which hand?</param>
+        /// <returns>TouchController object, otherwise null</returns>
+        public TouchController GetController(TouchControllerHand hand)
+        {
+            switch(hand)
+            {
+                case TouchControllerHand.Left:
+                    return Device?.LeftHand;
+                case TouchControllerHand.Right:
+                    return Device?.RightHand;
+                default:
+                    return null;
+            }
+        }
+
         private static bool physicalDeviceInUse;
 
         public VRDeviceSystem(IServiceRegistry registry) : base(registry)
         {
+            GetSystem = this;
+
             EnabledChanged += OnEnabledChanged;
 
             DrawOrder = -100;
@@ -156,6 +192,9 @@ postswitch:
                     };
                     Device.Enable(GraphicsDevice, deviceManager, RequireMirror, MirrorWidth, MirrorHeight);
                 }
+
+                // init virtual buttons for use with VR input
+                Xenko.Input.VirtualButton.RegisterExternalVirtualButtonType(typeof(Xenko.VirtualReality.VRButtons));
             }
         }
 
