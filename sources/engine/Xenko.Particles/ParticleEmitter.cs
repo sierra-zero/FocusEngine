@@ -826,11 +826,13 @@ namespace Xenko.Particles
 
         /// <summary>
         /// Emit a single particle with specific parameters. Values provided as arguments here will be replaced by initializers,
-        /// so only set what isn't being initialized by the particle system.
+        /// so only set what isn't being initialized by the particle system. Returns false if the particle system doesn't have capacity
         /// </summary>
-        public void EmitSpecificParticle(Vector3 pos, Color4? color = null, Quaternion? rotation = null, float? size = null,
+        public bool EmitSpecificParticle(Vector3 pos, Color4? color = null, Quaternion? rotation = null, float? size = null,
                                          float life = 1f, Vector3? velocity = null, uint? seed = null)
         {
+            if (SpawnIndividuals.Count >= pool.AvailableParticles) return false;
+
             if (color.HasValue)
             {
                 pool.AddField(ParticleFields.Color);
@@ -858,6 +860,8 @@ namespace Xenko.Particles
                 _lifetime = life,
                 _seed = seed ?? (uint)System.Environment.TickCount
             });
+
+            return true;
         }
 
         /// <summary>
