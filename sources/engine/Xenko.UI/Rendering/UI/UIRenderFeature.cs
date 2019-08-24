@@ -146,9 +146,10 @@ namespace Xenko.Rendering.UI
                 }
                 else
                 {
-                    var cameraComponent = renderView.Camera;
+                    CameraComponent cameraComponent = renderView.Camera as CameraComponent;
                     if (cameraComponent != null)
-                        uiElementState.Update(renderObject, (CameraComponent)cameraComponent);
+                        uiElementState.Update(renderObject, cameraComponent.VerticalFieldOfView,
+                                              ref renderView.View, ref renderView.Projection, cameraComponent.Entity.Transform.WorldPosition());
                 }
 
                 // Check if the current UI component is being picked based on the current ViewParameters (used to draw this element)
@@ -320,9 +321,9 @@ namespace Xenko.Rendering.UI
                 WorldViewProjectionMatrix = Matrix.Identity;
             }
 
-            public void Update(RenderUIElement renderObject, CameraComponent camera)
+            public void Update(RenderUIElement renderObject, float vFoV, ref Matrix viewMatrix, ref Matrix projMatrix, Vector3 camPosition)
             {
-                var frustumHeight = 2 * (float)Math.Tan(MathUtil.DegreesToRadians(camera.VerticalFieldOfView) / 2);
+                var frustumHeight = 2 * (float)Math.Tan(MathUtil.DegreesToRadians(vFoV) / 2);
 
                 var worldMatrix = renderObject.WorldMatrix;
 
@@ -334,7 +335,7 @@ namespace Xenko.Rendering.UI
                 else
                 {
                     Matrix viewInverse;
-                    Matrix.Invert(ref camera.ViewMatrix, out viewInverse);
+                    Matrix.Invert(ref viewMatrix, out viewInverse);
                     var forwardVector = viewInverse.Forward;
 
                     if (renderObject.IsBillboard)
@@ -356,7 +357,7 @@ namespace Xenko.Rendering.UI
                     if (renderObject.IsFixedSize)
                     {
                         forwardVector.Normalize();
-                        var distVec = (worldMatrix.TranslationVector - camera.Entity.Transform.Position);
+                        var distVec = (worldMatrix.TranslationVector - camPosition);
                         float distScalar;
                         Vector3.Dot(ref forwardVector, ref distVec, out distScalar);
                         distScalar = Math.Abs(distScalar);
@@ -377,8 +378,8 @@ namespace Xenko.Rendering.UI
                 worldMatrix.Row3 = -worldMatrix.Row3;
 
                 Matrix worldViewMatrix;
-                Matrix.Multiply(ref worldMatrix, ref camera.ViewMatrix, out worldViewMatrix);
-                Matrix.Multiply(ref worldViewMatrix, ref camera.ProjectionMatrix, out WorldViewProjectionMatrix);
+                Matrix.Multiply(ref worldMatrix, ref viewMatrix, out worldViewMatrix);
+                Matrix.Multiply(ref worldViewMatrix, ref projMatrix, out WorldViewProjectionMatrix);
             }
 
             public void Update(RenderUIElement renderObject, Vector3 virtualResolution)
@@ -389,16 +390,10 @@ namespace Xenko.Rendering.UI
                 var aspectRatio = virtualResolution.X / virtualResolution.Y;
                 var verticalFov = (float)Math.Atan2(virtualResolution.Y / 2, zOffset) * 2;
 
-                var cameraComponent = new CameraComponent(nearPlane, farPlane)
-                {
-                    UseCustomAspectRatio = true,
-                    AspectRatio = aspectRatio,
-                    VerticalFieldOfView = MathUtil.RadiansToDegrees(verticalFov),
-                    ViewMatrix = Matrix.LookAtRH(new Vector3(0, 0, zOffset), Vector3.Zero, Vector3.UnitY),
-                    ProjectionMatrix = Matrix.PerspectiveFovRH(verticalFov, aspectRatio, nearPlane, farPlane),
-                };
+                Matrix vm = Matrix.LookAtRH(new Vector3(0, 0, zOffset), Vector3.Zero, Vector3.UnitY);
+                Matrix pm = Matrix.PerspectiveFovRH(verticalFov, aspectRatio, nearPlane, farPlane);
 
-                Update(renderObject, cameraComponent);
+                Update(renderObject, MathUtil.RadiansToDegrees(verticalFov), ref vm, ref pm, Vector3.Zero);
             }
         }
     }
