@@ -1104,14 +1104,14 @@ namespace Xenko.Graphics
                     }
                     else
                     {
-                        throw new NotImplementedException();
-                        //var copy = new ImageCopy
-                        //{
-                        //    SourceSubresource = new ImageSubresourceLayers(sourceParent.NativeImageAspect, (uint)sourceTexture.ArraySlice, (uint)sourceTexture.ArraySize, (uint)sourceTexture.MipLevel),
-                        //    DestinationSubresource = destinationSubresource,
-                        //    Extent = new Extent3D((uint)sourceTexture.ViewWidth, (uint)sourceTexture.ViewHeight, (uint)sourceTexture.ViewDepth),
-                        //};
-                        //currentCommandList.NativeCommandBuffer.CopyImage(sourceParent.NativeImage, ImageLayout.TransferSourceOptimal, destinationParent.NativeImage, ImageLayout.TransferDestinationOptimal, 1, &copy);
+                        var copy = new ImageCopy
+                        {
+                            DestinationOffset = new Offset3D(dstX, dstY, dstZ),
+                            SourceSubresource = new ImageSubresourceLayers(sourceParent.NativeImageAspect, (uint)sourceTexture.ArraySlice, (uint)sourceTexture.ArraySize, (uint)sourceTexture.MipLevel),
+                            DestinationSubresource = destinationSubresource,
+                            Extent = new Extent3D((uint)(region.Right - region.Left), (uint)(region.Bottom - region.Top), (uint)(region.Back - region.Front)),
+                        };
+                        currentCommandList.NativeCommandBuffer.CopyImage(sourceParent.NativeImage, ImageLayout.TransferSourceOptimal, destinationParent.NativeImage, ImageLayout.TransferDestinationOptimal, 1, &copy);
                     }
                 }
 
