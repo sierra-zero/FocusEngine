@@ -18,6 +18,7 @@ namespace Xenko.VirtualReality
         private Vector3 currentLinearVelocity;
         private Vector3 currentAngularVelocity;
         private Quaternion currentRot;
+        private Matrix convertOpenVRToXenko = Matrix.RotationY(1.5708f);
 
         internal OpenVRTouchController(TouchControllerHand hand)
         {
@@ -51,6 +52,7 @@ namespace Xenko.VirtualReality
                 if (internalState != DeviceState.Invalid)
                 {
                     Vector3 scale;
+                    mat *= convertOpenVRToXenko;
                     mat.Decompose(out scale, out currentRot, out currentPos);
                     currentLinearVelocity = vel;
                     currentAngularVelocity = new Vector3(MathUtil.DegreesToRadians(angVel.X), MathUtil.DegreesToRadians(angVel.Y), MathUtil.DegreesToRadians(angVel.Z));

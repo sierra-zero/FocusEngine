@@ -113,12 +113,12 @@ namespace Xenko.VirtualReality
                         }
                         case VRApi.OpenVR:
                         {
-#if XENKO_PLATFORM_WINDOWS_DESKTOP
+#if XENKO_GRAPHICS_API_VULKAN || XENKO_GRAPHICS_API_DIRECT3D11
                             Device = new OpenVRHmd(Game);
 #endif
                             break;
-                        }
-                        case VRApi.WindowsMixedReality:
+                        
+/*                        case VRApi.WindowsMixedReality:
                         {
 #if XENKO_GRAPHICS_API_DIRECT3D11 && XENKO_PLATFORM_UWP
                             if (Windows.Graphics.Holographic.HolographicSpace.IsAvailable && GraphicsDevice.Presenter is WindowsMixedRealityGraphicsPresenter)
@@ -126,7 +126,7 @@ namespace Xenko.VirtualReality
                                 Device = new WindowsMixedRealityHmd();
                             }
 #endif
-                            break;
+                            break;*/
                         }
                         //case VRApi.Fove:
                         //{
