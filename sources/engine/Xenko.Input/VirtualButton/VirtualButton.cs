@@ -141,6 +141,7 @@ namespace Xenko.Input
         {
             foreach (VirtualButton vb in Registered)
             {
+                if (vb == Pointer.State) continue; // skip you, which is always apparently down
                 if (vb.IsPressed(manager)) return vb;
             }
             return null;
