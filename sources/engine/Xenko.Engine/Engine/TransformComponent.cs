@@ -340,7 +340,7 @@ namespace Xenko.Engine
         {
             if (recalculate) UpdateWorldMatrix();
             if (parent != null && WorldMatrix.GetRotationQuaternion(out Quaternion q)) {
-                return q * Rotation;
+                return q;
             } else {
                 return Rotation;
             }
