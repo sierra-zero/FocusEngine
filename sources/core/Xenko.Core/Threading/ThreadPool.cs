@@ -105,7 +105,7 @@ namespace Xenko.Core.Threading
                             spinLock.Exit(true);
                         }
                     }
-                    
+
                     if (workItem == null)
                     {
                         bool idleForTooLong = Stopwatch.GetTimestamp() - lastWorkTS > MaxIdleTimeTS;
