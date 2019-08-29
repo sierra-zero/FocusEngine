@@ -270,6 +270,7 @@ namespace Xenko.Core.Threading {
                         {
                             Interlocked.Decrement(ref busyCount);
                         }
+                        PooledDelegateHelper.Release(workItem);
                         lastWorkTS = Stopwatch.GetTimestamp();
                     }
                 }
