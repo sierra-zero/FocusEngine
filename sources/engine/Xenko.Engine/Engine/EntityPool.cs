@@ -63,15 +63,13 @@ public static class EntityPool {
                 // Grab the last object in the inactive array
                 obj = inactive.Pop();
 
-                if (obj == null) {
-                    // The inactive object we expected to find no longer exists.
-                    // The most likely causes are:
-                    //   - Someone calling Destroy() on our object
-                    //   - A scene change (which will destroy all our objects).
-                    //     NOTE: This could be prevented with a DontDestroyOnLoad
-                    //	   if you really don't want this.
-                    // No worries -- we'll just try the next one in our sequence.
-
+                if (obj == null ||
+                    obj.UsingPool == null ||
+                    obj.UsingPool.active ||
+                    obj.Scene != null) {
+                    // something weird happened... we didn't get an entity
+                    // or it isn't really inactive...
+                    // Just get another one, then...
                     return Spawn(pos, rot);
                 }
 
