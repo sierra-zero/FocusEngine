@@ -173,14 +173,24 @@ postswitch:
 
                     Device.RenderFrameScaling = PreferredScalings[Device.VRApi];
                     Device.Enable(GraphicsDevice, deviceManager, RequireMirror, MirrorWidth, MirrorHeight);
+                    Device.SetTrackingSpace(TrackingSpace.Standing);
                     physicalDeviceInUse = true;
 
-#if XENKO_PLATFORM_WINDOWS_DESKTOP
-                    if (Device is OpenVRHmd) refreshRate = ((OpenVRHmd)Device).RefreshRate();
-#endif
+                    // default values
                     Game.TargetElapsedTime = Utilities.FromSecondsPrecise(1.0 / refreshRate);
                     Game.WindowMinimumUpdateRate.MinimumElapsedTime = Game.TargetElapsedTime;
                     Game.MinimizedMinimumUpdateRate.MinimumElapsedTime = Game.TargetElapsedTime;
+
+#if XENKO_GRAPHICS_API_VULKAN || XENKO_GRAPHICS_API_DIRECT3D11
+                    if (Device is OpenVRHmd)
+                    {
+                        // WaitGetPoses should throttle our application, so don't do it elsewhere
+                        //refreshRate = ((OpenVRHmd)Device).RefreshRate();
+                        Game.TargetElapsedTime = TimeSpan.Zero; //Utilities.FromSecondsPrecise(1.0 / refreshRate);
+                        Game.WindowMinimumUpdateRate.MinimumElapsedTime = TimeSpan.Zero;
+                        Game.MinimizedMinimumUpdateRate.MinimumElapsedTime = TimeSpan.Zero;
+                    }
+#endif
                 }
                 else
                 {

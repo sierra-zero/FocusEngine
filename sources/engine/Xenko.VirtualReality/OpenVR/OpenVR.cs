@@ -233,8 +233,6 @@ namespace Xenko.VirtualReality
 
             InitDone = true;
 
-            Valve.VR.OpenVR.Compositor.SetTrackingSpace(ETrackingUniverseOrigin.TrackingUniverseStanding);
-
             return true;
         }
 
