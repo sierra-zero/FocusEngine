@@ -27,9 +27,9 @@ namespace Xenko.VirtualReality
         {
             if (trackedDevice != null)
             {
-                Matrix mat;
-                Vector3 vel, angVel;
-                internalState = OpenVR.GetTrackerPose(trackedDevice.TrackerIndex, out mat, out vel, out angVel);
+                Matrix mat = Matrix.Identity;
+                Vector3 vel = Vector3.Zero, angVel = Vector3.Zero;
+                internalState = OpenVR.GetTrackerPose(trackedDevice.TrackerIndex, ref mat, ref vel, ref angVel);
                 if (internalState != DeviceState.Invalid)
                 {
                     Vector3 scale;

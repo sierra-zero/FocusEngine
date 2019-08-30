@@ -280,15 +280,21 @@ namespace Xenko.VirtualReality
 
         public static void GetEyeToHead(int eyeIndex, out Matrix pose)
         {
-            GetEyeToHeadUnsafe(eyeIndex, out pose);
-        }
-
-        private static unsafe void GetEyeToHeadUnsafe(int eyeIndex, out Matrix pose)
-        {
             pose = Matrix.Identity;
             var eye = eyeIndex == 0 ? EVREye.Eye_Left : EVREye.Eye_Right;
             var eyeToHead = Valve.VR.OpenVR.System.GetEyeToHeadTransform(eye);
-            Utilities.CopyMemory((IntPtr)Interop.Fixed(ref pose), (IntPtr)Interop.Fixed(ref eyeToHead), Utilities.SizeOf<HmdMatrix34_t>());
+            pose.M11 = eyeToHead.m0;
+            pose.M21 = eyeToHead.m1;
+            pose.M31 = eyeToHead.m2;
+            pose.M41 = eyeToHead.m3;
+            pose.M12 = eyeToHead.m4;
+            pose.M22 = eyeToHead.m5;
+            pose.M32 = eyeToHead.m6;
+            pose.M42 = eyeToHead.m7;
+            pose.M13 = eyeToHead.m8;
+            pose.M23 = eyeToHead.m9;
+            pose.M33 = eyeToHead.m10;
+            pose.M43 = eyeToHead.m11;
         }
 
         public static void UpdatePoses()
@@ -309,11 +315,6 @@ namespace Xenko.VirtualReality
 
         public static DeviceState GetControllerPose(int controllerIndex, out Matrix pose, out Vector3 velocity, out Vector3 angVelocity)
         {
-            return GetControllerPoseUnsafe(controllerIndex, out pose, out velocity, out angVelocity);
-        }
-
-        private static unsafe DeviceState GetControllerPoseUnsafe(int controllerIndex, out Matrix pose, out Vector3 velocity, out Vector3 angVelocity)
-        {
             var currentIndex = 0;
 
             pose = Matrix.Identity;
@@ -326,9 +327,29 @@ namespace Xenko.VirtualReality
                 {
                     if (currentIndex == controllerIndex)
                     {
-                        Utilities.CopyMemory((IntPtr)Interop.Fixed(ref pose), (IntPtr)Interop.Fixed(ref DevicePoses[index].mDeviceToAbsoluteTracking), Utilities.SizeOf<HmdMatrix34_t>());
-                        Utilities.CopyMemory((IntPtr)Interop.Fixed(ref velocity), (IntPtr)Interop.Fixed(ref DevicePoses[index].vVelocity), Utilities.SizeOf<HmdVector3_t>());
-                        Utilities.CopyMemory((IntPtr)Interop.Fixed(ref angVelocity), (IntPtr)Interop.Fixed(ref DevicePoses[index].vAngularVelocity), Utilities.SizeOf<HmdVector3_t>());
+                        HmdMatrix34_t openVRPose = DevicePoses[index].mDeviceToAbsoluteTracking;
+                        pose.M11 = openVRPose.m0;
+                        pose.M21 = openVRPose.m1;
+                        pose.M31 = openVRPose.m2;
+                        pose.M41 = openVRPose.m3;
+                        pose.M12 = openVRPose.m4;
+                        pose.M22 = openVRPose.m5;
+                        pose.M32 = openVRPose.m6;
+                        pose.M42 = openVRPose.m7;
+                        pose.M13 = openVRPose.m8;
+                        pose.M23 = openVRPose.m9;
+                        pose.M33 = openVRPose.m10;
+                        pose.M43 = openVRPose.m11;
+
+                        HmdVector3_t vel = DevicePoses[index].vVelocity;
+                        velocity.X = vel.v0;
+                        velocity.Y = vel.v1;
+                        velocity.Z = vel.v2;
+
+                        HmdVector3_t avel = DevicePoses[index].vAngularVelocity;
+                        angVelocity.X = avel.v0;
+                        angVelocity.Y = avel.v1;
+                        angVelocity.Z = avel.v2;
 
                         var state = DeviceState.Invalid;
                         if (DevicePoses[index].bDeviceIsConnected && DevicePoses[index].bPoseIsValid)
@@ -349,21 +370,33 @@ namespace Xenko.VirtualReality
             return DeviceState.Invalid;
         }
 
-        public static DeviceState GetTrackerPose(int trackerIndex, out Matrix pose, out Vector3 velocity, out Vector3 angVelocity)
+        public static DeviceState GetTrackerPose(int trackerIndex, ref Matrix pose, ref Vector3 velocity, ref Vector3 angVelocity)
         {
-            return GetTrackerPoseUnsafe(trackerIndex, out pose, out velocity, out angVelocity);
-        }
-
-        private static unsafe DeviceState GetTrackerPoseUnsafe(int trackerIndex, out Matrix pose, out Vector3 velocity, out Vector3 angVelocity)
-        {
-            pose = Matrix.Identity;
-            velocity = Vector3.Zero;
-            angVelocity = Vector3.Zero;
             var index = trackerIndex;
 
-            Utilities.CopyMemory((IntPtr)Interop.Fixed(ref pose), (IntPtr)Interop.Fixed(ref DevicePoses[index].mDeviceToAbsoluteTracking), Utilities.SizeOf<HmdMatrix34_t>());
-            Utilities.CopyMemory((IntPtr)Interop.Fixed(ref velocity), (IntPtr)Interop.Fixed(ref DevicePoses[index].vVelocity), Utilities.SizeOf<HmdVector3_t>());
-            Utilities.CopyMemory((IntPtr)Interop.Fixed(ref angVelocity), (IntPtr)Interop.Fixed(ref DevicePoses[index].vAngularVelocity), Utilities.SizeOf<HmdVector3_t>());
+            HmdMatrix34_t openVRPose = DevicePoses[index].mDeviceToAbsoluteTracking;
+            pose.M11 = openVRPose.m0;
+            pose.M21 = openVRPose.m1;
+            pose.M31 = openVRPose.m2;
+            pose.M41 = openVRPose.m3;
+            pose.M12 = openVRPose.m4;
+            pose.M22 = openVRPose.m5;
+            pose.M32 = openVRPose.m6;
+            pose.M42 = openVRPose.m7;
+            pose.M13 = openVRPose.m8;
+            pose.M23 = openVRPose.m9;
+            pose.M33 = openVRPose.m10;
+            pose.M43 = openVRPose.m11;
+
+            HmdVector3_t vel = DevicePoses[index].vVelocity;
+            velocity.X = vel.v0;
+            velocity.Y = vel.v1;
+            velocity.Z = vel.v2;
+
+            HmdVector3_t avel = DevicePoses[index].vAngularVelocity;
+            angVelocity.X = avel.v0;
+            angVelocity.Y = avel.v1;
+            angVelocity.Z = avel.v2;
 
             var state = DeviceState.Invalid;
             if (DevicePoses[index].bDeviceIsConnected && DevicePoses[index].bPoseIsValid)
@@ -380,21 +413,37 @@ namespace Xenko.VirtualReality
 
         public static DeviceState GetHeadPose(out Matrix pose, out Vector3 linearVelocity, out Vector3 angularVelocity)
         {
-            return GetHeadPoseUnsafe(out pose, out linearVelocity, out angularVelocity);
-        }
-
-        private static unsafe DeviceState GetHeadPoseUnsafe(out Matrix pose, out Vector3 linearVelocity, out Vector3 angularVelocity)
-        {
             pose = Matrix.Identity;
             linearVelocity = Vector3.Zero;
             angularVelocity = Vector3.Zero;
+   
             for (uint index = 0; index < DevicePoses.Length; index++)
             {
                 if (Valve.VR.OpenVR.System.GetTrackedDeviceClass(index) == ETrackedDeviceClass.HMD)
                 {
-                    Utilities.CopyMemory((IntPtr)Interop.Fixed(ref pose), (IntPtr)Interop.Fixed(ref DevicePoses[index].mDeviceToAbsoluteTracking), Utilities.SizeOf<HmdMatrix34_t>());
-                    Utilities.CopyMemory((IntPtr)Interop.Fixed(ref linearVelocity), (IntPtr)Interop.Fixed(ref DevicePoses[index].vVelocity), Utilities.SizeOf<HmdVector3_t>());
-                    Utilities.CopyMemory((IntPtr)Interop.Fixed(ref angularVelocity), (IntPtr)Interop.Fixed(ref DevicePoses[index].vAngularVelocity), Utilities.SizeOf<HmdVector3_t>());
+                    HmdMatrix34_t openVRPose = DevicePoses[index].mDeviceToAbsoluteTracking;
+                    pose.M11 = openVRPose.m0;
+                    pose.M21 = openVRPose.m1;
+                    pose.M31 = openVRPose.m2;
+                    pose.M41 = openVRPose.m3;
+                    pose.M12 = openVRPose.m4;
+                    pose.M22 = openVRPose.m5;
+                    pose.M32 = openVRPose.m6;
+                    pose.M42 = openVRPose.m7;
+                    pose.M13 = openVRPose.m8;
+                    pose.M23 = openVRPose.m9;
+                    pose.M33 = openVRPose.m10;
+                    pose.M43 = openVRPose.m11;
+
+                    HmdVector3_t vel = DevicePoses[index].vVelocity;
+                    linearVelocity.X = vel.v0;
+                    linearVelocity.Y = vel.v1;
+                    linearVelocity.Z = vel.v2;
+
+                    HmdVector3_t avel = DevicePoses[index].vAngularVelocity;
+                    angularVelocity.X = avel.v0;
+                    angularVelocity.Y = avel.v1;
+                    angularVelocity.Z = avel.v2;
 
                     var state = DeviceState.Invalid;
                     if (DevicePoses[index].bDeviceIsConnected && DevicePoses[index].bPoseIsValid)
@@ -415,15 +464,25 @@ namespace Xenko.VirtualReality
 
         public static void GetProjection(int eyeIndex, float near, float far, out Matrix projection)
         {
-            GetProjectionUnsafe(eyeIndex, near, far, out projection);
-        }
-
-        private static unsafe void GetProjectionUnsafe(int eyeIndex, float near, float far, out Matrix projection)
-        {
             projection = Matrix.Identity;
             var eye = eyeIndex == 0 ? EVREye.Eye_Left : EVREye.Eye_Right;
             var proj = Valve.VR.OpenVR.System.GetProjectionMatrix(eye, near, far);
-            Utilities.CopyMemory((IntPtr)Interop.Fixed(ref projection), (IntPtr)Interop.Fixed(ref proj), Utilities.SizeOf<Matrix>());
+            projection.M11 = proj.m0;
+            projection.M21 = proj.m1;
+            projection.M31 = proj.m2;
+            projection.M41 = proj.m3;
+            projection.M12 = proj.m4;
+            projection.M22 = proj.m5;
+            projection.M32 = proj.m6;
+            projection.M42 = proj.m7;
+            projection.M13 = proj.m8;
+            projection.M23 = proj.m9;
+            projection.M33 = proj.m10;
+            projection.M43 = proj.m11;
+            projection.M14 = proj.m12;
+            projection.M24 = proj.m13;
+            projection.M34 = proj.m14;
+            projection.M44 = proj.m15;
         }
 
         public static void ShowMirror()
