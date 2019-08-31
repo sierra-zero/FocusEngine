@@ -17,19 +17,18 @@ namespace Xenko.Core.Threading
     /// </remarks>
     internal class ThreadPool
     {
-        private const int MaxIdleTimeInMS = 5000;
-        private readonly long MaxIdleTimeTS = (long)((double)Stopwatch.Frequency / 1000 * MaxIdleTimeInMS);
-
         public static readonly ThreadPool Instance = new ThreadPool();
-
-        private readonly Action<object> cachedTaskLoop;
+        private static TimeSpan maxIdleTime = TimeSpan.FromTicks(5 * TimeSpan.TicksPerSecond);
 
         private readonly int maxThreadCount = Environment.ProcessorCount + 2;
         private readonly Queue<Action> workItems = new Queue<Action>();
         private readonly ManualResetEvent workAvailable = new ManualResetEvent(false);
 
+        private readonly Action<object> cachedTaskLoop;
+
         private SpinLock spinLock = new SpinLock();
-        private int busyCount;
+        private int workingCount;
+        /// <summary> Usage only within <see cref="spinLock"/> </summary>
         private int aliveCount;
 
         public ThreadPool()
@@ -40,34 +39,27 @@ namespace Xenko.Core.Threading
 
         public void QueueWorkItem([NotNull] [Pooled] Action workItem)
         {
+            PooledDelegateHelper.AddReference(workItem);
             bool lockTaken = false;
             bool startNewTask = false;
-            PooledDelegateHelper.AddReference(workItem);
             try
             {
                 spinLock.Enter(ref lockTaken);
+
                 workItems.Enqueue(workItem);
                 workAvailable.Set();
 
-                // We're only locking when potentially increasing aliveCount as we
-                // don't want to go above our maximum amount of threads.
-                int curBusyCount = Interlocked.CompareExchange(ref busyCount, 0, 0);
-                int curAliveCount = Interlocked.CompareExchange(ref aliveCount, 0, 0);
-                if (curBusyCount + 1 >= curAliveCount && curAliveCount < maxThreadCount)
+                var curWorkingCount = Interlocked.CompareExchange(ref workingCount, 0, 0);
+                if (curWorkingCount + 1 >= aliveCount && aliveCount < maxThreadCount)
                 {
-                    // Start threads as busy otherwise only one thread will be created 
-                    // when calling this function multiple times in a row
-                    Interlocked.Increment(ref busyCount);
-                    Interlocked.Increment(ref aliveCount);
                     startNewTask = true;
+                    aliveCount++;
                 }
             }
             finally
             {
                 if (lockTaken)
-                {
                     spinLock.Exit(true);
-                }
             }
             // No point in wasting spins on the lock while creating the task
             if (startNewTask)
@@ -78,65 +70,48 @@ namespace Xenko.Core.Threading
 
         private void ProcessWorkItems()
         {
-            Interlocked.Decrement(ref busyCount);
-            try
+            while (true)
             {
-                long lastWorkTS = Stopwatch.GetTimestamp();
-                while (true)
+                Action workItem = null;
+                var lockTaken = false;
+                try
                 {
-                    Action workItem = null;
-                    bool lockTaken = false;
-                    try
-                    {
-                        spinLock.Enter(ref lockTaken);
-                        if (workItems.Count > 0)
-                        {
-                            workItem = workItems.Dequeue();
-                            if (workItems.Count == 0)
-                            {
-                                workAvailable.Reset();
-                            }
-                        }
-                    }
-                    finally
-                    {
-                        if (lockTaken)
-                        {
-                            spinLock.Exit(true);
-                        }
-                    }
+                    spinLock.Enter(ref lockTaken);
+                    int workItemCount = workItems.Count;
 
-                    if (workItem == null)
+                    if (workItemCount > 0)
                     {
-                        bool idleForTooLong = Stopwatch.GetTimestamp() - lastWorkTS > MaxIdleTimeTS;
-                        // Wait for another work item to be (potentially) available
-                        if (idleForTooLong || workAvailable.WaitOne(MaxIdleTimeInMS) == false)
-                        {
-                            // No work given in the last MaxIdleTimeTS, close this task
-                            return;
-                        }
-                    }
-                    else
-                    {
-                        Interlocked.Increment(ref busyCount);
-                        try
-                        {
-                            workItem();
-                        }
-                        // Let exceptions fall into unhandled as we don't have any
-                        // good mechanisms to pass it elegantly over to user-land yet
-                        finally
-                        {
-                            Interlocked.Decrement(ref busyCount);
-                        }
-                        PooledDelegateHelper.Release(workItem);
-                        lastWorkTS = Stopwatch.GetTimestamp();
+                        workItem = workItems.Dequeue();
+                        if (workItemCount == 1) workAvailable.Reset(); // we must have taken off our last item
                     }
                 }
-            }
-            finally
-            {
-                Interlocked.Decrement(ref aliveCount);
+                finally
+                {
+                    if (lockTaken)
+                        spinLock.Exit(true);
+                }
+
+                if (workItem != null)
+                {
+                    Interlocked.Increment(ref workingCount);
+                    try
+                    {
+                        workItem.Invoke();
+                    }
+                    catch (Exception)
+                    {
+                        // Ignoring Exception
+                    }
+                    Interlocked.Decrement(ref workingCount);
+                    PooledDelegateHelper.Release(workItem);
+                }
+
+                // Wait for another work item to be (potentially) available
+                if (workAvailable.WaitOne(maxIdleTime) == false)
+                {
+                    aliveCount--;
+                    return;
+                }
             }
         }
     }
