@@ -37,6 +37,7 @@ namespace Xenko.UI
         internal Vector3 RenderSizeInternal;
         internal Matrix WorldMatrixInternal;
         internal Matrix WorldMatrixPickingInternal;
+        internal Matrix? WorldMatrix3D;
         protected internal Thickness MarginInternal = Thickness.UniformCuboid(0f);
 
         private string name, emptyDefaultName;
@@ -1130,16 +1131,72 @@ namespace Xenko.UI
             }
         }
 
+        //                                                 R1                      S1                        s2                           S3
+        /// <summary>
+        /// Variation on Ray vs Rectangle
+        /// </summary>
+        internal bool RayIntersectsRectangle(ref Ray ray, ref Vector3 topLeftCorner, ref Vector3 topRightCorner, ref Vector3 bottomLeftCorner)
+        {
+            // from https://stackoverflow.com/questions/21114796/3d-ray-quad-intersection-test-in-java
+
+            // 1.
+            Vector3 dS21 = topRightCorner - topLeftCorner;
+            Vector3 dS31 = bottomLeftCorner - topLeftCorner;
+            Vector3.Cross(ref dS21, ref dS31, out Vector3 n);
+
+            // 2.
+            Vector3 dR = ray.Direction;
+
+            Vector3.Dot(ref n, ref dR, out float ndotdR);
+
+            if (ndotdR < 1e-6f) return false;
+
+            Vector3 posDiff = ray.Position - topLeftCorner;
+
+            float t = Vector3.Dot(-n, posDiff) / ndotdR;
+            Vector3 M = ray.Position + dR * t;
+
+            // 3.
+            Vector3 dMS1 = M - topLeftCorner;
+            Vector3.Dot(ref dMS1, ref dS21, out float u);
+            Vector3.Dot(ref dMS1, ref dS31, out float v);
+
+            // 4.
+            return (u >= 0.0f && u <= Vector3.Dot(dS21, dS21)
+                    && v >= 0.0f && v <= Vector3.Dot(dS31, dS31));
+        }
+
         /// <summary>
         /// Calculate the intersection of the UI element and the ray.
         /// </summary>
         /// <param name="ray">The ray in world space coordinate</param>
         /// <param name="intersectionPoint">The intersection point in world space coordinate</param>
         /// <returns><value>true</value> if the two elements intersects, <value>false</value> otherwise</returns>
-        protected internal virtual bool Intersects(ref Ray ray, out Vector3 intersectionPoint)
+        protected internal virtual bool Intersects(ref Ray ray, out Vector3 intersectionPoint, bool nonUISpace)
         {
             // does ray intersect element Oxy face?
-            var intersects = CollisionHelper.RayIntersectsRectangle(ref ray, ref WorldMatrixPickingInternal, ref RenderSizeInternal, 2, out intersectionPoint);
+            bool intersects;
+            if (WorldMatrix3D.HasValue && nonUISpace)
+            {
+                Matrix worldMatrix = WorldMatrixPickingInternal;
+                worldMatrix.M42 = -worldMatrix.M42; // for some reason Y translation needs to be flipped
+                worldMatrix *= WorldMatrix3D.Value;
+                intersectionPoint = worldMatrix.TranslationVector;
+                Vector3 topLeft = Vector3.Transform(new Vector3(-RenderSizeInternal.X * 0.5f,
+                                                                 RenderSizeInternal.Y * 0.5f,
+                                                                 0f), worldMatrix).XYZ();
+                Vector3 topRight = Vector3.Transform(new Vector3( RenderSizeInternal.X * 0.5f,
+                                                                  RenderSizeInternal.Y * 0.5f,
+                                                                 0f), worldMatrix).XYZ();
+                Vector3 bottomLeft = Vector3.Transform(new Vector3(-RenderSizeInternal.X * 0.5f,
+                                                                   -RenderSizeInternal.Y * 0.5f,
+                                                                 0f), worldMatrix).XYZ();
+                intersects = RayIntersectsRectangle(ref ray, ref topLeft, ref topRight, ref bottomLeft);
+            }
+            else
+            {
+                intersects = CollisionHelper.RayIntersectsRectangle(ref ray, ref WorldMatrixPickingInternal, ref RenderSizeInternal, 2, out intersectionPoint);
+            }
 
             // if element has depth also test other faces
             if (ActualDepth > MathUtil.ZeroTolerance)

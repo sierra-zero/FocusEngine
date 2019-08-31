@@ -17,7 +17,7 @@ namespace Xenko.VirtualReality
         public static VRDeviceSystem GetSystem { get; private set; }
 
         /// <summary>
-        /// Is VR active and enabled?
+        /// Is VR currently active and initialized? May take some frames to start returning true.
         /// </summary>
         public static bool VRActive
         {

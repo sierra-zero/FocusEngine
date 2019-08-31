@@ -80,8 +80,11 @@ namespace Xenko.UI.Renderers
         {
             var backgroundColor = element.RenderOpacity * element.BackgroundColor;
 
+            // pass the 3D matrix onto the element for picking
+            element.WorldMatrix3D = context.IsFullscreen ? (Matrix?)null : context.WorldMatrix3D;
+
             // optimization: don't draw the background if transparent
-            if (backgroundColor == new Color())
+            if (backgroundColor.A == (byte)0)
                 return;
 
             // Default implementation: render an back-face cube with background color

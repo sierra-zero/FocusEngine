@@ -60,6 +60,11 @@ namespace Xenko.UI.Renderers
         public Matrix ViewProjectionMatrix;
 
         /// <summary>
+        /// World Matrix of the UI
+        /// </summary>
+        public Matrix WorldMatrix3D;
+
+        /// <summary>
         /// Is this UI being drawn fullscreen, or in the 3D scene?
         /// </summary>
         public bool IsFullscreen;

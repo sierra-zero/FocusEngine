@@ -27,8 +27,10 @@ namespace Xenko.Rendering.UI
             var inverseZViewProj = worldViewProj;
             inverseZViewProj.Row3 = -inverseZViewProj.Row3;
 
-            UpdateMouseOver(ref viewport, ref inverseZViewProj, renderUIElement);
-            UpdateTouchEvents(ref viewport, ref inverseZViewProj, renderUIElement, drawTime);
+            if (UpdateMouseOver(ref viewport, ref inverseZViewProj, renderUIElement, drawTime))
+            {
+                UpdateTouchEvents(ref viewport, ref inverseZViewProj, renderUIElement, drawTime);
+            }
         }
 
         partial void PickingClear()
@@ -84,7 +86,7 @@ namespace Xenko.Rendering.UI
         /// <param name="screenPos">The click position on screen in normalized (0..1, 0..1) range</param>
         /// <param name="worldViewProj">The WorldViewProjection matrix with which the object was last rendered in the view</param>
         /// <returns></returns>
-        private Ray GetWorldRay(ref Viewport viewport, Vector2 screenPos, ref Matrix worldViewProj)
+        private Ray GetWorldRay(ref Vector3 resolution, ref Viewport viewport, Vector2 screenPos, ref Matrix worldViewProj)
         {
             var graphicsDevice = graphicsDeviceService?.GraphicsDevice;
             if (graphicsDevice == null)
@@ -119,7 +121,7 @@ namespace Xenko.Rendering.UI
             // TODO XK-3367 This only works for a single view
 
             // Get a touch ray in object (UI component) space
-            var touchRay = GetWorldRay(ref viewport, screenPosition, ref worldViewProj);
+            var touchRay = GetWorldRay(ref resolution, ref viewport, screenPosition, ref worldViewProj);
 
             // If the click point is outside the canvas ignore any further testing
             var dist = -touchRay.Position.Z / touchRay.Direction.Z;
@@ -129,6 +131,69 @@ namespace Xenko.Rendering.UI
 
             uiRay = touchRay;
             return true;
+        }
+
+        private void MakeTouchEvent(UIElement currentTouchedElement, UIElement lastTouchedElement, PointerEventType type,
+                                    Vector2 screenPos, Vector2 screenTranslation, Vector3 worldPos, Vector3 worldTranslation, GameTime time)
+        {
+            var touchEvent = new TouchEventArgs
+            {
+                Action = TouchAction.Down,
+                Timestamp = time.Total,
+                ScreenPosition = screenPos,
+                ScreenTranslation = screenTranslation,
+                WorldPosition = worldPos,
+                WorldTranslation = worldTranslation
+            };
+
+            switch (type)
+            {
+                case PointerEventType.Pressed:
+                    touchEvent.Action = TouchAction.Down;
+                    currentTouchedElement?.RaiseTouchDownEvent(touchEvent);
+                    break;
+
+                case PointerEventType.Released:
+                    touchEvent.Action = TouchAction.Up;
+
+                    // generate enter/leave events if we passed from an element to another without move events
+                    if (currentTouchedElement != lastTouchedElement)
+                        ThrowEnterAndLeaveTouchEvents(currentTouchedElement, lastTouchedElement, touchEvent);
+
+                    // trigger the up event
+                    currentTouchedElement?.RaiseTouchUpEvent(touchEvent);
+                    break;
+
+                case PointerEventType.Moved:
+                    touchEvent.Action = TouchAction.Move;
+
+                    // first notify the move event (even if the touched element changed in between it is still coherent in one of its parents)
+                    currentTouchedElement?.RaiseTouchMoveEvent(touchEvent);
+
+                    // then generate enter/leave events if we passed from an element to another
+                    if (currentTouchedElement != lastTouchedElement)
+                        ThrowEnterAndLeaveTouchEvents(currentTouchedElement, lastTouchedElement, touchEvent);
+                    break;
+
+                case PointerEventType.Canceled:
+                    touchEvent.Action = TouchAction.Move;
+
+                    // generate enter/leave events if we passed from an element to another without move events
+                    if (currentTouchedElement != lastTouchedElement)
+                        ThrowEnterAndLeaveTouchEvents(currentTouchedElement, lastTouchedElement, touchEvent);
+
+                    // then raise leave event to all the hierarchy of the previously selected element.
+                    var element = currentTouchedElement;
+                    while (element != null)
+                    {
+                        if (element.IsTouched)
+                            element.RaiseTouchLeaveEvent(touchEvent);
+                        element = element.VisualParent;
+                    }
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
         }
 
         private void UpdateTouchEvents(ref Viewport viewport, ref Matrix worldViewProj, RenderUIElement state, GameTime gameTime)
@@ -144,8 +209,6 @@ namespace Xenko.Rendering.UI
                 var lastTouchedElement = state.LastTouchedElement;
                 if (lastTouchedElement == null && pointerEvent.EventType != PointerEventType.Pressed)
                     continue;
-
-                var time = gameTime.Total;
 
                 var currentTouchPosition = pointerEvent.Position;
                 var currentTouchedElement = lastTouchedElement;
@@ -163,65 +226,8 @@ namespace Xenko.Rendering.UI
                 if (pointerEvent.EventType == PointerEventType.Pressed || pointerEvent.EventType == PointerEventType.Released)
                     state.LastIntersectionPoint = intersectionPoint;
 
-                // TODO: add the pointer type to the event args?
-                var touchEvent = new TouchEventArgs
-                {
-                    Action = TouchAction.Down,
-                    Timestamp = time,
-                    ScreenPosition = currentTouchPosition,
-                    ScreenTranslation = pointerEvent.DeltaPosition,
-                    WorldPosition = intersectionPoint,
-                    WorldTranslation = intersectionPoint - state.LastIntersectionPoint
-                };
-
-                switch (pointerEvent.EventType)
-                {
-                    case PointerEventType.Pressed:
-                        touchEvent.Action = TouchAction.Down;
-                        currentTouchedElement?.RaiseTouchDownEvent(touchEvent);
-                        break;
-
-                    case PointerEventType.Released:
-                        touchEvent.Action = TouchAction.Up;
-
-                        // generate enter/leave events if we passed from an element to another without move events
-                        if (currentTouchedElement != lastTouchedElement)
-                            ThrowEnterAndLeaveTouchEvents(currentTouchedElement, lastTouchedElement, touchEvent);
-
-                        // trigger the up event
-                        currentTouchedElement?.RaiseTouchUpEvent(touchEvent);
-                        break;
-
-                    case PointerEventType.Moved:
-                        touchEvent.Action = TouchAction.Move;
-
-                        // first notify the move event (even if the touched element changed in between it is still coherent in one of its parents)
-                        currentTouchedElement?.RaiseTouchMoveEvent(touchEvent);
-
-                        // then generate enter/leave events if we passed from an element to another
-                        if (currentTouchedElement != lastTouchedElement)
-                            ThrowEnterAndLeaveTouchEvents(currentTouchedElement, lastTouchedElement, touchEvent);
-                        break;
-
-                    case PointerEventType.Canceled:
-                        touchEvent.Action = TouchAction.Move;
-
-                        // generate enter/leave events if we passed from an element to another without move events
-                        if (currentTouchedElement != lastTouchedElement)
-                            ThrowEnterAndLeaveTouchEvents(currentTouchedElement, lastTouchedElement, touchEvent);
-
-                        // then raise leave event to all the hierarchy of the previously selected element.
-                        var element = currentTouchedElement;
-                        while (element != null)
-                        {
-                            if (element.IsTouched)
-                                element.RaiseTouchLeaveEvent(touchEvent);
-                            element = element.VisualParent;
-                        }
-                        break;
-                    default:
-                        throw new ArgumentOutOfRangeException();
-                }
+                MakeTouchEvent(currentTouchedElement, lastTouchedElement, pointerEvent.EventType, currentTouchPosition, pointerEvent.DeltaPosition, intersectionPoint,
+                               intersectionPoint - state.LastIntersectionPoint, gameTime);
 
                 lastTouchPosition = currentTouchPosition;
                 state.LastTouchedElement = currentTouchedElement;
@@ -229,25 +235,74 @@ namespace Xenko.Rendering.UI
             }
         }
 
-        private void UpdateMouseOver(ref Viewport viewport, ref Matrix worldViewProj, RenderUIElement state)
+        /// <summary>
+        /// If a VR controller is pointing at a UIElement, this will be set with it. null otherwise.
+        /// </summary>
+        public static UIElement VRControllerPointingAt { get; private set; }
+
+        private bool UpdateMouseOver(ref Viewport viewport, ref Matrix worldViewProj, RenderUIElement state, GameTime time)
         {
-            if (input == null || !input.HasMouse)
-                return;
+            bool VRcontrollerUsed = VirtualReality.VRDeviceSystem.VRActive && (TransformComponent.LastLeftHandTracked != null || TransformComponent.LastRightHandTracked != null);
+
+            if (input == null || !input.HasMouse && VRcontrollerUsed == false)
+                return false;
 
             var intersectionPoint = Vector3.Zero;
-            var mousePosition = input.MousePosition;
             var rootElement = state.Page.RootElement;
             var lastMouseOverElement = state.LastMouseOverElement;
             var mouseOverElement = lastMouseOverElement;
 
-            // determine currently overred element.
-            if (mousePosition != state.LastMousePosition)
+            if (VRcontrollerUsed)
             {
-                Ray uiRay;
-                if (!GetTouchPosition(state.Resolution, ref viewport, ref worldViewProj, mousePosition, out uiRay))
-                    return;
+                for (int i=0; i<2; i++)
+                {
+                    TransformComponent useHand = i == 0 ? (TransformComponent.OverrideRightHandUIPointer ?? TransformComponent.LastRightHandTracked) :
+                                                          (TransformComponent.OverrideLeftHandUIPointer ?? TransformComponent.LastLeftHandTracked);
 
-                mouseOverElement = GetElementAtScreenPosition(rootElement, ref uiRay, ref worldViewProj, ref intersectionPoint);
+                    if (useHand != null)
+                    {
+                        Ray uiRay = new Ray(useHand.WorldPosition(), useHand.Forward(true));
+
+                        mouseOverElement = GetElementAtWorldPosition(rootElement, ref uiRay, ref worldViewProj, ref intersectionPoint);
+                        VRControllerPointingAt = mouseOverElement;
+
+                        if (mouseOverElement != null)
+                        {
+                            // wait, are we selecting this element?
+                            VirtualReality.TouchController tc = VirtualReality.VRDeviceSystem.GetSystem.GetController(i == 0 ? VirtualReality.TouchControllerHand.Right : VirtualReality.TouchControllerHand.Left);
+
+                            if (tc != null)
+                            {
+                                if (tc.IsPressedDown(VirtualReality.TouchControllerButton.Trigger))
+                                {
+                                    MakeTouchEvent(mouseOverElement, lastMouseOverElement, PointerEventType.Pressed, Vector2.Zero, Vector2.Zero, intersectionPoint, intersectionPoint - state.LastIntersectionPoint, time);
+                                }
+                                else if (tc.IsPressReleased(VirtualReality.TouchControllerButton.Trigger))
+                                {
+                                    MakeTouchEvent(mouseOverElement, lastMouseOverElement, PointerEventType.Released, Vector2.Zero, Vector2.Zero, intersectionPoint, intersectionPoint - state.LastIntersectionPoint, time);
+                                }
+                            }
+
+                            break;
+                        }
+                    }
+                }
+            }
+            else 
+            {
+                var mousePosition = input.MousePosition;
+
+                // determine currently overred element.
+                if (mousePosition != state.LastMousePosition)
+                {
+                    state.LastMousePosition = mousePosition;
+
+                    Ray uiRay;
+                    if (!GetTouchPosition(state.Resolution, ref viewport, ref worldViewProj, mousePosition, out uiRay))
+                        return true;
+
+                    mouseOverElement = GetElementAtScreenPosition(rootElement, ref uiRay, ref worldViewProj, ref intersectionPoint);
+                }
             }
 
             // find the common parent between current and last overred elements
@@ -280,7 +335,8 @@ namespace Xenko.Rendering.UI
 
             // update cached values
             state.LastMouseOverElement = mouseOverElement;
-            state.LastMousePosition = mousePosition;
+
+            return !VRcontrollerUsed;
         }
 
         private UIElement FindCommonParent(UIElement element1, UIElement element2)
@@ -344,7 +400,25 @@ namespace Xenko.Rendering.UI
             UIElement clickedElement = null;
             var smallestDepth = float.PositiveInfinity;
             var highestDepthBias = -1.0f;
-            PerformRecursiveHitTest(rootElement, ref clickRay, ref worldViewProj, ref clickedElement, ref intersectionPoint, ref smallestDepth, ref highestDepthBias);
+            PerformRecursiveHitTest(rootElement, ref clickRay, ref worldViewProj, ref clickedElement, ref intersectionPoint, ref smallestDepth, ref highestDepthBias, false);
+
+            return clickedElement;
+        }
+
+        /// <summary>
+        /// Gets the element with which the world Ray intersects, or null if none is found
+        /// </summary>
+        /// <param name="rootElement">The root <see cref="UIElement"/> from which it should test</param>
+        /// <param name="clickRay"><see cref="Ray"/> from the click in world space of the ui component</param>
+        /// <param name="worldViewProj"></param>
+        /// <param name="intersectionPoint">Intersection point between the ray and the element</param>
+        /// <returns>The <see cref="UIElement"/> with which the ray intersects</returns>
+        public static UIElement GetElementAtWorldPosition(UIElement rootElement, ref Ray clickRay, ref Matrix worldViewProj, ref Vector3 intersectionPoint)
+        {
+            UIElement clickedElement = null;
+            var smallestDepth = float.PositiveInfinity;
+            var highestDepthBias = -1.0f;
+            PerformRecursiveHitTest(rootElement, ref clickRay, ref worldViewProj, ref clickedElement, ref intersectionPoint, ref smallestDepth, ref highestDepthBias, true);
 
             return clickedElement;
         }
@@ -363,7 +437,7 @@ namespace Xenko.Rendering.UI
             return results;
         }
         
-        private static void PerformRecursiveHitTest(UIElement element, ref Ray ray, ref Matrix worldViewProj, ref UIElement hitElement, ref Vector3 intersectionPoint, ref float smallestDepth, ref float highestDepthBias)
+        private static void PerformRecursiveHitTest(UIElement element, ref Ray ray, ref Matrix worldViewProj, ref UIElement hitElement, ref Vector3 intersectionPoint, ref float smallestDepth, ref float highestDepthBias, bool nonUISpace)
         {
             // if the element is not visible, we also remove all its children
             if (!element.IsVisible)
@@ -373,7 +447,7 @@ namespace Xenko.Rendering.UI
             if (canBeHit || element.ClipToBounds)
             {
                 Vector3 intersection;
-                var intersect = element.Intersects(ref ray, out intersection);
+                var intersect = element.Intersects(ref ray, out intersection, nonUISpace);
 
                 // don't perform the hit test on children if clipped and parent no hit
                 if (element.ClipToBounds && !intersect)
@@ -400,7 +474,7 @@ namespace Xenko.Rendering.UI
 
             // test the children
             foreach (var child in element.HitableChildren)
-                PerformRecursiveHitTest(child, ref ray, ref worldViewProj, ref hitElement, ref intersectionPoint, ref smallestDepth, ref highestDepthBias);
+                PerformRecursiveHitTest(child, ref ray, ref worldViewProj, ref hitElement, ref intersectionPoint, ref smallestDepth, ref highestDepthBias, nonUISpace);
         }
 
         private static void PerformRecursiveHitTest(UIElement element, ref Ray ray, ref Matrix worldViewProj, ICollection<HitTestResult> results)
@@ -413,7 +487,7 @@ namespace Xenko.Rendering.UI
             if (canBeHit || element.ClipToBounds)
             {
                 Vector3 intersection;
-                var intersect = element.Intersects(ref ray, out intersection);
+                var intersect = element.Intersects(ref ray, out intersection, false);
 
                 // don't perform the hit test on children if clipped and parent no hit
                 if (element.ClipToBounds && !intersect)

@@ -12,7 +12,7 @@ namespace Xenko.Rendering.UI
         {
         }
 
-        public Matrix WorldMatrix;
+        public Matrix WorldMatrix, WorldMatrix3D;
 
         // UIComponent values
         public UIPage Page;

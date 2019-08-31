@@ -88,6 +88,22 @@ namespace Xenko.Engine
         [DataMember(40)]
         public VirtualReality.TouchControllerHand TrackVRHand = TouchControllerHand.None;
 
+        /// <summary>
+        /// If in VR, do we want to override the normally tracked TransformComponent to point at UI elements?
+        /// This is useful if we want to adjust our pointer with a child TransformComponent.
+        /// </summary>
+        static public TransformComponent OverrideLeftHandUIPointer, OverrideRightHandUIPointer;
+
+        /// <summary>
+        /// Last left VR hand tracked. Useful for quick access to left hand and internal UI picking
+        /// </summary>
+        static public TransformComponent LastLeftHandTracked { get; private set; }
+
+        /// <summary>
+        /// Last right VR hand tracked. Useful for quick access to right hand and internal UI picking
+        /// </summary>
+        static public TransformComponent LastRightHandTracked { get; private set; }
+
         [DataMemberIgnore]
         public TransformLink TransformLink;
 
@@ -259,6 +275,15 @@ namespace Xenko.Engine
                 {
                     Position = vrController.Position;
                     Rotation = vrController.Rotation;
+
+                    if (TrackVRHand == TouchControllerHand.Left)
+                    {
+                        LastLeftHandTracked = this;
+                    }
+                    else
+                    {
+                        LastRightHandTracked = this;
+                    }
                 }
             }
 

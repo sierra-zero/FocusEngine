@@ -176,6 +176,7 @@ namespace Xenko.Rendering.UI
                 renderingContext.DepthStencilBuffer = renderObject.IsFullScreen ? scopedDepthBuffer : context.CommandList.DepthStencilBuffer;
                 renderingContext.ShouldSnapText = renderObject.SnapText;
                 renderingContext.IsFullscreen = renderObject.IsFullScreen;
+                renderingContext.WorldMatrix3D = renderObject.WorldMatrix3D;
 
                 // calculate an estimate of the UI real size by projecting the element virtual resolution on the screen
                 var virtualOrigin = uiElementState.WorldViewProjectionMatrix.Row4;
@@ -371,6 +372,9 @@ namespace Xenko.Rendering.UI
 
                     // If the UI component is not drawn fullscreen it should be drawn as a quad with world sizes corresponding to its actual size
                     worldMatrix = Matrix.Scaling(renderObject.Size / renderObject.Resolution) * worldMatrix;
+
+                    // capture 3D world matrix for picking against things in 3D space
+                    renderObject.WorldMatrix3D = worldMatrix;
                 }
 
                 // Rotation of Pi along 0x to go from UI space to world space
