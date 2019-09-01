@@ -39,6 +39,13 @@ namespace Xenko.VirtualReality
         public abstract Vector2 ThumbstickAxis { get; }
 
         /// <summary>
+        /// Vibrate the controller
+        /// </summary>
+        /// <param name="amount">Amount of vibration, try 0.5f to 3.5f</param>
+        /// <returns></returns>
+        public abstract bool Vibrate(float amount);
+
+        /// <summary>
         /// Returns true if in this frame the button switched to pressed state
         /// </summary>
         /// <param name="button"></param>

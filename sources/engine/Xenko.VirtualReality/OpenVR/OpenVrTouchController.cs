@@ -123,6 +123,13 @@ namespace Xenko.VirtualReality
             return controller?.GetTouchUp(ToOpenVrButton(button)) ?? false;
         }
 
+        public override bool Vibrate(float amount)
+        {
+            if (controllerIndex == -1 || amount <= 0f) return false;
+            Valve.VR.OpenVR.System.TriggerHapticPulse((uint)controllerIndex, 0, (ushort)(1000f * amount));
+            return true;
+        }
+
         public override Vector3 Position => currentPos;
 
         public override Quaternion Rotation => currentRot;
