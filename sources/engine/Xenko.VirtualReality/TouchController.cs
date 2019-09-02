@@ -43,7 +43,7 @@ namespace Xenko.VirtualReality
         /// </summary>
         /// <param name="amount">Amount of vibration, try 0.5f to 3.5f</param>
         /// <returns></returns>
-        public abstract bool Vibrate(float amount);
+        public abstract bool Vibrate(float amount = 1f);
 
         /// <summary>
         /// Returns true if in this frame the button switched to pressed state

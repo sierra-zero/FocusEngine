@@ -400,7 +400,7 @@ namespace Xenko.VirtualReality
             }
         }
 
-        public override bool Vibrate(float amount)
+        public override bool Vibrate(float amount = 1f)
         {
             // not implemented for oculus SDK (use OpenVR instead)
             return false;
