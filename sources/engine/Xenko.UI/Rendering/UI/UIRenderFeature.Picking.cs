@@ -273,11 +273,11 @@ namespace Xenko.Rendering.UI
 
                             if (tc != null)
                             {
-                                if (tc.IsPressedDown(VirtualReality.TouchControllerButton.Trigger))
+                                if (tc.IsPressedDown(VirtualReality.VRDeviceSystem.UIActivationButton))
                                 {
                                     MakeTouchEvent(mouseOverElement, lastMouseOverElement, PointerEventType.Pressed, Vector2.Zero, Vector2.Zero, intersectionPoint, intersectionPoint - state.LastIntersectionPoint, time);
                                 }
-                                else if (tc.IsPressReleased(VirtualReality.TouchControllerButton.Trigger))
+                                else if (tc.IsPressReleased(VirtualReality.VRDeviceSystem.UIActivationButton))
                                 {
                                     MakeTouchEvent(mouseOverElement, lastMouseOverElement, PointerEventType.Released, Vector2.Zero, Vector2.Zero, intersectionPoint, intersectionPoint - state.LastIntersectionPoint, time);
                                 }
