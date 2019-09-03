@@ -271,7 +271,14 @@ namespace Xenko.Physics
 
         protected override void OnAttach()
         {
-            MotionState = new XenkoMotionState(this);
+            if (MotionState == null)
+            {
+                MotionState = new XenkoMotionState(this);
+            }
+            else
+            {
+                MotionState.rigidBody = this;
+            }
 
             SetupBoneLink();
 
@@ -314,6 +321,14 @@ namespace Xenko.Physics
 
         protected override void OnDetach()
         {
+            if (DoNotDispose)
+            {
+                // we might want to reuse this, just detach from scene/simulation
+                Simulation.RemoveRigidBody(this);
+                base.OnDetach();
+                return;
+            }
+
             MotionState.Dispose();
             MotionState.Clear();
 
@@ -602,7 +617,7 @@ namespace Xenko.Physics
 
         internal class XenkoMotionState : BulletSharp.MotionState
         {
-            private RigidbodyComponent rigidBody;
+            public RigidbodyComponent rigidBody;
 
             public XenkoMotionState(RigidbodyComponent rb)
             {

@@ -370,6 +370,18 @@ namespace Xenko.Engine
             }
         }
 
+        /// <summary>
+        /// When updating the associated TransformComponent, should we not set rotation?
+        /// </summary>
+        [DataMember(69)]
+        public bool IgnorePhysicsRotation = false;
+
+        /// <summary>
+        /// Keep this rigidbody around for reuse when detached? Defaults to false
+        /// </summary>
+        [DataMember(70)]
+        public bool DoNotDispose;
+
         #region Ignore or Private/Internal
 
         [DataMemberIgnore]
@@ -399,9 +411,6 @@ namespace Xenko.Engine
 
         [DataMemberIgnore]
         public bool ColliderShapeChanged { get; private set; }
-
-        [DataMemberIgnore]
-        public bool IgnorePhysicsRotation = false;
 
         [DataMemberIgnore]
         public Vector3? LocalPhysicsOffset = null;
@@ -739,7 +748,7 @@ namespace Xenko.Engine
 
         internal void Detach()
         {
-            Data = null;
+            if (DoNotDispose) Data = null;
 
             //this is mostly required for the game studio gizmos
             if (Simulation.DisableSimulation)
@@ -771,6 +780,8 @@ namespace Xenko.Engine
 
         protected virtual void OnDetach()
         {
+            if (CurrentPhysicalContacts != null) CurrentPhysicalContacts.Clear();
+
             if (NativeCollisionObject == null) return;
 
             NativeCollisionObject.UserObject = null;

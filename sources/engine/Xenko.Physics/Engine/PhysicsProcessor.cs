@@ -22,7 +22,7 @@ namespace Xenko.Physics
             public bool BoneMatricesUpdated;
         }
 
-        private readonly List<PhysicsComponent> elements = new List<PhysicsComponent>();
+        private readonly HashSet<PhysicsComponent> elements = new HashSet<PhysicsComponent>();
         private readonly List<PhysicsSkinnedComponentBase> boneElements = new List<PhysicsSkinnedComponentBase>();
         private readonly List<CharacterComponent> characters = new List<CharacterComponent>();
 
@@ -118,6 +118,9 @@ namespace Xenko.Physics
 
             elements.Add(component);
 
+            // lets make sure this won't be removed later
+            currentFrameRemovals.Remove(component);
+
             if (component.BoneIndex != -1)
             {
                 boneElements.Add((PhysicsSkinnedComponentBase)component);
@@ -149,11 +152,19 @@ namespace Xenko.Physics
             component.Detach();
         }
 
-        private readonly List<PhysicsComponent> currentFrameRemovals = new List<PhysicsComponent>();
+        private readonly HashSet<PhysicsComponent> currentFrameRemovals = new HashSet<PhysicsComponent>();
 
         protected override void OnEntityComponentRemoved(Entity entity, PhysicsComponent component, AssociatedData data)
         {
-            currentFrameRemovals.Add(component);
+            if (component.DoNotDispose)
+            {
+                // we won't be completely removing this, so it is safe to "remove" now
+                ComponentRemoval(component);
+            }
+            else
+            {
+                currentFrameRemovals.Add(component);
+            }
         }
 
         protected override void OnSystemAdd()
