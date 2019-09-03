@@ -782,7 +782,7 @@ namespace Xenko.Engine
         {
             if (CurrentPhysicalContacts != null) CurrentPhysicalContacts.Clear();
 
-            if (NativeCollisionObject == null) return;
+            if (NativeCollisionObject == null || DoNotDispose) return;
 
             NativeCollisionObject.UserObject = null;
             NativeCollisionObject.Dispose();

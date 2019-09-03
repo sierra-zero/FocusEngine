@@ -282,15 +282,18 @@ namespace Xenko.Physics
 
             SetupBoneLink();
 
-            var rbci = new BulletSharp.RigidBodyConstructionInfo(0.0f, MotionState, ColliderShape.InternalShape, Vector3.Zero);
-            InternalRigidBody = new BulletSharp.RigidBody(rbci)
+            if (NativeCollisionObject == null)
             {
-                UserObject = this,
-            };
+                var rbci = new BulletSharp.RigidBodyConstructionInfo(0.0f, MotionState, ColliderShape.InternalShape, Vector3.Zero);
+                InternalRigidBody = new BulletSharp.RigidBody(rbci)
+                {
+                    UserObject = this,
+                };
 
-            NativeCollisionObject = InternalRigidBody;
+                NativeCollisionObject = InternalRigidBody;
 
-            NativeCollisionObject.ContactProcessingThreshold = !Simulation.CanCcd ? 1e18f : 1e30f;
+                NativeCollisionObject.ContactProcessingThreshold = !Simulation.CanCcd ? 1e18f : 1e30f;
+            }
 
             if (ColliderShape.NeedsCustomCollisionCallback)
             {
