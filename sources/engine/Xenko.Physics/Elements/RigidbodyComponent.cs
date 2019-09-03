@@ -271,19 +271,12 @@ namespace Xenko.Physics
 
         protected override void OnAttach()
         {
-            if (MotionState == null)
-            {
-                MotionState = new XenkoMotionState(this);
-            }
-            else
-            {
-                MotionState.rigidBody = this;
-            }
-
-            SetupBoneLink();
-
             if (NativeCollisionObject == null)
             {
+                MotionState = new XenkoMotionState(this);
+
+                SetupBoneLink();
+
                 var rbci = new BulletSharp.RigidBodyConstructionInfo(0.0f, MotionState, ColliderShape.InternalShape, Vector3.Zero);
                 InternalRigidBody = new BulletSharp.RigidBody(rbci)
                 {

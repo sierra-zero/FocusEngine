@@ -23,8 +23,8 @@ namespace Xenko.Physics
         }
 
         private readonly HashSet<PhysicsComponent> elements = new HashSet<PhysicsComponent>();
-        private readonly List<PhysicsSkinnedComponentBase> boneElements = new List<PhysicsSkinnedComponentBase>();
-        private readonly List<CharacterComponent> characters = new List<CharacterComponent>();
+        private readonly HashSet<PhysicsSkinnedComponentBase> boneElements = new HashSet<PhysicsSkinnedComponentBase>();
+        private readonly HashSet<CharacterComponent> characters = new HashSet<CharacterComponent>();
 
         private Bullet2PhysicsSystem physicsSystem;
         private SceneSystem sceneSystem;
@@ -103,6 +103,14 @@ namespace Xenko.Physics
 
         protected override void OnEntityComponentAdding(Entity entity, PhysicsComponent component, AssociatedData data)
         {
+            // wait, are we already added?
+            if (elements.Contains(component))
+            {
+                // make sure we are not removing it
+                currentFrameRemovals.Remove(component);
+                return;
+            }
+
             component.Attach(data);
 
             var character = component as CharacterComponent;
@@ -117,9 +125,6 @@ namespace Xenko.Physics
             }
 
             elements.Add(component);
-
-            // lets make sure this won't be removed later
-            currentFrameRemovals.Remove(component);
 
             if (component.BoneIndex != -1)
             {
@@ -156,15 +161,7 @@ namespace Xenko.Physics
 
         protected override void OnEntityComponentRemoved(Entity entity, PhysicsComponent component, AssociatedData data)
         {
-            if (component.DoNotDispose)
-            {
-                // we won't be completely removing this, so it is safe to "remove" now
-                ComponentRemoval(component);
-            }
-            else
-            {
-                currentFrameRemovals.Add(component);
-            }
+            currentFrameRemovals.Add(component);
         }
 
         protected override void OnSystemAdd()
