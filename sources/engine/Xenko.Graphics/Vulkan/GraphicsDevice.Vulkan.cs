@@ -31,7 +31,6 @@ namespace Xenko.Graphics
         private Device nativeDevice;
         internal Queue NativeCommandQueue;
         internal object QueueLock = new object();
-        internal object PresentLock = new object();
 
         internal CommandPool NativeCopyCommandPool;
         internal CommandBuffer NativeCopyCommandBuffer;

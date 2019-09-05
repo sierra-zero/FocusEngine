@@ -241,11 +241,9 @@ namespace Xenko.Graphics
                 var fenceCreateInfo = new FenceCreateInfo { StructureType = StructureType.FenceCreateInfo };
                 var fence = GraphicsDevice.NativeDevice.CreateFence(ref fenceCreateInfo);                
 
-                lock (PipelineState.PipeLock) {
-                    lock (GraphicsDevice.QueueLock) {
-                        GraphicsDevice.NativeCommandQueue.Submit(1, &submitInfo, fence);
-                        GraphicsDevice.NativeDevice.WaitForFences(1, &fence, true, ulong.MaxValue);
-                    }
+                lock (GraphicsDevice.QueueLock) {
+                    GraphicsDevice.NativeCommandQueue.Submit(1, &submitInfo, fence);
+                    GraphicsDevice.NativeDevice.WaitForFences(1, &fence, true, ulong.MaxValue);
                 }
 
                 GraphicsDevice.NativeDevice.FreeCommandBuffers(GraphicsDevice.NativeCopyCommandPool, 1, &commandBuffer);

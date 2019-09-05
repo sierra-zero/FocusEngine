@@ -87,9 +87,7 @@ namespace Xenko.Graphics
                 currentBufferIndexCopy = presentingIndex;
 
                 // Present
-                lock (GraphicsDevice.PresentLock) {
-                    GraphicsDevice.NativeCommandQueue.Present(ref presentInfo);
-                }
+                GraphicsDevice.NativeCommandQueue.Present(ref presentInfo);
             }
         }
 
