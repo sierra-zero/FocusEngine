@@ -886,7 +886,7 @@ namespace Xenko.Graphics
                     imageBarriers[imageBarrierCount++] = new ImageMemoryBarrier(destinationParent.NativeImage, destinationTexture.NativeLayout, ImageLayout.TransferDestinationOptimal, destinationTexture.NativeAccessMask, AccessFlags.TransferWrite, new ImageSubresourceRange(destinationParent.NativeImageAspect));
                 }
 
-                currentCommandList.NativeCommandBuffer.PipelineBarrier(sourceTexture.NativePipelineStageMask, PipelineStageFlags.Transfer, DependencyFlags.None, 0, null, bufferBarrierCount, bufferBarriers, imageBarrierCount, imageBarriers);
+                currentCommandList.NativeCommandBuffer.PipelineBarrier(sourceTexture.NativePipelineStageMask | destinationParent.NativePipelineStageMask, PipelineStageFlags.Transfer, DependencyFlags.None, 0, null, bufferBarrierCount, bufferBarriers, imageBarrierCount, imageBarriers);
 
                 // Copy
                 if (destinationTexture.Usage == GraphicsResourceUsage.Staging)
@@ -975,7 +975,7 @@ namespace Xenko.Graphics
                     imageBarrierCount++;
                 }
 
-                currentCommandList.NativeCommandBuffer.PipelineBarrier(PipelineStageFlags.Transfer, sourceTexture.NativePipelineStageMask, DependencyFlags.None, 0, null, bufferBarrierCount, bufferBarriers, imageBarrierCount, imageBarriers);
+                currentCommandList.NativeCommandBuffer.PipelineBarrier(PipelineStageFlags.Transfer, sourceTexture.NativePipelineStageMask | destinationParent.NativePipelineStageMask, DependencyFlags.None, 0, null, bufferBarrierCount, bufferBarriers, imageBarrierCount, imageBarriers);
             }
             else
             {
@@ -1054,7 +1054,7 @@ namespace Xenko.Graphics
                     imageBarriers[imageBarrierCount++] = new ImageMemoryBarrier(destinationParent.NativeImage, destinationParent.NativeLayout, ImageLayout.TransferDestinationOptimal, destinationParent.NativeAccessMask, AccessFlags.TransferWrite, new ImageSubresourceRange(destinationParent.NativeImageAspect));
                 }
 
-                currentCommandList.NativeCommandBuffer.PipelineBarrier(sourceTexture.NativePipelineStageMask, PipelineStageFlags.Transfer, DependencyFlags.None, 0, null, bufferBarrierCount, bufferBarriers, imageBarrierCount, imageBarriers);
+                currentCommandList.NativeCommandBuffer.PipelineBarrier(sourceTexture.NativePipelineStageMask | destinationParent.NativePipelineStageMask, PipelineStageFlags.Transfer, DependencyFlags.None, 0, null, bufferBarrierCount, bufferBarriers, imageBarrierCount, imageBarriers);
 
                 // Copy
                 if (destinationTexture.Usage == GraphicsResourceUsage.Staging)
@@ -1149,7 +1149,7 @@ namespace Xenko.Graphics
                     imageBarrierCount++;
                 }
 
-                currentCommandList.NativeCommandBuffer.PipelineBarrier(PipelineStageFlags.Transfer, sourceTexture.NativePipelineStageMask, DependencyFlags.None, 0, null, bufferBarrierCount, bufferBarriers, imageBarrierCount, imageBarriers);
+                currentCommandList.NativeCommandBuffer.PipelineBarrier(PipelineStageFlags.Transfer, sourceTexture.NativePipelineStageMask | destinationParent.NativePipelineStageMask, DependencyFlags.None, 0, null, bufferBarrierCount, bufferBarriers, imageBarrierCount, imageBarriers);
             }
             else
             {
