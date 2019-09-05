@@ -66,6 +66,7 @@ namespace Xenko.Graphics
         };
 
         internal Buffer EmptyTexelBuffer;
+        internal Texture EmptyTexture;
 
         internal PhysicalDevice NativePhysicalDevice => Adapter.GetPhysicalDevice(IsDebugMode);
 
@@ -372,9 +373,9 @@ namespace Xenko.Graphics
             graphicsResourceLinkCollector = new GraphicsResourceLinkCollector(this);
 
             EmptyTexelBuffer = Buffer.Typed.New(this, 1, PixelFormat.R32G32B32A32_Float);
-
-            dummyTexture = Texture.New2D(this, 1, 1, PixelFormat.R8G8B8A8_UNorm_SRgb, TextureFlags.RenderTarget | TextureFlags.ShaderResource);
+            EmptyTexture = Texture.New2D(this, 1, 1, PixelFormat.R8G8B8A8_UNorm_SRgb, TextureFlags.ShaderResource);
         }
+
         internal unsafe IntPtr AllocateUploadBuffer(int size, out SharpVulkan.Buffer resource, out int offset)
         {
             // TODO D3D12 thread safety, should we simply use locks?
@@ -463,6 +464,9 @@ namespace Xenko.Graphics
         {
             EmptyTexelBuffer.Dispose();
             EmptyTexelBuffer = null;
+
+            EmptyTexture.Dispose();
+            EmptyTexture = null;
 
             // Wait for all queues to be idle
             nativeDevice.WaitIdle();
