@@ -70,8 +70,8 @@ namespace Xenko.Graphics.Data
                     ContentStorageHeader storageHeader;
                     ContentStorageHeader.Read(stream, out storageHeader);
 
-                    // Check if streaming service is available
-                    if (texturesStreamingProvider != null)
+                    // Check if streaming service is available (disable for vulkan, which isn't really necessary [and kinda broken])
+                    if (texturesStreamingProvider != null && GraphicsDevice.Platform != GraphicsPlatform.Vulkan)
                     {
                         if (allowContentStreaming)
                         {

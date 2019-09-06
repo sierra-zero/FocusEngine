@@ -347,12 +347,8 @@ namespace Xenko.Graphics
                 switch (mapping.DescriptorType)
                 {
                     case DescriptorType.SampledImage:
-                        var texture = (heapObject.Value as Texture)?.AwaitReady(int.MaxValue);
-                        descriptorData->ImageInfo = new DescriptorImageInfo
-                        {
-                            ImageView = texture == null ? GraphicsDevice.EmptyTexture.NativeImageView : texture.NativeImageView,
-                            ImageLayout = ImageLayout.ShaderReadOnlyOptimal
-                        };
+                        var texture = heapObject.Value as Texture;
+                        descriptorData->ImageInfo = new DescriptorImageInfo { ImageView = texture?.NativeImageView ?? GraphicsDevice.EmptyTexture.NativeImageView, ImageLayout = ImageLayout.ShaderReadOnlyOptimal };
                         write->ImageInfo = new IntPtr(descriptorData);
                         break;
 
