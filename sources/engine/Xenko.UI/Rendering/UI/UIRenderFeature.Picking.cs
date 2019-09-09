@@ -238,7 +238,7 @@ namespace Xenko.Rendering.UI
         /// <summary>
         /// If a VR controller is pointing at a UIElement, this will be set with it. null otherwise.
         /// </summary>
-        public static UIElement VRControllerPointingAt { get; private set; }
+        public static UIElement UIElementUnderMouseCursor { get; private set; }
 
         private bool UpdateMouseOver(ref Viewport viewport, ref Matrix worldViewProj, RenderUIElement state, GameTime time)
         {
@@ -250,7 +250,7 @@ namespace Xenko.Rendering.UI
             var intersectionPoint = Vector3.Zero;
             var rootElement = state.Page.RootElement;
             var lastMouseOverElement = state.LastMouseOverElement;
-            var mouseOverElement = lastMouseOverElement;
+            UIElementUnderMouseCursor = lastMouseOverElement;
 
             if (VRcontrollerUsed)
             {
@@ -263,10 +263,9 @@ namespace Xenko.Rendering.UI
                     {
                         Ray uiRay = new Ray(useHand.WorldPosition(), useHand.Forward(true));
 
-                        mouseOverElement = GetElementAtWorldPosition(rootElement, ref uiRay, ref worldViewProj, ref intersectionPoint);
-                        VRControllerPointingAt = mouseOverElement;
+                        UIElementUnderMouseCursor = GetElementAtWorldPosition(rootElement, ref uiRay, ref worldViewProj, ref intersectionPoint);
 
-                        if (mouseOverElement != null)
+                        if (UIElementUnderMouseCursor != null)
                         {
                             // wait, are we selecting this element?
                             VirtualReality.TouchController tc = VirtualReality.VRDeviceSystem.GetSystem.GetController(i == 0 ? VirtualReality.TouchControllerHand.Right : VirtualReality.TouchControllerHand.Left);
@@ -275,11 +274,11 @@ namespace Xenko.Rendering.UI
                             {
                                 if (tc.IsPressedDown(VirtualReality.VRDeviceSystem.UIActivationButton))
                                 {
-                                    MakeTouchEvent(mouseOverElement, lastMouseOverElement, PointerEventType.Pressed, Vector2.Zero, Vector2.Zero, intersectionPoint, intersectionPoint - state.LastIntersectionPoint, time);
+                                    MakeTouchEvent(UIElementUnderMouseCursor, lastMouseOverElement, PointerEventType.Pressed, Vector2.Zero, Vector2.Zero, intersectionPoint, intersectionPoint - state.LastIntersectionPoint, time);
                                 }
                                 else if (tc.IsPressReleased(VirtualReality.VRDeviceSystem.UIActivationButton))
                                 {
-                                    MakeTouchEvent(mouseOverElement, lastMouseOverElement, PointerEventType.Released, Vector2.Zero, Vector2.Zero, intersectionPoint, intersectionPoint - state.LastIntersectionPoint, time);
+                                    MakeTouchEvent(UIElementUnderMouseCursor, lastMouseOverElement, PointerEventType.Released, Vector2.Zero, Vector2.Zero, intersectionPoint, intersectionPoint - state.LastIntersectionPoint, time);
                                 }
                             }
 
@@ -301,12 +300,12 @@ namespace Xenko.Rendering.UI
                     if (!GetTouchPosition(state.Resolution, ref viewport, ref worldViewProj, mousePosition, out uiRay))
                         return true;
 
-                    mouseOverElement = GetElementAtScreenPosition(rootElement, ref uiRay, ref worldViewProj, ref intersectionPoint);
+                    UIElementUnderMouseCursor = GetElementAtScreenPosition(rootElement, ref uiRay, ref worldViewProj, ref intersectionPoint);
                 }
             }
 
             // find the common parent between current and last overred elements
-            var commonElement = FindCommonParent(mouseOverElement, lastMouseOverElement);
+            var commonElement = FindCommonParent(UIElementUnderMouseCursor, lastMouseOverElement);
 
             // disable mouse over state to previously overred hierarchy
             var parent = lastMouseOverElement;
@@ -317,13 +316,13 @@ namespace Xenko.Rendering.UI
             }
 
             // enable mouse over state to currently overred hierarchy
-            if (mouseOverElement != null)
+            if (UIElementUnderMouseCursor != null)
             {
                 // the element itself
-                mouseOverElement.MouseOverState = MouseOverState.MouseOverElement;
+                UIElementUnderMouseCursor.MouseOverState = MouseOverState.MouseOverElement;
 
                 // its hierarchy
-                parent = mouseOverElement.VisualParent;
+                parent = UIElementUnderMouseCursor.VisualParent;
                 while (parent != null)
                 {
                     if (parent.IsHierarchyEnabled)
@@ -334,7 +333,7 @@ namespace Xenko.Rendering.UI
             }
 
             // update cached values
-            state.LastMouseOverElement = mouseOverElement;
+            state.LastMouseOverElement = UIElementUnderMouseCursor;
 
             return !VRcontrollerUsed;
         }
