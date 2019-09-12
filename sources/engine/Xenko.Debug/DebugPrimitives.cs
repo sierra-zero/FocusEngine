@@ -430,6 +430,8 @@ namespace Xenko.DebugRendering
         public static (VertexPositionTexture[] Vertices, int[] Indices) GenerateCylinder(float height = 1.0f, float radius = 0.5f, int tesselations = 16, int uvSplits = 4, int? uvSidesForCircle = null)
         {
 
+            const int uvOffset = 3;
+
             if (tesselations < 3) tesselations = 3;
 
             if (uvSplits != 0 && tesselations % uvSplits != 0) // FIXME: this can read a lot nicer i think?
@@ -438,7 +440,7 @@ namespace Xenko.DebugRendering
             }
 
             var hasUvSplit = (uvSplits > 0 ? 1 : 0);
-            var (capVertices, capIndices) = GenerateCircle(radius, tesselations, uvSidesForCircle ?? uvSplits, uvOffset: 1);
+            var (capVertices, capIndices) = GenerateCircle(radius, tesselations, uvSidesForCircle ?? uvSplits, uvOffset: 1 + uvOffset);
 
             VertexPositionTexture[] vertices = new VertexPositionTexture[(capVertices.Length * 2) + (tesselations * 4)];
             int[] indices = new int[(capIndices.Length * 2) + (tesselations * 6)];
@@ -477,7 +479,7 @@ namespace Xenko.DebugRendering
                 var curTopPos = (normal * radius) + (Vector3.UnitY * (height / 2.0f));
                 var curBottomPos = (normal * radius) - (Vector3.UnitY * (height / 2.0f));
 
-                int? sideModulo = (uvSplits > 0) ? ((i + 1) % (tesselations / uvSplits)) : (int?)null;
+                int? sideModulo = (uvSplits > 0) ? ((i + 1 - uvOffset) % (tesselations / uvSplits)) : (int?)null;
 
                 vertices[curVert].Position = curBottomPos;
                 vertices[curVert].TextureCoordinate = (sideModulo == 0) ? lineUv : noLineUv;
