@@ -56,8 +56,6 @@ namespace Xenko.Rendering.Rendering {
         }
 
         private class StagedMeshDrawTyped<T> : StagedMeshDraw where T : struct {
-            private uint[] stagedIndexBuffer;
-            private T[] stagedVertexBuffer;
             public static ConcurrentDictionary<T[], object[]> CachedBuffers = new ConcurrentDictionary<T[], object[]>();
         }
     }
