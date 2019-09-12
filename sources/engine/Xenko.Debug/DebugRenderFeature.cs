@@ -248,6 +248,7 @@ namespace Xenko.DebugRendering
             public Color Color;
         }
 
+        private const float DefaultCircleRadius = 0.5f;
         private const float DefaultSphereRadius = 0.5f;
         private const float DefaultCubeSize = 1.0f;
         private const float DefaultCapsuleLength = 1.0f;
@@ -265,7 +266,7 @@ namespace Xenko.DebugRendering
         private const int ConeTesselation = 16;
 
         /* mesh data we will use when stuffing things in vertex buffers */
-        private readonly (VertexPositionTexture[] Vertices, int[] Indices) circle = DebugPrimitives.GenerateCircle(0.5f, CircleTesselation);
+        private readonly (VertexPositionTexture[] Vertices, int[] Indices) circle = DebugPrimitives.GenerateCircle(DefaultCircleRadius, CircleTesselation);
         private readonly (VertexPositionTexture[] Vertices, int[] Indices) plane = DebugPrimitives.GenerateQuad(DefaultPlaneSize, DefaultPlaneSize);
         private readonly (VertexPositionTexture[] Vertices, int[] Indices) sphere = DebugPrimitives.GenerateSphere(DefaultSphereRadius, SphereTesselation, uvSplitOffsetVertical: 1);
         private readonly (VertexPositionTexture[] Vertices, int[] Indices) cube = DebugPrimitives.GenerateCube(DefaultCubeSize);
