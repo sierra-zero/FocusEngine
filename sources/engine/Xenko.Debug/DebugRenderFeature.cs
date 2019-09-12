@@ -31,6 +31,7 @@ namespace Xenko.DebugRendering
             public int Quads;
             public int Circles;
             public int Spheres;
+            public int HalfSpheres;
             public int Cubes;
             public int Capsules;
             public int Cylinders;
@@ -42,6 +43,7 @@ namespace Xenko.DebugRendering
                 Quads = 0;
                 Circles = 0;
                 Spheres = 0;
+                HalfSpheres = 0;
                 Cubes = 0;
                 Capsules = 0;
                 Cylinders = 0;
@@ -67,6 +69,7 @@ namespace Xenko.DebugRendering
             Quad,
             Circle,
             Sphere,
+            HalfSphere,
             Cube,
             Capsule,
             Cylinder,
@@ -94,6 +97,12 @@ namespace Xenko.DebugRendering
             {
                 Type = RenderableType.Sphere;
                 SphereData = s;
+            }
+
+            public Renderable(ref HalfSphere h) : this()
+            {
+                Type = RenderableType.HalfSphere;
+                HalfSphereData = h;
             }
 
             public Renderable(ref Cube c) : this()
@@ -139,6 +148,9 @@ namespace Xenko.DebugRendering
             public Sphere SphereData;
 
             [FieldOffset(1)]
+            public HalfSphere HalfSphereData;
+
+            [FieldOffset(1)]
             public Cube CubeData;
 
             [FieldOffset(1)]
@@ -175,6 +187,14 @@ namespace Xenko.DebugRendering
         {
             public Vector3 Position;
             public float Radius;
+            public Color Color;
+        }
+
+        internal struct HalfSphere
+        {
+            public Vector3 Position;
+            public float Radius;
+            public Quaternion Rotation;
             public Color Color;
         }
 
@@ -247,7 +267,7 @@ namespace Xenko.DebugRendering
         /* mesh data we will use when stuffing things in vertex buffers */
         private readonly (VertexPositionTexture[] Vertices, int[] Indices) circle = DebugPrimitives.GenerateCircle(0.5f, CircleTesselation);
         private readonly (VertexPositionTexture[] Vertices, int[] Indices) plane = DebugPrimitives.GenerateQuad(DefaultPlaneSize, DefaultPlaneSize);
-        private readonly (VertexPositionTexture[] Vertices, int[] Indices) sphere = DebugPrimitives.GenerateSphere(DefaultSphereRadius, SphereTesselation);
+        private readonly (VertexPositionTexture[] Vertices, int[] Indices) sphere = DebugPrimitives.GenerateSphere(DefaultSphereRadius, SphereTesselation, uvSplitOffsetVertical: 1);
         private readonly (VertexPositionTexture[] Vertices, int[] Indices) cube = DebugPrimitives.GenerateCube(DefaultCubeSize);
         private readonly (VertexPositionTexture[] Vertices, int[] Indices) capsule = DebugPrimitives.GenerateCapsule(DefaultCapsuleLength, DefaultCapsuleRadius, CapsuleTesselation);
         private readonly (VertexPositionTexture[] Vertices, int[] Indices) cylinder = DebugPrimitives.GenerateCylinder(DefaultCylinderHeight, DefaultCylinderRadius, CylinderTesselation);
@@ -334,6 +354,7 @@ namespace Xenko.DebugRendering
 
             Array.Copy(sphere.Vertices, 0, vertexData, vertexBufferOffset, sphere.Vertices.Length);
             primitiveVertexOffsets.Spheres = vertexBufferOffset;
+            primitiveVertexOffsets.HalfSpheres = vertexBufferOffset; // same as spheres
             vertexBufferOffset += sphere.Vertices.Length;
 
             Array.Copy(cube.Vertices, 0, vertexData, vertexBufferOffset, cube.Vertices.Length);
@@ -384,6 +405,7 @@ namespace Xenko.DebugRendering
 
             Array.Copy(sphere.Indices, 0, indexData, indexBufferOffset, sphere.Indices.Length);
             primitiveIndexOffsets.Spheres = indexBufferOffset;
+            primitiveIndexOffsets.HalfSpheres = indexBufferOffset; // same as spheres
             indexBufferOffset += sphere.Indices.Length;
 
             Array.Copy(cube.Indices, 0, indexData, indexBufferOffset, cube.Indices.Length);
@@ -449,6 +471,13 @@ namespace Xenko.DebugRendering
                             instances.Items[offsets.Spheres].Color = cmd.SphereData.Color;
                             offsets.Spheres++;
                             break;
+                        case RenderableType.HalfSphere:
+                            instances.Items[offsets.HalfSpheres].Position = cmd.HalfSphereData.Position;
+                            instances.Items[offsets.HalfSpheres].Rotation = cmd.HalfSphereData.Rotation;
+                            instances.Items[offsets.HalfSpheres].Scale = new Vector3(cmd.HalfSphereData.Radius * 2);
+                            instances.Items[offsets.HalfSpheres].Color = cmd.HalfSphereData.Color;
+                            offsets.HalfSpheres++;
+                            break;
                         case RenderableType.Cube:
                             ref var start = ref cmd.CubeData.Start;
                             ref var end = ref cmd.CubeData.End;
@@ -495,6 +524,7 @@ namespace Xenko.DebugRendering
                 return primitives.Quads
                     + primitives.Circles
                     + primitives.Spheres
+                    + primitives.HalfSpheres
                     + primitives.Cubes
                     + primitives.Capsules
                     + primitives.Cylinders
@@ -507,7 +537,8 @@ namespace Xenko.DebugRendering
                 offsets.Quads = 0 + offset;
                 offsets.Circles = offsets.Quads + counts.Quads;
                 offsets.Spheres = offsets.Circles + counts.Circles;
-                offsets.Cubes = offsets.Spheres + counts.Spheres;
+                offsets.HalfSpheres = offsets.Spheres + counts.Spheres;
+                offsets.Cubes = offsets.HalfSpheres + counts.HalfSpheres;
                 offsets.Capsules = offsets.Cubes + counts.Cubes;
                 offsets.Cylinders = offsets.Capsules + counts.Capsules;
                 offsets.Cones = offsets.Cylinders + counts.Cylinders;
@@ -703,7 +734,7 @@ namespace Xenko.DebugRendering
 
             }
 
-            if (counts.Quads > 0 || counts.Circles > 0)
+            if (counts.Quads > 0 || counts.Circles > 0 || counts.HalfSpheres > 0)
             {
 
                 SetPrimitiveRenderingPipelineState(commandList, depthTest, fillMode, isDoubleSided: true, hasTransparency: hasTransparency);
@@ -728,6 +759,18 @@ namespace Xenko.DebugRendering
                     primitiveEffect.Apply(context.GraphicsContext);
 
                     commandList.DrawIndexedInstanced(circle.Indices.Length, counts.Circles, primitiveIndexOffsets.Circles, primitiveVertexOffsets.Circles);
+
+                }
+
+                // draw half spheres
+                if (counts.HalfSpheres > 0)
+                {
+
+                    primitiveEffect.Parameters.Set(PrimitiveShaderKeys.InstanceOffset, offsets.HalfSpheres);
+                    primitiveEffect.Apply(context.GraphicsContext);
+
+                    // HACK: we sort of abuse knowledge of the mesh primitive here.. :P
+                    commandList.DrawIndexedInstanced(sphere.Indices.Length / 2, counts.HalfSpheres, primitiveIndexOffsets.HalfSpheres, primitiveVertexOffsets.HalfSpheres);
 
                 }
 

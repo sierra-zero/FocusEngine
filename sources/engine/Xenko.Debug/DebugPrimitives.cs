@@ -146,7 +146,7 @@ namespace Xenko.DebugRendering
 
             if (hasUvSplits > 0)
             {
-                for (int i = 0; i <= tesselations * 3; i += 3)
+                for (int i = 0; i < tesselations * 3; i += 3)
                 {
                     int splitMod = ((i / 3) - uvOffset) % (tesselations / uvSplits);
                     var timeToSplit = splitMod == 0;
@@ -178,13 +178,13 @@ namespace Xenko.DebugRendering
             for (int i = 0; i < tesselations; ++i)
             {
                 var normal = GetCircleVector(i, tesselations);
-                vertices[offset + i].Position = normal * radius;
+                vertices[offset + i].Position = (normal * radius) + new Vector3(0.0f, yOffset, 0.0f);
                 vertices[offset + i].TextureCoordinate = lineUv;
             }
 
             int curVert = tesselations + offset;
             int curIdx = (tesselations + 1) * 3;
-            for (int i = 0; i <= tesselations * 3; i += 3)
+            for (int i = 0; i < tesselations * 3; i += 3)
             {
                 int? splitMod = (uvSplits > 0) ? (((i / 3) - uvOffset) % (tesselations / uvSplits)) : (int?)null;
                 var timeToSplit = splitMod == 0;
@@ -201,7 +201,8 @@ namespace Xenko.DebugRendering
                     vertices[curVert] = vertices[offset + (((i / 3) + 1) % tesselations)];
                     vertices[curVert++].TextureCoordinate = noLineUv;
 
-                    indices[curIdx++] = 0;
+                    // FIXME: this is shit geometry really
+                    indices[curIdx++] = offset + ((i / 3) % tesselations);
                     indices[curIdx++] = offset + ((i / 3) % tesselations);
                     indices[curIdx++] = offset + (((i / 3) + 1) % tesselations);
 
@@ -236,7 +237,7 @@ namespace Xenko.DebugRendering
 
         }
 
-        public static (VertexPositionTexture[] Vertices, int[] Indices) GenerateSphere(float radius = 0.5f, int tesselations = 16, int uvSplits = 4)
+        public static (VertexPositionTexture[] Vertices, int[] Indices) GenerateSphere(float radius = 0.5f, int tesselations = 16, int uvSplits = 4, int uvSplitOffsetVertical = 0)
         {
 
             if (uvSplits != 0 && tesselations % uvSplits != 0) // FIXME: this can read a lot nicer i think?
@@ -261,7 +262,7 @@ namespace Xenko.DebugRendering
                 {
                     for (int j = 0; j <= horizontalSegments; j++)
                     {
-                        int vertModulo = i % (verticalSegments / uvSplits);
+                        int vertModulo = (i + uvSplitOffsetVertical) % (verticalSegments / uvSplits);
                         int horizModulo = j % (horizontalSegments / uvSplits);
                         if (hasUvSplit > 0 && (vertModulo == 0 && horizModulo == 0))
                         {
@@ -298,7 +299,7 @@ namespace Xenko.DebugRendering
 
                 // the first point
                 var firstNormal = new Vector3(0, dy, dxz);
-                var firstHorizontalVertex = new VertexPositionTexture(firstNormal * radius, new Vector2(0.5f));
+                var firstHorizontalVertex = new VertexPositionTexture(firstNormal * radius, noLineUv);
                 vertices[vertexCount++] = firstHorizontalVertex;
 
                 // Create a single ring of vertices at this latitude.
@@ -342,9 +343,9 @@ namespace Xenko.DebugRendering
                 {
                     int nextI = i + 1;
                     int nextJ = (j + 1) % stride;
-                    int? vertModulo = (uvSplits > 0) ? ((i - 0) % (verticalSegments / uvSplits)) : (int?)null;
-                    int? horizModulo = (uvSplits > 0) ? ((j - 0) % (horizontalSegments / uvSplits)) : (int?)null;
-                    if (hasUvSplit > 0 && (vertModulo == 0 && horizModulo == 0))
+                    int? vertModulo = (uvSplits > 0) ? ((i + uvSplitOffsetVertical) % (verticalSegments / uvSplits)) : (int?)null;
+                    int? horizModulo = (uvSplits > 0) ? (j % (horizontalSegments / uvSplits)) : (int?)null;
+                    if (hasUvSplit > 0 && ((vertModulo == 0 && horizModulo == 0)))
                     {
 
                         vertices[newVertexCount] = vertices[(i * stride + j)];
@@ -439,8 +440,8 @@ namespace Xenko.DebugRendering
             var hasUvSplit = (uvSplits > 0 ? 1 : 0);
             var (capVertices, capIndices) = GenerateCircle(radius, tesselations, uvSidesForCircle ?? uvSplits, uvOffset: 1);
 
-            VertexPositionTexture[] vertices = new VertexPositionTexture[(capVertices.Length * 2) + ((tesselations + 1) * 4)];
-            int[] indices = new int[(capIndices.Length * 2) + ((tesselations + 1) * 6)];
+            VertexPositionTexture[] vertices = new VertexPositionTexture[(capVertices.Length * 2) + (tesselations * 4)];
+            int[] indices = new int[(capIndices.Length * 2) + (tesselations * 6)];
 
             int bottomVertsOffset = (vertices.Length - capVertices.Length);
             int topVertsOffset = (vertices.Length - capVertices.Length * 2);
@@ -451,8 +452,9 @@ namespace Xenko.DebugRendering
             for (int i = 0; i < capVertices.Length; ++i)
             {
                 vertices[bottomVertsOffset + i] = capVertices[i];
+                vertices[bottomVertsOffset + i].Position.Y = -(height / 2.0f);
                 vertices[topVertsOffset + i] = capVertices[i];
-                vertices[topVertsOffset + i].Position.Y = height;
+                vertices[topVertsOffset + i].Position.Y = height / 2.0f;
             }
 
             // copy indices
@@ -468,20 +470,20 @@ namespace Xenko.DebugRendering
             // generate sides, using our top and bottom circle triangle fans
             int curVert = 0;
             int curIndex = 0;
-            for (int i = 0; i <= tesselations; ++i)
+            for (int i = 0; i < tesselations; ++i)
             {
 
                 var normal = GetCircleVector(i, tesselations);
-                var curTopPos = (normal * radius) + (Vector3.UnitY * height);
-                var curBottomPos = (normal * radius);
+                var curTopPos = (normal * radius) + (Vector3.UnitY * (height / 2.0f));
+                var curBottomPos = (normal * radius) - (Vector3.UnitY * (height / 2.0f));
 
-                int? sideModulo = (uvSplits > 0) ? (i % (tesselations / uvSplits)) : (int?)null;
+                int? sideModulo = (uvSplits > 0) ? ((i + 1) % (tesselations / uvSplits)) : (int?)null;
 
                 vertices[curVert].Position = curBottomPos;
                 vertices[curVert].TextureCoordinate = (sideModulo == 0) ? lineUv : noLineUv;
                 var ip = curVert++;
 
-                var nextBottomNormal = GetCircleVector(i + 1, tesselations) * radius;
+                var nextBottomNormal = GetCircleVector(i + 1, tesselations) * radius - (Vector3.UnitY * (height / 2.0f));
                 vertices[curVert].Position = nextBottomNormal;
                 vertices[curVert].TextureCoordinate = noLineUv;
                 var ip1 = curVert++;
@@ -490,7 +492,7 @@ namespace Xenko.DebugRendering
                 vertices[curVert].TextureCoordinate = (sideModulo == 0) ? lineUv : noLineUv;
                 var ipv = curVert++;
 
-                var nextTopNormal = (GetCircleVector(i + 1, tesselations) * radius) + (Vector3.UnitY * height);
+                var nextTopNormal = (GetCircleVector(i + 1, tesselations) * radius) + (Vector3.UnitY * (height / 2.0f));
                 vertices[curVert].Position = nextTopNormal;
                 vertices[curVert].TextureCoordinate = noLineUv;
                 var ipv1 = curVert++;
@@ -525,8 +527,8 @@ namespace Xenko.DebugRendering
                 throw new ArgumentException("expected the desired number of uv splits for the bottom to be a divisor of the number of tesselations");
             }
 
-            var (bottomVertices, bottomIndices) = GenerateCircle(radius, tesselations, uvSplits, isFlipped: true);
-            var (topVertices, topIndices) = GenerateCircle(radius, tesselations, uvSplitsBottom);
+            var (bottomVertices, bottomIndices) = GenerateCircle(radius, tesselations, uvSplits, yOffset: -(height / 2.0f));
+            var (topVertices, topIndices) = GenerateCircle(radius, tesselations, uvSplitsBottom, isFlipped: true, yOffset: -(height / 2.0f));
             VertexPositionTexture[] vertices = new VertexPositionTexture[bottomVertices.Length + topVertices.Length];
             int[] indices = new int[topIndices.Length + bottomIndices.Length];
 
@@ -553,8 +555,8 @@ namespace Xenko.DebugRendering
             }
 
             // extrude middle vertex of center of first circle triangle fan
-            vertices[0].Position.Y = height;
-            vertices[1].Position.Y = height;
+            vertices[0].Position.Y = height / 2.0f;
+            vertices[1].Position.Y = height / 2.0f;
 
             return (vertices, indices);
 
