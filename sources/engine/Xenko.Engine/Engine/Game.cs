@@ -11,6 +11,7 @@ using Xenko.Core.Diagnostics;
 using Xenko.Core.IO;
 using Xenko.Core.Mathematics;
 using Xenko.Core.Storage;
+using Xenko.DebugRendering;
 using Xenko.Engine.Design;
 using Xenko.Engine.Processors;
 using Xenko.Games;
@@ -104,9 +105,14 @@ namespace Xenko.Engine
         public SpriteAnimationSystem SpriteAnimation { get; }
 
         /// <summary>
-        /// Gets the game profiler system.
+        /// Gets the debug text system.
         /// </summary>
         public DebugTextSystem DebugTextSystem { get; }
+
+        /// <summary>
+        /// Gets the debug rendering system.
+        /// </summary>
+        public DebugRenderSystem DebugRenderSystem { get; }
 
         /// <summary>
         /// Gets the game profiler system.
@@ -291,6 +297,9 @@ namespace Xenko.Engine
             DebugTextSystem = new DebugTextSystem(Services);
             Services.AddService(DebugTextSystem);
 
+            DebugRenderSystem = new DebugRenderSystem(Services);
+            Services.AddService(DebugRenderSystem);
+
             ProfilingSystem = new GameProfilingSystem(Services);
             Services.AddService(ProfilingSystem);
 
@@ -440,6 +449,7 @@ namespace Xenko.Engine
             //Add the sprite animation System
             GameSystems.Add(SpriteAnimation);
 
+            GameSystems.Add(DebugRenderSystem);
             GameSystems.Add(DebugTextSystem);
             GameSystems.Add(ProfilingSystem);
 

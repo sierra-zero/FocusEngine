@@ -8,6 +8,7 @@ using Xenko.Audio;
 using Xenko.Core;
 using Xenko.Core.Diagnostics;
 using Xenko.Core.Serialization.Contents;
+using Xenko.DebugRendering;
 using Xenko.Engine.Design;
 using Xenko.Engine.Processors;
 using Xenko.Games;
@@ -64,6 +65,7 @@ namespace Xenko.Engine
             Audio = Services.GetSafeServiceAs<AudioSystem>();
             SpriteAnimation = Services.GetSafeServiceAs<SpriteAnimationSystem>();
             GameProfiler = Services.GetSafeServiceAs<GameProfilingSystem>();
+            DebugDraw = Services.GetSafeServiceAs<DebugRenderSystem>();
             DebugText = Services.GetSafeServiceAs<DebugTextSystem>();
             Streaming = Services.GetSafeServiceAs<StreamingManager>();
         }
@@ -125,6 +127,9 @@ namespace Xenko.Engine
 
         [DataMemberIgnore]
         public DebugTextSystem DebugText { get; private set; }
+
+        [DataMemberIgnore]
+        public DebugRenderSystem DebugDraw { get; private set; }
 
         /// <summary>
         /// Gets the streaming system.
