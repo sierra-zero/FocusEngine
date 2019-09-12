@@ -40,8 +40,25 @@ namespace Xenko.Graphics
     [ContentSerializer(typeof(DataContentSerializer<Buffer>))]
     public partial class Buffer : GraphicsResource
     {
+        /// <summary>
+        /// Capture easy-access data for all vertex buffers below this size. Can be useful for batching!
+        /// </summary>
+        [DataMemberIgnore]
+        public static int CaptureVertexBuffersOfSize = 32768;
+
+        /// <summary>
+        /// Capture easy-access data for all index buffers below this size. Can be useful for batching!
+        /// </summary>
+        [DataMemberIgnore]
+        public static int CaptureIndexBuffersOfSize = 8192;
+
         protected int elementCount;
         private BufferDescription bufferDescription;
+
+        /// <summary>
+        /// If this is a vertex or index buffer, this stores the raw data. Only works in Vulkan
+        /// </summary>
+        public byte[] VertIndexData { get; private set; }
 
         public Buffer()
         {

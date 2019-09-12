@@ -86,6 +86,18 @@ namespace Xenko.Graphics
         /// <param name="dataPointer"></param>
         public unsafe void Recreate(IntPtr dataPointer)
         {
+            // capture vertex information for things less than ~512 verts for possible later easy batching
+            if (dataPointer != IntPtr.Zero &&
+                (ViewFlags == BufferFlags.VertexBuffer && bufferDescription.SizeInBytes <= CaptureVertexBuffersOfSize ||
+                 ViewFlags == BufferFlags.IndexBuffer && bufferDescription.SizeInBytes <= CaptureIndexBuffersOfSize))
+            {
+                VertIndexData = new byte[Description.SizeInBytes];
+                fixed (byte* vid = &VertIndexData[0])
+                {
+                    Utilities.CopyMemory((IntPtr)vid, dataPointer, VertIndexData.Length);
+                }
+            } else VertIndexData = null;
+
             var createInfo = new BufferCreateInfo
             {
                 StructureType = StructureType.BufferCreateInfo,
