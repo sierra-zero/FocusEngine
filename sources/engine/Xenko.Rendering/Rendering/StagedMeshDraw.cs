@@ -2,12 +2,16 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Text;
+using Xenko.Core;
 using Xenko.Graphics;
 
 namespace Xenko.Rendering.Rendering {
     public class StagedMeshDraw : MeshDraw {
 
         public Action<GraphicsDevice> performStage;
+
+        public uint[] Indicies { get; private set; }
+        public object Verticies { get; private set; }
 
         private StagedMeshDraw() { }
         private static object StagedLock = new object();
@@ -23,6 +27,8 @@ namespace Xenko.Rendering.Rendering {
             StagedMeshDrawTyped<T> smdt = new StagedMeshDrawTyped<T>();
             smdt.PrimitiveType = PrimitiveType.TriangleList;
             smdt.DrawCount = indexBuffer.Length;
+            smdt.Indicies = indexBuffer;
+            smdt.Verticies = vertexBuffer;
             smdt.performStage = (GraphicsDevice graphicsDevice) => {
                 if (StagedMeshDrawTyped<T>.CachedBuffers.TryGetValue(vertexBuffer, out object[] bufferBindings)) {
                     smdt.VertexBuffers = (VertexBufferBinding[])bufferBindings[0];
@@ -32,12 +38,12 @@ namespace Xenko.Rendering.Rendering {
                     lock (StagedLock) {
                         vbo = Xenko.Graphics.Buffer.Vertex.New<T>(
                             graphicsDevice,
-                            vertexBuffer,
+                            (T[])smdt.Verticies,
                             GraphicsResourceUsage.Immutable
                         );
                         ibo = Xenko.Graphics.Buffer.Index.New<uint>(
                             graphicsDevice,
-                            indexBuffer
+                            smdt.Indicies
                         );
                     }
                     object[] o = new object[2];
@@ -47,7 +53,7 @@ namespace Xenko.Rendering.Rendering {
                     IndexBufferBinding ibb = new IndexBufferBinding(ibo, true, smdt.DrawCount);
                     o[0] = vbb;
                     o[1] = ibb;
-                    StagedMeshDrawTyped<T>.CachedBuffers.TryAdd(vertexBuffer, o);
+                    StagedMeshDrawTyped<T>.CachedBuffers.TryAdd((T[])smdt.Verticies, o);
                     smdt.VertexBuffers = vbb;
                     smdt.IndexBuffer = ibb;
                 }

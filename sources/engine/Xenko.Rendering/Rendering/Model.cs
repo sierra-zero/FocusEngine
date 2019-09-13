@@ -30,21 +30,12 @@ namespace Xenko.Rendering
     {
         private List<Mesh> meshes = new List<Mesh>();
         private readonly List<MaterialInstance> materials = new List<MaterialInstance>();
-        private IList<Model> children;
-        private Model parent;
 
         /// <summary>
-        /// Gets the views.
+        /// This really has no use, but required for serialization backwards compatibility.
         /// </summary>
-        /// <value>
-        /// The views.
-        /// </value>
         [MemberCollection(NotNullItems = true)]
-        public IList<Model> Children
-        {
-            get { return children; }
-            set { children = value; }
-        }
+        public IList<Model> Children { get; set; }
 
         /// <summary>
         /// Gets the materials.
@@ -93,22 +84,6 @@ namespace Xenko.Rendering
         /// <value>The bounding sphere.</value>
         public BoundingSphere BoundingSphere { get; set; }
 
-        // Temporarily removed
-        //[DataMemberConvert]
-        //public ParameterCollection Parameters
-        //{
-        //    get { return parameters; }
-        //}
-
-        /// <summary>
-        /// Adds the specified model view (for collection Initializers).
-        /// </summary>
-        /// <param name="model">The model view.</param>
-        public void Add(Model model)
-        {
-            if (model != null) children.Add(model);
-        }
-
         /// <summary>
         /// Adds the specified mesh (for collection Initializers).
         /// </summary>
@@ -116,6 +91,28 @@ namespace Xenko.Rendering
         public void Add(Mesh mesh)
         {
             if (mesh != null) Meshes.Add(mesh);
+        }
+
+        /// <summary>
+        /// Merges models
+        /// </summary>
+        /// <param name="model">Model to merge</param>
+        public void Add(Model model, bool updateBoundingBox = true)
+        {
+            if (model != null)
+            {
+                for (int i=0; i<model.meshes.Count; i++)
+                {
+                    Add(model.meshes[i]);
+                }
+                for (int i=0; i<model.materials.Count; i++)
+                {
+                    Add(model.materials[i]);
+                }
+
+                if (Skeleton == null) Skeleton = model.Skeleton;
+                if (updateBoundingBox) UpdateBoundingBox();
+            }
         }
 
         /// <summary>
@@ -133,20 +130,38 @@ namespace Xenko.Rendering
         }
 
         /// <summary>
+        /// Takes all meshes and updates my bounding box accordingly
+        /// </summary>
+        public void UpdateBoundingBox()
+        {
+            //handle boundng box/sphere for whole model
+            BoundingBox bb = new BoundingBox(new Vector3(float.PositiveInfinity, float.PositiveInfinity, float.PositiveInfinity),
+                                             new Vector3(float.NegativeInfinity, float.NegativeInfinity, float.NegativeInfinity));
+
+            for (int i = 0; i < meshes.Count; i++)
+            {
+                Vector3 max = meshes[i].BoundingBox.Maximum;
+                Vector3 min = meshes[i].BoundingBox.Minimum;
+
+                // update bounding box?
+                if (max.X > bb.Maximum.X) bb.Maximum.X = max.X;
+                if (max.Y > bb.Maximum.Y) bb.Maximum.Y = max.Y;
+                if (max.Z > bb.Maximum.Z) bb.Maximum.Z = max.Z;
+                if (min.X < bb.Minimum.X) bb.Minimum.X = min.X;
+                if (min.Y < bb.Minimum.Y) bb.Minimum.Y = min.Y;
+                if (min.Z < bb.Minimum.Z) bb.Minimum.Z = min.Z;
+            }
+
+            BoundingBox = bb;
+        }
+
+        /// <summary>
         /// Create a clone with its own ParameterCollection.
         /// It allows reuse of a single Model for multiple ModelComponent.
         /// </summary>
         public Model Instantiate()
         {
             var result = new Model();
-            if (Children != null)
-            {
-                result.Children = new List<Model>();
-                foreach (var child in Children)
-                {
-                    result.Children.Add(child.Instantiate());
-                }
-            }
 
             foreach (var mesh in Meshes)
             {
@@ -158,24 +173,6 @@ namespace Xenko.Rendering
             result.BoundingBox = BoundingBox;
 
             return result;
-        }
-
-        private void Children_CollectionChanged(object sender, TrackingCollectionChangedEventArgs e)
-        {
-            var child = (Model)e.Item;
-            switch (e.Action)
-            {
-                case NotifyCollectionChangedAction.Add:
-                    if (child.parent != null)
-                        throw new InvalidOperationException("Model already have a parent.");
-                    child.parent = this;
-                    break;
-                case NotifyCollectionChangedAction.Remove:
-                    if (child.parent != this)
-                        throw new InvalidOperationException("Model doesn't have expected parent.");
-                    child.parent = null;
-                    break;
-            }
         }
     }
 }

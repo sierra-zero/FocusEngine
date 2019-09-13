@@ -86,7 +86,7 @@ namespace Xenko.Engine
             //actually create the mesh
             List<VertexPositionNormalTexture> vertsNT = null;
             List<VertexPositionNormalColor> vertsNC = null;
-            List<uint> indicies = new List<uint>();
+            List<uint> indiciesList = new List<uint>();
             BoundingBox bb = new BoundingBox(new Vector3(float.PositiveInfinity, float.PositiveInfinity, float.PositiveInfinity),
                                              new Vector3(float.NegativeInfinity, float.NegativeInfinity, float.NegativeInfinity));
             uint indexOffset = 0;
@@ -101,21 +101,112 @@ namespace Xenko.Engine
                     //process only right material
                     if (modelMesh.MaterialIndex == chunk.MaterialIndex)
                     {
+                        Vector3[] positions = null, normals = null;
+                        Vector2[] uvs = null;
+                        Color4[] colors = null;
+
                         //vertexes
-                        Xenko.Graphics.Buffer buf = modelMesh.Draw?.VertexBuffers[0].Buffer;
-                        Xenko.Graphics.Buffer ibuf = modelMesh.Draw?.IndexBuffer.Buffer;
-                        if (buf == null || buf.VertIndexData == null ||
-                            ibuf == null || ibuf.VertIndexData == null)
+                        if (modelMesh.Draw is StagedMeshDraw)
                         {
-                            if (unbatched != null) unbatched.Add(chunk.Entity);
-                            continue;
+                            StagedMeshDraw smd = modelMesh.Draw as StagedMeshDraw;
+
+                            object verts = smd.Verticies;
+
+                            if (verts is VertexPositionNormalColor[])
+                            {
+                                VertexPositionNormalColor[] vpnc = verts as VertexPositionNormalColor[];
+                                positions = new Vector3[vpnc.Length];
+                                normals = new Vector3[vpnc.Length];
+                                colors = new Color4[vpnc.Length];
+                                for (int k = 0; k < vpnc.Length; k++)
+                                {
+                                    positions[k] = vpnc[k].Position;
+                                    normals[k] = vpnc[k].Normal;
+                                    colors[k] = vpnc[k].Color;
+                                }
+                            }
+                            else if (verts is VertexPositionNormalTexture[])
+                            {
+                                VertexPositionNormalTexture[] vpnc = verts as VertexPositionNormalTexture[];
+                                positions = new Vector3[vpnc.Length];
+                                normals = new Vector3[vpnc.Length];
+                                uvs = new Vector2[vpnc.Length];
+                                for (int k = 0; k < vpnc.Length; k++)
+                                {
+                                    positions[k] = vpnc[k].Position;
+                                    normals[k] = vpnc[k].Normal;
+                                    uvs[k] = vpnc[k].TextureCoordinate;
+                                }
+                            }
+                            else
+                            {
+                                // unsupported StagedMeshDraw
+                                if (unbatched != null) unbatched.Add(chunk.Entity);
+                                continue;
+                            }
+
+                            // take care of indicies
+                            for (int k = 0; k < smd.Indicies.Length; k++) indiciesList.Add(smd.Indicies[k] + indexOffset);
+                        }
+                        else
+                        {
+                            Xenko.Graphics.Buffer buf = modelMesh.Draw?.VertexBuffers[0].Buffer;
+                            Xenko.Graphics.Buffer ibuf = modelMesh.Draw?.IndexBuffer.Buffer;
+                            if (buf == null || buf.VertIndexData == null ||
+                                ibuf == null || ibuf.VertIndexData == null)
+                            {
+                                if (unbatched != null) unbatched.Add(chunk.Entity);
+                                continue;
+                            }
+
+                            if (UnpackRawVertData(buf.VertIndexData, modelMesh.Draw.VertexBuffers[0].Declaration,
+                                                  out positions, out normals, out uvs, out colors) == false)
+                            {
+                                if (unbatched != null) unbatched.Add(chunk.Entity);
+                                continue;
+                            }
+
+                            if (indiciesList == null) indiciesList = new List<uint>();
+
+                            // indicies
+                            fixed (byte* pdst = ibuf.VertIndexData)
+                            {
+                                if (modelMesh.Draw.IndexBuffer.Is32Bit)
+                                {
+                                    var dst = (uint*)pdst;
+
+                                    int numIndices = ibuf.VertIndexData.Length / sizeof(uint);
+                                    for (var k = 0; k < numIndices; k++)
+                                    {
+                                        // Offset indices
+                                        indiciesList.Add(dst[k] + indexOffset);
+                                    }
+                                }
+                                else
+                                {
+                                    var dst = (ushort*)pdst;
+
+                                    int numIndices = ibuf.VertIndexData.Length / sizeof(ushort);
+                                    for (var k = 0; k < numIndices; k++)
+                                    {
+                                        // Offset indices
+                                        indiciesList.Add(dst[k] + indexOffset);
+                                    }
+                                }
+                            }
                         }
 
-                        if (UnpackRawVertData(buf.VertIndexData, modelMesh.Draw.VertexBuffers[0].Declaration,
-                                              out Vector3[] positions, out Vector3[] normals, out Vector2[] uvs, out Color4[] colors) == false)
+                        // what kind of structure will we be making, if we haven't picked one already?
+                        if (vertsNT == null && vertsNC == null)
                         {
-                            if (unbatched != null) unbatched.Add(chunk.Entity);
-                            continue;
+                            if (uvs != null)
+                            {
+                                vertsNT = new List<VertexPositionNormalTexture>();
+                            }
+                            else
+                            {
+                                vertsNC = new List<VertexPositionNormalColor>();
+                            }
                         }
 
                         // transform verts/norms by matrix
@@ -134,60 +225,24 @@ namespace Xenko.Engine
                             if (pos.Z < bb.Minimum.Z) bb.Minimum.Z = pos.Z;
 
                             if (normals != null) Vector3.TransformNormal(ref normals[k], ref worldMatrix, out normals[k]);
-                        }
 
-                        // what kind of structure should we make?
-                        if (uvs != null)
-                        {
-                            if (vertsNT == null) vertsNT = new List<VertexPositionNormalTexture>();
-                            for (int k = 0; k < positions.Length; k++)
-                            {
+                            if (vertsNT != null)
+                            { 
                                 vertsNT.Add(new VertexPositionNormalTexture
                                 {
                                     Position = positions[k],
-                                    Normal = normals != null ? normals[k] : Vector3.Zero,
+                                    Normal = normals != null ? normals[k] : Vector3.UnitY,
                                     TextureCoordinate = uvs[k]
                                 });
                             }
-                        }
-                        else
-                        {
-                            if (vertsNC == null) vertsNC = new List<VertexPositionNormalColor>();
-                            for (int k = 0; k < positions.Length; k++)
+                            else
                             {
                                 vertsNC.Add(new VertexPositionNormalColor
                                 {
                                     Position = positions[k],
-                                    Normal = normals != null ? normals[k] : Vector3.Zero,
+                                    Normal = normals != null ? normals[k] : Vector3.UnitY,
                                     Color = colors != null ? colors[k] : Color4.White
                                 });
-                            }
-                        }
-
-                        // indicies
-                        fixed (byte* pdst = ibuf.VertIndexData)
-                        {
-                            if (modelMesh.Draw.IndexBuffer.Is32Bit)
-                            {
-                                var dst = (uint*)pdst;
-
-                                int numIndices = ibuf.VertIndexData.Length / sizeof(uint);
-                                for (var k = 0; k < numIndices; k++)
-                                {
-                                    // Offset indices
-                                    indicies.Add(dst[k] + indexOffset);
-                                }
-                            }
-                            else
-                            {
-                                var dst = (ushort*)pdst;
-
-                                int numIndices = ibuf.VertIndexData.Length / sizeof(ushort);
-                                for (var k = 0; k < numIndices; k++)
-                                {
-                                    // Offset indices
-                                    indicies.Add(dst[k] + indexOffset);
-                                }
                             }
                         }
 
@@ -196,18 +251,19 @@ namespace Xenko.Engine
                 }
             }
 
-            if (indicies.Count <= 0) return;
+            if (indiciesList.Count <= 0) return;
+
+            uint[] indicies = indiciesList.ToArray();
 
             // make stagedmesh with verts
-            uint[] iarray = indicies.ToArray();
             StagedMeshDraw md;
             if (vertsNT != null)
             {
-                md = StagedMeshDraw.MakeStagedMeshDraw<VertexPositionNormalTexture>(iarray, vertsNT.ToArray(), VertexPositionNormalTexture.Layout);
+                md = StagedMeshDraw.MakeStagedMeshDraw<VertexPositionNormalTexture>(indicies, vertsNT.ToArray(), VertexPositionNormalTexture.Layout);
             }
             else if (vertsNC != null)
             {
-                md = StagedMeshDraw.MakeStagedMeshDraw<VertexPositionNormalColor>(iarray, vertsNC.ToArray(), VertexPositionNormalColor.Layout);
+                md = StagedMeshDraw.MakeStagedMeshDraw<VertexPositionNormalColor>(indicies, vertsNC.ToArray(), VertexPositionNormalColor.Layout);
             }
             else return;
 
@@ -265,6 +321,19 @@ namespace Xenko.Engine
             // return how many things we were able to batch
             return allEs.Count;
         }
+        
+        private static bool ModelOKForBatching(Model model)
+        {
+            if (model == null) return false;
+            for (int i = 0; i < model.Meshes.Count; i++)
+            {
+                Mesh m = model.Meshes[i];
+                if (m.Draw.PrimitiveType != PrimitiveType.TriangleList ||
+                    m.Draw.VertexBuffers == null && m.Draw is StagedMeshDraw == false ||
+                    m.Draw.VertexBuffers != null && m.Draw.VertexBuffers.Length != 1) return false;
+            }
+            return true;
+        }
 
         /// <summary>
         /// Generate a batched model. Copies the model to all positions in listOfTransforms into one batched model.
@@ -274,11 +343,7 @@ namespace Xenko.Engine
         /// <returns>Returns batched model. Null if model coouldn't be made, like if buffers for meshes couldn't be found</returns>
         public static Model GenerateBatch(Model model, List<Matrix> listOfTransforms)
         {
-            if (model == null ||
-                model.Meshes.Any(x => x.Draw.PrimitiveType != PrimitiveType.TriangleList || x.Draw.VertexBuffers == null || x.Draw.VertexBuffers.Length != 1)) //For now we limit only to TriangleList types and interleaved vertex buffers, also we skip transparent
-            {
-                return null;
-            }
+            if (ModelOKForBatching(model) == false) return null;
 
             var materials = new Dictionary<MaterialInstance, List<EntityChunk>>();
 
@@ -308,22 +373,7 @@ namespace Xenko.Engine
                 ProcessMaterial(material.Value, material.Key, prefabModel);
             }
 
-            //handle boundng box/sphere for whole model
-            BoundingBox bb = new BoundingBox(new Vector3(float.PositiveInfinity, float.PositiveInfinity, float.PositiveInfinity),
-                                             new Vector3(float.NegativeInfinity, float.NegativeInfinity, float.NegativeInfinity));
-            for (int i = 0; i < prefabModel.Meshes.Count; i++)
-            {
-                Vector3 max = prefabModel.Meshes[i].BoundingBox.Maximum;
-                Vector3 min = prefabModel.Meshes[i].BoundingBox.Minimum;
-                // update bounding box?
-                if (max.X > bb.Maximum.X) bb.Maximum.X = max.X;
-                if (max.Y > bb.Maximum.Y) bb.Maximum.Y = max.Y;
-                if (max.Z > bb.Maximum.Z) bb.Maximum.Z = max.Z;
-                if (min.X < bb.Minimum.X) bb.Minimum.X = min.X;
-                if (min.Y < bb.Minimum.Y) bb.Minimum.Y = min.Y;
-                if (min.Z < bb.Minimum.Z) bb.Minimum.Z = min.Z;
-            }
-            prefabModel.BoundingBox = bb;
+            prefabModel.UpdateBoundingBox();
 
             return prefabModel;
         }
@@ -345,6 +395,9 @@ namespace Xenko.Engine
 
             var materials = new Dictionary<MaterialInstance, List<EntityChunk>>();
 
+            // keep track of any entities that couldn't be batched
+            unbatched = new HashSet<Entity>();
+
             foreach (var subEntity in entityList)
             {
                 var modelComponent = subEntity.Get<ModelComponent>();
@@ -354,9 +407,9 @@ namespace Xenko.Engine
 
                 var model = modelComponent.Model;
 
-                if (model == null ||
-                    model.Meshes.Any(x => x.Draw.PrimitiveType != PrimitiveType.TriangleList || x.Draw.VertexBuffers == null || x.Draw.VertexBuffers.Length != 1)) //For now we limit only to TriangleList types and interleaved vertex buffers, also we skip transparent
+                if (ModelOKForBatching(model) == false)
                 {
+                    unbatched.Add(subEntity);
                     continue;
                 }
 
@@ -377,30 +430,12 @@ namespace Xenko.Engine
                 }
             }
 
-            // keep track of any entities that couldn't be batched
-            unbatched = new HashSet<Entity>();
-
             foreach (var material in materials)
             {
                 ProcessMaterial(material.Value, material.Key, prefabModel, unbatched);
             }
 
-            //handle boundng box/sphere for whole model
-            BoundingBox bb = new BoundingBox(new Vector3(float.PositiveInfinity, float.PositiveInfinity, float.PositiveInfinity),
-                                             new Vector3(float.NegativeInfinity, float.NegativeInfinity, float.NegativeInfinity));
-            for (int i = 0; i < prefabModel.Meshes.Count; i++)
-            {
-                Vector3 max = prefabModel.Meshes[i].BoundingBox.Maximum;
-                Vector3 min = prefabModel.Meshes[i].BoundingBox.Minimum;
-                // update bounding box?
-                if (max.X > bb.Maximum.X) bb.Maximum.X = max.X;
-                if (max.Y > bb.Maximum.Y) bb.Maximum.Y = max.Y;
-                if (max.Z > bb.Maximum.Z) bb.Maximum.Z = max.Z;
-                if (min.X < bb.Minimum.X) bb.Minimum.X = min.X;
-                if (min.Y < bb.Minimum.Y) bb.Minimum.Y = min.Y;
-                if (min.Z < bb.Minimum.Z) bb.Minimum.Z = min.Z;
-            }
-            prefabModel.BoundingBox = bb;
+            prefabModel.UpdateBoundingBox();
 
             return prefabModel;
         }
