@@ -23,11 +23,11 @@ namespace Xenko.Engine
     /// </summary>
     public class ModelBatcher
     {
-        private struct EntityChunk
+        private struct BatchingChunk
         {
             public Entity Entity;
             public Model Model;
-            public Matrix Transform;
+            public Matrix? Transform;
             public int MaterialIndex;
         }
 
@@ -81,7 +81,7 @@ namespace Xenko.Engine
             return true;
         }
 
-        private static unsafe void ProcessMaterial(List<EntityChunk> chunks, MaterialInstance material, Model prefabModel, HashSet<Entity> unbatched = null)
+        private static unsafe void ProcessMaterial(List<BatchingChunk> chunks, MaterialInstance material, Model prefabModel, HashSet<Entity> unbatched = null)
         {
             //actually create the mesh
             List<VertexPositionNormalTexture> vertsNT = null;
@@ -92,7 +92,7 @@ namespace Xenko.Engine
             uint indexOffset = 0;
             for (int i = 0; i < chunks.Count; i++)
             {
-                EntityChunk chunk = chunks[i];
+                BatchingChunk chunk = chunks[i];
                 if (unbatched != null && unbatched.Contains(chunk.Entity)) continue; // don't try batching other things in this entity if some failed
                 if (chunk.Entity != null) chunk.Entity.Transform.UpdateWorldMatrix();
                 for (int j = 0; j < chunk.Model.Meshes.Count; j++)
@@ -210,10 +210,11 @@ namespace Xenko.Engine
                         }
 
                         // transform verts/norms by matrix
-                        Matrix worldMatrix = chunk.Entity == null ? chunk.Transform : chunk.Entity.Transform.WorldMatrix;
+                        Matrix worldMatrix = chunk.Entity == null ? (chunk.Transform ?? Matrix.Identity) : chunk.Entity.Transform.WorldMatrix;
+                        bool matrixNeeded = worldMatrix != Matrix.Identity;
                         for (int k = 0; k < positions.Length; k++)
                         {
-                            Vector3.Transform(ref positions[k], ref worldMatrix, out positions[k]);
+                            if (matrixNeeded) Vector3.Transform(ref positions[k], ref worldMatrix, out positions[k]);
 
                             // update bounding box?
                             Vector3 pos = positions[k];
@@ -224,7 +225,7 @@ namespace Xenko.Engine
                             if (pos.Y < bb.Minimum.Y) bb.Minimum.Y = pos.Y;
                             if (pos.Z < bb.Minimum.Z) bb.Minimum.Z = pos.Z;
 
-                            if (normals != null) Vector3.TransformNormal(ref normals[k], ref worldMatrix, out normals[k]);
+                            if (normals != null && matrixNeeded) Vector3.TransformNormal(ref normals[k], ref worldMatrix, out normals[k]);
 
                             if (vertsNT != null)
                             { 
@@ -285,7 +286,7 @@ namespace Xenko.Engine
         }
 
         /// <summary>
-        /// Takes an Entity tree and does its best to batch all the children into one entity. Automatically removes batched entities.
+        /// Takes an Entity tree and does its best to batch itself and children into one entity. Automatically removes batched entities.
         /// </summary>
         /// <param name="root">The root entity to batch from and merge into</param>
         /// <returns>Returns the number of successfully batched and removed entities</returns>
@@ -345,7 +346,7 @@ namespace Xenko.Engine
         {
             if (ModelOKForBatching(model) == false) return null;
 
-            var materials = new Dictionary<MaterialInstance, List<EntityChunk>>();
+            var materials = new Dictionary<MaterialInstance, List<BatchingChunk>>();
 
             for (var index = 0; index < model.Materials.Count; index++)
             {
@@ -353,7 +354,7 @@ namespace Xenko.Engine
 
                 for (int i = 0; i < listOfTransforms.Count; i++)
                 {
-                    var chunk = new EntityChunk { Entity = null, Model = model, MaterialIndex = index, Transform = listOfTransforms[i] };
+                    var chunk = new BatchingChunk { Entity = null, Model = model, MaterialIndex = index, Transform = listOfTransforms[i] };
 
                     if (materials.TryGetValue(material, out var entities))
                     {
@@ -361,8 +362,47 @@ namespace Xenko.Engine
                     }
                     else
                     {
-                        materials[material] = new List<EntityChunk> { chunk };
+                        materials[material] = new List<BatchingChunk> { chunk };
                     }
+                }
+            }
+
+            Model prefabModel = new Model();
+
+            foreach (var material in materials)
+            {
+                ProcessMaterial(material.Value, material.Key, prefabModel);
+            }
+
+            prefabModel.UpdateBoundingBox();
+
+            return prefabModel;
+        }
+
+        /// <summary>
+        /// Batches a model by trying to combine meshes and materials in the model
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        public static Model BatchModel(Model model)
+        {
+            if (ModelOKForBatching(model) == false) return model;
+
+            var materials = new Dictionary<MaterialInstance, List<BatchingChunk>>();
+
+            for (var index = 0; index < model.Materials.Count; index++)
+            {
+                var material = model.Materials[index];
+
+                var chunk = new BatchingChunk { Entity = null, Model = model, MaterialIndex = index, Transform = null };
+
+                if (materials.TryGetValue(material, out var entities))
+                {
+                    entities.Add(chunk);
+                }
+                else
+                {
+                    materials[material] = new List<BatchingChunk> { chunk };
                 }
             }
 
@@ -393,7 +433,7 @@ namespace Xenko.Engine
             //1. We group by materials
             //2. Create a mesh per material (might need still more meshes if 16bit indexes or more then 32bit)
 
-            var materials = new Dictionary<MaterialInstance, List<EntityChunk>>();
+            var materials = new Dictionary<MaterialInstance, List<BatchingChunk>>();
 
             // keep track of any entities that couldn't be batched
             unbatched = new HashSet<Entity>();
@@ -417,7 +457,7 @@ namespace Xenko.Engine
                 {
                     var material = model.Materials[index];
 
-                    var chunk = new EntityChunk { Entity = subEntity, Model = model, MaterialIndex = index };
+                    var chunk = new BatchingChunk { Entity = subEntity, Model = model, MaterialIndex = index };
 
                     if (materials.TryGetValue(material, out var entities))
                     {
@@ -425,7 +465,7 @@ namespace Xenko.Engine
                     }
                     else
                     {
-                        materials[material] = new List<EntityChunk> { chunk };
+                        materials[material] = new List<BatchingChunk> { chunk };
                     }
                 }
             }
