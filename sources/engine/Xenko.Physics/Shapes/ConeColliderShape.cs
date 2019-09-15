@@ -22,7 +22,7 @@ namespace Xenko.Physics
         /// <param name="orientation">Up axis.</param>
         /// <param name="radius">The radius of the cone</param>
         /// <param name="height">The height of the cone</param>
-        public ConeColliderShape(float heightParam, float radiusParam, ShapeOrientation orientationParam)
+        public ConeColliderShape(float heightParam, float radiusParam, ShapeOrientation orientationParam, Vector3? offset = null, Quaternion? localrot = null)
         {
             Type = ColliderShapeTypes.Cone;
             Is2D = false; //always false for cone
@@ -62,6 +62,13 @@ namespace Xenko.Physics
             }
 
             DebugPrimitiveMatrix = Matrix.Scaling(new Vector3(Radius * 2, Height, Radius * 2) * DebugScaling) * rotation;
+
+            if (offset.HasValue || localrot.HasValue)
+            {
+                LocalOffset = offset ?? Vector3.Zero;
+                LocalRotation = localrot ?? Quaternion.Identity;
+                UpdateLocalTransformations();
+            }
         }
 
         public override MeshDraw CreateDebugPrimitive(GraphicsDevice device)

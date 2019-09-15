@@ -18,7 +18,7 @@ namespace Xenko.Physics
         /// </summary>
         /// <param name="is2D">if set to <c>true</c> [is2 d].</param>
         /// <param name="radius">The radius.</param>
-        public SphereColliderShape(bool is2D, float radiusParam)
+        public SphereColliderShape(bool is2D, float radiusParam, Vector3? offset = null)
         {
             Type = ColliderShapeTypes.Sphere;
             Is2D = is2D;
@@ -44,6 +44,12 @@ namespace Xenko.Physics
             if (Is2D)
             {
                 DebugPrimitiveMatrix.M33 = 0f;
+            }
+
+            if (offset.HasValue)
+            {
+                LocalOffset = offset.Value;
+                UpdateLocalTransformations();
             }
         }
 

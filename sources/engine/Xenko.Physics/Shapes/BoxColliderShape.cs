@@ -18,7 +18,7 @@ namespace Xenko.Physics
         /// </summary>
         /// <param name="is2D">If this cube is a 2D quad</param>
         /// <param name="size">The size of the cube</param>
-        public BoxColliderShape(bool is2D, Vector3 size)
+        public BoxColliderShape(bool is2D, Vector3 size, Vector3? offset = null, Quaternion? localrot = null)
         {
             Type = ColliderShapeTypes.Box;
             Is2D = is2D;
@@ -45,6 +45,13 @@ namespace Xenko.Physics
             }
 
             DebugPrimitiveMatrix = Matrix.Scaling(size * DebugScaling);
+
+            if (offset.HasValue || localrot.HasValue)
+            {
+                LocalOffset = offset ?? Vector3.Zero;
+                LocalRotation = localrot ?? Quaternion.Identity;
+                UpdateLocalTransformations();
+            }
         }
 
         public override MeshDraw CreateDebugPrimitive(GraphicsDevice device)

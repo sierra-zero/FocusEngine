@@ -24,7 +24,7 @@ namespace Xenko.Physics
         /// <param name="radius">The radius.</param>
         /// <param name="length">The length of the capsule.</param>
         /// <param name="orientation">Up axis.</param>
-        public CapsuleColliderShape(bool is2D, float radius, float length, ShapeOrientation orientation)
+        public CapsuleColliderShape(bool is2D, float radius, float length, ShapeOrientation orientation, Vector3? offset = null, Quaternion? localrot = null)
         {
             Type = ColliderShapeTypes.Capsule;
             Is2D = is2D;
@@ -71,6 +71,13 @@ namespace Xenko.Physics
             InternalShape = Is2D ? (CollisionShape)new Convex2DShape(shape) { LocalScaling = cachedScaling } : shape;
 
             DebugPrimitiveMatrix = Matrix.Scaling(new Vector3(DebugScaling)) * rotation;
+
+            if (offset.HasValue || localrot.HasValue)
+            {
+                LocalOffset = offset ?? Vector3.Zero;
+                LocalRotation = localrot ?? Quaternion.Identity;
+                UpdateLocalTransformations();
+            }
         }
 
         public override MeshDraw CreateDebugPrimitive(GraphicsDevice device)
