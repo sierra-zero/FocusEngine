@@ -37,12 +37,13 @@ namespace Xenko.Engine
         /// <returns>Returns true if some data was successful in extraction</returns>
         public static unsafe bool UnpackRawVertData(byte[] data, VertexDeclaration declaration,
                                                     out Vector3[] positions, out Vector3[] normals,
-                                                    out Vector2[] uvs, out Color4[] colors)
+                                                    out Vector2[] uvs, out Color4[] colors, out Vector4[] tangents)
         {
             positions = null;
             normals = null;
             uvs = null;
             colors = null;
+            tangents = null;
             if (data == null || declaration == null || data.Length <= 0) return false;
             VertexElement[] elements = declaration.VertexElements;
             int totalEntries = data.Length / declaration.VertexStride;
@@ -74,6 +75,10 @@ namespace Xenko.Engine
                                 if (uvs == null) uvs = new Vector2[totalEntries];
                                 uvs[vertindex] = *(Vector2*)&dp[offset + eoffsets[i]];
                                 break;
+                            case "TANGENT":
+                                if (tangents == null) tangents = new Vector4[totalEntries];
+                                tangents[vertindex] = *(Vector4*)&dp[offset + eoffsets[i]];
+                                break;
                         }
                     }
                 }
@@ -84,7 +89,7 @@ namespace Xenko.Engine
         private static unsafe void ProcessMaterial(List<BatchingChunk> chunks, MaterialInstance material, Model prefabModel, HashSet<Entity> unbatched = null)
         {
             //actually create the mesh
-            List<VertexPositionNormalTexture> vertsNT = null;
+            List<VertexPositionNormalTextureTangent> vertsNT = null;
             List<VertexPositionNormalColor> vertsNC = null;
             List<uint> indiciesList = new List<uint>();
             BoundingBox bb = new BoundingBox(new Vector3(float.PositiveInfinity, float.PositiveInfinity, float.PositiveInfinity),
@@ -102,6 +107,7 @@ namespace Xenko.Engine
                     if (modelMesh.MaterialIndex == chunk.MaterialIndex)
                     {
                         Vector3[] positions = null, normals = null;
+                        Vector4[] tangents = null;
                         Vector2[] uvs = null;
                         Color4[] colors = null;
 
@@ -138,6 +144,21 @@ namespace Xenko.Engine
                                     uvs[k] = vpnc[k].TextureCoordinate;
                                 }
                             }
+                            else if (verts is VertexPositionNormalTextureTangent[])
+                            {
+                                VertexPositionNormalTextureTangent[] vpnc = verts as VertexPositionNormalTextureTangent[];
+                                positions = new Vector3[vpnc.Length];
+                                normals = new Vector3[vpnc.Length];
+                                uvs = new Vector2[vpnc.Length];
+                                tangents = new Vector4[vpnc.Length];
+                                for (int k = 0; k < vpnc.Length; k++)
+                                {
+                                    positions[k] = vpnc[k].Position;
+                                    normals[k] = vpnc[k].Normal;
+                                    uvs[k] = vpnc[k].TextureCoordinate;
+                                    tangents[k] = vpnc[k].Tangent;
+                                }
+                            }
                             else
                             {
                                 // unsupported StagedMeshDraw
@@ -160,7 +181,7 @@ namespace Xenko.Engine
                             }
 
                             if (UnpackRawVertData(buf.VertIndexData, modelMesh.Draw.VertexBuffers[0].Declaration,
-                                                  out positions, out normals, out uvs, out colors) == false)
+                                                  out positions, out normals, out uvs, out colors, out tangents) == false)
                             {
                                 if (unbatched != null) unbatched.Add(chunk.Entity);
                                 continue;
@@ -201,7 +222,7 @@ namespace Xenko.Engine
                         {
                             if (uvs != null)
                             {
-                                vertsNT = new List<VertexPositionNormalTexture>();
+                                vertsNT = new List<VertexPositionNormalTextureTangent>();
                             }
                             else
                             {
@@ -225,15 +246,19 @@ namespace Xenko.Engine
                             if (pos.Y < bb.Minimum.Y) bb.Minimum.Y = pos.Y;
                             if (pos.Z < bb.Minimum.Z) bb.Minimum.Z = pos.Z;
 
-                            if (normals != null && matrixNeeded) Vector3.TransformNormal(ref normals[k], ref worldMatrix, out normals[k]);
+                            if (normals != null && matrixNeeded && worldMatrix.GetRotationMatrix(out Matrix rot))
+                            {
+                                Vector3.TransformNormal(ref normals[k], ref rot, out normals[k]);
+                            }
 
                             if (vertsNT != null)
-                            { 
-                                vertsNT.Add(new VertexPositionNormalTexture
+                            {
+                                vertsNT.Add(new VertexPositionNormalTextureTangent
                                 {
                                     Position = positions[k],
                                     Normal = normals != null ? normals[k] : Vector3.UnitY,
-                                    TextureCoordinate = uvs[k]
+                                    TextureCoordinate = uvs[k],
+                                    Tangent = tangents != null ? tangents[k] : Vector4.UnitW
                                 });
                             }
                             else
@@ -260,7 +285,7 @@ namespace Xenko.Engine
             StagedMeshDraw md;
             if (vertsNT != null)
             {
-                md = StagedMeshDraw.MakeStagedMeshDraw<VertexPositionNormalTexture>(indicies, vertsNT.ToArray(), VertexPositionNormalTexture.Layout);
+                md = StagedMeshDraw.MakeStagedMeshDraw<VertexPositionNormalTextureTangent>(indicies, vertsNT.ToArray(), VertexPositionNormalTextureTangent.Layout);
             }
             else if (vertsNC != null)
             {
