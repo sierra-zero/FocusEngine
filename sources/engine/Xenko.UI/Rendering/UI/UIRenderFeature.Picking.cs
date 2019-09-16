@@ -238,7 +238,12 @@ namespace Xenko.Rendering.UI
         /// <summary>
         /// If a VR controller is pointing at a UIElement, this will be set with it. null otherwise.
         /// </summary>
-        public static UIElement UIElementUnderMouseCursor { get; private set; }
+        public static UIElement UIElementVivePointed { get; private set; } 
+
+        /// <summary>
+        /// If a pointer is pointed at an UIElement, it will be set here
+        /// </summary>
+        public UIElement UIElementUnderMouseCursor { get; private set; }
 
         private bool UpdateMouseOver(ref Viewport viewport, ref Matrix worldViewProj, RenderUIElement state, GameTime time)
         {
@@ -263,7 +268,7 @@ namespace Xenko.Rendering.UI
                     {
                         Ray uiRay = new Ray(useHand.WorldPosition(), useHand.Forward(true));
 
-                        UIElementUnderMouseCursor = GetElementAtWorldPosition(rootElement, ref uiRay, ref worldViewProj, ref intersectionPoint);
+                        UIElementVivePointed = UIElementUnderMouseCursor = GetElementAtWorldPosition(rootElement, ref uiRay, ref worldViewProj, ref intersectionPoint);
 
                         if (UIElementUnderMouseCursor != null)
                         {
