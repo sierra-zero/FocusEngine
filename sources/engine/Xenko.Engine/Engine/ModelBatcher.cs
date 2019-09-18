@@ -443,6 +443,15 @@ namespace Xenko.Engine
             return prefabModel;
         }
 
+        private static MaterialInstance ExtractMaterialInstance(ModelComponent mc, int index)
+        {
+            if (mc.Materials.Count <= index ||
+                mc.Materials[index] == null)
+                return mc.Model.Materials[index];
+
+            return new MaterialInstance() { IsShadowCaster = mc.IsShadowCaster, Material = mc.Materials[index] };
+        }
+
         /// <summary>
         /// Returns a model that batches as much as possible from all of the entities in the list. Any entities that couldn't be batched into
         /// the model will be added to unbatched. Entities may not get batched if underlying buffer data couldn't be found to batch with
@@ -478,9 +487,12 @@ namespace Xenko.Engine
                     continue;
                 }
 
-                for (var index = 0; index < model.Materials.Count; index++)
+                int materialCount = Math.Max(model.Materials.Count, modelComponent.Materials.Count);
+                for (var index = 0; index < materialCount; index++)
                 {
-                    var material = model.Materials[index];
+                    var material = ExtractMaterialInstance(modelComponent, index);
+
+                    if (material == null) continue;
 
                     var chunk = new BatchingChunk { Entity = subEntity, Model = model, MaterialIndex = index };
 
