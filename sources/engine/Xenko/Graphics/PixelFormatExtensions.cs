@@ -40,7 +40,7 @@ namespace Xenko.Graphics
         private static readonly bool[] alpha32Formats = new bool[256];
         private static readonly bool[] typelessFormats = new bool[256];
         private static readonly Dictionary<PixelFormat, PixelFormat> sRgbConvertion;
-        
+
         private static int GetIndex(PixelFormat format)
         {
             // DirectX official pixel formats (0..115 use 0..127 in the arrays)
@@ -150,6 +150,8 @@ namespace Xenko.Graphics
 
                 case PixelFormat.ETC2_RGBA:
                 case PixelFormat.ETC2_RGBA_SRgb:
+                case PixelFormat.ASTC_RGBA_4X4:
+                case PixelFormat.ASTC_RGBA_4X4_SRgb:
                     return 8;
 
                 case PixelFormat.ETC2_RGB_A1:
@@ -174,7 +176,8 @@ namespace Xenko.Graphics
             return ((int)(format) >= 1 && (int)(format) <= 115) // DirectX formats
                 || ((int)(format) >= 1024 && (int)(format) <= 1033) // PVRTC formats
                 || ((int)(format) >= 1088 && (int)(format) <= 1097) // ETC formats
-                || ((int)(format) >= 1120 && (int)(format) <= 1122); // ATITC formats
+                || ((int)(format) >= 1120 && (int)(format) <= 1122) // ATITC formats
+                || ((int)(format) >= 1130 && (int)(format) <= 1131); // ASTC formats
         }
 
         /// <summary>
@@ -341,13 +344,15 @@ namespace Xenko.Graphics
                 case PixelFormat.ATC_RGB:
                 case PixelFormat.ATC_RGBA_Explicit:
                 case PixelFormat.ATC_RGBA_Interpolated:
+                case PixelFormat.ASTC_RGBA_4X4:
+                case PixelFormat.ASTC_RGBA_4X4_SRgb:
                     return Math.Max(1, (height + 3) / 4);
 
                 default:
                     return height;
             }
         }
-        
+
         /// <summary>
         /// Determine if the format has an equivalent sRGB format.
         /// </summary>
@@ -483,7 +488,7 @@ namespace Xenko.Graphics
             InitFormat(new[] { PixelFormat.A8_UNorm, PixelFormat.R8_SInt, PixelFormat.R8_SNorm, PixelFormat.R8_Typeless, PixelFormat.R8_UInt, PixelFormat.R8_UNorm }, 8);
 
             InitFormat(new[]
-            { 
+            {
                 PixelFormat.B5G5R5A1_UNorm,
                 PixelFormat.B5G6R5_UNorm,
                 PixelFormat.D16_UNorm,
@@ -501,10 +506,12 @@ namespace Xenko.Graphics
 #if DIRECTX11_1
                 PixelFormat.B4G4R4A4_UNorm,
 #endif
+                PixelFormat.ASTC_RGBA_4X4,
+                PixelFormat.ASTC_RGBA_4X4_SRgb,
             }, 16);
 
             InitFormat(new[]
-            { 
+            {
                 PixelFormat.B8G8R8X8_Typeless,
                 PixelFormat.B8G8R8X8_UNorm,
                 PixelFormat.B8G8R8X8_UNorm_SRgb,
@@ -546,7 +553,7 @@ namespace Xenko.Graphics
             }, 32);
 
             InitFormat(new[]
-            { 
+            {
                 PixelFormat.R16G16B16A16_Float,
                 PixelFormat.R16G16B16A16_SInt,
                 PixelFormat.R16G16B16A16_SNorm,
@@ -561,7 +568,7 @@ namespace Xenko.Graphics
             }, 64);
 
             InitFormat(new[]
-            { 
+            {
                 PixelFormat.R32G32B32_Float,
                 PixelFormat.R32G32B32_SInt,
                 PixelFormat.R32G32B32_Typeless,
@@ -569,7 +576,7 @@ namespace Xenko.Graphics
             }, 96);
 
             InitFormat(new[]
-            { 
+            {
                 PixelFormat.R32G32B32A32_Float,
                 PixelFormat.R32G32B32A32_SInt,
                 PixelFormat.R32G32B32A32_Typeless,
@@ -577,7 +584,7 @@ namespace Xenko.Graphics
             }, 128);
 
             InitFormat(new[]
-            { 
+            {
                 PixelFormat.BC1_Typeless,
                 PixelFormat.BC1_UNorm,
                 PixelFormat.BC1_UNorm_SRgb,
@@ -587,7 +594,7 @@ namespace Xenko.Graphics
             }, 4);
 
             InitFormat(new[]
-            { 
+            {
                 PixelFormat.BC2_Typeless,
                 PixelFormat.BC2_UNorm,
                 PixelFormat.BC2_UNorm_SRgb,
@@ -652,6 +659,8 @@ namespace Xenko.Graphics
                     PixelFormat.ATC_RGB,
                     PixelFormat.ATC_RGBA_Explicit,
                     PixelFormat.ATC_RGBA_Interpolated,
+                    PixelFormat.ASTC_RGBA_4X4,
+                    PixelFormat.ASTC_RGBA_4X4_SRgb,
                 }, compressedFormats);
 
             // Init srgb formats
@@ -670,6 +679,7 @@ namespace Xenko.Graphics
                     PixelFormat.PVRTC_4bpp_RGBA_SRgb,
                     PixelFormat.ETC2_RGBA_SRgb,
                     PixelFormat.ETC2_RGB_SRgb,
+                    PixelFormat.ASTC_RGBA_4X4_SRgb,
                 }, srgbFormats);
 
             // Init srgb formats
@@ -751,6 +761,8 @@ namespace Xenko.Graphics
                 { PixelFormat.ETC2_RGBA, PixelFormat.ETC2_RGBA_SRgb },
                 { PixelFormat.ETC2_RGB_SRgb, PixelFormat.ETC2_RGB },
                 { PixelFormat.ETC2_RGB, PixelFormat.ETC2_RGB_SRgb },
+                { PixelFormat.ASTC_RGBA_4X4_SRgb, PixelFormat.ASTC_RGBA_4X4 },
+                { PixelFormat.ASTC_RGBA_4X4, PixelFormat.ASTC_RGBA_4X4_SRgb },
             };
         }
 
