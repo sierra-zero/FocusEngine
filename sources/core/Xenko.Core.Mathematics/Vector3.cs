@@ -229,6 +229,21 @@ namespace Xenko.Core.Mathematics
         }
 
         /// <summary>
+        /// Generates a new Vector3 with the normalized value
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Vector3 Normalized()
+        {
+            float length = Length();
+            if (length > MathUtil.ZeroTolerance)
+            {
+                float inv = 1.0f / length;
+                return new Vector3(X * inv, Y * inv, Z * inv);
+            }
+            return Vector3.Zero;
+        }
+
+        /// <summary>
         /// Raises the exponent for each components.
         /// </summary>
         /// <param name="exponent">The exponent.</param>
