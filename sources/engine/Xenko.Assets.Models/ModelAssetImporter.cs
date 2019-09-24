@@ -198,7 +198,7 @@ namespace Xenko.Assets.Models
 
             if (importPrefab)
             {
-                var prefabAsset = new PrefabAsset { Source = assetSource };
+                var prefabAsset = new PrefabAsset();
                 UFile prefabURL = modelUrl + "_Prefab";
                 var prefabItem = new AssetItem(prefabURL, prefabAsset);
 

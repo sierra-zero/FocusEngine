@@ -23,22 +23,6 @@ namespace Xenko.Assets.Entities
         private const string CurrentVersion = "3.1.0.1";
 
         /// <summary>
-        /// Gets or sets the source file of this asset.
-        /// </summary>
-        /// <value>The source.</value>
-        /// <userdoc>
-        /// The source file of this asset.
-        /// </userdoc>
-        [DataMember(-50)]
-        [DefaultValue(null)]
-        [SourceFileMember(true)]
-        public UFile Source { get; set; } = new UFile("");
-
-        /// <inheritdoc/>
-        [DataMemberIgnore]
-        public override UFile MainSource => Source;
-
-        /// <summary>
         /// The default file extension used by the <see cref="PrefabAsset"/>.
         /// </summary>
         public const string FileExtension = ".xkprefab";
