@@ -365,8 +365,6 @@ namespace Xenko.Graphics
             public int SourceBinding;
             public int DestinationBinding;
             public DescriptorType DescriptorType;
-            // Used for buffer/texture (to know what type to match)
-            public bool ResourceElementIsInteger;
         }
 
         internal List<DescriptorSetInfo> DescriptorBindingMapping;
@@ -421,8 +419,7 @@ namespace Xenko.Graphics
                             SourceSet = layoutIndex,
                             SourceBinding = sourceBinding,
                             DestinationBinding = destinationBinding,
-                            DescriptorType = VulkanConvertExtensions.ConvertDescriptorType(sourceEntry.Class, sourceEntry.Type),
-                            ResourceElementIsInteger = sourceEntry.ElementType != EffectParameterType.Float && sourceEntry.ElementType != EffectParameterType.Double,
+                            DescriptorType = VulkanConvertExtensions.ConvertDescriptorType(sourceEntry.Class, sourceEntry.Type)
                         });
                     }
                 }
