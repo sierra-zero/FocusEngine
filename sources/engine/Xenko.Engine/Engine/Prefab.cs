@@ -35,6 +35,26 @@ namespace Xenko.Engine
 
         private Entity packed;
 
+        public Prefab() { }
+
+        /// <summary>
+        /// Make Prefab at runtime
+        /// </summary>
+        /// <param name="e"></param>
+        public Prefab(Entity e)
+        {
+            Entities.Add(e);
+        }
+
+        /// <summary>
+        /// Make Prefab at runtime
+        /// </summary>
+        /// <param name="e"></param>
+        public Prefab(List<Entity> e)
+        {
+            Entities.AddRange(e);
+        }
+
         /// <summary>
         /// Converts a Prefab into a single Entity that has all entities as children. Makes it easier to use with an EntityPool
         /// </summary>
