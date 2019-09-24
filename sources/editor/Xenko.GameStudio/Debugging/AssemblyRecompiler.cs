@@ -305,19 +305,19 @@ namespace Xenko.GameStudio.Debugging
             bool inQuotes = false;
 
             return Split(commandLine, c =>
-                                        {
-                                            if (c == '\"')
-                                                inQuotes = !inQuotes;
+            {
+                if (c == '\"')
+                    inQuotes = !inQuotes;
 
-                                            return !inQuotes && c == ' ';
-                                        })
+                return !inQuotes && c == ' ';
+            })
                                 .Select(arg => TrimMatchingQuotes(arg.Trim(), '\"'))
                                 .Where(arg => !string.IsNullOrEmpty(arg));
         }
 
         public static string TrimMatchingQuotes(string input, char quote)
         {
-            if ((input.Length >= 2) && 
+            if ((input.Length >= 2) &&
                 (input[0] == quote) && (input[input.Length - 1] == quote))
                 return input.Substring(1, input.Length - 2);
 
