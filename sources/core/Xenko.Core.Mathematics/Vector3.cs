@@ -216,7 +216,7 @@ namespace Xenko.Core.Mathematics
         /// Converts the vector into a unit vector.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Normalize()
+        public Vector3 Normalize()
         {
             float length = Length();
             if (length > MathUtil.ZeroTolerance)
@@ -226,6 +226,7 @@ namespace Xenko.Core.Mathematics
                 Y *= inv;
                 Z *= inv;
             }
+            return this;
         }
 
         /// <summary>
