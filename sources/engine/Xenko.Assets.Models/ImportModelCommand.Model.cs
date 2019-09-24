@@ -7,9 +7,11 @@ using System.Linq;
 using Xenko.Core.Assets;
 using Xenko.Core.BuildEngine;
 using Xenko.Core.Extensions;
+using Xenko.Core.IO;
 using Xenko.Core.Mathematics;
 using Xenko.Core.Serialization;
 using Xenko.Core.Serialization.Contents;
+using Xenko.Engine;
 using Xenko.Extensions;
 using Xenko.Graphics;
 using Xenko.Graphics.Data;
@@ -30,6 +32,7 @@ namespace Xenko.Assets.Models
         public bool AllowUnsignedBlendIndices { get; set; }
         public List<ModelMaterial> Materials { get; set; }
         public string EffectName { get; set; }
+        public Prefab PrefabAsset { get; set; }
 
         public List<IModelModifier> ModelModifiers { get; set; }
         

@@ -79,6 +79,12 @@ namespace Xenko.Assets.Models
                         break;
                     case ExportMode.Model:
                         exportedObject = ExportModel(commandContext, assetManager);
+                        // making a prefab?
+                        if (PrefabAsset != null)
+                        {
+                            PrefabAsset.Entities.Add(new Engine.Entity("TestEntity"));
+                            assetManager.Save(Location + "_Prefab", PrefabAsset);
+                        }
                         break;
                     default:
                         commandContext.Logger.Error($"Unknown export type [{Mode}] {ContextAsString}");

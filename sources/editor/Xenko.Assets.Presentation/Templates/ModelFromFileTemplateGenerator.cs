@@ -18,6 +18,7 @@ using Xenko.Assets.Materials;
 using Xenko.Assets.Models;
 using Xenko.Assets.Textures;
 using Xenko.Rendering;
+using Xenko.Assets.Entities;
 
 namespace Xenko.Assets.Presentation.Templates
 {
@@ -26,6 +27,7 @@ namespace Xenko.Assets.Presentation.Templates
         public static SettingsKey<bool> ImportMaterials = new SettingsKey<bool>("Templates/ModelFromFile/ImportMaterials", PackageUserSettings.SettingsContainer, true);
         public static SettingsKey<bool> ImportTextures = new SettingsKey<bool>("Templates/ModelFromFile/ImportTextures", PackageUserSettings.SettingsContainer, true);
         public static SettingsKey<bool> ImportSkeleton = new SettingsKey<bool>("Templates/ModelFromFile/ImportSkeleton", PackageUserSettings.SettingsContainer, true);
+        public static SettingsKey<bool> ImportPrefab = new SettingsKey<bool>("Templates/ModelFromFile/ImportPrefab", PackageUserSettings.SettingsContainer, false);
         public static SettingsKey<AssetId> DefaultSkeleton = new SettingsKey<AssetId>("Templates/ModelFromFile/DefaultSkeleton", PackageUserSettings.SettingsContainer, AssetId.Empty);
     }
 
@@ -38,6 +40,7 @@ namespace Xenko.Assets.Presentation.Templates
         protected static readonly PropertyKey<bool> ImportMaterialsKey = new PropertyKey<bool>("ImportMaterials", typeof(ModelFromFileTemplateGenerator));
         protected static readonly PropertyKey<bool> ImportTexturesKey = new PropertyKey<bool>("ImportTextures", typeof(ModelFromFileTemplateGenerator));
         protected static readonly PropertyKey<bool> ImportSkeletonKey = new PropertyKey<bool>("ImportSkeleton", typeof(ModelFromFileTemplateGenerator));
+        protected static readonly PropertyKey<bool> ImportPrefabKey = new PropertyKey<bool>("ImportPrefab", typeof(ModelFromFileTemplateGenerator));
         protected static readonly PropertyKey<Skeleton> SkeletonToUseKey = new PropertyKey<Skeleton>("SkeletonToUse", typeof(ModelFromFileTemplateGenerator));
 
         public override bool IsSupportingTemplate(TemplateDescription templateDescription)
@@ -63,7 +66,8 @@ namespace Xenko.Assets.Presentation.Templates
                 {
                     ImportMaterials = ModelFromFileTemplateSettings.ImportMaterials.GetValue(profile, true),
                     ImportTextures = ModelFromFileTemplateSettings.ImportTextures.GetValue(profile, true),
-                    ImportSkeleton = ModelFromFileTemplateSettings.ImportSkeleton.GetValue(profile, true)
+                    ImportSkeleton = ModelFromFileTemplateSettings.ImportSkeleton.GetValue(profile, true),
+                    ImportPrefab = ModelFromFileTemplateSettings.ImportPrefab.GetValue(profile, true)
                 }
             };
 
@@ -85,12 +89,14 @@ namespace Xenko.Assets.Presentation.Templates
             parameters.Tags.Set(ImportMaterialsKey, window.Parameters.ImportMaterials);
             parameters.Tags.Set(ImportTexturesKey, window.Parameters.ImportTextures);
             parameters.Tags.Set(ImportSkeletonKey, window.Parameters.ImportSkeleton);
+            parameters.Tags.Set(ImportPrefabKey, window.Parameters.ImportPrefab);
             parameters.Tags.Set(SkeletonToUseKey, skeletonToReuse);
 
             // Save settings
             ModelFromFileTemplateSettings.ImportMaterials.SetValue(window.Parameters.ImportMaterials, profile);
             ModelFromFileTemplateSettings.ImportTextures.SetValue(window.Parameters.ImportTextures, profile);
             ModelFromFileTemplateSettings.ImportSkeleton.SetValue(window.Parameters.ImportSkeleton, profile);
+            ModelFromFileTemplateSettings.ImportPrefab.SetValue(window.Parameters.ImportPrefab, profile);
             skeletonId = AttachedReferenceManager.GetAttachedReference(skeletonToReuse)?.Id ?? AssetId.Empty;
             ModelFromFileTemplateSettings.DefaultSkeleton.SetValue(skeletonId, profile);
             parameters.Package.UserSettings.Save();
@@ -107,6 +113,7 @@ namespace Xenko.Assets.Presentation.Templates
             var importMaterials = parameters.Tags.Get(ImportMaterialsKey);
             var importTextures = parameters.Tags.Get(ImportTexturesKey);
             var importSkeleton = parameters.Tags.Get(ImportSkeletonKey);
+            var importPrefab = parameters.Tags.Get(ImportPrefabKey);
             var skeletonToReuse = parameters.Tags.Get(SkeletonToUseKey);
 
             var importParameters = new AssetImporterParameters { Logger = parameters.Logger };
@@ -114,6 +121,7 @@ namespace Xenko.Assets.Presentation.Templates
             importParameters.SelectedOutputTypes.Add(typeof(MaterialAsset), importMaterials);
             importParameters.SelectedOutputTypes.Add(typeof(TextureAsset), importTextures);
             importParameters.SelectedOutputTypes.Add(typeof(SkeletonAsset), importSkeleton);
+            importParameters.SelectedOutputTypes.Add(typeof(PrefabAsset), importPrefab);
 
             var importedAssets = new List<AssetItem>();
 

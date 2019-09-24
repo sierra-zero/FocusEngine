@@ -14,6 +14,8 @@ using Xenko.Assets.Materials;
 using Xenko.Assets.Textures;
 using Xenko.Rendering;
 using Xenko.Importer.Common;
+using Xenko.Assets.Entities;
+using Xenko.Engine;
 
 namespace Xenko.Assets.Models
 {
@@ -35,6 +37,7 @@ namespace Xenko.Assets.Models
             {
                 yield return typeof(MaterialAsset);
                 yield return typeof(TextureAsset);
+                yield return typeof(PrefabAsset);
             }
         }
 
@@ -79,6 +82,8 @@ namespace Xenko.Assets.Models
 
             var isImportingTexture = importParameters.IsTypeSelectedForOutput<TextureAsset>();
 
+            var isImportingPrefab = importParameters.IsTypeSelectedForOutput<PrefabAsset>();
+
             // 1. Textures
             if (isImportingTexture)
             {
@@ -110,7 +115,7 @@ namespace Xenko.Assets.Models
             // 5. Model
             if (isImportingModel)
             {
-                ImportModel(rawAssetReferences, localPath, localPath, entityInfo, false, skeletonAsset);
+                ImportModel(rawAssetReferences, localPath, localPath, entityInfo, false, skeletonAsset, isImportingPrefab);
             }
 
             return rawAssetReferences;
@@ -154,7 +159,7 @@ namespace Xenko.Assets.Models
             }
         }
 
-        private static void ImportModel(List<AssetItem> assetReferences, UFile assetSource, UFile localPath, EntityInfo entityInfo, bool shouldPostFixName, AssetItem skeletonAsset)
+        private static void ImportModel(List<AssetItem> assetReferences, UFile assetSource, UFile localPath, EntityInfo entityInfo, bool shouldPostFixName, AssetItem skeletonAsset, bool importPrefab)
         {
             var asset = new ModelAsset { Source = assetSource };
 
@@ -190,6 +195,17 @@ namespace Xenko.Assets.Models
             var modelUrl = new UFile(localPath.GetFileNameWithoutExtension() + (shouldPostFixName?" Model": ""));
             var assetItem = new AssetItem(modelUrl, asset);
             assetReferences.Add(assetItem);
+
+            if (importPrefab)
+            {
+                var prefabAsset = new PrefabAsset { Source = assetSource };
+                UFile prefabURL = modelUrl + "_Prefab";
+                var prefabItem = new AssetItem(prefabURL, prefabAsset);
+
+                asset.myPrefab = AttachedReferenceManager.CreateProxyObject<Prefab>(prefabAsset.Id, prefabItem.Location);
+
+                assetReferences.Add(prefabItem);
+            }
         }
 
         private static void ImportMaterials(List<AssetItem> assetReferences, Dictionary<string, MaterialAsset> materials)

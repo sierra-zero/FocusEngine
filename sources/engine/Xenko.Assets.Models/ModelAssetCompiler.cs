@@ -56,6 +56,7 @@ namespace Xenko.Assets.Models
                 return;
             }
 
+            importModelCommand.PrefabAsset = asset.myPrefab;
             importModelCommand.InputFilesGetter = () => GetInputFiles(assetItem);
             importModelCommand.Mode = ImportModelCommand.ExportMode.Model;
             importModelCommand.SourcePath = assetSource;

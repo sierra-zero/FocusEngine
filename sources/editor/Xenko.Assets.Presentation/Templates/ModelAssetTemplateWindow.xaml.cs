@@ -41,6 +41,7 @@ namespace Xenko.Assets.Presentation.Templates
 
         private bool importMaterials = true;
         private bool importTextures = true;
+        private bool importPrefab = false;
         private bool importSkeleton = true;
         private bool dontImportSkeleton;
         private bool reuseSkeleton;
@@ -56,6 +57,8 @@ namespace Xenko.Assets.Presentation.Templates
         public bool ImportTextures { get { return importTextures; } set { SetValue(ref importTextures, value); } }
 
         public bool ImportSkeleton { get { return importSkeleton; } set { SetValue(ref importSkeleton, value); } }
+
+        public bool ImportPrefab { get { return importPrefab; } set { SetValue(ref importPrefab, value); } }
 
         public bool DontImportSkeleton { get { return dontImportSkeleton; } set { SetValue(ref dontImportSkeleton, value); } }
 

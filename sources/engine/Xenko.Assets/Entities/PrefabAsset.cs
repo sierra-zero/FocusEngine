@@ -1,4 +1,4 @@
-﻿// Copyright (c) Xenko contributors (https://xenko.com) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) Xenko contributors (https://xenko.com) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
@@ -8,6 +8,8 @@ using Xenko.Core.Assets;
 using Xenko.Core;
 using Xenko.Core.Annotations;
 using Xenko.Engine;
+using System.ComponentModel;
+using Xenko.Core.IO;
 
 namespace Xenko.Assets.Entities
 {
@@ -19,6 +21,22 @@ namespace Xenko.Assets.Entities
     public partial class PrefabAsset : EntityHierarchyAssetBase
     {
         private const string CurrentVersion = "3.1.0.1";
+
+        /// <summary>
+        /// Gets or sets the source file of this asset.
+        /// </summary>
+        /// <value>The source.</value>
+        /// <userdoc>
+        /// The source file of this asset.
+        /// </userdoc>
+        [DataMember(-50)]
+        [DefaultValue(null)]
+        [SourceFileMember(true)]
+        public UFile Source { get; set; } = new UFile("");
+
+        /// <inheritdoc/>
+        [DataMemberIgnore]
+        public override UFile MainSource => Source;
 
         /// <summary>
         /// The default file extension used by the <see cref="PrefabAsset"/>.
