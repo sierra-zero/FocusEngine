@@ -321,7 +321,7 @@ namespace Xenko.Shaders.Parser
 
                     var variableType = variable.Type;
 
-                    parameterKey.Type = CreateTypeInfo(variableType, attributable.Attributes, out parameterKey.ElementType);
+                    parameterKey.Type = CreateTypeInfo(variableType, attributable.Attributes);
                 }
 
                 return parameterKey;
@@ -330,10 +330,8 @@ namespace Xenko.Shaders.Parser
             return null;
         }
 
-        private static EffectTypeDescription CreateTypeInfo(TypeBase variableType, List<AttributeBase> attributes, out EffectTypeDescription elementType)
+        private static EffectTypeDescription CreateTypeInfo(TypeBase variableType, List<AttributeBase> attributes)
         {
-            elementType = default;
-
             var parameterTypeInfo = new EffectTypeDescription();
 
             if (variableType.TypeInference.TargetType != null)
@@ -415,7 +413,7 @@ namespace Xenko.Shaders.Parser
                     var memberInfo = new EffectTypeMemberDescription
                     {
                         Name = field.Name.Text,
-                        Type = CreateTypeInfo(field.Type, field.Attributes, out var _),
+                        Type = CreateTypeInfo(field.Type, field.Attributes),
                     };
                     members.Add(memberInfo);
                 }
@@ -425,11 +423,6 @@ namespace Xenko.Shaders.Parser
             else
             {
                 var variableTypeName = variableType.Name.Text.ToLowerInvariant();
-
-                if (variableType is ClassType classType && classType.GenericArguments.Count == 1)
-                {
-                    elementType = CreateTypeInfo(classType.GenericArguments[0], new List<AttributeBase>(), out var _);
-                }
 
                 switch (variableTypeName)
                 {
@@ -695,11 +688,6 @@ namespace Xenko.Shaders.Parser
             public string LogicalGroup;
 
             public EffectTypeDescription Type;
-
-            /// <summary>
-            /// The element type (for buffers or textures).
-            /// </summary>
-            public EffectTypeDescription ElementType;
 
             /*public EffectParameterClass Class;
 

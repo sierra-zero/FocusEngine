@@ -28,11 +28,6 @@ namespace Xenko.Shaders
         public EffectParameterType Type;
 
         /// <summary>
-        /// The element type (for buffers or textures).
-        /// </summary>
-        public EffectTypeDescription ElementType;
-
-        /// <summary>
         /// Name of this parameter in the original shader
         /// </summary>
         public string RawName;
