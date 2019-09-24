@@ -79,6 +79,22 @@ namespace Xenko.DebugRendering
             }
         }
 
+        public void DrawHalfSphere(ref Vector3 position, float radius, ref Quaternion rotation, ref Color color, bool depthTest = true)
+        {
+            var cmd = new HalfSphere() { Position = position, Radius = radius, Rotation = rotation, Color = color };
+            var msg = new Renderable(ref cmd);
+            if (depthTest)
+            {
+                renderablesWithDepth.Add(msg);
+                totalPrimitives.HalfSpheres++;
+            }
+            else
+            {
+                renderablesNoDepth.Add(msg);
+                totalPrimitivesNoDepth.HalfSpheres++;
+            }
+        }
+
         public void DrawCube(ref Vector3 start, ref Vector3 end, ref Quaternion rotation, ref Color color, bool depthTest = true)
         {
             var cmd = new Cube() { Start = start, End = end, Rotation = rotation, Color = color };
