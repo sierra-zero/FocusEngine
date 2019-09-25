@@ -10,6 +10,7 @@ using Xenko.Core.IO;
 using Xenko.Core.Mathematics;
 using Xenko.Rendering;
 using Xenko.Engine;
+using Xenko.Assets.Entities;
 
 namespace Xenko.Assets.Models
 {
@@ -93,7 +94,10 @@ namespace Xenko.Assets.Models
         /// <userdoc>
         /// Describes the node hierarchy that will be active at runtime.
         /// </userdoc>
-        [DataMember(60)]
+        [DataMemberIgnore]
+        public AssetItem myPrefabItem { get; set; }
+
+        [DataMemberIgnore]
         public Prefab myPrefab { get; set; }
 
         /// <inheritdoc/>

@@ -199,12 +199,9 @@ namespace Xenko.Assets.Models
             if (importPrefab)
             {
                 var prefabAsset = new PrefabAsset();
-                UFile prefabURL = modelUrl + "_Prefab";
-                var prefabItem = new AssetItem(prefabURL, prefabAsset);
-
-                asset.myPrefab = AttachedReferenceManager.CreateProxyObject<Prefab>(prefabAsset.Id, prefabItem.Location);
-
-                assetReferences.Add(prefabItem);
+                asset.myPrefabItem = new AssetItem(modelUrl + "_Prefab", prefabAsset);
+                asset.myPrefab = AttachedReferenceManager.CreateProxyObject<Prefab>(asset.myPrefabItem.Id, asset.myPrefabItem.Location);
+                assetReferences.Add(asset.myPrefabItem);
             }
         }
 

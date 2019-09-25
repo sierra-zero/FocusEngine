@@ -10,6 +10,8 @@ using Xenko.Core.IO;
 using Xenko.Core.Serialization.Contents;
 using Xenko.Assets.Materials;
 using Xenko.Graphics;
+using Xenko.Assets.Entities;
+using static Xenko.Assets.Entities.PrefabAssetCompiler;
 
 namespace Xenko.Assets.Models
 {
@@ -56,7 +58,8 @@ namespace Xenko.Assets.Models
                 return;
             }
 
-            importModelCommand.PrefabAsset = asset.myPrefab;
+            importModelCommand.PrefabAsset = asset.myPrefabItem;
+            importModelCommand.Prefab = asset.myPrefab;
             importModelCommand.InputFilesGetter = () => GetInputFiles(assetItem);
             importModelCommand.Mode = ImportModelCommand.ExportMode.Model;
             importModelCommand.SourcePath = assetSource;

@@ -15,6 +15,7 @@ using Xenko.Shaders;
 using System.Linq;
 using Xenko.Core.Assets;
 using Xenko.Core.Serialization.Contents;
+using Xenko.Engine;
 
 namespace Xenko.Assets.Models
 {
@@ -82,8 +83,9 @@ namespace Xenko.Assets.Models
                         // making a prefab?
                         if (PrefabAsset != null)
                         {
-                            PrefabAsset.Entities.Add(new Engine.Entity("TestEntity"));
-                            assetManager.Save(Location + "_Prefab", PrefabAsset);
+                            Prefab.Entities.Add(new Entity("TestEntity"));
+                            assetManager.Save(PrefabAsset.Location, Prefab);
+                            PrefabAsset.IsDirty = true;
                         }
                         break;
                     default:
