@@ -86,6 +86,24 @@ namespace Xenko.Engine
             return true;
         }
 
+        public static List<Entity> UnbatchModel(Model m, string prefix = "unbatched")
+        {
+            List<Entity> unbatched = new List<Entity>();
+            if (m == null) return unbatched;
+
+            for (int i=0; i<m.Meshes.Count; i++)
+            {
+                Model newm = new Model();
+                Entity e = new Entity(prefix + i);
+                newm.Add(m.Meshes[i]);
+                newm.Add(m.Materials[m.Meshes[i].MaterialIndex]);
+                e.GetOrCreate<ModelComponent>().Model = newm;
+                unbatched.Add(e);
+            }
+
+            return unbatched;
+        }
+
         private static unsafe void ProcessMaterial(List<BatchingChunk> chunks, MaterialInstance material, Model prefabModel, HashSet<Entity> unbatched = null)
         {
             //actually create the mesh
