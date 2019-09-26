@@ -137,6 +137,23 @@ public static class EntityPool {
     private static Entity blankPrefab;
 
     /// <summary>
+    /// Attempts to return an entity to a pool, which includes removing it from any scene
+    /// </summary>
+    /// <param name="e">Entity to try and return to a pool it came from</param>
+    /// <returns>True if entity was in a pool to return to</returns>
+    static public bool ReturnToPool(Entity e)
+    {
+        if (e == null || e.UsingPool == null ||
+            e.UsingPool.myPool == null || e.UsingPool.active == false)
+            return false;
+
+        e.Scene = null;
+        e.UsingPool.myPool.ReturnToPool(e, ref e.UsingPool.active);
+
+        return true;
+    }
+
+    /// <summary>
     /// spawn an empty Entity from a pool
     /// </summary>
     static public Entity SpawnEmpty(Vector3? pos = null, Quaternion? rot = null) {
