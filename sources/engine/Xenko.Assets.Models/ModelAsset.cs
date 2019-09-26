@@ -9,8 +9,6 @@ using Xenko.Core.Annotations;
 using Xenko.Core.IO;
 using Xenko.Core.Mathematics;
 using Xenko.Rendering;
-using Xenko.Engine;
-using Xenko.Assets.Entities;
 
 namespace Xenko.Assets.Models
 {
@@ -87,18 +85,6 @@ namespace Xenko.Assets.Models
         [DataMember(50)]
         [Category]
         public List<IModelModifier> Modifiers { get; } = new List<IModelModifier>();
-
-        /// <summary>
-        /// Gets or sets the Prefab.
-        /// </summary>
-        /// <userdoc>
-        /// Describes the node hierarchy that will be active at runtime.
-        /// </userdoc>
-        [DataMemberIgnore]
-        public AssetItem myPrefabItem { get; set; }
-
-        [DataMemberIgnore]
-        public Prefab myPrefab { get; set; }
 
         /// <inheritdoc/>
         [DataMemberIgnore]

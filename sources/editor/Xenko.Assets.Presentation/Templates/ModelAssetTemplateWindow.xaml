@@ -19,13 +19,12 @@
   </Window.Resources>
   <StackPanel>
     <Border Background="{StaticResource EmphasisColorBrush}" Margin="20,20,20,0">
-      <TextBlock Text="{xk:Localize Materials textures and Prefab}" Margin="20,10" FontSize="16"/>
+      <TextBlock Text="{xk:Localize Materials and textures}" Margin="20,10" FontSize="16"/>
     </Border>
     <Border Margin="20,10,20,20">
       <StackPanel>
         <CheckBox Content="{xk:Localize Import materials, Context=Button}" IsChecked="{Binding ImportMaterials}" Margin="5"/>
         <CheckBox Content="{xk:Localize Import textures, Context=Button}" IsChecked="{Binding ImportTextures}" Margin="5"/>
-        <CheckBox Content="{xk:Localize Import prefab, Context=Button}" IsChecked="{Binding ImportPrefab}" Margin="5"/>
       </StackPanel>
     </Border>
     <Border Background="{StaticResource EmphasisColorBrush}" Margin="20,0">

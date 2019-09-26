@@ -15,7 +15,6 @@ using Xenko.Shaders;
 using System.Linq;
 using Xenko.Core.Assets;
 using Xenko.Core.Serialization.Contents;
-using Xenko.Engine;
 
 namespace Xenko.Assets.Models
 {
@@ -80,13 +79,6 @@ namespace Xenko.Assets.Models
                         break;
                     case ExportMode.Model:
                         exportedObject = ExportModel(commandContext, assetManager);
-                        // making a prefab?
-                        if (PrefabAsset != null)
-                        {
-                            Prefab.Entities.Add(new Entity("TestEntity"));
-                            assetManager.Save(PrefabAsset.Location, Prefab);
-                            PrefabAsset.IsDirty = true;
-                        }
                         break;
                     default:
                         commandContext.Logger.Error($"Unknown export type [{Mode}] {ContextAsString}");
