@@ -545,14 +545,17 @@ namespace Xenko.Engine
             Matrix.Multiply(ref rotation, ref translationMatrix, out outMatrix);
 
             //handle dynamic scaling if allowed (aka not using assets)
-            if (CanScaleShape) {
-                if (ColliderShape.Scaling != scale) {
+            if (CanScaleShape)
+            {
+                if (ColliderShape.Scaling != scale)
+                {
                     ColliderShape.Scaling = scale;
                 }
             }
 
             //Handle collider shape offset
-            if (ColliderShape.LocalOffset != Vector3.Zero || ColliderShape.LocalRotation != Quaternion.Identity) {
+            if (ColliderShape.LocalOffset != Vector3.Zero || ColliderShape.LocalRotation != Quaternion.Identity)
+            {
                 outMatrix = Matrix.Multiply(ColliderShape.PositiveCenterMatrix, outMatrix);
             }
 
@@ -739,6 +742,9 @@ namespace Xenko.Engine
                     logger.Error($"Entity {Entity.Name} has a PhysicsComponent but it failed to compose the collider shape.");
                     return; //no shape no purpose
                 }
+
+                // carry over DoNotDispose state
+                ColliderShape.DoNotDispose = DoNotDispose;
             }
 
             BoneIndex = -1;
