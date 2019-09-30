@@ -126,7 +126,7 @@ namespace Xenko.Assets.Presentation.AssetEditors.UILibraryEditor.ViewModels
 
         private void ClearPublicUIElements() {
             var node = NodeContainer.GetNode((UILibraryAsset)Asset.Asset)[nameof(UILibraryAsset.PublicUIElements)].Target;
-            if (node is Xenko.Core.Assets.Quantum.Internal.AssetObjectNode) ((Xenko.Core.Assets.Quantum.Internal.AssetObjectNode)node).Clear();
+            if (node is Xenko.Core.Assets.Quantum.IAssetObjectNode assetObjNode) assetObjNode.Clear();
         }
 
         private void UpdatePublicUIElementsEntry(Guid rootId, [CanBeNull] string name)

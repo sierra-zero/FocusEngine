@@ -73,5 +73,10 @@ namespace Xenko.Core.Quantum
         /// <param name="item">The item to remove.</param>
         /// <param name="itemIndex">The index from which the item must be removed.</param>
         void Remove(object item, NodeIndex itemIndex);
+
+        /// <summary>
+        /// Clears all items from this content
+        /// </summary>
+        void Clear();
     }
 }
