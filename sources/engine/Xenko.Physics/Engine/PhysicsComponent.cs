@@ -51,12 +51,12 @@ namespace Xenko.Engine
         internal BulletSharp.CollisionObject NativeCollisionObject;
 
         /// <summary>
-        /// Is this physics component initialized interally and ready to be used?
+        /// Get the internal native collision object
         /// </summary>
         [DataMemberIgnore]
-        public bool InternallyPrepared {
+        public object NativeObject {
             get {
-                return NativeCollisionObject != null;
+                return NativeCollisionObject;
             }
         }
 

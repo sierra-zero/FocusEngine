@@ -185,7 +185,7 @@ namespace Xenko.Physics
                 gameSystems.Add(debugShapeRendering);
             }
 
-            Simulation = physicsSystem.Create(this);
+            Simulation = OverlapTest.mySimulation = physicsSystem.Create(this);
 
             sceneSystem = Services.GetSafeServiceAs<SceneSystem>();
         }

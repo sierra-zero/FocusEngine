@@ -20,7 +20,7 @@ namespace Xenko.Physics
         private readonly PhysicsProcessor processor;
 
         private readonly BulletSharp.DiscreteDynamicsWorld discreteDynamicsWorld;
-        private readonly BulletSharp.CollisionWorld collisionWorld;
+        internal readonly BulletSharp.CollisionWorld collisionWorld;
 
         private readonly BulletSharp.CollisionDispatcher dispatcher;
         private readonly BulletSharp.CollisionConfiguration collisionConfiguration;
