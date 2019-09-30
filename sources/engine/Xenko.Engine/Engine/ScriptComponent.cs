@@ -8,7 +8,7 @@ using Xenko.Audio;
 using Xenko.Core;
 using Xenko.Core.Diagnostics;
 using Xenko.Core.Serialization.Contents;
-using Xenko.DebugRendering;
+using Xenko.Engine;
 using Xenko.Engine.Design;
 using Xenko.Engine.Processors;
 using Xenko.Games;

@@ -1130,6 +1130,12 @@
       <Generator>XenkoShaderKeyGenerator</Generator>
       <LastGenOutput>GlobalVR.cs</LastGenOutput>
     </None>
+    <None Update="Rendering\Shaders\LinePrimitiveShader.xksl">
+      <Generator>XenkoShaderKeyGenerator</Generator>
+    </None>
+    <None Update="Rendering\Shaders\PrimitiveShader.xksl">
+      <Generator>XenkoShaderKeyGenerator</Generator>
+    </None>
     <None Update="Rendering\Shadows\ShadowMapCasterAlphaDiscard.xksl">
       <Generator>XenkoShaderKeyGenerator</Generator>
       <LastGenOutput>ShadowMapCasterAlphaDiscard.cs</LastGenOutput>

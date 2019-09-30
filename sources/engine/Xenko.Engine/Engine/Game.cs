@@ -11,7 +11,7 @@ using Xenko.Core.Diagnostics;
 using Xenko.Core.IO;
 using Xenko.Core.Mathematics;
 using Xenko.Core.Storage;
-using Xenko.DebugRendering;
+using Xenko.Engine;
 using Xenko.Engine.Design;
 using Xenko.Engine.Processors;
 using Xenko.Games;
