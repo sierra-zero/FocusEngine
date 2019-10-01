@@ -71,11 +71,12 @@ namespace Xenko.Physics
         /// <param name="myGroup">What collision group is the ColliderShape in?</param>
         /// <param name="overlapsWith">What collision groups does the ColliderShape overlap with?</param>
         /// <param name="contactTest">If true, contact test overlapping objects. See ContactResults for output. Defaults to false</param>
+        /// <param name="stopAfterFirstContact">If contact testing, should we stop contact testing after our first contact was found?</param>
         /// <returns>Number of overlapping objects</returns>
         public static int PerformOverlapTest(ColliderShape shape, Xenko.Core.Mathematics.Vector3? position = null,
                                              CollisionFilterGroups myGroup = CollisionFilterGroups.DefaultFilter,
                                              CollisionFilterGroupFlags overlapsWith = CollisionFilterGroupFlags.AllFilter,
-                                             bool contactTest = false)
+                                             bool contactTest = false, bool stopAfterFirstContact = false)
         {
             if (ghostObject == null)
             {
@@ -94,21 +95,22 @@ namespace Xenko.Physics
 
             int overlapCount = ghostObject.NumOverlappingObjects;
 
-            if (contactTest)
-            {
-                internalResults.Clear();
-
-                if (overlapCount > 0)
-                {
-                    internalResults.CollisionFilterGroup = (int)myGroup;
-                    internalResults.CollisionFilterMask = (int)overlapsWith;
-                    mySimulation.collisionWorld.ContactTest(ghostObject, internalResults);
-                }
-            }
-
             NativeOverlappingObjects.Clear();
             for (int i = 0; i < overlapCount; i++)
                 NativeOverlappingObjects.Add(ghostObject.OverlappingPairs[i]);
+
+            if (contactTest)
+            {
+                internalResults.Clear();
+                internalResults.CollisionFilterGroup = (int)myGroup;
+                internalResults.CollisionFilterMask = (int)overlapsWith;
+
+                foreach (object nativeobj in NativeOverlappingObjects)
+                {
+                    mySimulation.collisionWorld.ContactPairTest(ghostObject, (BulletSharp.CollisionObject)nativeobj, internalResults);
+                    if (stopAfterFirstContact && internalResults.Contacts.Count > 0) break;
+                }
+            }
 
             mySimulation.collisionWorld.RemoveCollisionObject(ghostObject);
 
