@@ -154,7 +154,10 @@ namespace Xenko.Rendering.Sprites
 
                     if (hasBegin)
                     {
-                        batchContext.SpriteBatch.End();
+                        lock (batchEndLocker)
+                        {
+                            batchContext.SpriteBatch.End();
+                        }
                     }
 
                     var rasterizerState = RasterizerStates.CullNone;
@@ -240,9 +243,14 @@ namespace Xenko.Rendering.Sprites
 
             if (hasBegin)
             {
-                batchContext.SpriteBatch.End();
+                lock (batchEndLocker)
+                {
+                    batchContext.SpriteBatch.End();
+                }
             }
         }
+
+        private object batchEndLocker = new object();
 
         private class ThreadContext : IDisposable
         {
