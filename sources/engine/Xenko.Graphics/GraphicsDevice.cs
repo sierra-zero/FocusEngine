@@ -16,7 +16,7 @@ namespace Xenko.Graphics
     /// </summary>
     public partial class GraphicsDevice : ComponentBase
     {
-        internal readonly Dictionary<PipelineStateDescriptionWithHash, PipelineState> CachedPipelineStates = new Dictionary<PipelineStateDescriptionWithHash, PipelineState>();
+        internal readonly Dictionary<int, PipelineState> CachedPipelineStates = new Dictionary<int, PipelineState>();
 
         internal readonly ConcurrentDictionary<SamplerStateDescription, SamplerState> CachedSamplerStates = new ConcurrentDictionary<SamplerStateDescription, SamplerState>();
 

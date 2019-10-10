@@ -79,17 +79,25 @@ namespace Xenko.Graphics
                 && Output == other.Output))
                 return false;
 
-            if ((InputElements != null) != (other.InputElements != null))
-                return false;
-            if (InputElements != null)
+            recheck: if (InputElements != null && other.InputElements != null)
             {
                 if (InputElements.Length != other.InputElements.Length) return false;
-                for (int i = 0; i < InputElements.Length; ++i)
+                try
                 {
-                    if (!InputElements[i].Equals(other.InputElements[i]))
-                        return false;
+                    for (int i = 0; i < InputElements.Length && i < other.InputElements.Length; i++)
+                    {
+                        if (!InputElements[i].Equals(other.InputElements[i]))
+                            return false;
+                    }
+                } catch(Exception e)
+                {
+                    // input elements changed during processing, which should be extremely rare
+                    // but we don't want the engine to die, so lets just recheck
+                    goto recheck;
                 }
             }
+            else if ((InputElements != null) != (other.InputElements != null))
+                return false;
 
             return true;
         }
@@ -114,8 +122,8 @@ namespace Xenko.Graphics
                 hashCode = (hashCode * 397) ^ DepthStencilState.GetHashCode();
                 if (InputElements != null)
                 {
-                    foreach (var inputElement in InputElements)
-                        hashCode = (hashCode * 397) ^ inputElement.GetHashCode();
+                    for (int i=0; i<InputElements.Length; i++)
+                        hashCode = (hashCode * 397) ^ InputElements[i].GetHashCode();
                 }
 
                 hashCode = (hashCode * 397) ^ (int)PrimitiveType;

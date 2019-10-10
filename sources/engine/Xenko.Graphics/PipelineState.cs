@@ -23,7 +23,7 @@ namespace Xenko.Graphics
             PipelineState pipelineState = null;
 
             // Hash the current state
-            var hashedState = new PipelineStateDescriptionWithHash(pipelineStateDescription);
+            int hashedState = pipelineStateDescription.GetHashCode();
 
             // check if it is in the cache, or being worked on...
             bool foundInCache = false;
