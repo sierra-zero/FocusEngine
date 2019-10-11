@@ -132,6 +132,28 @@ namespace Xenko.Graphics
             }
         }
 
+        public long GetLongHashCode()
+        {
+            unchecked
+            {
+                long hashCode = RootSignature != null ? RootSignature.GetHashCode() : 0;
+                hashCode = (hashCode * 503) ^ (EffectBytecode != null ? EffectBytecode.GetHashCode() : 0);
+                hashCode = (hashCode * 503) ^ BlendState.GetHashCode();
+                hashCode = (hashCode * 503) ^ (long)SampleMask;
+                hashCode = (hashCode * 503) ^ RasterizerState.GetHashCode();
+                hashCode = (hashCode * 503) ^ DepthStencilState.GetHashCode();
+                if (InputElements != null)
+                {
+                    for (int i = 0; i < InputElements.Length; i++)
+                        hashCode = (hashCode * 503) ^ InputElements[i].GetHashCode();
+                }
+
+                hashCode = (hashCode * 503) ^ (long)PrimitiveType;
+                hashCode = (hashCode * 503) ^ Output.GetHashCode();
+                return hashCode;
+            }
+        }
+
         public static bool operator ==(PipelineStateDescription left, PipelineStateDescription right)
         {
             return Equals(left, right);
