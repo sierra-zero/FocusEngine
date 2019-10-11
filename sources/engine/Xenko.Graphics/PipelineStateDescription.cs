@@ -136,20 +136,20 @@ namespace Xenko.Graphics
         {
             unchecked
             {
-                long hashCode = RootSignature != null ? RootSignature.GetHashCode() : 0;
-                hashCode = (hashCode * 503) ^ (EffectBytecode != null ? EffectBytecode.GetHashCode() : 0);
+                long hashCode = RootSignature != null ? RootSignature.GetHashCode() : 271;
+                hashCode = (hashCode * 397) ^ (EffectBytecode != null ? EffectBytecode.GetHashCode() : 541);
                 hashCode = (hashCode * 503) ^ BlendState.GetHashCode();
-                hashCode = (hashCode * 503) ^ (long)SampleMask;
-                hashCode = (hashCode * 503) ^ RasterizerState.GetHashCode();
-                hashCode = (hashCode * 503) ^ DepthStencilState.GetHashCode();
+                hashCode = (hashCode * 641) ^ (long)SampleMask;
+                hashCode = (hashCode * 773) ^ RasterizerState.GetHashCode();
+                hashCode = (hashCode * 997) ^ DepthStencilState.GetHashCode();
                 if (InputElements != null)
                 {
                     for (int i = 0; i < InputElements.Length; i++)
-                        hashCode = (hashCode * 503) ^ InputElements[i].GetHashCode();
+                        hashCode = (hashCode * 127) ^ InputElements[i].GetHashCode();
                 }
 
-                hashCode = (hashCode * 503) ^ (long)PrimitiveType;
-                hashCode = (hashCode * 503) ^ Output.GetHashCode();
+                hashCode = (hashCode * 1021) ^ (long)PrimitiveType;
+                hashCode = (hashCode * 1213) ^ Output.GetHashCode();
                 return hashCode;
             }
         }
