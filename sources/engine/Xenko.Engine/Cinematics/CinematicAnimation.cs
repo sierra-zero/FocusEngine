@@ -34,8 +34,17 @@ namespace Xenko.Cinematics
         public object argument0, argument1;
         public TransformComponent target;
         public float startTime, endTime;
-        public Action method;
+        public Action<ActionInfo> method;
         public bool relativeStartArgument;
+    }
+
+    /// <summary>
+    /// Arguments provided in an action
+    /// </summary>
+    public struct ActionInfo
+    {
+        public float PercentProgress;
+        public float AnimationTimeElapsed;
     }
 
     /// <summary>
@@ -111,7 +120,7 @@ namespace Xenko.Cinematics
         }
 
         /// <summary>
-        /// Make an action for this CinematicAnimation at the given time
+        /// Make an action for this CinematicAnimation at the given time.
         /// </summary>
         /// <param name="type">What kind of action is this?</param>
         /// <param name="target">The TransformComponent to act on</param>
@@ -136,12 +145,12 @@ namespace Xenko.Cinematics
         }
 
         /// <summary>
-        /// Add a method to be run at the given time
+        /// Add a method to be run at the given time. ActionInfo is constructed, set and passed as an argument to the method
         /// </summary>
         /// <param name="method">Action to be executed</param>
         /// <param name="startTime">When to execute the action</param>
         /// <param name="endTime">Keep running the action until this time, default is 0 which means always just run this once</param>
-        public void AddMethod(Action method, float startTime, float endTime = 0f)
+        public void AddMethod(Action<ActionInfo> method, float startTime, float endTime = 0f)
         {
             CinematicAction ca = new CinematicAction()
             {
@@ -159,19 +168,22 @@ namespace Xenko.Cinematics
             return 1.0f / (1.0f + (float)Math.Exp(-value));
         }
 
+        [ThreadStatic]
+        private static ActionInfo tempArguments;
+
         private void PerformAction(CinematicAction ca, float delta_time)
         {
             // wait, are we just an action to call here?
-            if (ca.Type == ACTION_TYPE.DELEGATE)
-            {
-                ca.method();
-                return;
-            }
             float totalTimeOfAction = ca.endTime - ca.startTime;
             float positionInAction = totalTimeOfAction > 0f ? (CurrentTime - ca.startTime) / totalTimeOfAction : 1f;
             if (positionInAction > 1f) positionInAction = 1f;
             switch (ca.Type)
             {
+                case ACTION_TYPE.DELEGATE:
+                    tempArguments.AnimationTimeElapsed = delta_time;
+                    tempArguments.PercentProgress = positionInAction;
+                    ca.method(tempArguments);
+                    break;
                 case ACTION_TYPE.SET_POSITION:
                     ca.target.Position = (Vector3)ca.argument1;
                     break;
