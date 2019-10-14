@@ -71,6 +71,14 @@ namespace Xenko.UI.Controls
         public Color ScrollBarColor { get; set; } = new Color(0.1f, 0.1f, 0.1f, 1f);
 
         /// <summary>
+        /// Gets or sets how transparent the bar will go when not used
+        /// </summary>
+        [DataMember]
+        [Display(category: AppearanceCategory)]
+        [DefaultValue(0.0f)]
+        public float ScrollBarFadeAlpha { get; set; } = 0.0f;
+
+        /// <summary>
         /// Gets or sets the scrolling bar thickness in virtual pixels.
         /// </summary>
         /// <userdoc>The scrolling bar thickness in virtual pixels.</userdoc>
@@ -145,6 +153,14 @@ namespace Xenko.UI.Controls
                 OnTouchScrollingEnabledChanged();
             }
         }
+
+        /// <summary>
+        /// Scroll speed multiplier. Can be negative to reverse scrolling.
+        /// </summary>
+        [DataMember]
+        [Display(category: BehaviorCategory)]
+        [DefaultValue(1.0f)]
+        public float ScrollSensitivity { get; set; } = 1.0f;
 
         /// <summary>
         /// Gets or sets the value indicating if the element should snap its scrolling to anchors.
@@ -432,7 +448,7 @@ namespace Xenko.UI.Controls
                 var shouldFadeOutScrollingBar = Math.Abs(CurrentScrollingSpeed[dim]) < MathUtil.ZeroTolerance && (!TouchScrollingEnabled || !IsUserScrollingViewer);
                 if (shouldFadeOutScrollingBar)
                     for (var i = 0; i < 4; i++)
-                        scrollBars[dim].BarColorInternal[i] = (byte)Math.Max(0, scrollBars[dim].BarColorInternal[i] - ScrollBarColor[i] * ScrollBarHidingSpeed * elapsedSeconds);
+                        scrollBars[dim].BarColorInternal[i] = (byte)Math.Max(ScrollBarFadeAlpha * ScrollBarColor[i], scrollBars[dim].BarColorInternal[i] - ScrollBarColor[i] * ScrollBarHidingSpeed * elapsedSeconds);
                 else
                     scrollBars[dim].BarColor = ScrollBarColor;
             }
@@ -585,9 +601,10 @@ namespace Xenko.UI.Controls
         private void UpdateScrollOffsets(Vector3 desiredScrollPosition)
         {
             // the space desired by the child + the padding of the viewer
-            var childRenderSize = VisualContent.RenderSize;
-            var childRenderSizeWithMargins = CalculateSizeWithoutThickness(ref childRenderSize, ref MarginInternal);
-            var childRenderSizeWithPadding = CalculateSizeWithoutThickness(ref childRenderSizeWithMargins, ref padding);
+            Vector3 childRenderSize = VisualContent.RenderSize;
+            childRenderSize.X += padding.Left + padding.Right;
+            childRenderSize.Y += padding.Top + padding.Bottom;
+            childRenderSize.Z += padding.Front + padding.Back;
 
             // update scroll viewer scroll offsets
             foreach (var index in ScrollModeToDirectionIndices[ScrollMode])
@@ -603,7 +620,7 @@ namespace Xenko.UI.Controls
                 ScrollOffsets[index] = desiredScrollPosition[index];
 
                 // no blank on the other extremity (reached the offset "right" limit)
-                var minimumOffset = ViewPort[index] - childRenderSizeWithPadding[index];
+                var minimumOffset = ViewPort[index] - childRenderSize[index];
                 if (ScrollOffsets[index] < minimumOffset)
                 {
                     ScrollOffsets[index] = minimumOffset;
@@ -831,7 +848,7 @@ namespace Xenko.UI.Controls
                 return;
 
             // accumulate all the touch moves of the frame
-            var translation = args.WorldTranslation;
+            var translation = args.WorldTranslation * ScrollSensitivity;
             foreach (var index in ScrollModeToDirectionIndices[ScrollMode])
                 lastFrameTranslation[index] -= translation[index];
 
