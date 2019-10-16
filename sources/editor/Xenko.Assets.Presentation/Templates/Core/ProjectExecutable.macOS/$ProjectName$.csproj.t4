@@ -7,7 +7,6 @@
     <ApplicationIcon>Resources\Icon.ico</ApplicationIcon>
     <OutputType>WinExe</OutputType>
     <RootNamespace><#= Properties.Namespace #></RootNamespace>
-	<RuntimeIdentifierGraphPath></RuntimeIdentifierGraphPath>
 
     <OutputPath>..\Bin\macOS\$(Configuration)\</OutputPath>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
