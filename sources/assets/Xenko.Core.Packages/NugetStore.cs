@@ -41,7 +41,7 @@ namespace Xenko.Core.Packages
     /// </summary>
     public class NugetStore : INugetDownloadProgress
     {
-        public const string MainExecutables = @"lib\net472\Xenko.GameStudio.exe,Bin\Windows\Xenko.GameStudio.exe,Bin\Windows-Direct3D11\Xenko.GameStudio.exe";
+        public const string MainExecutables = @"lib\net48\Xenko.GameStudio.exe,Bin\Windows\Xenko.GameStudio.exe,Bin\Windows-Direct3D11\Xenko.GameStudio.exe";
         public const string PrerequisitesInstaller = @"Bin\Prerequisites\install-prerequisites.exe";
 
         public const string DefaultPackageSource = "https://packages.xenko.com/nuget";
@@ -348,7 +348,7 @@ namespace Xenko.Core.Packages
                             {
                                 new TargetFrameworkInformation
                                 {
-                                    FrameworkName = NuGetFramework.Parse("net472"),
+                                    FrameworkName = NuGetFramework.Parse("net48"),
                                 }
                             },
                             RestoreMetadata = new ProjectRestoreMetadata
@@ -358,7 +358,7 @@ namespace Xenko.Core.Packages
                                 ProjectStyle = ProjectStyle.PackageReference,
                                 ProjectUniqueName = projectPath,
                                 OutputPath = Path.Combine(Path.GetTempPath(), $"XenkoLauncher-{packageId}-{version.ToString()}"),
-                                OriginalTargetFrameworks = new[] { "net472" },
+                                OriginalTargetFrameworks = new[] { "net48" },
                                 ConfigFilePaths = settings.GetConfigFilePaths(),
                                 PackagesPath = installPath,
                                 Sources = SettingsUtility.GetEnabledSources(settings).ToList(),

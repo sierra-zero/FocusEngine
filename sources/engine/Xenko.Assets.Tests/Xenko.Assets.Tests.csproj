@@ -1,11 +1,11 @@
-﻿<Project>
+<Project>
   <Import Project="..\..\targets\Xenko.PreSettings.UnitTests.targets" />
   <Import Project="Sdk.props" Sdk="MSBuild.Sdk.Extras" Version="2.0.54" />
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <RootNamespace>Xenko.Assets.Tests</RootNamespace>
     <AssemblyName>Xenko.Assets.Tests</AssemblyName>
-    <TargetFramework>net472</TargetFramework>
+    <TargetFramework>$(TargetFrameworkTool)</TargetFramework>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <EnableDefaultItems>false</EnableDefaultItems>
     <XenkoPlatform>Windows</XenkoPlatform>

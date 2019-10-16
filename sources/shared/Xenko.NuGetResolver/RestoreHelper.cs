@@ -31,6 +31,7 @@ namespace Xenko.Core.Assets
         };
         static List<string> SupportedTfms = new List<string>
         {
+            "net48",
             "net472",
             "net471",
             "net47",
@@ -147,7 +148,7 @@ namespace Xenko.Core.Assets
                 {
                     new TargetFrameworkInformation
                     {
-                        FrameworkName = NuGetFramework.Parse("net472"),
+                        FrameworkName = NuGetFramework.Parse("net48"),
                     }
                 },
                 RestoreMetadata = new ProjectRestoreMetadata
@@ -157,7 +158,7 @@ namespace Xenko.Core.Assets
                     ProjectStyle = ProjectStyle.PackageReference,
                     ProjectUniqueName = projectPath,
                     OutputPath = Path.Combine(Path.GetTempPath(), $"XenkoNugetResolver-{packageName}-{versionRange.MinVersion.ToString()}"),
-                    OriginalTargetFrameworks = new[] { "net472" },
+                    OriginalTargetFrameworks = new[] { "net48" },
                     ConfigFilePaths = settings.GetConfigFilePaths(),
                     PackagesPath = SettingsUtility.GetGlobalPackagesFolder(settings),
                     Sources = SettingsUtility.GetEnabledSources(settings).ToList(),

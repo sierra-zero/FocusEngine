@@ -1,7 +1,7 @@
 @set SOURCES_DIR=%~dp0..
 @set MSGMERGE=%~dp0..\..\deps\gettext\msgmerge
 @set OUTPUT_DIR=%SOURCES_DIR%\localization
-@set TOOL_DIR=%SOURCES_DIR%\tools\Xenko.Core.Translation.Extractor\bin\Debug\net472
+@set TOOL_DIR=%SOURCES_DIR%\tools\Xenko.Core.Translation.Extractor\bin\Debug\net48
 
 @cd %OUTPUT_DIR%
 

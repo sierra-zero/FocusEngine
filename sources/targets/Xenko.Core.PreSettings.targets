@@ -17,9 +17,9 @@
   <PropertyGroup>
     <!-- Using C# version 7.3 -->
     <LangVersion>7.3</LangVersion>
-    <XenkoRuntimeTargetFramework>net461</XenkoRuntimeTargetFramework>
-    <TargetFrameworkTool>net472</TargetFrameworkTool>
-    <TargetFrameworkVersionTool>v4.7.2</TargetFrameworkVersionTool>
+    <XenkoRuntimeTargetFramework>net48</XenkoRuntimeTargetFramework>
+    <TargetFrameworkTool>net48</TargetFrameworkTool>
+    <TargetFrameworkVersionTool>v4.8</TargetFrameworkVersionTool>
     <XenkoPlatformDefines>XENKO_PLATFORM_WINDOWS;XENKO_PLATFORM_WINDOWS_DESKTOP;NET45</XenkoPlatformDefines>
 
     <!-- Note: ideally we would split using ItemGroup but then PropertyGroup are not properly evaluated if they contain ItemGroup (unless using Targets) -->
