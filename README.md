@@ -1,19 +1,19 @@
 ![Xenko](https://xenko.com/images/external/xenko-logo-side.png)
 =======
 
-Welcome to the Xenko source code repository!
+Welcome to the Focus Engine source code repository!
 
-Xenko is an open-source C# game engine for realistic rendering and VR. 
+Focus is an open-source C# game engine for realistic rendering and VR based off of Xenko. You'll still see "Xenko" in many places.
 The engine is highly modular and aims at giving game makers more flexibility in their development.
 Xenko comes with an editor that allows you create and manage the content of your games or applications in a visual and intuitive way.
 
-![Xenko Editor](https://xenko.com/images/external/script-editor.png)
+![Focus Game Studio](https://xenko.com/images/external/script-editor.png)
 
 To learn more about Xenko, visit [xenko.com](https://xenko.com/).
 
 ## License
 
-Xenko is covered by [MIT](LICENSE.md), unless stated otherwise (i.e. for some files that are copied from other projects).
+Focus is covered by [MIT](LICENSE.md), unless stated otherwise (i.e. for some files that are copied from other projects).
 
 You can find the list of third party projects [here](THIRD%20PARTY.md).
 
@@ -47,10 +47,10 @@ Ask for help or report issues:
   * Optional (to target iOS/Android): `Mobile development with .NET` and `Android NDK R13B+` individual component
 3. [FBX SDK 2019.0 VS2015](https://www.autodesk.com/developer-network/platform-technologies/fbx-sdk-2019-0)
 
-### Build Xenko
+### Build Focus
 
-1. Clone Xenko: `git clone https://github.com/phr00t/xenko.git`
-2. Run `<XenkoDir>\build\Xenko.PCPlatforms.bat`, which starts Visual Studio 2019, and build.
+1. Clone Focus: `git clone https://github.com/phr00t/FocusEngine.git`
+2. Run `<FocusDir>\build\Xenko.PCPlatforms.bat`, which starts Visual Studio 2019, and build.
 
 ### Contribution Guidelines
 
