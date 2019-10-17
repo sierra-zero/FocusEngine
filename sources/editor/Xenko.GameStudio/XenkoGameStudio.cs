@@ -16,7 +16,7 @@ namespace Xenko.GameStudio
         public static string CopyrightText2 => "© 2011-2018 Silicon Studio Corp.";
 
         [NotNull]
-        public static string EditorName => $"Xenko Game Studio {EditorVersion}";
+        public static string EditorName => Program.EngineName + " " + Program.GameStudioName + " " + EditorVersion;
 
         [NotNull]
         public static string EditorVersion => XenkoVersion.NuGetVersion;

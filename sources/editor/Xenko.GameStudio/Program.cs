@@ -53,6 +53,9 @@ namespace Xenko.GameStudio
 {
     public static class Program
     {
+        public const string EngineName = "Focus";
+        public const string GameStudioName = "Game Studio";
+
         private static App app;
         private static IntPtr windowHandle;
         private static bool terminating;
@@ -68,7 +71,7 @@ namespace Xenko.GameStudio
 
             if (IntPtr.Size == 4)
             {
-                MessageBox.Show("Xenko GameStudio requires a 64bit OS to run.", "Xenko", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show(EngineName + " " + GameStudioName + " requires a 64bit OS to run.", "Xenko", MessageBoxButton.OK, MessageBoxImage.Error);
                 Environment.Exit(1);
             }
 
