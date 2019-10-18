@@ -214,7 +214,7 @@ namespace Xenko.Graphics
                     {
                         ComputeShader = computeShader.Data,
                         Flags =  PipelineStateFlags.None,
-                        RootSignature = rootSignature,
+                        RootSignaturePointer = rootSignature,
                     };
 
                     CompiledState = NativeDevice.CreateComputePipelineState(nativePipelineStateDescription);
