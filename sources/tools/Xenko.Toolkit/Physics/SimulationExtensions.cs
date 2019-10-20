@@ -81,7 +81,9 @@ namespace Xenko.Toolkit.Physics
                 throw new ArgumentNullException(nameof(simulation));
             }
 
-            return simulation.RaycastPenetrating(raySegment.Start, raySegment.End);
+            var results = new FastList<HitResult>();
+            simulation.RaycastPenetrating(raySegment.Start, raySegment.End, results);
+            return results;
         }
 
         /// <summary>
