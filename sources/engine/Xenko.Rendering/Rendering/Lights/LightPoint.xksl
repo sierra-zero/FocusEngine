@@ -23,6 +23,25 @@ namespace Xenko.Rendering.Lights
             float3 Color;
         };
 
+        void ProcessLightLinear(PointLightDataInternal light)
+        {
+            float3 lightVectorNorm;
+            float attenuation = ComputeAttenuationLinear(light, streams.PositionWS.xyz, lightVectorNorm);
+
+            streams.lightPositionWS = light.PositionWS;
+            streams.lightColor = light.Color * attenuation;
+            streams.lightDirectionWS = lightVectorNorm;
+        }
+
+        float ComputeAttenuationLinear(PointLightDataInternal light, float3 position, inout float3 lightVectorNorm)
+        {
+            float3 lightVector = light.PositionWS - position;
+            float lightVectorLength = length(lightVector);
+            lightVectorNorm = lightVector / lightVectorLength;
+
+            return max(0.0, 1.0 - (lightVectorLength / light.InvSquareRadius));
+        }
+
         void ProcessLight(PointLightDataInternal light)
         {
             float3 lightVectorNorm;

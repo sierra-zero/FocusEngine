@@ -22,6 +22,8 @@ namespace Xenko.Rendering.Lights
     /// </remarks>
     public class LightClusteredPointSpotGroupRenderer : LightGroupRendererBase
     {
+        internal static bool UseLinearLighting = false;
+
         private readonly List<int> selectedLightIndices = new List<int>();
 
         private PointLightShaderGroupData pointGroup;
@@ -167,7 +169,7 @@ namespace Xenko.Rendering.Lights
                 : base(renderContext, null)
             {
                 this.clusteredGroupRenderer = clusteredGroupRenderer;
-                ShaderSource = new ShaderClassSource("LightClusteredPointGroup");
+                ShaderSource = new ShaderClassSource(UseLinearLighting ? "LightClusteredPointGroupLinear" : "LightClusteredPointGroup");
             }
 
             protected override void UpdateLightCount()
@@ -175,7 +177,7 @@ namespace Xenko.Rendering.Lights
                 base.UpdateLightCount();
 
                 var mixin = new ShaderMixinSource();
-                mixin.Mixins.Add(new ShaderClassSource("LightClusteredPointGroup"));
+                mixin.Mixins.Add(new ShaderClassSource(UseLinearLighting ? "LightClusteredPointGroupLinear" : "LightClusteredPointGroup"));
                 ShadowGroup?.ApplyShader(mixin);
 
                 ShaderSource = mixin;
@@ -320,7 +322,7 @@ namespace Xenko.Rendering.Lights
 
                     movedClusters.Clear();
 
-                    var radius = (float)Math.Sqrt(1.0f / spotLightData.AngleOffsetAndInvSquareRadius.Z);
+                    var radius = UseLinearLighting ? spotLightData.AngleOffsetAndInvSquareRadius.Z : (float)Math.Sqrt(1.0f / spotLightData.AngleOffsetAndInvSquareRadius.Z);
 
                     Vector3 positionVS;
                     Vector3.TransformCoordinate(ref spotLightData.PositionWS, ref renderView.View, out positionVS);
@@ -374,7 +376,7 @@ namespace Xenko.Rendering.Lights
 
                     movedClusters.Clear();
 
-                    var radius = (float)Math.Sqrt(1.0f / pointLightData.InvSquareRadius);
+                    var radius = LightClusteredPointSpotGroupRenderer.UseLinearLighting ? pointLightData.InvSquareRadius : (float)Math.Sqrt(1.0f / pointLightData.InvSquareRadius);
 
                     Vector3 positionVS;
                     Vector3.TransformCoordinate(ref pointLightData.PositionWS, ref renderView.View, out positionVS);
@@ -756,7 +758,7 @@ namespace Xenko.Rendering.Lights
             public PointSpotShaderGroupData(RenderContext renderContext)
                 : base(renderContext, null)
             {
-                ShaderSource = new ShaderClassSource("LightClusteredSpotGroup");
+                ShaderSource = new ShaderClassSource(UseLinearLighting ? "LightClusteredSpotGroupLinear" : "LightClusteredSpotGroup");
             }
 
             // Makes LightRanges and Lights public

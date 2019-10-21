@@ -12,6 +12,7 @@ using Xenko.Core.Serialization.Contents;
 using Xenko.Engine;
 using Xenko.Graphics;
 using Xenko.Rendering.Images;
+using Xenko.Rendering.Lights;
 
 namespace Xenko.Rendering.Compositing
 {
@@ -107,6 +108,16 @@ namespace Xenko.Rendering.Compositing
         protected override void InitializeCore()
         {
             base.InitializeCore();
+
+            // see if we are setting linear light mode from a mesh renderer
+            foreach (RootRenderFeature rrf in RenderFeatures)
+            {
+                if (rrf is MeshRenderFeature mrf)
+                {
+                    LightClusteredPointSpotGroupRenderer.UseLinearLighting = mrf.LinearLightAttenuation;
+                    break;
+                }
+            }
 
             RenderSystem.Initialize(Context);
         }

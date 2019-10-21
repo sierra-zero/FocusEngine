@@ -610,6 +610,14 @@
       <Generator>XenkoShaderKeyGenerator</Generator>
       <LastGenOutput>VolumeMinMaxShader.cs</LastGenOutput>
     </None>
+    <None Update="Rendering\Lights\LightClusteredPointGroupLinear.xksl">
+      <LastGenOutput>LightClusteredPointGroup.cs</LastGenOutput>
+      <Generator>XenkoShaderKeyGenerator</Generator>
+    </None>
+    <None Update="Rendering\Lights\LightClusteredSpotGroupLinear.xksl">
+      <LastGenOutput>LightClusteredSpotGroup.cs</LastGenOutput>
+      <Generator>XenkoShaderKeyGenerator</Generator>
+    </None>
     <None Update="Rendering\Lights\LightSpotAttenuationDefault.xksl">
       <Generator>XenkoShaderKeyGenerator</Generator>
       <LastGenOutput>LightSpotAttenuationDefault.cs</LastGenOutput>

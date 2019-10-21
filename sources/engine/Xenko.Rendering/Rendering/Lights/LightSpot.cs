@@ -144,7 +144,7 @@ namespace Xenko.Rendering.Lights
         public override bool Update(RenderLight light)
         {
             var range = Math.Max(0.001f, Range);
-            InvSquareRange = 1.0f / (range * range);
+            InvSquareRange = LightClusteredPointSpotGroupRenderer.UseLinearLighting ? range : 1.0f / (range * range);
             var innerAngle = Math.Min(AngleInner, AngleOuter);
             var outerAngle = Math.Max(AngleInner, AngleOuter);
             AngleOuterInRadians = MathUtil.DegreesToRadians(outerAngle);

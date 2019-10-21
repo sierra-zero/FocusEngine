@@ -32,5 +32,18 @@ namespace Xenko.Rendering.Lights
             streams.lightColor = light.Color * attenuation;
             streams.lightDirectionWS = lightVectorNorm;
         }
+
+        void ProcessLightLinear(SpotLightDataInternal light)
+        {
+            float3 lightVectorNorm;
+            //float attenuation = ComputeAttenuation(light, streams.PositionWS.xyz, lightVectorNorm);
+            float attenuation = ComputeAttenuationLinear(light.PositionWS,  // TODO: Revert to the above line as soon as the shader compiler is fixed.
+                                                         light.AngleOffsetAndInvSquareRadius,
+                                                         light.DirectionWS,
+                                                         streams.PositionWS.xyz, lightVectorNorm);
+
+            streams.lightColor = light.Color * attenuation;
+            streams.lightDirectionWS = lightVectorNorm;
+        }
     };
 }

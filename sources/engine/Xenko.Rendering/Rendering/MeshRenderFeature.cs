@@ -33,6 +33,12 @@ namespace Xenko.Rendering
         [MemberCollection(CanReorderItems = true, NotNullItems = true)]
         public TrackingCollection<SubRenderFeature> RenderFeatures = new TrackingCollection<SubRenderFeature>();
 
+        /// <summary>
+        /// Use linear (fast) light attenuation? Defaults to false.
+        /// </summary>
+        [DataMember]
+        public bool LinearLightAttenuation { get; set; } = false;
+
         /// <inheritdoc/>
         public override Type SupportedRenderObjectType => typeof(RenderMesh);
 

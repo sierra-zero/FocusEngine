@@ -53,7 +53,7 @@ namespace Xenko.Rendering.Lights
         public override bool Update(RenderLight light)
         {
             var range = Math.Max(0.001f, Radius);
-            InvSquareRadius = 1.0f / (range * range);
+            InvSquareRadius = LightClusteredPointSpotGroupRenderer.UseLinearLighting ? range : 1.0f / (range * range);
             return true;
         }
 
