@@ -34,7 +34,7 @@ namespace Xenko.Rendering
         public TrackingCollection<SubRenderFeature> RenderFeatures = new TrackingCollection<SubRenderFeature>();
 
         /// <summary>
-        /// Use linear (fast) light attenuation? Defaults to false.
+        /// Use linear (fast) light attenuation? Defaults to false. Requires scene to be reloaded to be visible in editor
         /// </summary>
         [DataMember]
         public bool LinearLightAttenuation { get; set; } = false;

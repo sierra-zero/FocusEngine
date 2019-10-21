@@ -109,7 +109,7 @@ namespace Xenko.Rendering.Compositing
         {
             base.InitializeCore();
 
-            // see if we are setting linear light mode from a mesh renderer
+            // any settings to apply from a meshrenderfeature?
             foreach (RootRenderFeature rrf in RenderFeatures)
             {
                 if (rrf is MeshRenderFeature mrf)

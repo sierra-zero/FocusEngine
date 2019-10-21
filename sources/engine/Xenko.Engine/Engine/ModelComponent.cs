@@ -33,6 +33,11 @@ namespace Xenko.Engine
         private bool modelViewHierarchyDirty = true;
 
         /// <summary>
+        /// Do newly generated models become shadow casters by default? Defaults to true
+        /// </summary>
+        public static bool DefaultShadowCasters = true;
+
+        /// <summary>
         /// Per-entity state of each individual mesh of a model.
         /// </summary>
         public class MeshInfo
@@ -67,7 +72,7 @@ namespace Xenko.Engine
         public ModelComponent(Model model)
         {
             Model = model;
-            IsShadowCaster = true;
+            IsShadowCaster = DefaultShadowCasters;
         }
 
         /// <summary>
@@ -139,7 +144,7 @@ namespace Xenko.Engine
         [DataMember(30)]
         [DefaultValue(true)]
         [Display("Cast shadows")]
-        public bool IsShadowCaster { get; set; }
+        public bool IsShadowCaster { get; set; } = DefaultShadowCasters;
 
         /// <summary>
         /// The render group for this component.

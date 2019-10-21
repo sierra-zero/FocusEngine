@@ -378,6 +378,11 @@ namespace Xenko.Engine
                     SceneSystem.SplashScreenColor = Settings?.SplashScreenColor ?? Color4.Black;
                     SceneSystem.DoubleViewSplashScreen = Settings?.DoubleViewSplashScreen ?? false;
                 }
+
+                // apply rendersettings
+                Xenko.Graphics.Buffer.CaptureIndexBuffersOfSize = renderingSettings.CaptureIndexBufferOfSize;
+                Xenko.Graphics.Buffer.CaptureVertexBuffersOfSize = renderingSettings.CaptureVertexBufferOfSize;
+                ModelComponent.DefaultShadowCasters = renderingSettings.DefaultShadowCasters;
             }
         }
 

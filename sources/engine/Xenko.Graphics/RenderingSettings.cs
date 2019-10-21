@@ -2,6 +2,7 @@
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
+using System.ComponentModel;
 using Xenko.Core;
 using Xenko.Data;
 
@@ -120,5 +121,27 @@ namespace Xenko.Graphics
         /// <userdoc>The display orientations this game support.</userdoc>
         [DataMember(40)]
         public RequiredDisplayOrientation DisplayOrientation = RequiredDisplayOrientation.Default;
+
+        /// <summary>
+        /// Are mesh models by default shadow casters? Used for initialization of value only.
+        /// </summary>
+        [DataMember]
+        [DefaultValue(true)]
+        public bool DefaultShadowCasters { get; set; } = true;
+
+        /// <summary>
+        /// Store vertex buffers for later use (like batching) that are less than this size. Used for initialization of value only.
+        /// </summary>
+        [DataMember]
+        [DefaultValue(32768)]
+        public int CaptureVertexBufferOfSize { get; set; } = 32768;
+
+        /// <summary>
+        /// Store index buffers for later use (like batching) that are less than this size. Used for initialization of value only.
+        /// </summary>
+        [DataMember]
+        [DefaultValue(8192)]
+        public int CaptureIndexBufferOfSize { get; set; } = 8192;
+
     }
 }
