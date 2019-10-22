@@ -626,6 +626,10 @@
       <Generator>XenkoShaderKeyGenerator</Generator>
       <LastGenOutput>LightSpotAttenuationRectangular.cs</LastGenOutput>
     </None>
+    <None Update="Rendering\Lights\LightSpotGroupLinear.xksl">
+      <LastGenOutput>LightSpotGroup.cs</LastGenOutput>
+      <Generator>XenkoShaderKeyGenerator</Generator>
+    </None>
     <None Update="Rendering\Lights\SpotLightDataInternalShader.xksl">
       <Generator>XenkoShaderKeyGenerator</Generator>
       <LastGenOutput>SpotLightDataInternalShader.cs</LastGenOutput>

@@ -363,7 +363,8 @@ namespace Xenko.Rendering.Lights
                 TextureProjectionShaderGroupData?.UpdateLayout(compositionName);
 
                 countKey = DirectLightGroupPerDrawKeys.LightCount.ComposeWith(compositionName);
-                lightsKey = LightSpotGroupKeys.Lights.ComposeWith(compositionName);
+                lightsKey = LightClusteredPointSpotGroupRenderer.UseLinearLighting ? LightSpotGroupLinearKeys.Lights.ComposeWith(compositionName) :
+                            LightSpotGroupKeys.Lights.ComposeWith(compositionName);
             }
 
             protected override void UpdateLightCount()
@@ -376,7 +377,7 @@ namespace Xenko.Rendering.Lights
                 // Old fixed path kept in case we need it again later
                 //mixin.Mixins.Add(new ShaderClassSource("LightSpotGroup", LightCurrentCount));
                 //mixin.Mixins.Add(new ShaderClassSource("DirectLightGroupFixed", LightCurrentCount));
-                mixin.Mixins.Add(new ShaderClassSource("LightSpotGroup", LightCurrentCount));   // Add the base shader for the light group.
+                mixin.Mixins.Add(new ShaderClassSource(LightClusteredPointSpotGroupRenderer.UseLinearLighting ? "LightSpotGroupLinear" : "LightSpotGroup", LightCurrentCount));   // Add the base shader for the light group.
                 ShadowGroup?.ApplyShader(mixin);    // Add the shader for shadow mapping.
                 TextureProjectionShaderGroupData?.ApplyShader(mixin);   // Add the shader for texture projection.
 
