@@ -434,24 +434,27 @@ namespace Xenko.Graphics
 
             // shift the string position so that it is written from the left/top corner of the element
             var leftTopCornerOffset = drawCommand.TextBoxSize / 2f;
-            drawCommand.Matrix.M41 -= drawCommand.Matrix.M11 * leftTopCornerOffset.X + drawCommand.Matrix.M21 * leftTopCornerOffset.Y;
-            drawCommand.Matrix.M42 -= drawCommand.Matrix.M12 * leftTopCornerOffset.X + drawCommand.Matrix.M22 * leftTopCornerOffset.Y;
-            drawCommand.Matrix.M43 -= drawCommand.Matrix.M13 * leftTopCornerOffset.X + drawCommand.Matrix.M23 * leftTopCornerOffset.Y;
+            var worldMatrix = drawCommand.Matrix;
+            worldMatrix.M41 -= worldMatrix.M11 * leftTopCornerOffset.X + worldMatrix.M21 * leftTopCornerOffset.Y;
+            worldMatrix.M42 -= worldMatrix.M12 * leftTopCornerOffset.X + worldMatrix.M22 * leftTopCornerOffset.Y;
+            worldMatrix.M43 -= worldMatrix.M13 * leftTopCornerOffset.X + worldMatrix.M23 * leftTopCornerOffset.Y;
 
-            // do not snap static fonts when real/virtual resolution does not match.
+            // transform the world matrix into the world view project matrix
+            Matrix.MultiplyTo(ref worldMatrix, ref viewProjectionMatrix, out drawCommand.Matrix);
+
             if (!drawCommand.IsFullscreen) {
                 // we are drawing in 3D, don't snap or scale
                 drawCommand.SnapText = false;
                 drawCommand.RealVirtualResolutionRatio.X = 1f;
                 drawCommand.RealVirtualResolutionRatio.Y = 1f;
-            } 
+            }
             else if (font.FontType == SpriteFontType.SDF)
             {
                 drawCommand.SnapText = false;
                 float scaling = drawCommand.RequestedFontSize / font.Size;
                 drawCommand.RealVirtualResolutionRatio = 1 / new Vector2(scaling, scaling);
             }
-            else if ((font.FontType == SpriteFontType.Static)) 
+            else if ((font.FontType == SpriteFontType.Static))
             {
                 if ((drawCommand.RealVirtualResolutionRatio.X != 1 || drawCommand.RealVirtualResolutionRatio.Y != 1))
                     drawCommand.SnapText = false;   // we don't want snapping of the resolution of the screen does not match virtual resolution. (character alignment problems)

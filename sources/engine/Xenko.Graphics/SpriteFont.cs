@@ -301,10 +301,8 @@ namespace Xenko.Graphics
             worldMatrix.M23 *= elementSize.Y;
             worldMatrix.M24 *= elementSize.Y;
 
-            Matrix.Multiply(ref worldMatrix, ref parameters.Batch.viewProjectionMatrix, out Matrix outMatrix);
-
             RectangleF sourceRectangle = glyph.Subrect;
-            parameters.Batch.DrawCharacter(Textures[glyph.BitmapIndex], ref outMatrix, ref sourceRectangle, ref parameters.Color, parameters.DepthBias, swizzle);
+            parameters.Batch.DrawCharacter(Textures[glyph.BitmapIndex], ref worldMatrix, ref sourceRectangle, ref parameters.Color, parameters.DepthBias, swizzle);
         }
 
         /// <summary>
