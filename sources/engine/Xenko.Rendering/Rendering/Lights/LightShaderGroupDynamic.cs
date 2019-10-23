@@ -23,6 +23,12 @@ namespace Xenko.Rendering.Lights
 
         protected LightRange[] lightRanges;
 
+        /// <summary>
+        /// List of lights selected for this rendering.
+        /// </summary>
+        [ThreadStatic]
+        protected static FastListStruct<LightDynamicEntry> currentLights;
+
         public ILightShadowMapShaderGroupData ShadowGroup { get; }
 
         public int LightCurrentCount { get; private set; }
@@ -121,17 +127,17 @@ namespace Xenko.Rendering.Lights
         }
 
         /// <inheritdoc/>
-        public override void ApplyViewParameters(FastListStruct<LightDynamicEntry>? lightList, RenderDrawContext context, int viewIndex, ParameterCollection parameters)
+        public override void ApplyViewParameters(RenderDrawContext context, int viewIndex, ParameterCollection parameters)
         {
-            base.ApplyViewParameters(lightList, context, viewIndex, parameters);
-            ShadowGroup?.ApplyViewParameters(context, parameters, lightList.HasValue ? lightList.Value : new FastListStruct<LightDynamicEntry>(8));
+            base.ApplyViewParameters(context, viewIndex, parameters);
+            ShadowGroup?.ApplyViewParameters(context, parameters, currentLights);
         }
 
         /// <inheritdoc/>
-        public override void ApplyDrawParameters(FastListStruct<LightDynamicEntry>? lightList, RenderDrawContext context, int viewIndex, ParameterCollection parameters, ref BoundingBoxExt boundingBox)
+        public override void ApplyDrawParameters(RenderDrawContext context, int viewIndex, ParameterCollection parameters, ref BoundingBoxExt boundingBox)
         {
-            base.ApplyDrawParameters(lightList, context, viewIndex, parameters, ref boundingBox);
-            ShadowGroup?.ApplyDrawParameters(context, parameters, lightList.HasValue ? lightList.Value : new FastListStruct<LightDynamicEntry>(8), ref boundingBox);
+            base.ApplyDrawParameters(context, viewIndex, parameters, ref boundingBox);
+            ShadowGroup?.ApplyDrawParameters(context, parameters, currentLights, ref boundingBox);
         }
 
         public struct LightRange

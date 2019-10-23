@@ -377,11 +377,11 @@ namespace Xenko.Rendering.Lights
                 // Compute PerView lighting
                 foreach (var directLightGroup in shaderPermutation.DirectLightGroups)
                 {
-                    directLightGroup.ApplyViewParameters(null, context, viewIndex, viewParameters);
+                    directLightGroup.ApplyViewParameters(context, viewIndex, viewParameters);
                 }
                 foreach (var environmentLight in shaderPermutation.EnvironmentLights)
                 {
-                    environmentLight.ApplyViewParameters(null, context, viewIndex, viewParameters);
+                    environmentLight.ApplyViewParameters(context, viewIndex, viewParameters);
                 }
 
                 // Update PerView
@@ -439,11 +439,11 @@ namespace Xenko.Rendering.Lights
                     // Compute PerDraw lighting
                     foreach (var directLightGroup in shaderPermutation.DirectLightGroups)
                     {
-                        directLightGroup.ApplyDrawParameters(null, context, viewIndex, locals.DrawParameters, ref renderNode.RenderObject.BoundingBox);
+                        directLightGroup.ApplyDrawParameters(context, viewIndex, locals.DrawParameters, ref renderNode.RenderObject.BoundingBox);
                     }
                     foreach (var environmentLight in shaderPermutation.EnvironmentLights)
                     {
-                        environmentLight.ApplyDrawParameters(null, context, viewIndex, locals.DrawParameters, ref renderNode.RenderObject.BoundingBox);
+                        environmentLight.ApplyDrawParameters(context, viewIndex, locals.DrawParameters, ref renderNode.RenderObject.BoundingBox);
                     }
 
                     // Update resources

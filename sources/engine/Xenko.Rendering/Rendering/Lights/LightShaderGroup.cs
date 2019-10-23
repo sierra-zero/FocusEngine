@@ -57,7 +57,7 @@ namespace Xenko.Rendering.Lights
         /// <param name="context"></param>
         /// <param name="viewIndex"></param>
         /// <param name="parameters"></param>
-        public virtual void ApplyViewParameters(FastListStruct<LightDynamicEntry>? lightList, RenderDrawContext context, int viewIndex, ParameterCollection parameters)
+        public virtual void ApplyViewParameters(RenderDrawContext context, int viewIndex, ParameterCollection parameters)
         {
         }
 
@@ -68,7 +68,7 @@ namespace Xenko.Rendering.Lights
         /// <param name="viewIndex"></param>
         /// <param name="parameters"></param>
         /// <param name="boundingBox"></param>
-        public virtual void ApplyDrawParameters(FastListStruct<LightDynamicEntry>? lightList, RenderDrawContext context, int viewIndex, ParameterCollection parameters, ref BoundingBoxExt boundingBox)
+        public virtual void ApplyDrawParameters(RenderDrawContext context, int viewIndex, ParameterCollection parameters, ref BoundingBoxExt boundingBox)
         {
         }
 

@@ -347,6 +347,8 @@ namespace Xenko.Rendering.Lights
         private class SpotLightShaderGroup : LightShaderGroupDynamic
         {
             private ValueParameterKey<int> countKey;
+            [ThreadStatic]
+            private static FastListStruct<SpotLightData> lightsData;
             private ValueParameterKey<SpotLightData> lightsKey;
 
             public ITextureProjectionShaderGroupData TextureProjectionShaderGroupData { get; }
@@ -393,16 +395,20 @@ namespace Xenko.Rendering.Lights
                 return lightCount;
             }
 
-            public override void ApplyDrawParameters(FastListStruct<LightDynamicEntry>? lightList, RenderDrawContext context, int viewIndex, ParameterCollection parameters, ref BoundingBoxExt boundingBox)
+            public override void ApplyDrawParameters(RenderDrawContext context, int viewIndex, ParameterCollection parameters, ref BoundingBoxExt boundingBox)
             {
-                FastListStruct<SpotLightData> lightsData = new FastListStruct<SpotLightData>(8);
-                if (lightList == null) lightList = new FastListStruct<LightDynamicEntry>(8);
-                FastListStruct<LightDynamicEntry> currentLights = lightList.Value;
+                if (currentLights.Items == null)
+                {
+                    currentLights = new FastListStruct<LightDynamicEntry>(8);
+                }
+                else currentLights.Clear();
+                if (lightsData.Items == null) lightsData = new FastListStruct<SpotLightData>(8);
+
                 var lightRange = lightRanges[viewIndex];
                 for (int i = lightRange.Start; i < lightRange.End; ++i)
                     currentLights.Add(lights[i]);
 
-                base.ApplyDrawParameters(currentLights, context, viewIndex, parameters, ref boundingBox);
+                base.ApplyDrawParameters(context, viewIndex, parameters, ref boundingBox);
 
                 // TODO: Octree structure to select best lights quicker
                 var boundingBox2 = (BoundingBox)boundingBox;
@@ -432,6 +438,8 @@ namespace Xenko.Rendering.Lights
                 parameters.Set(lightsKey, lightsData.Count, ref lightsData.Items[0]);
 
                 TextureProjectionShaderGroupData?.ApplyDrawParameters(context, parameters, currentLights, ref boundingBox);
+
+                lightsData.Clear();
             }
         }
     }

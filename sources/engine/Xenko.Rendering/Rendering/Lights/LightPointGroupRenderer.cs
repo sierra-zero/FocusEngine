@@ -25,6 +25,8 @@ namespace Xenko.Rendering.Lights
         private class PointLightShaderGroup : LightShaderGroupDynamic
         {
             private ValueParameterKey<int> countKey;
+            [ThreadStatic]
+            private static FastListStruct<PointLightData> lightsData;
             private ValueParameterKey<PointLightData> lightsKey;
 
             public PointLightShaderGroup(RenderContext renderContext, ILightShadowMapShaderGroupData shadowGroupData)
@@ -63,16 +65,20 @@ namespace Xenko.Rendering.Lights
                 return lightCount;
             }
 
-            public override void ApplyDrawParameters(FastListStruct<LightDynamicEntry>? lightList, RenderDrawContext context, int viewIndex, ParameterCollection parameters, ref BoundingBoxExt boundingBox)
+            public override void ApplyDrawParameters(RenderDrawContext context, int viewIndex, ParameterCollection parameters, ref BoundingBoxExt boundingBox)
             {
-                FastListStruct<PointLightData> lightsData = new FastListStruct<PointLightData>(8);
-                if (lightList == null) lightList = new FastListStruct<LightDynamicEntry>(8);
-                FastListStruct<LightDynamicEntry> currentLights = lightList.Value;
+                if (currentLights.Items == null)
+                {
+                    currentLights = new FastListStruct<LightDynamicEntry>(8);
+                }
+                else currentLights.Clear();
+                if (lightsData.Items == null) lightsData = new FastListStruct<PointLightData>(8);
+
                 var lightRange = lightRanges[viewIndex];
                 for (int i = lightRange.Start; i < lightRange.End; ++i)
                     currentLights.Add(lights[i]);
 
-                base.ApplyDrawParameters(currentLights, context, viewIndex, parameters, ref boundingBox);
+                base.ApplyDrawParameters(context, viewIndex, parameters, ref boundingBox);
 
                 // TODO: Since we cull per object, we could maintain a higher number of allowed light than the shader support (i.e. 4 lights active per object even though the scene has many more of them)
                 // TODO: Octree structure to select best lights quicker
@@ -100,6 +106,7 @@ namespace Xenko.Rendering.Lights
 
                 parameters.Set(countKey, lightsData.Count);
                 parameters.Set(lightsKey, lightsData.Count, ref lightsData.Items[0]);
+                lightsData.Clear();
             }
         }
     }
