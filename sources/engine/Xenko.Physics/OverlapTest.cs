@@ -23,10 +23,10 @@ namespace Xenko.Physics
         internal static Simulation mySimulation;
 
         [ThreadStatic]
-        private static readonly OverlapCallback internalResults = new OverlapCallback();
+        private static OverlapCallback internalResults;
 
         [ThreadStatic]
-        public static readonly HashSet<object> NativeOverlappingObjects = new HashSet<object>();
+        public static HashSet<object> NativeOverlappingObjects;
 
         public static HashSet<OverlapContactPoint> ContactTestResults
         {
@@ -86,6 +86,10 @@ namespace Xenko.Physics
                     UserObject = shape
                 };
                 ghostObject.CollisionFlags |= BulletSharp.CollisionFlags.NoContactResponse;
+
+                internalResults = new OverlapCallback();
+
+                NativeOverlappingObjects = new HashSet<object>();
             }
 
             ghostObject.CollisionShape = shape.InternalShape;
