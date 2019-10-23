@@ -209,50 +209,55 @@ namespace Xenko.Rendering.Shadows
                 Array.Resize(ref offsetScales, lightCurrentCount);
             }
 
+            private object locker = new object();
+
             public override void ApplyDrawParameters(RenderDrawContext context, ParameterCollection parameters, FastListStruct<LightDynamicEntry> currentLights, ref BoundingBoxExt boundingBox)
             {
                 var boundingBox2 = (BoundingBox)boundingBox;
                 bool shadowMapCreated = false;
                 int lightIndex = 0;
 
-                for (int i = 0; i < currentLights.Count; ++i)
+                lock (locker)
                 {
-                    var lightEntry = currentLights[i];
-                    var light = lightEntry.Light;
-
-                    if (light.BoundingBox.Intersects(ref boundingBox2))
+                    for (int i = 0; i < currentLights.Count; ++i)
                     {
-                        var singleLightData = (LightSpotShadowMapShaderData)lightEntry.ShadowMapTexture.ShaderData;
-                        worldToShadowCascadeUV[lightIndex] = singleLightData.WorldToShadowCascadeUV;
-                        inverseWorldToShadowCascadeUV[lightIndex] = Matrix.Invert(singleLightData.WorldToShadowCascadeUV);
+                        var lightEntry = currentLights[i];
+                        var light = lightEntry.Light;
 
-                        depthBiases[lightIndex] = singleLightData.DepthBias;
-                        offsetScales[lightIndex] = singleLightData.OffsetScale;
-                        depthRanges[lightIndex] = singleLightData.DepthRange;
-
-                        if (!shadowMapCreated)
+                        if (light.BoundingBox.Intersects(ref boundingBox2))
                         {
-                            shadowMapTexture = singleLightData.Texture;
-                            if (shadowMapTexture != null)
+                            var singleLightData = (LightSpotShadowMapShaderData)lightEntry.ShadowMapTexture.ShaderData;
+                            worldToShadowCascadeUV[lightIndex] = singleLightData.WorldToShadowCascadeUV;
+                            inverseWorldToShadowCascadeUV[lightIndex] = Matrix.Invert(singleLightData.WorldToShadowCascadeUV);
+
+                            depthBiases[lightIndex] = singleLightData.DepthBias;
+                            offsetScales[lightIndex] = singleLightData.OffsetScale;
+                            depthRanges[lightIndex] = singleLightData.DepthRange;
+
+                            if (!shadowMapCreated) 
                             {
-                                shadowMapTextureSize = new Vector2(shadowMapTexture.Width, shadowMapTexture.Height);
-                                shadowMapTextureTexelSize = 1.0f / shadowMapTextureSize;
+                                shadowMapTexture = singleLightData.Texture;
+                                if (shadowMapTexture != null)
+                                {
+                                    shadowMapTextureSize = new Vector2(shadowMapTexture.Width, shadowMapTexture.Height);
+                                    shadowMapTextureTexelSize = 1.0f / shadowMapTextureSize;
+                                }
+                                shadowMapCreated = true;
                             }
-                            shadowMapCreated = true;
+
+                            lightIndex++;
                         }
-
-                        lightIndex++;
                     }
-                }
 
-                parameters.Set(shadowMapTextureKey, shadowMapTexture);
-                parameters.Set(shadowMapTextureSizeKey, shadowMapTextureSize);
-                parameters.Set(shadowMapTextureTexelSizeKey, shadowMapTextureTexelSize);
-                parameters.Set(worldToShadowCascadeUVsKey, worldToShadowCascadeUV);
-                parameters.Set(inverseWorldToShadowCascadeUVsKey, inverseWorldToShadowCascadeUV);
-                parameters.Set(depthRangesKey, depthRanges);
-                parameters.Set(depthBiasesKey, depthBiases);
-                parameters.Set(offsetScalesKey, offsetScales);
+                    parameters.Set(shadowMapTextureKey, shadowMapTexture);
+                    parameters.Set(shadowMapTextureSizeKey, shadowMapTextureSize);
+                    parameters.Set(shadowMapTextureTexelSizeKey, shadowMapTextureTexelSize);
+                    parameters.Set(worldToShadowCascadeUVsKey, worldToShadowCascadeUV);
+                    parameters.Set(inverseWorldToShadowCascadeUVsKey, inverseWorldToShadowCascadeUV);
+                    parameters.Set(depthRangesKey, depthRanges);
+                    parameters.Set(depthBiasesKey, depthBiases);
+                    parameters.Set(offsetScalesKey, offsetScales);
+                }
             }
         }
 
