@@ -1305,16 +1305,16 @@ namespace Xenko.Graphics
                 }
             }
 
-            if (mapMode == MapMode.Read || mapMode == MapMode.ReadWrite || mapMode == MapMode.Write)
+            if (mapMode == MapMode.WriteDiscard)
+            {
+                // this mode isn't supported, so fallback to just Write
+                mapMode = MapMode.Write;
+            }
+            else if (mapMode == MapMode.Read || mapMode == MapMode.ReadWrite || mapMode == MapMode.Write)
             {
                 // Is non-staging ever possible for Read/Write?
                 if (usage != GraphicsResourceUsage.Staging)
                     throw new InvalidOperationException();
-            }
-
-            if (mapMode == MapMode.WriteDiscard)
-            {
-                throw new InvalidOperationException("Can't use WriteDiscard on Graphics API that doesn't support renaming");
             }
 
             if (mapMode != MapMode.WriteNoOverwrite && mapMode != MapMode.Write)
