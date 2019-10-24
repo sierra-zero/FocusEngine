@@ -19,10 +19,11 @@ namespace Xenko.Physics
 
         private readonly PhysicsProcessor processor;
 
-        private readonly BulletSharp.DiscreteDynamicsWorld discreteDynamicsWorld;
+        private readonly BulletSharp.DiscreteDynamicsWorldMultiThreaded discreteDynamicsWorld;
         internal readonly BulletSharp.CollisionWorld collisionWorld;
 
         private readonly BulletSharp.CollisionDispatcher dispatcher;
+        private readonly BulletSharp.ConstraintSolverPoolMultiThreaded constraints;
         private readonly BulletSharp.CollisionConfiguration collisionConfiguration;
         private readonly BulletSharp.DbvtBroadphase broadphase;
 
@@ -90,8 +91,9 @@ namespace Xenko.Physics
             FixedTimeStep = configuration.FixedTimeStep;
 
             collisionConfiguration = new BulletSharp.DefaultCollisionConfiguration();
-            dispatcher = new BulletSharp.CollisionDispatcher(collisionConfiguration);
+            dispatcher = new BulletSharp.CollisionDispatcherMultiThreaded(collisionConfiguration);
             broadphase = new BulletSharp.DbvtBroadphase();
+            constraints = new ConstraintSolverPoolMultiThreaded(8);
 
             //this allows characters to have proper physics behavior
             broadphase.OverlappingPairCache.SetInternalGhostPairCallback(new BulletSharp.GhostPairCallback());
@@ -108,7 +110,7 @@ namespace Xenko.Physics
             //~2D pipeline
 
             //default solver
-            var solver = new BulletSharp.SequentialImpulseConstraintSolver();
+            var solver = new BulletSharp.SequentialImpulseConstraintSolverMultiThreaded();
 
             if (configuration.Flags.HasFlag(PhysicsEngineFlags.CollisionsOnly))
             {
@@ -123,7 +125,7 @@ namespace Xenko.Physics
             }
             else
             {
-                discreteDynamicsWorld = new BulletSharp.DiscreteDynamicsWorld(dispatcher, broadphase, solver, collisionConfiguration);
+                discreteDynamicsWorld = new BulletSharp.DiscreteDynamicsWorldMultiThreaded(dispatcher, broadphase, constraints, solver, collisionConfiguration);
                 discreteDynamicsWorld.SetInternalTickCallback(OnPreSimulationTick, new object(), true);
                 collisionWorld = discreteDynamicsWorld;
             }
@@ -133,7 +135,7 @@ namespace Xenko.Physics
                 solverInfo = discreteDynamicsWorld.SolverInfo; //we are required to keep this reference, or the GC will mess up
                 dispatchInfo = discreteDynamicsWorld.DispatchInfo;
 
-                solverInfo.SolverMode |= BulletSharp.SolverModes.CacheFriendly; //todo test if helps with performance or not
+                solverInfo.SolverMode |= BulletSharp.SolverModes.CacheFriendly | SolverModes.Simd | SolverModes.UseWarmStarting; //todo test if helps with performance or not
 
                 if (configuration.Flags.HasFlag(PhysicsEngineFlags.ContinuousCollisionDetection))
                 {
