@@ -201,7 +201,7 @@ namespace Xenko.Rendering.Lights
             {
                 foreach (var lightShadowMapRenderer in ShadowMapRenderer.Renderers)
                 {
-                    var shadowMapEffectSlot = lightShadowMapRenderer != null ? ((RootEffectRenderFeature)RootRenderFeature).GetEffectPermutationSlot(lightShadowMapRenderer.ShadowCasterRenderStage) : EffectPermutationSlot.Invalid;
+                    var shadowMapEffectSlot = lightShadowMapRenderer != null && lightShadowMapRenderer.ShadowCasterRenderStage != null ? ((RootEffectRenderFeature)RootRenderFeature).GetEffectPermutationSlot(lightShadowMapRenderer.ShadowCasterRenderStage) : EffectPermutationSlot.Invalid;
                     ignoredEffectSlots.Add(shadowMapEffectSlot.Index);
                 }
             }
