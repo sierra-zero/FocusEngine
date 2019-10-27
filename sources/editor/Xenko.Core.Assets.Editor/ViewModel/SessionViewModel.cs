@@ -995,29 +995,11 @@ namespace Xenko.Core.Assets.Editor.ViewModel
             {
                 var buttons = DialogHelper.CreateButtons(new[]
                 {
-                    Tr._p("Button", "Save"),
-                    Tr._p("Button", "Don't save"),
+                    Tr._p("Button", "Close Anyway"),
                     Tr._p("Button", "Cancel")
-                }, 1, 3);
-                var result = await Dialogs.MessageBox(Tr._p("Message", "The project has unsaved changes. Do you want to save it?"), buttons, MessageBoxImage.Question);
-                switch (result)
-                {
-                    case 0:
-                    case 3:
-                        // Cancel
-                        return false;
-
-                    case 1:
-                        await SaveSession();
-                        // session saving has been cancelled, aborting
-                        if (HasUnsavedAssets())
-                        {
-                            ServiceProvider.Get<IEditorDialogService>().BlockingMessageBox(Tr._p("Message", "Some assets couldn't be saved. Check the assets and try again."), MessageBoxButton.OK,
-                                MessageBoxImage.Error);
-                            return false;
-                        }
-                        break;
-                }
+                }, 2, 2);
+                var result = await Dialogs.MessageBox(Tr._p("Message", "The project has unsaved changes. Closing now would lose these changes."), buttons, MessageBoxImage.Question);
+                if (result == 2) return false;
             }
 
             return true;
