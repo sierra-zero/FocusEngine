@@ -70,6 +70,8 @@ namespace Xenko.Core.Threading
 
         private void ProcessWorkItems()
         {
+            Thread.CurrentThread.IsBackground = true;
+
             while (true)
             {
                 Action workItem = null;
