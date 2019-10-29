@@ -75,22 +75,16 @@ namespace Xenko.Physics
 
             base.Destroy();
 
-            lock (this)
+            foreach (var scene in scenes)
             {
-                foreach (var scene in scenes)
-                {
-                    scene.Simulation.Dispose();
-                }
+                scene.Simulation.Dispose();
             }
         }
 
         public Simulation Create(PhysicsProcessor sceneProcessor, PhysicsEngineFlags flags = PhysicsEngineFlags.None)
         {
             var scene = new PhysicsScene { Processor = sceneProcessor, Simulation = new Simulation(sceneProcessor, physicsConfiguration) };
-            lock (this)
-            {
-                scenes.Add(scene);
-            }
+            scenes.Add(scene);
             return scene.Simulation;
         }
 
@@ -98,46 +92,43 @@ namespace Xenko.Physics
         {
             EndThread();
 
-            lock (this)
-            {
-                var scene = scenes.SingleOrDefault(x => x.Processor == processor);
-                if (scene == null) return;
-                scenes.Remove(scene);
-                scene.Simulation.Dispose();
-            }
+            var scene = scenes.SingleOrDefault(x => x.Processor == processor);
+            if (scene == null) return;
+
+            scenes.Remove(scene);
+            scene.Simulation.Dispose();
         }
 
         private void RunPhysicsSimulation(float time)
         {
-            lock (this)
+            //read skinned meshes bone positions
+            for (int i=0; i<scenes.Count; i++)
             {
-                //read skinned meshes bone positions
-                foreach (var physicsScene in scenes)
-                {
-                    //first process any needed cleanup
-                    physicsScene.Processor.UpdateRemovals();
+                var physicsScene = scenes[i];
 
-                    //read skinned meshes bone positions and write them to the physics engine
-                    physicsScene.Processor.UpdateBones();
+                //first process any needed cleanup
+                physicsScene.Processor.UpdateRemovals();
 
-                    //simulate physics
-                    physicsScene.Simulation.Simulate(time);
+                //read skinned meshes bone positions and write them to the physics engine
+                physicsScene.Processor.UpdateBones();
 
-                    //update character bound entity's transforms from physics engine simulation
-                    physicsScene.Processor.UpdateCharacters();
+                //simulate physics
+                physicsScene.Simulation.Simulate(time);
 
-                    //Perform clean ups before test contacts in this frame
-                    physicsScene.Simulation.BeginContactTesting();
+                //update character bound entity's transforms from physics engine simulation
+                physicsScene.Processor.UpdateCharacters();
 
-                    //handle frame contacts
-                    physicsScene.Processor.UpdateContacts();
+                //Perform clean ups before test contacts in this frame
+                physicsScene.Simulation.BeginContactTesting();
 
-                    //This is the heavy contact logic
-                    physicsScene.Simulation.EndContactTesting();
+                //handle frame contacts
+                physicsScene.Processor.UpdateContacts();
 
-                    //send contact events
-                    physicsScene.Simulation.SendEvents();
-                }
+                //This is the heavy contact logic
+                physicsScene.Simulation.EndContactTesting();
+
+                //send contact events
+                physicsScene.Simulation.SendEvents();
             }
         }
 

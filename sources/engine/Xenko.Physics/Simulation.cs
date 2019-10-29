@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using BulletSharp;
 using Xenko.Core.Collections;
 using Xenko.Core.Diagnostics;
@@ -65,6 +66,8 @@ namespace Xenko.Physics
         /// </summary>
         public static bool DisableSimulation = false;
 
+        internal ReaderWriterLockSlim simulationLocker;
+
         public delegate PhysicsEngineFlags OnSimulationCreationDelegate();
 
         /// <summary>
@@ -81,6 +84,9 @@ namespace Xenko.Physics
         internal Simulation(PhysicsProcessor processor, PhysicsSettings configuration)
         {
             this.processor = processor;
+            
+            if (configuration.Flags.HasFlag(PhysicsEngineFlags.MultiThreaded))
+                simulationLocker = new ReaderWriterLockSlim(LockRecursionPolicy.NoRecursion);
 
             if (configuration.Flags == PhysicsEngineFlags.None)
             {
@@ -228,6 +234,8 @@ namespace Xenko.Physics
         /// </summary>
         public void Dispose()
         {
+            if (simulationLocker != null) simulationLocker.EnterWriteLock();
+
             //if (mSoftRigidDynamicsWorld != null) mSoftRigidDynamicsWorld.Dispose();
             if (discreteDynamicsWorld != null)
             {
@@ -241,6 +249,8 @@ namespace Xenko.Physics
             broadphase?.Dispose();
             dispatcher?.Dispose();
             collisionConfiguration?.Dispose();
+
+            if (simulationLocker != null) simulationLocker.ExitWriteLock();
         }
 
         /// <summary>
@@ -258,26 +268,34 @@ namespace Xenko.Physics
 
         internal void AddCollider(PhysicsComponent component, CollisionFilterGroupFlags group, CollisionFilterGroupFlags mask)
         {
+            if (simulationLocker != null) simulationLocker.EnterWriteLock();
             collisionWorld.AddCollisionObject(component.NativeCollisionObject, (BulletSharp.CollisionFilterGroups)group, (BulletSharp.CollisionFilterGroups)mask);
+            if (simulationLocker != null) simulationLocker.ExitWriteLock();
         }
 
         internal void RemoveCollider(PhysicsComponent component)
         {
+            if (simulationLocker != null) simulationLocker.EnterWriteLock();
             collisionWorld.RemoveCollisionObject(component.NativeCollisionObject);
+            if (simulationLocker != null) simulationLocker.ExitWriteLock();
         }
 
         internal void AddRigidBody(RigidbodyComponent rigidBody, CollisionFilterGroupFlags group, CollisionFilterGroupFlags mask)
         {
             if (discreteDynamicsWorld == null) throw new Exception("Cannot perform this action when the physics engine is set to CollisionsOnly");
 
+            if (simulationLocker != null) simulationLocker.EnterWriteLock();
             discreteDynamicsWorld.AddRigidBody(rigidBody.InternalRigidBody, (short)group, (short)mask);
+            if (simulationLocker != null) simulationLocker.ExitWriteLock();
         }
 
         internal void RemoveRigidBody(RigidbodyComponent rigidBody)
         {
             if (discreteDynamicsWorld == null) throw new Exception("Cannot perform this action when the physics engine is set to CollisionsOnly");
 
+            if (simulationLocker != null) simulationLocker.EnterWriteLock();
             discreteDynamicsWorld.RemoveRigidBody(rigidBody.InternalRigidBody);
+            if (simulationLocker != null) simulationLocker.ExitWriteLock();
         }
 
         internal void AddCharacter(CharacterComponent character, CollisionFilterGroupFlags group, CollisionFilterGroupFlags mask)
@@ -286,7 +304,11 @@ namespace Xenko.Physics
 
             var collider = character.NativeCollisionObject;
             var action = character.KinematicCharacter;
+
+            if (simulationLocker != null) simulationLocker.EnterWriteLock();
             discreteDynamicsWorld.AddCollisionObject(collider, (BulletSharp.CollisionFilterGroups)group, (BulletSharp.CollisionFilterGroups)mask);
+            if (simulationLocker != null) simulationLocker.ExitWriteLock();
+
             discreteDynamicsWorld.AddAction(action);
 
             character.Simulation = this;
@@ -298,7 +320,11 @@ namespace Xenko.Physics
 
             var collider = character.NativeCollisionObject;
             var action = character.KinematicCharacter;
+
+            if (simulationLocker != null) simulationLocker.EnterWriteLock();
             discreteDynamicsWorld.RemoveCollisionObject(collider);
+            if (simulationLocker != null) simulationLocker.ExitWriteLock();
+
             discreteDynamicsWorld.RemoveAction(action);
 
             character.Simulation = null;
@@ -520,7 +546,9 @@ namespace Xenko.Physics
         public HitResult Raycast(Vector3 from, Vector3 to, CollisionFilterGroups filterGroup = DefaultGroup, CollisionFilterGroupFlags filterFlags = DefaultFlags)
         {
             var callback = XenkoClosestRayResultCallback.Shared(ref from, ref to, filterGroup, filterFlags);
+            if (simulationLocker != null) simulationLocker.EnterReadLock();
             collisionWorld.RayTest(from, to, callback);
+            if (simulationLocker != null) simulationLocker.ExitReadLock();
             return callback.Result;
         }
 
@@ -536,7 +564,9 @@ namespace Xenko.Physics
         public bool Raycast(Vector3 from, Vector3 to, out HitResult result, CollisionFilterGroups filterGroup = DefaultGroup, CollisionFilterGroupFlags filterFlags = DefaultFlags)
         {
             var callback = XenkoClosestRayResultCallback.Shared(ref from, ref to, filterGroup, filterFlags);
+            if (simulationLocker != null) simulationLocker.EnterReadLock();
             collisionWorld.RayTest(from, to, callback);
+            if (simulationLocker != null) simulationLocker.ExitReadLock();
             result = callback.Result;
             return result.Succeeded;
         }
@@ -553,7 +583,9 @@ namespace Xenko.Physics
         public void RaycastPenetrating(Vector3 from, Vector3 to, IList<HitResult> resultsOutput, CollisionFilterGroups filterGroup = DefaultGroup, CollisionFilterGroupFlags filterFlags = DefaultFlags)
         {
             var callback = XenkoAllHitsRayResultCallback.Shared(ref from, ref to, resultsOutput, filterGroup, filterFlags);
+            if (simulationLocker != null) simulationLocker.EnterReadLock();
             collisionWorld.RayTest(from, to, callback);
+            if (simulationLocker != null) simulationLocker.ExitReadLock();
         }
 
         /// <summary>
@@ -572,7 +604,9 @@ namespace Xenko.Physics
             if (sh == null) throw new Exception("This kind of shape cannot be used for a ShapeSweep.");
 
             var callback = XenkoClosestConvexResultCallback.Shared(filterGroup, filterFlags);
+            if (simulationLocker != null) simulationLocker.EnterReadLock();
             collisionWorld.ConvexSweepTest(sh, from, to, callback);
+            if (simulationLocker != null) simulationLocker.ExitReadLock();
             return callback.Result;
         }
 
@@ -595,7 +629,9 @@ namespace Xenko.Physics
             }
             
             var rcb = XenkoAllHitsConvexResultCallback.Shared(resultsOutput, filterGroup, filterFlags);
+            if (simulationLocker != null) simulationLocker.EnterReadLock();
             collisionWorld.ConvexSweepTest(sh, from, to, rcb);
+            if (simulationLocker != null) simulationLocker.ExitReadLock();
         }
 
         /// <summary>
@@ -691,8 +727,16 @@ namespace Xenko.Physics
 
             SimulationProfiler = Profiler.Begin(PhysicsProfilingKeys.SimulationProfilingKey);
 
-            if (discreteDynamicsWorld != null) discreteDynamicsWorld.StepSimulation(deltaTime, MaxSubSteps, FixedTimeStep);
-            else collisionWorld.PerformDiscreteCollisionDetection();
+            if (discreteDynamicsWorld != null)
+            {
+                if (simulationLocker != null) simulationLocker.EnterWriteLock();
+                discreteDynamicsWorld.StepSimulation(deltaTime, MaxSubSteps, FixedTimeStep);
+                if (simulationLocker != null) simulationLocker.ExitWriteLock();
+            }
+            else
+            {
+                collisionWorld.PerformDiscreteCollisionDetection();
+            }
 
             SimulationProfiler.End("Alive rigidbodies: {0}", UpdatedRigidbodies);
 

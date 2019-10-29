@@ -95,7 +95,9 @@ namespace Xenko.Physics
             ghostObject.CollisionShape = shape.InternalShape;
             ghostObject.WorldTransform = Matrix.Transformation(shape.Scaling, shape.LocalRotation, position.HasValue ? position.Value + shape.LocalOffset : shape.LocalOffset);
 
+            if (mySimulation.simulationLocker != null) mySimulation.simulationLocker.EnterWriteLock();
             mySimulation.collisionWorld.AddCollisionObject(ghostObject, (BulletSharp.CollisionFilterGroups)myGroup, (BulletSharp.CollisionFilterGroups)overlapsWith);
+            if (mySimulation.simulationLocker != null) mySimulation.simulationLocker.ExitWriteLock();
 
             int overlapCount = ghostObject.NumOverlappingObjects;
 
@@ -116,7 +118,9 @@ namespace Xenko.Physics
                 }
             }
 
+            if (mySimulation.simulationLocker != null) mySimulation.simulationLocker.EnterWriteLock();
             mySimulation.collisionWorld.RemoveCollisionObject(ghostObject);
+            if (mySimulation.simulationLocker != null) mySimulation.simulationLocker.ExitWriteLock();
 
             return overlapCount;
         }
