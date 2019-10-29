@@ -3,6 +3,7 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using Xenko.Core;
 using Xenko.Engine;
 using Xenko.Games;
@@ -16,6 +17,11 @@ namespace Xenko.Physics
             public PhysicsProcessor Processor;
             public Simulation Simulation;
         }
+
+        internal static volatile float timeToSimulate;
+        private bool runThread;
+        private ManualResetEventSlim doUpdateEvent;
+        private Thread physicsThread;
 
         private readonly List<PhysicsScene> scenes = new List<PhysicsScene>();
 
@@ -33,13 +39,40 @@ namespace Xenko.Physics
 
         private PhysicsSettings physicsConfiguration;
 
+        public bool isMultithreaded
+        {
+            get
+            {
+                return ((physicsConfiguration?.Flags ?? 0) & PhysicsEngineFlags.MultiThreaded) != 0;
+            }
+        }
+
         public override void Initialize()
         {
             physicsConfiguration = Game?.Settings != null ? Game.Settings.Configurations.Get<PhysicsSettings>() : new PhysicsSettings();
+
+            if (isMultithreaded)
+            {
+                doUpdateEvent = new ManualResetEventSlim(false);
+                runThread = true;
+                physicsThread = new Thread(new ThreadStart(PhysicsProcessingThreadBody));
+                physicsThread.Name = "BulletPhysics Processing Thread";
+                physicsThread.IsBackground = true;
+                physicsThread.Start();
+            }
+        }
+
+        private void EndThread()
+        {
+            runThread = false;
+            if (physicsThread != null && physicsThread.IsAlive)
+                physicsThread.Join(5000);
         }
 
         protected override void Destroy()
         {
+            EndThread();
+
             base.Destroy();
 
             lock (this)
@@ -63,6 +96,8 @@ namespace Xenko.Physics
 
         public void Release(PhysicsProcessor processor)
         {
+            EndThread();
+
             lock (this)
             {
                 var scene = scenes.SingleOrDefault(x => x.Processor == processor);
@@ -72,10 +107,8 @@ namespace Xenko.Physics
             }
         }
 
-        public override void Update(GameTime gameTime)
+        private void RunPhysicsSimulation(float time)
         {
-            if (Simulation.DisableSimulation) return;
-
             lock (this)
             {
                 //read skinned meshes bone positions
@@ -86,16 +119,16 @@ namespace Xenko.Physics
 
                     //read skinned meshes bone positions and write them to the physics engine
                     physicsScene.Processor.UpdateBones();
-                    
+
                     //simulate physics
-                    physicsScene.Simulation.Simulate((float)gameTime.Elapsed.TotalSeconds);
+                    physicsScene.Simulation.Simulate(time);
 
                     //update character bound entity's transforms from physics engine simulation
                     physicsScene.Processor.UpdateCharacters();
 
                     //Perform clean ups before test contacts in this frame
                     physicsScene.Simulation.BeginContactTesting();
-                   
+
                     //handle frame contacts
                     physicsScene.Processor.UpdateContacts();
 
@@ -103,8 +136,39 @@ namespace Xenko.Physics
                     physicsScene.Simulation.EndContactTesting();
 
                     //send contact events
-                    physicsScene.Simulation.SendEvents();                   
+                    physicsScene.Simulation.SendEvents();
                 }
+            }
+        }
+
+        private void PhysicsProcessingThreadBody()
+        {
+            while (runThread)
+            {
+                if (doUpdateEvent.Wait(1000) && timeToSimulate > 0f)
+                {
+                    float simulateThisInterval = timeToSimulate;
+                    timeToSimulate -= simulateThisInterval;
+
+                    RunPhysicsSimulation(simulateThisInterval);
+                }
+
+                doUpdateEvent.Reset();
+            }
+        }
+
+        public override void Update(GameTime gameTime)
+        {
+            if (Simulation.DisableSimulation) return;
+
+            if (isMultithreaded)
+            {
+                timeToSimulate += (float)gameTime.Elapsed.TotalSeconds;
+                doUpdateEvent.Set();
+            } 
+            else
+            {
+                RunPhysicsSimulation((float)gameTime.Elapsed.TotalSeconds);
             }
         }
     }

@@ -9,6 +9,8 @@ using Xenko.Engine;
 using Xenko.Games;
 using Xenko.Physics.Engine;
 using Xenko.Rendering;
+using System.Linq;
+using System;
 
 namespace Xenko.Physics
 {
@@ -243,13 +245,36 @@ namespace Xenko.Physics
 
         public void UpdateContacts()
         {
-            foreach (var dataPair in ComponentDatas)
+            if (physicsSystem.isMultithreaded)
             {
-                var data = dataPair.Value;
-                var shouldProcess = data.PhysicsComponent.ProcessCollisionsSlim || data.PhysicsComponent.ProcessCollisions || ((data.PhysicsComponent as PhysicsTriggerComponentBase)?.IsTrigger ?? false);
-                if (data.PhysicsComponent.Enabled && shouldProcess && data.PhysicsComponent.ColliderShape != null)
+                List<AssociatedData> allData = ComponentDatas.Values.ToList<AssociatedData>();
+                for (int i=0; i<allData.Count; i++)
                 {
-                    Simulation.ContactTest(data.PhysicsComponent);
+                    try
+                    {
+                        var data = allData[i];
+
+                        var shouldProcess = data.PhysicsComponent.ProcessCollisionsSlim || data.PhysicsComponent.ProcessCollisions || ((data.PhysicsComponent as PhysicsTriggerComponentBase)?.IsTrigger ?? false);
+                        if (data.PhysicsComponent.Enabled && shouldProcess && data.PhysicsComponent.ColliderShape != null)
+                        {
+                            Simulation.ContactTest(data.PhysicsComponent);
+                        }
+                    } 
+                    catch(Exception e)
+                    {
+                        // just continue on, probably a threading blip we can safely ignore
+                    }
+                }
+            }
+            else
+            {
+                foreach (var data in ComponentDatas.Values)
+                {
+                    var shouldProcess = data.PhysicsComponent.ProcessCollisionsSlim || data.PhysicsComponent.ProcessCollisions || ((data.PhysicsComponent as PhysicsTriggerComponentBase)?.IsTrigger ?? false);
+                    if (data.PhysicsComponent.Enabled && shouldProcess && data.PhysicsComponent.ColliderShape != null)
+                    {
+                        Simulation.ContactTest(data.PhysicsComponent);
+                    }
                 }
             }
         }

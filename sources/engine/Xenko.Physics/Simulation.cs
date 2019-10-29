@@ -933,7 +933,7 @@ namespace Xenko.Physics
                         PositionOnA = contact.m_positionWorldOnA,
                         PositionOnB = contact.m_positionWorldOnB,
                     };
-                    component0.CurrentPhysicalContacts.Add(cp);
+                    component0.processingPhysicalContacts[component0.processingPhysicalContactsIndex ^ 1].Add(cp);
                 }
 
                 return 0f;
@@ -976,8 +976,9 @@ namespace Xenko.Physics
             if( component.ProcessCollisionsSlim ) {
                 simpleFrameContacts.CollisionFilterMask = (int)component.CanCollideWith;
                 simpleFrameContacts.CollisionFilterGroup = (int)component.CollisionGroup;
-                component.CurrentPhysicalContacts.Clear();
+                component.processingPhysicalContacts[component.processingPhysicalContactsIndex ^ 1].Clear();
                 collisionWorld.ContactTest(component.NativeCollisionObject, simpleFrameContacts);
+                component.processingPhysicalContactsIndex ^= 1; // switch what list to return
             } else {
                 currentFrameContacts.CollisionFilterMask = (int)component.CanCollideWith;
                 currentFrameContacts.CollisionFilterGroup = (int)component.CollisionGroup;

@@ -380,6 +380,17 @@ namespace Xenko.Physics
             {
                 UpdateBoneTransformation(ref physicsTransform);
             }
+
+            if (Bullet2PhysicsSystem.timeToSimulate > 0f)
+            {
+                // interpolate awaiting simulation time
+                Entity.Transform.Position += (Vector3)InternalRigidBody.InterpolationLinearVelocity * Bullet2PhysicsSystem.timeToSimulate;
+                if (IgnorePhysicsRotation == false)
+                {
+                    Vector3 angSpeed = (Vector3)InternalRigidBody.InterpolationAngularVelocity * Bullet2PhysicsSystem.timeToSimulate;
+                    Entity.Transform.Rotation *= Quaternion.RotationYawPitchRoll(angSpeed.X, angSpeed.Y, angSpeed.Z);
+                }
+            }
         }
 
         //This is valid for Dynamic rigidbodies (called once at initialization)

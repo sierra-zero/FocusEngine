@@ -122,7 +122,7 @@ namespace Xenko.Engine
         /// true, false
         /// </value>
         /// <userdoc>
-        /// Stores contact points in a simple CurrentPhysicalContacts list, instead of new/update/ended events. Uses less CPU than ProcessCollisions
+        /// Stores contact points in a simple CurrentPhysicalContacts list, instead of new/update/ended events. Uses less CPU than ProcessCollisions and is multithreading supported
         /// </userdoc>
         [Display("Simple collision storage")]
         [DataMemberIgnore]
@@ -131,7 +131,12 @@ namespace Xenko.Engine
                 return _ProcessCollisionsSlim;
             }
             set {
-                if (value && CurrentPhysicalContacts == null) CurrentPhysicalContacts = new List<ContactPoint>();
+                if (value && processingPhysicalContacts == null)
+                {
+                    processingPhysicalContacts = new List<ContactPoint>[2];
+                    processingPhysicalContacts[0] = new List<ContactPoint>();
+                    processingPhysicalContacts[1] = new List<ContactPoint>();
+                }
                 _ProcessCollisionsSlim = value;
             }
         }
@@ -141,7 +146,16 @@ namespace Xenko.Engine
         /// If we are using ProcessCollisionSlim, this list will maintain all current collisions
         /// </summary>
         [DataMemberIgnore]
-        public List<ContactPoint> CurrentPhysicalContacts;
+        public List<ContactPoint> CurrentPhysicalContacts
+        {
+            get
+            {
+                return processingPhysicalContacts != null ? processingPhysicalContacts[processingPhysicalContactsIndex] : null;
+            }
+        }
+
+        internal List<ContactPoint>[] processingPhysicalContacts;
+        internal int processingPhysicalContactsIndex;
 
         /// <summary>
         /// Gets or sets if this element is enabled in the physics engine
@@ -786,7 +800,11 @@ namespace Xenko.Engine
 
         protected virtual void OnDetach()
         {
-            if (CurrentPhysicalContacts != null) CurrentPhysicalContacts.Clear();
+            if (processingPhysicalContacts != null)
+            {
+                processingPhysicalContacts[0].Clear();
+                processingPhysicalContacts[1].Clear();
+            }
 
             if (NativeCollisionObject == null || DoNotDispose) return;
 
