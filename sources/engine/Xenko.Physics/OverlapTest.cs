@@ -76,7 +76,8 @@ namespace Xenko.Physics
                                              bool contactTest = false, bool stopAfterFirstContact = false)
         {
             // doesn't support multithreading
-            if (mySimulation.simulationLocker != null) return -1;
+            if (mySimulation.simulationLocker != null)
+                throw new InvalidOperationException("Overlap testing not supported with multithreaded physics");
 
             if (ghostObject == null)
             {
