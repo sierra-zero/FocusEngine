@@ -534,8 +534,7 @@ namespace Xenko.Core.Presentation.Quantum.ViewModels
             if (value == null)
                 return null;
             object convertedValue;
-            if (!TypeConverterHelper.TryConvert(value, Type, out convertedValue))
-                throw new InvalidOperationException("Can not convert value to the required type");
+            if (!TypeConverterHelper.TryConvert(value, Type, out convertedValue)) return null;
             return convertedValue;
         }
 
