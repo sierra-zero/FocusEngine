@@ -589,6 +589,39 @@ namespace Xenko.Physics
         }
 
         /// <summary>
+        /// Performs a test to see if a collider shape collides with anything, and if so, returns the closest hit to the center of the shape.
+        /// </summary>
+        /// <param name="shape">The shape.</param>
+        /// <param name="position">Where to test.</param>
+        /// <param name="filterGroup">Group of the shape.</param>
+        /// <param name="filterFlags">What the shape should collide with</param>
+        /// <returns></returns>
+        public HitResult ShapeTest(ColliderShape shape, Vector3 position, CollisionFilterGroups filterGroup = DefaultGroup, CollisionFilterGroupFlags filterFlags = DefaultFlags)
+        {
+            Matrix from = Matrix.Transformation(Vector3.Zero, Quaternion.Identity, position);
+            Matrix to = Matrix.Translation(position);
+
+            return ShapeSweep(shape, from, to, filterGroup, filterFlags);
+        }
+
+        /// <summary>
+        /// Performs a test to see if a collider shape collides with anything, and if so, returns all results in a list
+        /// </summary>
+        /// <param name="shape">The shape.</param>
+        /// <param name="position">Where to test.</param>
+        /// <param name="resultsOutput">Where to store results</param>
+        /// <param name="filterGroup">Group of the shape.</param>
+        /// <param name="filterFlags">What the shape should collide with</param>
+        /// <returns></returns>
+        public void ShapeTestPenetrating(ColliderShape shape, Vector3 position, IList<HitResult> resultsOutput, CollisionFilterGroups filterGroup = DefaultGroup, CollisionFilterGroupFlags filterFlags = DefaultFlags)
+        {
+            Matrix from = Matrix.Transformation(Vector3.Zero, Quaternion.Identity, position);
+            Matrix to = Matrix.Translation(position);
+
+            ShapeSweepPenetrating(shape, from, to, resultsOutput, filterGroup, filterFlags);
+        }
+
+        /// <summary>
         /// Performs a sweep test using a collider shape and returns the closest hit
         /// </summary>
         /// <param name="shape">The shape.</param>
