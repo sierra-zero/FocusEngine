@@ -146,11 +146,20 @@ namespace Xenko.Engine
         /// If we are using ProcessCollisionSlim, this list will maintain all current collisions
         /// </summary>
         [DataMemberIgnore]
-        public List<ContactPoint> CurrentPhysicalContacts
+        public List<ContactPoint> CollectCurrentSlimContacts
         {
             get
             {
-                return processingPhysicalContacts != null ? processingPhysicalContacts[processingPhysicalContactsIndex] : null;
+                if (processingPhysicalContacts == null) return null;
+
+                if (Simulation.simulationLocker == null)
+                {
+                    // not multithreaded, just return the current list
+                    return processingPhysicalContacts[processingPhysicalContactsIndex];
+                }
+
+                // multithreaded, construct a new list
+                return new List<ContactPoint>(processingPhysicalContacts[processingPhysicalContactsIndex]);
             }
         }
 
