@@ -534,7 +534,7 @@ namespace Xenko.Core.Presentation.Quantum.ViewModels
             if (value == null)
                 return null;
             object convertedValue;
-            if (!TypeConverterHelper.TryConvert(value, Type, out convertedValue)) return null;
+            if (!TypeConverterHelper.TryConvert(value, Type, out convertedValue)) return NodeValue;
             return convertedValue;
         }
 
