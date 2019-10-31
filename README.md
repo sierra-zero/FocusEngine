@@ -1,4 +1,4 @@
-![Xenko](https://xenko.com/images/external/xenko-logo-side.png)
+![Focus Engine](https://i.imgur.com/OjANvN9.png)
 =======
 
 Welcome to the Focus Engine source code repository!
@@ -32,7 +32,7 @@ Ask for help or report issues:
 * [Chat with the community on Discord](https://discord.gg/f6aerfE) [![Join the chat at https://discord.gg/f6aerfE](https://img.shields.io/discord/500285081265635328.svg?style=flat&logo=discord&label=discord)](https://discord.gg/f6aerfE)
 * [Discuss topics on our forums](http://forums.xenko.com/)
 * [Report engine issues](https://github.com/xenko3d/xenko/issues)
-* [Donate to support the project](https://www.patreon.com/xenko)
+* [Donate to support the project](https://www.patreon.com/phr00tssoftware)
 
 ## Building from source
 
