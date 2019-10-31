@@ -9,7 +9,6 @@ using Xenko.Engine;
 using Xenko.Games;
 using Xenko.Physics.Engine;
 using Xenko.Rendering;
-using System.Linq;
 using System;
 
 namespace Xenko.Physics
@@ -109,7 +108,10 @@ namespace Xenko.Physics
             if (elements.Contains(component))
             {
                 // make sure we are not removing it
-                currentFrameRemovals.Remove(component);
+                lock (currentFrameRemovals)
+                {
+                    currentFrameRemovals.Remove(component);
+                }
                 return;
             }
 
@@ -118,7 +120,10 @@ namespace Xenko.Physics
             var character = component as CharacterComponent;
             if (character != null)
             {
-                characters.Add(character);
+                lock (characters)
+                {
+                    characters.Add(character);
+                }
             }
 
             if (colliderShapesRendering)
@@ -130,7 +135,10 @@ namespace Xenko.Physics
 
             if (component.BoneIndex != -1)
             {
-                boneElements.Add((PhysicsSkinnedComponentBase)component);
+                lock (boneElements)
+                {
+                    boneElements.Add((PhysicsSkinnedComponentBase)component);
+                }
             }
         }
 
@@ -140,7 +148,10 @@ namespace Xenko.Physics
 
             if (component.BoneIndex != -1)
             {
-                boneElements.Remove((PhysicsSkinnedComponentBase)component);
+                lock (boneElements)
+                {
+                    boneElements.Remove((PhysicsSkinnedComponentBase)component);
+                }
             }
 
             elements.Remove(component);
@@ -153,7 +164,10 @@ namespace Xenko.Physics
             var character = component as CharacterComponent;
             if (character != null)
             {
-                characters.Remove(character);
+                lock (characters)
+                {
+                    characters.Remove(character);
+                }
             }
 
             component.Detach();
@@ -163,7 +177,10 @@ namespace Xenko.Physics
 
         protected override void OnEntityComponentRemoved(Entity entity, PhysicsComponent component, AssociatedData data)
         {
-            currentFrameRemovals.Add(component);
+            lock (currentFrameRemovals)
+            {
+                currentFrameRemovals.Add(component);
+            }
         }
 
         protected override void OnSystemAdd()
@@ -203,24 +220,27 @@ namespace Xenko.Physics
             var charactersProfilingState = Profiler.Begin(PhysicsProfilingKeys.CharactersProfilingKey);
             var activeCharacters = 0;
             //characters need manual updating
-            foreach (var element in characters)
+            lock (characters)
             {
-                if (!element.Enabled || element.ColliderShape == null) continue;
-
-                var worldTransform = Matrix.RotationQuaternion(element.Orientation) * element.PhysicsWorldTransform;
-                element.UpdateTransformationComponent(ref worldTransform);
-
-                if (element.DebugEntity != null)
+                foreach (var element in characters)
                 {
-                    Vector3 scale, pos;
-                    Quaternion rot;
-                    worldTransform.Decompose(out scale, out rot, out pos);
-                    element.DebugEntity.Transform.Position = pos;
-                    element.DebugEntity.Transform.Rotation = rot;
-                }
+                    if (!element.Enabled || element.ColliderShape == null) continue;
 
-                charactersProfilingState.Mark();
-                activeCharacters++;
+                    var worldTransform = Matrix.RotationQuaternion(element.Orientation) * element.PhysicsWorldTransform;
+                    element.UpdateTransformationComponent(ref worldTransform);
+
+                    if (element.DebugEntity != null)
+                    {
+                        Vector3 scale, pos;
+                        Quaternion rot;
+                        worldTransform.Decompose(out scale, out rot, out pos);
+                        element.DebugEntity.Transform.Position = pos;
+                        element.DebugEntity.Transform.Rotation = rot;
+                    }
+
+                    charactersProfilingState.Mark();
+                    activeCharacters++;
+                }
             }
             charactersProfilingState.End("Active characters: {0}", activeCharacters);
         }
@@ -237,9 +257,12 @@ namespace Xenko.Physics
 
         internal void UpdateBones()
         {
-            foreach (var element in boneElements)
+            lock (boneElements)
             {
-                element.UpdateBones();
+                foreach (var element in boneElements)
+                {
+                    element.UpdateBones();
+                }
             }
         }
 
@@ -247,22 +270,16 @@ namespace Xenko.Physics
         {
             if (physicsSystem.isMultithreaded)
             {
-                List<AssociatedData> allData = ComponentDatas.Values.ToList<AssociatedData>();
+                List<AssociatedData> allData = new List<AssociatedData>(ComponentDatas.Values);
                 for (int i=0; i<allData.Count; i++)
                 {
-                    try
-                    {
-                        var data = allData[i];
+                    var data = allData[i];
+                    if (data == null) continue;
 
-                        var shouldProcess = data.PhysicsComponent.ProcessCollisionsSlim || data.PhysicsComponent.ProcessCollisions || ((data.PhysicsComponent as PhysicsTriggerComponentBase)?.IsTrigger ?? false);
-                        if (data.PhysicsComponent.Enabled && shouldProcess && data.PhysicsComponent.ColliderShape != null)
-                        {
-                            Simulation.ContactTest(data.PhysicsComponent);
-                        }
-                    } 
-                    catch(Exception e)
+                    var shouldProcess = data.PhysicsComponent.ProcessCollisionsSlim || data.PhysicsComponent.ProcessCollisions || ((data.PhysicsComponent as PhysicsTriggerComponentBase)?.IsTrigger ?? false);
+                    if (data.PhysicsComponent.Enabled && shouldProcess && data.PhysicsComponent.ColliderShape != null)
                     {
-                        // just continue on, probably a threading blip we can safely ignore
+                        Simulation.ContactTest(data.PhysicsComponent);
                     }
                 }
             }
@@ -281,12 +298,15 @@ namespace Xenko.Physics
 
         public void UpdateRemovals()
         {
-            foreach (var currentFrameRemoval in currentFrameRemovals)
+            lock (currentFrameRemovals)
             {
-                ComponentRemoval(currentFrameRemoval);
-            }
+                foreach (var currentFrameRemoval in currentFrameRemovals)
+                {
+                    ComponentRemoval(currentFrameRemoval);
+                }
 
-            currentFrameRemovals.Clear();
+                currentFrameRemovals.Clear();
+            }
 
             // reset flag after removals/detaches
             ColliderShape.DoNotDisposeAnyOnNextDetach = false;
