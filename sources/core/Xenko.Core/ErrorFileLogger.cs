@@ -33,9 +33,11 @@ namespace Xenko.Core
 
             string time = DateTime.Now.ToString("dd-MMM-yyyy-hh.mm-tt");
             string filename = savePath + savePrefix + time + ".txt";
-            message = "\n-------------- NEW ENTRY ------------------------\n" +
+            message = "\n--------------------- NEW ENTRY ------------------------\n" +
                       "Executable: " + System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName + "\n" +
-                      "Time: " + time + "\n" + message;
+                      "Thread: " + Thread.CurrentThread.Name + "\n" +
+                      "Time: " + time + "\n" + 
+                      "Message: " + message + "\n------------------------ END ENTRY -------------------\n";
             System.IO.File.AppendAllText(filename, message);
         }
 
