@@ -44,18 +44,9 @@ namespace Xenko.Core.Diagnostics
         public LogMessage(string module, LogMessageType type, string text, Exception exception, CallerInfo callerInfo)
         {
             if (exception != null) {
-                try {
-                    // Get stack trace for the exception with source file information
-                    StackTrace st = new StackTrace(exception, true);
-                    // Get the top stack frame
-                    StackFrame frame = st.GetFrame(0);
-                    // Get the line number from the stack frame
-                    int line = frame.GetFileLineNumber();
-                    if (line != 0) {
-                        // try to add it to the front of the text
-                        text = "{line #" + line.ToString() + "} " + text;
-                    }
-                } catch (Exception e) { /* couldn't get line info */ }
+                // if file logging is enabled, write it here
+                ErrorFileLogger.WriteExceptionToFile(exception, type.ToString() + ", " + text + ", " + module + ", File: " +
+                                                     (callerInfo?.FilePath ?? "none") + ", Line: " + (callerInfo?.LineNumber.ToString() ?? "none"));
             }
 
             Module = module;
