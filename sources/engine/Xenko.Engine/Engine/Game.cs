@@ -7,6 +7,7 @@ using System.IO;
 using System.Reflection;
 using System.Threading.Tasks;
 using Xenko.Audio;
+using Xenko.Core;
 using Xenko.Core.Diagnostics;
 using Xenko.Core.IO;
 using Xenko.Core.Mathematics;
@@ -383,6 +384,17 @@ namespace Xenko.Engine
                 Xenko.Graphics.Buffer.CaptureIndexBuffersOfSize = renderingSettings.CaptureIndexBufferOfSize;
                 Xenko.Graphics.Buffer.CaptureVertexBuffersOfSize = renderingSettings.CaptureVertexBufferOfSize;
                 ModelComponent.DefaultShadowCasters = renderingSettings.DefaultShadowCasters;
+
+                // enable error file logging?
+                if (renderingSettings.DisableErrorFileLog == false)
+                {
+                    ErrorFileLogger.EnableGlobalExceptionLogger();
+                }
+                else
+                {
+                    // should already be disabled, but we'll make sure
+                    ErrorFileLogger.Disable();
+                }
             }
         }
 

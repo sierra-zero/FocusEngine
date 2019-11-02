@@ -13,8 +13,10 @@ namespace Xenko.Core
     {
         private static string savePath = null, savePrefix = null;
 
+        private static UnhandledExceptionEventHandler globalHandler = null;
+
         /// <summary>
-        /// Turn on file reporting of all exceptions
+        /// Turn on file reporting of all exceptions, or change settings
         /// </summary>
         /// <param name="prefix">What to prefix the files?</param>
         /// <param name="path">Location to store the log files, null defaults to My Documents folder</param>
@@ -23,8 +25,22 @@ namespace Xenko.Core
             savePath = (path ?? Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)) + "/";
             savePrefix = prefix ?? "FocusEngineCrashLog";
 
+            if (globalHandler == null)
+                globalHandler = new UnhandledExceptionEventHandler(UnhandledException);
+
             // Add the event handler for handling non-UI thread exceptions to the event. 
-            AppDomain.CurrentDomain.UnhandledException += new UnhandledExceptionEventHandler(UnhandledException);
+            // remove it first, just to make sure we don't multiply it
+            AppDomain.CurrentDomain.UnhandledException -= globalHandler;
+            AppDomain.CurrentDomain.UnhandledException += globalHandler;
+        }
+
+        public static void Disable()
+        {
+            if (globalHandler != null)
+                AppDomain.CurrentDomain.UnhandledException -= globalHandler;
+
+            savePath = null;
+            savePrefix = null;
         }
 
         public static void WriteLogToFile(string message)

@@ -66,7 +66,7 @@ namespace Xenko.Graphics
     }
 
     [DataContract]
-    [Display("Rendering")]
+    [Display("Core/Rendering")]
     public class RenderingSettings : Configuration
     {
         /// <summary>
@@ -125,23 +125,30 @@ namespace Xenko.Graphics
         /// <summary>
         /// Are mesh models by default shadow casters? Used for initialization of value only.
         /// </summary>
-        [DataMember]
+        [DataMember(50)]
         [DefaultValue(true)]
         public bool DefaultShadowCasters { get; set; } = true;
 
         /// <summary>
         /// Store vertex buffers for later use (like batching) that are less than this size. Used for initialization of value only.
         /// </summary>
-        [DataMember]
+        [DataMember(60)]
         [DefaultValue(32768)]
         public int CaptureVertexBufferOfSize { get; set; } = 32768;
 
         /// <summary>
         /// Store index buffers for later use (like batching) that are less than this size. Used for initialization of value only.
         /// </summary>
-        [DataMember]
+        [DataMember(70)]
         [DefaultValue(8192)]
         public int CaptureIndexBufferOfSize { get; set; } = 8192;
+
+        /// <summary>
+        /// Disable generating error log files in My Documents (default location)? Can be configured via ErrorFileLogger class
+        /// </summary>
+        [DataMember(80)]
+        [DefaultValue(false)]
+        public bool DisableErrorFileLog { get; set; } = false;
 
     }
 }
