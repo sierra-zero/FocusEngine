@@ -7,7 +7,7 @@
         xmlns:gameStudio="clr-namespace:Xenko.GameStudio"
         xmlns:crashReport="clr-namespace:Xenko.Editor.CrashReport"
         mc:Ignorable="d" 
-        Title="{xk:Localize About Xenko, Context=About}"
+        Title="{xk:Localize About Focus Engine, Context=About}"
         SizeToContent="WidthAndHeight" ResizeMode="NoResize"
         Style="{DynamicResource WindowChromeStyle}" ShowInTaskbar="False"
         d:DesignHeight="300" d:DesignWidth="300">
@@ -42,7 +42,7 @@
       <!-- Copyright info -->
       <TextBlock Grid.Row="0" Grid.Column="0"
                  HorizontalAlignment="Left" VerticalAlignment="Center">
-        <Run Text="{xk:Localize Xenko version, Context=About}" /> <Run Text="{x:Static gameStudio:XenkoGameStudio.EditorVersionWithMetadata}" /><LineBreak />
+        <Run Text="{xk:Localize Focus version, Context=About}" /> <Run Text="{x:Static gameStudio:XenkoGameStudio.EditorVersionWithMetadata}" /><LineBreak />
         <Run Text="{x:Static gameStudio:XenkoGameStudio.CopyrightText1}" /><LineBreak />
         <Run Text="{x:Static gameStudio:XenkoGameStudio.CopyrightText2}" /><LineBreak />
         <!-- License -->
@@ -53,7 +53,7 @@
       <TextBlock Grid.Row="0" Grid.Column="2"
                  HorizontalAlignment="Right" VerticalAlignment="Top" FlowDirection="RightToLeft" IsEnabled="True">
         <!-- Open-source notice -->
-        <Run Text="{xk:Localize Xenko uses open-source software, Context=About}" /><LineBreak />
+        <Run Text="{xk:Localize Focus uses open-source software, Context=About}" /><LineBreak />
         <Hyperlink TextDecorations="Underline" Click="ThirdParty_OnClick">
           <Run Text="{xk:Localize See the list, Context=About}" />
         </Hyperlink>
