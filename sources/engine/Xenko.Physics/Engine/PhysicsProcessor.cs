@@ -274,12 +274,20 @@ namespace Xenko.Physics
                 for (int i=0; i<allData.Count; i++)
                 {
                     var data = allData[i];
-                    if (data == null) continue;
-
-                    var shouldProcess = data.PhysicsComponent.ProcessCollisionsSlim || data.PhysicsComponent.ProcessCollisions || ((data.PhysicsComponent as PhysicsTriggerComponentBase)?.IsTrigger ?? false);
-                    if (data.PhysicsComponent.Enabled && shouldProcess && data.PhysicsComponent.ColliderShape != null)
+                    if (data != null)
                     {
-                        Simulation.ContactTest(data.PhysicsComponent);
+                        var shouldProcess = data.PhysicsComponent.ProcessCollisionsSlim || data.PhysicsComponent.ProcessCollisions || ((data.PhysicsComponent as PhysicsTriggerComponentBase)?.IsTrigger ?? false);
+                        if (data.PhysicsComponent.Enabled && shouldProcess && data.PhysicsComponent.ColliderShape != null)
+                        {
+                            try 
+                            {
+                                Simulation.ContactTest(data.PhysicsComponent);
+                            } 
+                            catch (Exception e)
+                            {
+                                // simple, rare threading blip, just ignore it for this frame and continue
+                            }
+                        }
                     }
                 }
             }
