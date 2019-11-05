@@ -16,8 +16,6 @@ namespace Xenko.Graphics
 
         public int InputBindingCount { get; private set; }
 
-        private PipelineStateDescription myDescription;
-
         public static PipelineState New(GraphicsDevice graphicsDevice, ref PipelineStateDescription pipelineStateDescription)
         {
             PipelineState pipelineState = null;

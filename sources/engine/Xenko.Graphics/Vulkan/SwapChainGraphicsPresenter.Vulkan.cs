@@ -19,7 +19,6 @@ namespace Xenko.Graphics
     {
         private Swapchain swapChain = Swapchain.Null;
         private Surface surface;
-        private CommandList drawingWith;
 
         private Texture backbuffer;
         private SwapChainImageInfo[] swapchainImages;
@@ -62,10 +61,10 @@ namespace Xenko.Graphics
 
         public override bool InternalFullscreen { get; set; }
 
-        AutoResetEvent presentWaiter = new AutoResetEvent(false);
-        private volatile bool runPresenter;
+        private ManualResetEventSlim presentWaiter = new ManualResetEventSlim(false);
         private Thread presenterThread;
-        private volatile uint presentingIndex;
+        private bool runPresenter;
+        private Queue<uint> presentingIndex = new Queue<uint>();
 
         private unsafe void PresenterThread() {
             Swapchain swapChainCopy = swapChain;
@@ -79,22 +78,25 @@ namespace Xenko.Graphics
             };
             while (runPresenter) {
                 // wait until we have a frame to present
-                presentWaiter.WaitOne();
-
+                presentWaiter.Wait();
+    
                 // are we still OK to present?
                 if (runPresenter == false) return;
 
-                currentBufferIndexCopy = presentingIndex;
+                while (presentingIndex.Count > 0) {
+                    currentBufferIndexCopy = presentingIndex.Dequeue();
+                    GraphicsDevice.NativeCommandQueue.Present(ref presentInfo);             
+                }
 
-                // Present
-                GraphicsDevice.NativeCommandQueue.Present(ref presentInfo);
+                presentWaiter.Reset();
             }
         }
 
         public override unsafe void Present()
         {
             // collect and let presenter thread know to present
-            presentingIndex = currentBufferIndex;
+            presentingIndex.Enqueue(currentBufferIndex);
+            presentWaiter.Set();
 
             // Get next image
             Result r = GraphicsDevice.NativeDevice.AcquireNextImageWithResult(swapChain, ulong.MaxValue, GraphicsDevice.GetNextPresentSemaphore(), Fence.Null, out currentBufferIndex);
@@ -103,13 +105,11 @@ namespace Xenko.Graphics
                 // re-create and do a "lite" re-present
                 // unfortunately this will likely crash, since recreating swapchains isn't stable
                 CreateSwapChain();
-                presentingIndex = currentBufferIndex;
+                presentingIndex.Clear();
+                presentingIndex.Enqueue(currentBufferIndex);
                 presentWaiter.Set();
                 return;
             }
-
-            // ok, ready to present
-            presentWaiter.Set();
 
             // Flip render targets
             backbuffer.SetNativeHandles(swapchainImages[currentBufferIndex].NativeImage, swapchainImages[currentBufferIndex].NativeColorAttachmentView);
@@ -231,7 +231,7 @@ namespace Xenko.Graphics
             GraphicsDevice.NativePhysicalDevice.GetSurfaceCapabilities(surface, out surfaceCapabilities);
 
             // Buffer count
-            uint desiredImageCount = Math.Max(surfaceCapabilities.MinImageCount, 4);
+            uint desiredImageCount = Math.Max(surfaceCapabilities.MinImageCount, 6);
             if (surfaceCapabilities.MaxImageCount > 0 && desiredImageCount > surfaceCapabilities.MaxImageCount)
             {
                 desiredImageCount = surfaceCapabilities.MaxImageCount;
@@ -292,6 +292,7 @@ namespace Xenko.Graphics
             // start new presentation thread
             runPresenter = true;
             presenterThread = new Thread(new ThreadStart(PresenterThread));
+            presenterThread.IsBackground = true;
             presenterThread.Name = "Vulkan Presentation Thread";
             presenterThread.Priority = ThreadPriority.AboveNormal;
             presenterThread.Start();
