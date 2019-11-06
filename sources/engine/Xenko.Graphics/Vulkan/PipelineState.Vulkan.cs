@@ -30,9 +30,6 @@ namespace Xenko.Graphics
         internal int ResourceGroupCount;
         internal PipelineStateDescription Description;
 
-        // threading synchronization
-        public static object PipeLock = new object();
-
         // GLSL converter always outputs entry point main()
         private static readonly byte[] defaultEntryPoint = Encoding.UTF8.GetBytes("main\0");
 
@@ -61,7 +58,7 @@ namespace Xenko.Graphics
             Recreate();
         }
 
-        [HandleProcessCorruptedStateExceptionsAttribute, SecurityCriticalAttribute]
+        //[HandleProcessCorruptedStateExceptionsAttribute, SecurityCriticalAttribute]
         private unsafe void Recreate()
         {
             errorDuringCreate = false;
@@ -71,177 +68,166 @@ namespace Xenko.Graphics
 
             PipelineShaderStageCreateInfo[] stages;
 
-            // try to recover from a rare failure?
-            bool retry = false;
+            CreateRenderPass(Description);
 
-            // it appears pipeline creation is just not thread safe :(
-            lock (PipeLock) {
-                Xenko.Shaders.Compiler.EffectCompilerCache.CompileSynchronization.Wait();
+            CreatePipelineLayout(Description);
 
-                CreateRenderPass(Description);
+            // Create shader stages
+            Dictionary<int, string> inputAttributeNames;
 
-                CreatePipelineLayout(Description);
+            // Note: important to pin this so that stages[x].Name is valid during this whole function
+            void* defaultEntryPointData = Interop.Fixed(defaultEntryPoint);
+            stages = CreateShaderStages(Description, out inputAttributeNames);
 
-                // Create shader stages
-                Dictionary<int, string> inputAttributeNames;
+            var inputAttributes = new VertexInputAttributeDescription[Description.InputElements.Length];
+            int inputAttributeCount = 0;
+            var inputBindings = new VertexInputBindingDescription[inputAttributes.Length];
+            int inputBindingCount = 0;
 
-                // Note: important to pin this so that stages[x].Name is valid during this whole function
-                void* defaultEntryPointData = Interop.Fixed(defaultEntryPoint);
-                stages = CreateShaderStages(Description, out inputAttributeNames);
+            for (int inputElementIndex = 0; inputElementIndex < inputAttributes.Length; inputElementIndex++)
+            {
+                var inputElement = Description.InputElements[inputElementIndex];
+                var slotIndex = inputElement.InputSlot;
 
-                var inputAttributes = new VertexInputAttributeDescription[Description.InputElements.Length];
-                int inputAttributeCount = 0;
-                var inputBindings = new VertexInputBindingDescription[inputAttributes.Length];
-                int inputBindingCount = 0;
-
-                for (int inputElementIndex = 0; inputElementIndex < inputAttributes.Length; inputElementIndex++)
+                if (inputElement.InstanceDataStepRate > 1)
                 {
-                    var inputElement = Description.InputElements[inputElementIndex];
-                    var slotIndex = inputElement.InputSlot;
-
-                    if (inputElement.InstanceDataStepRate > 1)
-                    {
-                        throw new NotImplementedException();
-                    }
-
-                    Format format;
-                    int size;
-                    bool isCompressed;
-                    VulkanConvertExtensions.ConvertPixelFormat(inputElement.Format, out format, out size, out isCompressed);
-
-                    var location = inputAttributeNames.FirstOrDefault(x => x.Value == inputElement.SemanticName && inputElement.SemanticIndex == 0 || x.Value == inputElement.SemanticName + inputElement.SemanticIndex);
-                    if (location.Value != null)
-                    {
-                        inputAttributes[inputAttributeCount++] = new VertexInputAttributeDescription
-                        {
-                            Format = format,
-                            Offset = (uint)inputElement.AlignedByteOffset,
-                            Binding = (uint)inputElement.InputSlot,
-                            Location = (uint)location.Key
-                        };
-                    }
-
-                    inputBindings[slotIndex].Binding = (uint)slotIndex;
-                    inputBindings[slotIndex].InputRate = inputElement.InputSlotClass == InputClassification.Vertex ? VertexInputRate.Vertex : VertexInputRate.Instance;
-
-                    // TODO VULKAN: This is currently an argument to Draw() overloads.
-                    if (inputBindings[slotIndex].Stride < inputElement.AlignedByteOffset + size)
-                        inputBindings[slotIndex].Stride = (uint)(inputElement.AlignedByteOffset + size);
-
-                    if (inputElement.InputSlot >= inputBindingCount)
-                        inputBindingCount = inputElement.InputSlot + 1;
+                    throw new NotImplementedException();
                 }
 
-                var inputAssemblyState = new PipelineInputAssemblyStateCreateInfo
+                Format format;
+                int size;
+                bool isCompressed;
+                VulkanConvertExtensions.ConvertPixelFormat(inputElement.Format, out format, out size, out isCompressed);
+
+                var location = inputAttributeNames.FirstOrDefault(x => x.Value == inputElement.SemanticName && inputElement.SemanticIndex == 0 || x.Value == inputElement.SemanticName + inputElement.SemanticIndex);
+                if (location.Value != null)
                 {
-                    StructureType = StructureType.PipelineInputAssemblyStateCreateInfo,
-                    Topology = VulkanConvertExtensions.ConvertPrimitiveType(Description.PrimitiveType),
-                    PrimitiveRestartEnable = VulkanConvertExtensions.ConvertPrimitiveRestart(Description.PrimitiveType),
-                };
-
-                // TODO VULKAN: Tessellation and multisampling
-                var multisampleState = new PipelineMultisampleStateCreateInfo
-                {
-                    StructureType = StructureType.PipelineMultisampleStateCreateInfo,
-                    RasterizationSamples = SampleCountFlags.Sample1
-                };
-
-                //var tessellationState = new PipelineTessellationStateCreateInfo();
-
-                var rasterizationState = CreateRasterizationState(Description.RasterizerState);
-
-                var depthStencilState = CreateDepthStencilState(Description);
-
-                var description = Description.BlendState;
-
-                var renderTargetCount = Description.Output.RenderTargetCount;
-                var colorBlendAttachments = new PipelineColorBlendAttachmentState[renderTargetCount];
-
-                var renderTargetBlendState = &description.RenderTarget0;
-                for (int i = 0; i < renderTargetCount; i++)
-                {
-                    colorBlendAttachments[i] = new PipelineColorBlendAttachmentState
+                    inputAttributes[inputAttributeCount++] = new VertexInputAttributeDescription
                     {
-                        BlendEnable = renderTargetBlendState->BlendEnable,
-                        AlphaBlendOperation = VulkanConvertExtensions.ConvertBlendFunction(renderTargetBlendState->AlphaBlendFunction),
-                        ColorBlendOperation = VulkanConvertExtensions.ConvertBlendFunction(renderTargetBlendState->ColorBlendFunction),
-                        DestinationAlphaBlendFactor = VulkanConvertExtensions.ConvertBlend(renderTargetBlendState->AlphaDestinationBlend),
-                        DestinationColorBlendFactor = VulkanConvertExtensions.ConvertBlend(renderTargetBlendState->ColorDestinationBlend),
-                        SourceAlphaBlendFactor = VulkanConvertExtensions.ConvertBlend(renderTargetBlendState->AlphaSourceBlend),
-                        SourceColorBlendFactor = VulkanConvertExtensions.ConvertBlend(renderTargetBlendState->ColorSourceBlend),
-                        ColorWriteMask = VulkanConvertExtensions.ConvertColorWriteChannels(renderTargetBlendState->ColorWriteChannels),
+                        Format = format,
+                        Offset = (uint)inputElement.AlignedByteOffset,
+                        Binding = (uint)inputElement.InputSlot,
+                        Location = (uint)location.Key
                     };
-
-                    if (description.IndependentBlendEnable)
-                        renderTargetBlendState++;
                 }
 
-                var viewportState = new PipelineViewportStateCreateInfo
+                inputBindings[slotIndex].Binding = (uint)slotIndex;
+                inputBindings[slotIndex].InputRate = inputElement.InputSlotClass == InputClassification.Vertex ? VertexInputRate.Vertex : VertexInputRate.Instance;
+
+                // TODO VULKAN: This is currently an argument to Draw() overloads.
+                if (inputBindings[slotIndex].Stride < inputElement.AlignedByteOffset + size)
+                    inputBindings[slotIndex].Stride = (uint)(inputElement.AlignedByteOffset + size);
+
+                if (inputElement.InputSlot >= inputBindingCount)
+                    inputBindingCount = inputElement.InputSlot + 1;
+            }
+
+            var inputAssemblyState = new PipelineInputAssemblyStateCreateInfo
+            {
+                StructureType = StructureType.PipelineInputAssemblyStateCreateInfo,
+                Topology = VulkanConvertExtensions.ConvertPrimitiveType(Description.PrimitiveType),
+                PrimitiveRestartEnable = VulkanConvertExtensions.ConvertPrimitiveRestart(Description.PrimitiveType),
+            };
+
+            // TODO VULKAN: Tessellation and multisampling
+            var multisampleState = new PipelineMultisampleStateCreateInfo
+            {
+                StructureType = StructureType.PipelineMultisampleStateCreateInfo,
+                RasterizationSamples = SampleCountFlags.Sample1
+            };
+
+            //var tessellationState = new PipelineTessellationStateCreateInfo();
+
+            var rasterizationState = CreateRasterizationState(Description.RasterizerState);
+
+            var depthStencilState = CreateDepthStencilState(Description);
+
+            var description = Description.BlendState;
+
+            var renderTargetCount = Description.Output.RenderTargetCount;
+            var colorBlendAttachments = new PipelineColorBlendAttachmentState[renderTargetCount];
+
+            var renderTargetBlendState = &description.RenderTarget0;
+            for (int i = 0; i < renderTargetCount; i++)
+            {
+                colorBlendAttachments[i] = new PipelineColorBlendAttachmentState
                 {
-                    StructureType = StructureType.PipelineViewportStateCreateInfo,
-                    ScissorCount = 1,
-                    ViewportCount = 1,
+                    BlendEnable = renderTargetBlendState->BlendEnable,
+                    AlphaBlendOperation = VulkanConvertExtensions.ConvertBlendFunction(renderTargetBlendState->AlphaBlendFunction),
+                    ColorBlendOperation = VulkanConvertExtensions.ConvertBlendFunction(renderTargetBlendState->ColorBlendFunction),
+                    DestinationAlphaBlendFactor = VulkanConvertExtensions.ConvertBlend(renderTargetBlendState->AlphaDestinationBlend),
+                    DestinationColorBlendFactor = VulkanConvertExtensions.ConvertBlend(renderTargetBlendState->ColorDestinationBlend),
+                    SourceAlphaBlendFactor = VulkanConvertExtensions.ConvertBlend(renderTargetBlendState->AlphaSourceBlend),
+                    SourceColorBlendFactor = VulkanConvertExtensions.ConvertBlend(renderTargetBlendState->ColorSourceBlend),
+                    ColorWriteMask = VulkanConvertExtensions.ConvertColorWriteChannels(renderTargetBlendState->ColorWriteChannels),
                 };
 
-                fixed (void* dynamicStatesPointer = dynamicStates.Length == 0 ? null : dynamicStates,
-                             inputAttributesPointer = inputAttributes.Length == 0 ? null : inputAttributes,
-                             inputBindingsPointer = inputBindings.Length == 0 ? null : inputBindings,
-                             colorBlendAttachmentsPointer = colorBlendAttachments.Length == 0 ? null : colorBlendAttachments,
-                             stagesPointer = stages.Length == 0 ? null : stages)
+                if (description.IndependentBlendEnable)
+                    renderTargetBlendState++;
+            }
+
+            var viewportState = new PipelineViewportStateCreateInfo
+            {
+                StructureType = StructureType.PipelineViewportStateCreateInfo,
+                ScissorCount = 1,
+                ViewportCount = 1,
+            };
+
+            fixed (void* dynamicStatesPointer = dynamicStates.Length == 0 ? null : dynamicStates,
+                         inputAttributesPointer = inputAttributes.Length == 0 ? null : inputAttributes,
+                         inputBindingsPointer = inputBindings.Length == 0 ? null : inputBindings,
+                         colorBlendAttachmentsPointer = colorBlendAttachments.Length == 0 ? null : colorBlendAttachments,
+                         stagesPointer = stages.Length == 0 ? null : stages)
+            {
+                var vertexInputState = new PipelineVertexInputStateCreateInfo
                 {
-                    var vertexInputState = new PipelineVertexInputStateCreateInfo
-                    {
-                        StructureType = StructureType.PipelineVertexInputStateCreateInfo,
-                        VertexAttributeDescriptionCount = (uint)inputAttributeCount,
-                        VertexAttributeDescriptions = (IntPtr)inputAttributesPointer,
-                        VertexBindingDescriptionCount = (uint)inputBindingCount,
-                        VertexBindingDescriptions = (IntPtr)inputBindingsPointer,
-                    };
+                    StructureType = StructureType.PipelineVertexInputStateCreateInfo,
+                    VertexAttributeDescriptionCount = (uint)inputAttributeCount,
+                    VertexAttributeDescriptions = (IntPtr)inputAttributesPointer,
+                    VertexBindingDescriptionCount = (uint)inputBindingCount,
+                    VertexBindingDescriptions = (IntPtr)inputBindingsPointer,
+                };
 
-                    var colorBlendState = new PipelineColorBlendStateCreateInfo
-                    {
-                        StructureType = StructureType.PipelineColorBlendStateCreateInfo,
-                        AttachmentCount = (uint)renderTargetCount,
-                        Attachments = (IntPtr)colorBlendAttachmentsPointer,
-                    };
+                var colorBlendState = new PipelineColorBlendStateCreateInfo
+                {
+                    StructureType = StructureType.PipelineColorBlendStateCreateInfo,
+                    AttachmentCount = (uint)renderTargetCount,
+                    Attachments = (IntPtr)colorBlendAttachmentsPointer,
+                };
 
-                    var dynamicState = new PipelineDynamicStateCreateInfo
-                    {
-                        StructureType = StructureType.PipelineDynamicStateCreateInfo,
-                        DynamicStateCount = (uint)dynamicStates.Length,
-                        DynamicStates = (IntPtr)dynamicStatesPointer,
-                    };
+                var dynamicState = new PipelineDynamicStateCreateInfo
+                {
+                    StructureType = StructureType.PipelineDynamicStateCreateInfo,
+                    DynamicStateCount = (uint)dynamicStates.Length,
+                    DynamicStates = (IntPtr)dynamicStatesPointer,
+                };
 
-                    var createInfo = new GraphicsPipelineCreateInfo
-                    {
-                        StructureType = StructureType.GraphicsPipelineCreateInfo,
-                        Layout = NativeLayout,
-                        StageCount = (uint)stages.Length,
-                        Stages = (IntPtr)stagesPointer,
-                        //TessellationState = new IntPtr(&tessellationState),
-                        VertexInputState = new IntPtr(&vertexInputState),
-                        InputAssemblyState = new IntPtr(&inputAssemblyState),
-                        RasterizationState = new IntPtr(&rasterizationState),
-                        MultisampleState = new IntPtr(&multisampleState),
-                        DepthStencilState = new IntPtr(&depthStencilState),
-                        ColorBlendState = new IntPtr(&colorBlendState),
-                        DynamicState = new IntPtr(&dynamicState),
-                        ViewportState = new IntPtr(&viewportState),
-                        RenderPass = NativeRenderPass,
-                        Subpass = 0,
-                    };
+                var createInfo = new GraphicsPipelineCreateInfo
+                {
+                    StructureType = StructureType.GraphicsPipelineCreateInfo,
+                    Layout = NativeLayout,
+                    StageCount = (uint)stages.Length,
+                    Stages = (IntPtr)stagesPointer,
+                    //TessellationState = new IntPtr(&tessellationState),
+                    VertexInputState = new IntPtr(&vertexInputState),
+                    InputAssemblyState = new IntPtr(&inputAssemblyState),
+                    RasterizationState = new IntPtr(&rasterizationState),
+                    MultisampleState = new IntPtr(&multisampleState),
+                    DepthStencilState = new IntPtr(&depthStencilState),
+                    ColorBlendState = new IntPtr(&colorBlendState),
+                    DynamicState = new IntPtr(&dynamicState),
+                    ViewportState = new IntPtr(&viewportState),
+                    RenderPass = NativeRenderPass,
+                    Subpass = 0,
+                };
                 
-                    try {
-                        lock (GraphicsDevice.QueueLock) {
-                            NativePipeline = GraphicsDevice.NativeDevice.CreateGraphicsPipelines(PipelineCache.Null, 1, &createInfo);
-                        }
-                    } catch (AccessViolationException ae) {
-                        // this happens extremely rarely and might be recoverable by reattempting the recreate
-                        retry = true;
-                    } catch (Exception e) {
-                        errorDuringCreate = true;
-                        NativePipeline = Pipeline.Null;
-                    }
+                try {
+                    GraphicsDevice.QueueLock.EnterReadLock();
+                    NativePipeline = GraphicsDevice.NativeDevice.CreateGraphicsPipelines(PipelineCache.Null, 1, &createInfo);
+                    GraphicsDevice.QueueLock.ExitReadLock();
+                } catch (Exception e) {
+                    errorDuringCreate = true;
+                    NativePipeline = Pipeline.Null;
                 }
             }
 
@@ -250,8 +236,6 @@ namespace Xenko.Graphics
             {
                 GraphicsDevice.NativeDevice.DestroyShaderModule(stages[i].Module);
             }
-
-            if (retry) Recreate();
         }
 
         /// <inheritdoc/>

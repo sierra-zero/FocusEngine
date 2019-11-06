@@ -64,7 +64,7 @@ namespace Xenko.Graphics
         private ManualResetEventSlim presentWaiter = new ManualResetEventSlim(false);
         private Thread presenterThread;
         private bool runPresenter;
-        private Queue<uint> presentingIndex = new Queue<uint>();
+        private volatile uint presentingIndex;
 
         private unsafe void PresenterThread() {
             Swapchain swapChainCopy = swapChain;
@@ -79,14 +79,12 @@ namespace Xenko.Graphics
             while (runPresenter) {
                 // wait until we have a frame to present
                 presentWaiter.Wait();
+                currentBufferIndexCopy = presentingIndex;
     
                 // are we still OK to present?
                 if (runPresenter == false) return;
 
-                while (presentingIndex.Count > 0) {
-                    currentBufferIndexCopy = presentingIndex.Dequeue();
-                    GraphicsDevice.NativeCommandQueue.Present(ref presentInfo);             
-                }
+                GraphicsDevice.NativeCommandQueue.Present(ref presentInfo);             
 
                 presentWaiter.Reset();
             }
@@ -95,7 +93,7 @@ namespace Xenko.Graphics
         public override unsafe void Present()
         {
             // collect and let presenter thread know to present
-            presentingIndex.Enqueue(currentBufferIndex);
+            presentingIndex = currentBufferIndex;
             presentWaiter.Set();
 
             // Get next image
@@ -105,8 +103,7 @@ namespace Xenko.Graphics
                 // re-create and do a "lite" re-present
                 // unfortunately this will likely crash, since recreating swapchains isn't stable
                 CreateSwapChain();
-                presentingIndex.Clear();
-                presentingIndex.Enqueue(currentBufferIndex);
+                presentingIndex = currentBufferIndex;
                 presentWaiter.Set();
                 return;
             }
@@ -231,7 +228,7 @@ namespace Xenko.Graphics
             GraphicsDevice.NativePhysicalDevice.GetSurfaceCapabilities(surface, out surfaceCapabilities);
 
             // Buffer count
-            uint desiredImageCount = Math.Max(surfaceCapabilities.MinImageCount, 6);
+            uint desiredImageCount = Math.Max(surfaceCapabilities.MinImageCount, 4);
             if (surfaceCapabilities.MaxImageCount > 0 && desiredImageCount > surfaceCapabilities.MaxImageCount)
             {
                 desiredImageCount = surfaceCapabilities.MaxImageCount;

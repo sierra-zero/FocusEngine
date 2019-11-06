@@ -15,13 +15,18 @@ namespace Xenko.Graphics
         };
 
         public int InputBindingCount { get; private set; }
+        internal long storedHash;
 
-        public static PipelineState New(GraphicsDevice graphicsDevice, ref PipelineStateDescription pipelineStateDescription)
+        public static PipelineState New(GraphicsDevice graphicsDevice, ref PipelineStateDescription pipelineStateDescription, PipelineState existingState)
         {
-            PipelineState pipelineState = null;
-
             // Hash the current state
             long hashedState = pipelineStateDescription.GetLongHashCode();
+
+            // do we even need to check the cache? We already have this?
+            if (existingState != null && existingState.storedHash == hashedState)
+                return existingState;
+
+            PipelineState pipelineState = null;
 
             // check if it is in the cache, or being worked on...
             bool foundInCache = false;
@@ -30,6 +35,7 @@ namespace Xenko.Graphics
                 foundInCache = graphicsDevice.CachedPipelineStates.TryGetValue(hashedState, out pipelineState);
                 if (!foundInCache) {
                     pipelineState = new PipelineState(graphicsDevice); // mark we will work on this pipeline (which is just blank right now)
+                    pipelineState.storedHash = hashedState;
                     graphicsDevice.CachedPipelineStates[hashedState] = pipelineState;
                 }
             }

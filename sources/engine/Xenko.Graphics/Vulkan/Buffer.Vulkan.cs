@@ -185,10 +185,9 @@ namespace Xenko.Graphics
                 };
                 CommandBuffer commandBuffer;
 
-                lock (GraphicsDevice.QueueLock)
-                {
-                    GraphicsDevice.NativeDevice.AllocateCommandBuffers(ref commandBufferAllocateInfo, &commandBuffer);
-                }
+                GraphicsDevice.QueueLock.EnterReadLock();
+                GraphicsDevice.NativeDevice.AllocateCommandBuffers(ref commandBufferAllocateInfo, &commandBuffer);
+                GraphicsDevice.QueueLock.ExitReadLock();
 
                 var beginInfo = new CommandBufferBeginInfo { StructureType = StructureType.CommandBufferBeginInfo, Flags = CommandBufferUsageFlags.OneTimeSubmit };
                 commandBuffer.Begin(ref beginInfo);
@@ -200,10 +199,9 @@ namespace Xenko.Graphics
                     {
                         var uploadMemory = GraphicsDevice.NativeDevice.MapMemory(NativeMemory, 0, (ulong)SizeInBytes, MemoryMapFlags.None);
                         Utilities.CopyMemory(uploadMemory, dataPointer, SizeInBytes);
-                        lock (GraphicsDevice.QueueLock)
-                        {
-                            GraphicsDevice.NativeDevice.UnmapMemory(NativeMemory);
-                        }
+                        GraphicsDevice.QueueLock.EnterReadLock();
+                        GraphicsDevice.NativeDevice.UnmapMemory(NativeMemory);
+                        GraphicsDevice.QueueLock.ExitReadLock();
                     }
                     else
                     {
@@ -225,10 +223,9 @@ namespace Xenko.Graphics
                             DestinationOffset = 0,
                             Size = (uint)sizeInBytes
                         };
-                        lock (GraphicsDevice.QueueLock)
-                        {
-                            commandBuffer.CopyBuffer(uploadResource, NativeBuffer, 1, &bufferCopy);
-                        }
+                        GraphicsDevice.QueueLock.EnterReadLock();
+                        commandBuffer.CopyBuffer(uploadResource, NativeBuffer, 1, &bufferCopy);
+                        GraphicsDevice.QueueLock.ExitReadLock();
                     }
                 }
                 else
@@ -253,10 +250,10 @@ namespace Xenko.Graphics
                 var fenceCreateInfo = new FenceCreateInfo { StructureType = StructureType.FenceCreateInfo };
                 var fence = GraphicsDevice.NativeDevice.CreateFence(ref fenceCreateInfo);                
 
-                lock (GraphicsDevice.QueueLock) {
-                    GraphicsDevice.NativeCommandQueue.Submit(1, &submitInfo, fence);
-                    GraphicsDevice.NativeDevice.WaitForFences(1, &fence, true, ulong.MaxValue);
-                }
+                GraphicsDevice.QueueLock.EnterWriteLock();
+                GraphicsDevice.NativeCommandQueue.Submit(1, &submitInfo, fence);
+                GraphicsDevice.NativeDevice.WaitForFences(1, &fence, true, ulong.MaxValue);
+                GraphicsDevice.QueueLock.ExitWriteLock();
 
                 GraphicsDevice.NativeDevice.FreeCommandBuffers(GraphicsDevice.NativeCopyCommandPool, 1, &commandBuffer);
                 GraphicsDevice.NativeDevice.DestroyFence(fence);

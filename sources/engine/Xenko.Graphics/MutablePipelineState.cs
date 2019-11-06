@@ -31,7 +31,7 @@ namespace Xenko.Graphics
         public void Update()
         {
             // we already do caching within pipeline state below
-            CurrentState = PipelineState.New(graphicsDevice, ref State);
+            CurrentState = PipelineState.New(graphicsDevice, ref State, CurrentState);
         }
     }
 }

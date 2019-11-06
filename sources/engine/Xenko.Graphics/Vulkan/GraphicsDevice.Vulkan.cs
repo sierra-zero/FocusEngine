@@ -30,7 +30,7 @@ namespace Xenko.Graphics
 
         private Device nativeDevice;
         internal Queue NativeCommandQueue;
-        internal object QueueLock = new object();
+        internal ReaderWriterLockSlim QueueLock = new ReaderWriterLockSlim();
 
         internal CommandPool NativeCopyCommandPool;
         internal CommandBuffer NativeCopyCommandBuffer;
@@ -221,9 +221,9 @@ namespace Xenko.Graphics
                 WaitDstStageMask = new IntPtr(&pipelineStageFlags),
             };
 
-            lock (QueueLock) {
-                NativeCommandQueue.Submit(1, &submitInfo, fence);
-            }
+            QueueLock.EnterReadLock();
+            NativeCommandQueue.Submit(1, &submitInfo, fence);
+            QueueLock.ExitReadLock();
 
             presentSemaphore = Semaphore.Null;
             nativeResourceCollector.Release();
