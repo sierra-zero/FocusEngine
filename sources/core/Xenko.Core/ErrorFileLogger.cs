@@ -15,6 +15,8 @@ namespace Xenko.Core
 
         private static UnhandledExceptionEventHandler globalHandler = null;
 
+        private static object locker = new object();
+
         /// <summary>
         /// Turn on file reporting of all exceptions, or change settings
         /// </summary>
@@ -54,7 +56,11 @@ namespace Xenko.Core
                       "Thread: " + Thread.CurrentThread.Name + "\n" +
                       "Time: " + time + "\n" + 
                       "Message: " + message + "\n------------------------ END ENTRY -------------------\n";
-            System.IO.File.AppendAllText(filename, message);
+
+            lock(locker)
+            {
+                System.IO.File.AppendAllText(filename, message);
+            }
         }
 
         public static void WriteExceptionToFile(Exception ex, string additionalContext = "")
