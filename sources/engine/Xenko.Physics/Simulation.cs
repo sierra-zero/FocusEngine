@@ -3,6 +3,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.ExceptionServices;
+using System.Security;
 using System.Threading;
 using BulletSharp;
 using Xenko.Core.Collections;
@@ -232,6 +234,7 @@ namespace Xenko.Physics
         /// <summary>
         /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
         /// </summary>
+        [HandleProcessCorruptedStateExceptionsAttribute, SecurityCriticalAttribute]
         public void Dispose()
         {
             if (simulationLocker != null) simulationLocker.EnterWriteLock();
@@ -239,7 +242,14 @@ namespace Xenko.Physics
             //if (mSoftRigidDynamicsWorld != null) mSoftRigidDynamicsWorld.Dispose();
             if (discreteDynamicsWorld != null)
             {
-                discreteDynamicsWorld.Dispose();
+                try
+                {
+                    discreteDynamicsWorld.Dispose();
+                }
+                catch(System.AccessViolationException e)
+                {
+                    // probably trying to dispose while threading is still happening... just ignore for now, we are likely quitting
+                }
             }
             else
             {
