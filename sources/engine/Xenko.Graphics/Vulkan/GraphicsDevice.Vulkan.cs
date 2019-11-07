@@ -526,7 +526,10 @@ namespace Xenko.Graphics
                 WaitSemaphores = new IntPtr(&presentSemaphoreCopy),
                 WaitDstStageMask = new IntPtr(&pipelineStageFlags),
             };
+
+            QueueLock.EnterReadLock();
             NativeCommandQueue.Submit(1, &submitInfo, fence);
+            QueueLock.ExitReadLock();
 
             presentSemaphore = Semaphore.Null;
             nativeResourceCollector.Release();
