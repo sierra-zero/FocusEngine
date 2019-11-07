@@ -84,7 +84,9 @@ namespace Xenko.Graphics
                 // are we still OK to present?
                 if (runPresenter == false) return;
 
-                GraphicsDevice.NativeCommandQueue.Present(ref presentInfo);             
+                GraphicsDevice.QueueLock.EnterReadLock();
+                GraphicsDevice.NativeCommandQueue.Present(ref presentInfo);        
+                GraphicsDevice.QueueLock.ExitReadLock();
 
                 presentWaiter.Reset();
             }
