@@ -24,9 +24,9 @@ namespace Xenko.SpriteStudio.Runtime
 
         public override void Update(GameTime time)
         {
-            foreach (var data in ComponentDatas)
+            for (int i=0; i<ComponentDataValues.Count; i++)
             {
-                var spriteStudioComponent = data.Value;
+                var spriteStudioComponent = ComponentDataValues[i];
                 if (!spriteStudioComponent.Enabled) continue;
 
                 spriteStudioComponent.ValidState = PrepareNodes(spriteStudioComponent);
@@ -35,9 +35,9 @@ namespace Xenko.SpriteStudio.Runtime
 
         public override void Draw(RenderContext context)
         {
-            foreach (var componentData in ComponentDatas)
+            for (int i = 0; i<ComponentDataValues.Count; i++)
             {
-                var component = componentData.Value;
+                var component = ComponentDataValues[i];
                 if (!component.ValidState) continue;
                 component.RootNode.UpdateTransformation();
             }

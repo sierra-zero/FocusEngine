@@ -268,38 +268,23 @@ namespace Xenko.Physics
 
         public void UpdateContacts()
         {
-            if (physicsSystem.isMultithreaded)
+            for (int i=0; i<ComponentDataValues.Count; i++)
             {
-                List<AssociatedData> allData = new List<AssociatedData>(ComponentDatas.Values);
-                for (int i=0; i<allData.Count; i++)
+                try
                 {
-                    var data = allData[i];
+                    var data = ComponentDataValues[i];
                     if (data != null)
                     {
                         var shouldProcess = data.PhysicsComponent.ProcessCollisionsSlim || data.PhysicsComponent.ProcessCollisions || ((data.PhysicsComponent as PhysicsTriggerComponentBase)?.IsTrigger ?? false);
                         if (data.PhysicsComponent.Enabled && shouldProcess && data.PhysicsComponent.ColliderShape != null)
                         {
-                            try 
-                            {
-                                Simulation.ContactTest(data.PhysicsComponent);
-                            } 
-                            catch (Exception e)
-                            {
-                                // simple, rare threading blip, just ignore it for this frame and continue
-                            }
+                            Simulation.ContactTest(data.PhysicsComponent);
                         }
                     }
                 }
-            }
-            else
-            {
-                foreach (var data in ComponentDatas.Values)
+                catch (Exception e)
                 {
-                    var shouldProcess = data.PhysicsComponent.ProcessCollisionsSlim || data.PhysicsComponent.ProcessCollisions || ((data.PhysicsComponent as PhysicsTriggerComponentBase)?.IsTrigger ?? false);
-                    if (data.PhysicsComponent.Enabled && shouldProcess && data.PhysicsComponent.ColliderShape != null)
-                    {
-                        Simulation.ContactTest(data.PhysicsComponent);
-                    }
+                    // simple, rare threading blip, just ignore it for this frame and continue
                 }
             }
         }

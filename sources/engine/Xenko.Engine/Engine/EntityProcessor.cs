@@ -218,7 +218,8 @@ namespace Xenko.Engine
     /// </remarks>
     public abstract class EntityProcessor<TComponent, TData> : EntityProcessor where TData : class where TComponent : EntityComponent
     {
-        protected readonly Dictionary<TComponent, TData> ComponentDatas = new Dictionary<TComponent, TData>();
+        protected readonly List<TComponent> ComponentDataKeys = new List<TComponent>();
+        protected readonly List<TData> ComponentDataValues = new List<TData>();
         private readonly HashSet<Entity> reentrancyCheck = new HashSet<Entity>();
         private readonly FastList<TypeInfo> checkRequiredTypes = new FastList<TypeInfo>();
 
@@ -241,13 +242,9 @@ namespace Xenko.Engine
         protected internal override void RemoveAllEntities()
         {
             // Keep removing until empty
-            while (ComponentDatas.Count > 0)
+            while(ComponentDataKeys.Count > 0)
             {
-                foreach (var component in ComponentDatas)
-                {
-                    ProcessEntityComponent(component.Key.Entity, component.Key, true);
-                    break; // break right after since we remove from iterator
-                }
+                ProcessEntityComponent(ComponentDataKeys[0].Entity, ComponentDataKeys[0], true);
             }
         }
 
@@ -257,7 +254,9 @@ namespace Xenko.Engine
             var entityComponent = (TComponent)entityComponentArg;
             // If forceRemove is true, no need to check if entity matches.
             var entityMatch = !forceRemove && EntityMatch(entity);
-            var entityAdded = ComponentDatas.TryGetValue(entityComponent, out var entityData);
+            int index = ComponentDataKeys.IndexOf(entityComponent);
+            var entityAdded = index != -1;
+            var entityData = entityAdded ? ComponentDataValues[index] : null;
 
             if (entityMatch && !entityAdded)
             {
@@ -277,7 +276,8 @@ namespace Xenko.Engine
                 OnEntityComponentAdding(entity, entityComponent, data);
 
                 // Associate the component to its data
-                ComponentDatas.Add(entityComponent, data);
+                ComponentDataKeys.Add(entityComponent);
+                ComponentDataValues.Add(data);
 
                 lock (reentrancyCheck)
                 {
@@ -289,8 +289,12 @@ namespace Xenko.Engine
                 // Notify component being removed
                 OnEntityComponentRemoved(entity, entityComponent, entityData);
 
+                // get new index
+                index = ComponentDataKeys.IndexOf(entityComponent);
+
                 // Removes it from the component => data map
-                ComponentDatas.Remove(entityComponent);
+                ComponentDataKeys.RemoveAt(index);
+                ComponentDataValues.RemoveAt(index);
             }
             else if (entityMatch) // && entityMatch
             {
@@ -299,7 +303,11 @@ namespace Xenko.Engine
                     OnEntityComponentRemoved(entity, entityComponent, entityData);
                     entityData = GenerateComponentData(entity, entityComponent);
                     OnEntityComponentAdding(entity, entityComponent, entityData);
-                    ComponentDatas[entityComponent] = entityData;
+
+                    // get new index
+                    index = ComponentDataKeys.IndexOf(entityComponent);
+
+                    ComponentDataValues[index] = entityData;
                 }
             }
         }

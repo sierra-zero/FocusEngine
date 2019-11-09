@@ -50,10 +50,10 @@ namespace Xenko.Rendering.Background
             ActiveBackground = null;
 
             // Start by making it not visible
-            foreach (var entityKeyPair in ComponentDatas)
+            for (int i=0; i<ComponentDataKeys.Count; i++)
             {
-                var backgroundComponent = entityKeyPair.Key;
-                var renderBackground = entityKeyPair.Value;
+                var backgroundComponent = ComponentDataKeys[i];
+                var renderBackground = ComponentDataValues[i];
                 if (backgroundComponent.Enabled && backgroundComponent.Texture != null)
                 {
                     // Select the first active background

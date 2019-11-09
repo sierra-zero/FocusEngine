@@ -25,10 +25,10 @@ namespace Xenko.Rendering.UI
         
         public override void Draw(RenderContext gameTime)
         {
-            foreach (var spriteStateKeyPair in ComponentDatas)
+            for (int i=0; i<ComponentDataKeys.Count; i++)
             {
-                var uiComponent = spriteStateKeyPair.Key;
-                var renderUIElement = spriteStateKeyPair.Value;
+                var uiComponent = ComponentDataKeys[i];
+                var renderUIElement = ComponentDataValues[i];
                 renderUIElement.Enabled = uiComponent.Enabled;
 
                 if (renderUIElement.Enabled)

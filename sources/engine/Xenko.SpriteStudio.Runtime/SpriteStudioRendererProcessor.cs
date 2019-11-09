@@ -39,10 +39,10 @@ namespace Xenko.SpriteStudio.Runtime
 
         public override void Draw(RenderContext context)
         {
-            foreach (var spriteStateKeyPair in ComponentDatas)
+            for (int i=0; i<ComponentDataKeys.Count; i++)
             {
-                var spriteStudioComponent = spriteStateKeyPair.Key;
-                var renderSpriteStudio = spriteStateKeyPair.Value;
+                var spriteStudioComponent = ComponentDataKeys[i];
+                var renderSpriteStudio = ComponentDataValues[i];
                 renderSpriteStudio.Enabled = spriteStudioComponent.Enabled && spriteStudioComponent.ValidState;
 
                 if (!renderSpriteStudio.Enabled)

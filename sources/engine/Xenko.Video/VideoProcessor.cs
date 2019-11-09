@@ -69,9 +69,9 @@ namespace Xenko.Video.Rendering
         /// <inheritdoc />
         public override void Draw(RenderContext context)
         {
-            foreach (var kv in ComponentDatas)
+            for (int i=0; i<ComponentDataValues.Count; i++)
             {
-                var associatedData = kv.Value;
+                var associatedData = ComponentDataValues[i];
                 associatedData.Draw(context.Time.Elapsed);
             }
         }

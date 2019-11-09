@@ -61,8 +61,9 @@ namespace Xenko.Audio
 
         public override void Draw(RenderContext context)
         {
-            foreach (var listenerData in ComponentDatas.Values)
+            for (int i=0; i<ComponentDataValues.Count; i++)
             {
+                var listenerData = ComponentDataValues[i];
                 if (!listenerData.Enabled) // skip all updates if the listener is not used.
                     continue;
 

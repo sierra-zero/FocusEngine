@@ -101,9 +101,9 @@ namespace Xenko.Engine.Processors
             if (ModelNodeLinkProcessor != null)
             {
                 modelNodeLinkComponents.Clear();
-                foreach (var modelNodeLink in ModelNodeLinkProcessor.ModelNodeLinkComponents)
+                for (int i=0; i<ModelNodeLinkProcessor.ModelNodeLinkComponents.Count; i++)
                 {
-                    modelNodeLinkComponents.Add(modelNodeLink.Entity.Transform);
+                    modelNodeLinkComponents.Add(ModelNodeLinkProcessor.ModelNodeLinkComponents[i].Entity.Transform);
                 }
                 Dispatcher.ForEach(modelNodeLinkComponents, UpdateTransformationAndChildren);
             }

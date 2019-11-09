@@ -25,9 +25,9 @@ namespace Xenko.Engine.Processors
         public override void Draw(RenderContext gameTime)
         {
             Backgrounds.Clear();
-            foreach (var backgroundKeyPair in ComponentDatas)
+            for (int i=0; i<ComponentDataKeys.Count; i++)
             {
-                var background = backgroundKeyPair.Key;
+                var background = ComponentDataKeys[i];
                 if (background.Enabled)
                 {
                     Backgrounds.Add(background);

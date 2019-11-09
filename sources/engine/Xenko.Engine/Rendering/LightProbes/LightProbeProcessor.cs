@@ -37,9 +37,9 @@ namespace Xenko.Rendering.LightProbes
                 // Collect LightProbes
                 var lightProbes = new FastList<LightProbeComponent>();
 
-                foreach (var lightProbe in ComponentDatas)
+                for (int i=0; i<ComponentDataKeys.Count; i++)
                 {
-                    lightProbes.Add(lightProbe.Key);
+                    lightProbes.Add(ComponentDataKeys[i]);
                 }
 
                 // Need at least 4 light probes to form a tetrahedron

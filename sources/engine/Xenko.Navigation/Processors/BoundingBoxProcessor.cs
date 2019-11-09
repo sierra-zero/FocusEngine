@@ -11,7 +11,7 @@ namespace Xenko.Navigation.Processors
 {
     internal class BoundingBoxProcessor : EntityProcessor<NavigationBoundingBoxComponent>
     {
-        public ICollection<NavigationBoundingBoxComponent> BoundingBoxes => ComponentDatas.Keys;
+        public ICollection<NavigationBoundingBoxComponent> BoundingBoxes => ComponentDataKeys;
 
         protected override void OnSystemAdd()
         {

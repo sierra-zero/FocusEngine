@@ -24,10 +24,11 @@ namespace Xenko.Rendering.Sprites
 
         public override void Draw(RenderContext gameTime)
         {
-            foreach (var spriteStateKeyPair in ComponentDatas)
+            for (int i=0; i<ComponentDataKeys.Count; i++)
             {
-                var spriteComponent = spriteStateKeyPair.Key;
-                var renderSprite = spriteStateKeyPair.Value.RenderSprite;
+                var spriteComponent = ComponentDataKeys[i];
+                var sprite = ComponentDataValues[i];
+                var renderSprite = sprite.RenderSprite;
                 var currentSprite = spriteComponent.CurrentSprite;
 
                 renderSprite.Enabled = spriteComponent.Enabled;
@@ -57,9 +58,9 @@ namespace Xenko.Rendering.Sprites
 
                 // TODO Should we allow adding RenderSprite without a CurrentSprite instead? (if yes, need some improvement in RenderSystem)
                 var isActive = (currentSprite != null) && renderSprite.Enabled;
-                if (spriteStateKeyPair.Value.Active != isActive)
+                if (sprite.Active != isActive)
                 {
-                    spriteStateKeyPair.Value.Active = isActive;
+                    sprite.Active = isActive;
                     if (isActive)
                         VisibilityGroup.RenderObjects.Add(renderSprite);
                     else

@@ -84,10 +84,10 @@ namespace Xenko.Particles.Rendering
 
         public override void Draw(RenderContext context)
         {
-            foreach (var componentData in ComponentDatas)
+            for (int i=0; i<ComponentDataKeys.Count; i++)
             {
-                var particleSystemComponent = componentData.Key;
-                var renderSystem = componentData.Value;
+                var particleSystemComponent = ComponentDataKeys[i];
+                var renderSystem = ComponentDataValues[i];
 
                 CheckEmitters(renderSystem);
 

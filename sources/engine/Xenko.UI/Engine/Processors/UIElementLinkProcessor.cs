@@ -21,10 +21,10 @@ namespace Xenko.Engine.Processors
 
         public override void Draw(RenderContext context)
         {
-            foreach (var item in ComponentDatas)
+            for (int i=0; i<ComponentDataKeys.Count; i++)
             {
-                var entity = item.Key.Entity;
-                var modelNodeLink = item.Value;
+                var entity = ComponentDataKeys[i].Entity;
+                var modelNodeLink = ComponentDataValues[i];
                 var transformComponent = entity.Transform;
                 var transformLink = transformComponent.TransformLink as UIElementTransformLink;
 

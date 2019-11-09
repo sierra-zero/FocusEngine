@@ -23,10 +23,10 @@ namespace Xenko.SpriteStudio.Runtime
 
         public override void Draw(RenderContext context)
         {
-            foreach (var item in ComponentDatas)
+            for (int i=0; i<ComponentDataKeys.Count; i++)
             {
-                var modelNodeLink = item.Value;
-                var transformComponent = item.Key.Entity.Transform;
+                var modelNodeLink = ComponentDataValues[i];
+                var transformComponent = ComponentDataKeys[i].Entity.Transform;
                 var transformLink = transformComponent.TransformLink as SpriteStudioNodeTransformLink;
 
                 // Try to use Target, otherwise Parent

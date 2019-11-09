@@ -97,16 +97,18 @@ namespace Xenko.Particles.Components
             float deltaTime = (float) context.Time.Elapsed.TotalSeconds;
 
             ParticleSystems.Clear();
-            foreach (var particleSystemStateKeyPair in ComponentDatas)
+            for (int i=0; i<ComponentDataValues.Count; i++)
             {
-                if (particleSystemStateKeyPair.Value.ParticleSystemComponent.Enabled)
+                var pairValue = ComponentDataValues[i];
+
+                if (pairValue.ParticleSystemComponent.Enabled)
                 {
                     // Exposed variables
 
-                    if (!particleSystemStateKeyPair.Value.ParticleSystemComponent.ParticleSystem.Enabled)
+                    if (!pairValue.ParticleSystemComponent.ParticleSystem.Enabled)
                         continue;
 
-                    ParticleSystems.Add(particleSystemStateKeyPair.Value);
+                    ParticleSystems.Add(pairValue);
                 }
             }
 

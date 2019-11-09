@@ -60,10 +60,8 @@ namespace Xenko.Animations
             var time = context.Time;
 
             //foreach (var entity in ComponentDatas.Values)
-            Dispatcher.ForEach(ComponentDatas, () => animationOperationPool.Acquire(), (entity, animationOperations) =>
+            Dispatcher.ForEach(ComponentDataValues, () => animationOperationPool.Acquire(), (associatedData, animationOperations) =>
             {
-                var associatedData = entity.Value;
-
                 var animationUpdater = associatedData.AnimationUpdater;
                 var animationComponent = associatedData.AnimationComponent;
 
@@ -194,10 +192,11 @@ namespace Xenko.Animations
 
         public AnimationClipResult GetAnimationClipResult(AnimationComponent animationComponent)
         {
-            if (!ComponentDatas.ContainsKey(animationComponent))
+            int index = ComponentDataKeys.IndexOf(animationComponent);
+            if (index == -1)
                 return null;
 
-            return ComponentDatas[animationComponent].AnimationClipResult;
+            return ComponentDataValues[index].AnimationClipResult;
         }
 
         public class AssociatedData

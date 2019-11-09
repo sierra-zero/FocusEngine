@@ -17,7 +17,8 @@ namespace Xenko.Rendering
     {
         private Material fallbackMaterial;
 
-        public Dictionary<ModelComponent, RenderModel> RenderModels => ComponentDatas;
+        public List<RenderModel> RenderModels => ComponentDataValues;
+        public List<ModelComponent> ModelComponents => ComponentDataKeys;
 
         public VisibilityGroup VisibilityGroup { get; set; }
 
@@ -72,10 +73,10 @@ namespace Xenko.Rendering
             // Note: we are rebuilding RenderMeshes every frame
             // TODO: check if it wouldn't be better to add/remove directly in CheckMeshes()?
             //foreach (var entity in ComponentDatas)
-            Dispatcher.ForEach(ComponentDatas, entity =>
+            Dispatcher.For(0, ComponentDataKeys.Count, i =>
             {
-                var modelComponent = entity.Key;
-                var renderModel = entity.Value;
+                var modelComponent = ComponentDataKeys[i];
+                var renderModel = ComponentDataValues[i];
 
                 if (modelComponent != null && renderModel != null) {
                     CheckMeshes(modelComponent, renderModel);

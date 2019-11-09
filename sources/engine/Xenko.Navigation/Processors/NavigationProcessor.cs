@@ -27,9 +27,9 @@ namespace Xenko.Navigation.Processors
         public override void Update(GameTime time)
         {
             // Update scene offsets for navigation components
-            foreach (var p in ComponentDatas)
+            for (int i=0; i<ComponentDataValues.Count; i++)
             {
-                UpdateSceneOffset(p.Value);
+                UpdateSceneOffset(ComponentDataValues[i]);
             }
         }
 
@@ -142,7 +142,7 @@ namespace Xenko.Navigation.Processors
 
             // Update loaded navigation meshes for components that are useing it,
             //  in case a group was added
-            var componentsToUpdate = ComponentDatas.Values.Where(x => x.Component.NavigationMesh == null).ToArray();
+            var componentsToUpdate = ComponentDataValues.Where(x => x.Component.NavigationMesh == null).ToArray();
             foreach (var component in componentsToUpdate)
             {
                 UpdateNavigationMesh(component);
@@ -151,8 +151,8 @@ namespace Xenko.Navigation.Processors
 
         private void ComponentOnNavigationMeshChanged(object sender, EventArgs eventArgs)
         {
-            var data = ComponentDatas[(NavigationComponent)sender];
-            UpdateNavigationMesh(data);
+            int index = ComponentDataKeys.IndexOf((NavigationComponent)sender);
+            UpdateNavigationMesh(index > -1 ? ComponentDataValues[index] : null);
         }
 
         private void UpdateNavigationMesh(AssociatedData data)

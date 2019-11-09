@@ -88,7 +88,7 @@ namespace Xenko.Audio
         protected internal override void OnSystemRemove()
         {
             // Destroy all the SoundInstance created by the processor before closing.
-            foreach (var soundInstance in ComponentDatas.Values.SelectMany(x => x.AudioEmitterComponent.SoundToController.Values))
+            foreach (var soundInstance in ComponentDataValues.SelectMany(x => x.AudioEmitterComponent.SoundToController.Values))
                 soundInstance.DestroyAllSoundInstances();
 
             audioSystem.Listeners.CollectionChanged -= OnListenerCollectionChanged;
@@ -116,8 +116,10 @@ namespace Xenko.Audio
 
         public override void Draw(RenderContext context)
         {
-            foreach (var associatedData in ComponentDatas.Values)
+            for (int a=0; a<ComponentDataValues.Count; a++)
             {
+                var associatedData = ComponentDataValues[a];
+
                 if (!associatedData.AudioEmitterComponent.Enabled)
                 {
                     if (associatedData.IsPlaying)
@@ -241,8 +243,10 @@ namespace Xenko.Audio
             // A listener have been Added or Removed. 
             // We need to create/destroy all SoundInstances associated to that listener for each AudioEmitterComponent.
 
-            foreach (var associatedData in ComponentDatas.Values)
+            for (int a=0; a<ComponentDataValues.Count; a++)
             {
+                var associatedData = ComponentDataValues[a];
+
                 var soundControllers = associatedData.AudioEmitterComponent.SoundToController.Values;
 
                 foreach (var soundController in soundControllers)

@@ -62,9 +62,9 @@ namespace Xenko.Engine.Processors
                     }
                 }
                 // Let's also check on all cameras if they are still attached to a compositor, then let's detach them.
-                foreach (var matchingCamera in ComponentDatas)
+                for (int i=0; i<ComponentDataValues.Count; i++)
                 {
-                    var camera = matchingCamera.Value;
+                    var camera = ComponentDataValues[i];
                     if (camera.Slot.AttachedCompositor != null)
                     {
                         DetachCameraFromSlot(camera);
@@ -73,9 +73,9 @@ namespace Xenko.Engine.Processors
             }
 
             // First pass, handle proper detach when Enabled changed
-            foreach (var matchingCamera in ComponentDatas)
+            for (int i = 0; i < ComponentDataValues.Count; i++)
             {
-                var camera = matchingCamera.Value;
+                var camera = ComponentDataValues[i];
                 if (graphicsCompositor != null)
                 {
                     if (camera.Enabled && camera.Slot.AttachedCompositor == null)
@@ -93,9 +93,9 @@ namespace Xenko.Engine.Processors
             }
 
             // Second pass, handle proper attach
-            foreach (var matchingCamera in ComponentDatas)
+            for (int i = 0; i < ComponentDataValues.Count; i++)
             {
-                var camera = matchingCamera.Value;
+                var camera = ComponentDataValues[i];
 
                 if (graphicsCompositor != null)
                 {

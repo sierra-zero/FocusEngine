@@ -74,12 +74,13 @@ namespace Xenko.Engine.Processors
                 }
             }
 
-            foreach (var pair in ComponentDatas)
+            for (int i=0; i<ComponentDataKeys.Count; i++)
             {
-                if (!pair.Key.Enabled)
+                var pairKey = ComponentDataKeys[i];
+                if (!pairKey.Enabled)
                     continue;
 
-                var lightShaft = pair.Key.LightShaft;
+                var lightShaft = pairKey.LightShaft;
                 if (lightShaft == null)
                     continue;
 
@@ -89,8 +90,8 @@ namespace Xenko.Engine.Processors
 
                 data.Add(new RenderLightShaftBoundingVolume
                 {
-                    World = pair.Key.Entity.Transform.WorldMatrix,
-                    Model = pair.Key.Model,
+                    World = pairKey.Entity.Transform.WorldMatrix,
+                    Model = pairKey.Model,
                 });
             }
 

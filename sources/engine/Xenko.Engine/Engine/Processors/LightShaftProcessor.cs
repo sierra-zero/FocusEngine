@@ -63,12 +63,14 @@ namespace Xenko.Engine.Processors
             if (lightShaftBoundingVolumeProcessor == null)
                 return;
 
-            foreach (var pair in ComponentDatas)
+            for (int i=0; i<ComponentDataKeys.Count; i++)
             {
-                if (!pair.Key.Enabled)
+
+
+                if (!ComponentDataKeys[i].Enabled)
                     continue;
 
-                var lightShaft = pair.Value;
+                var lightShaft = ComponentDataValues[i];
                 if (lightShaft.LightComponent == null)
                     continue;
 

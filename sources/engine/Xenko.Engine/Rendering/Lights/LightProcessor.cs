@@ -37,8 +37,8 @@ namespace Xenko.Rendering.Lights
 
         public RenderLight GetRenderLight(LightComponent lightComponent)
         {
-            ComponentDatas.TryGetValue(lightComponent, out var renderLight);
-            return renderLight;
+            int index = ComponentDataKeys.IndexOf(lightComponent);
+            return index > -1 ? ComponentDataValues[index] : null;
         }
 
         protected override RenderLight GenerateComponentData(Entity entity, LightComponent component) => new RenderLight();
@@ -65,10 +65,10 @@ namespace Xenko.Rendering.Lights
             var colorSpace = context.GraphicsDevice.ColorSpace;
 
             // 2) Prepare lights to be dispatched to the correct light group
-            foreach (var lightPair in ComponentDatas)
+            for (int i=0; i<ComponentDataKeys.Count; i++)
             {
-                var lightComponent = lightPair.Key;
-                var renderLight = lightPair.Value;
+                var lightComponent = ComponentDataKeys[i];
+                var renderLight = ComponentDataValues[i];
 
                 if (lightComponent.Type == null || !lightComponent.Enabled)
                 {

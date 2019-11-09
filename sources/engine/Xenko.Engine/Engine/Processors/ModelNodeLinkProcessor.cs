@@ -8,7 +8,7 @@ namespace Xenko.Engine.Processors
 {
     public class ModelNodeLinkProcessor : EntityProcessor<ModelNodeLinkComponent>
     {
-        public Dictionary<ModelNodeLinkComponent, ModelNodeLinkComponent>.KeyCollection ModelNodeLinkComponents => ComponentDatas.Keys;
+        public List<ModelNodeLinkComponent> ModelNodeLinkComponents => ComponentDataKeys;
 
         public ModelNodeLinkProcessor()
             : base(typeof(TransformComponent))
@@ -35,14 +35,14 @@ namespace Xenko.Engine.Processors
 
         public override void Draw(RenderContext context)
         {
-            foreach (var item in ComponentDatas)
+            for (int i=0; i<ComponentDataKeys.Count; i++)
             {
-                var entity = item.Key.Entity;
+                var entity = ComponentDataKeys[i].Entity;
                 var transformComponent = entity.Transform;
 
-                if (item.Value.IsValid)
+                if (ComponentDataValues[i].IsValid)
                 {
-                    var modelNodeLink = item.Value;
+                    var modelNodeLink = ComponentDataValues[i];
                     var transformLink = transformComponent.TransformLink as ModelNodeTransformLink;
 
                     // Try to use Target, otherwise Parent
