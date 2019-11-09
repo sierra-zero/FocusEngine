@@ -151,8 +151,10 @@ namespace Xenko.Navigation.Processors
 
         private void ComponentOnNavigationMeshChanged(object sender, EventArgs eventArgs)
         {
-            int index = ComponentDataKeys.IndexOf((NavigationComponent)sender);
-            UpdateNavigationMesh(index > -1 ? ComponentDataValues[index] : null);
+            if (KeyIndex.TryGetValue((NavigationComponent)sender, out int index))
+            {
+                UpdateNavigationMesh(ComponentDataValues[index]);
+            }
         }
 
         private void UpdateNavigationMesh(AssociatedData data)

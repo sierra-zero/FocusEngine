@@ -192,8 +192,7 @@ namespace Xenko.Animations
 
         public AnimationClipResult GetAnimationClipResult(AnimationComponent animationComponent)
         {
-            int index = ComponentDataKeys.IndexOf(animationComponent);
-            if (index == -1)
+            if (KeyIndex.TryGetValue(animationComponent, out int index) == false)
                 return null;
 
             return ComponentDataValues[index].AnimationClipResult;

@@ -37,8 +37,7 @@ namespace Xenko.Rendering.Lights
 
         public RenderLight GetRenderLight(LightComponent lightComponent)
         {
-            int index = ComponentDataKeys.IndexOf(lightComponent);
-            return index > -1 ? ComponentDataValues[index] : null;
+            return KeyIndex.TryGetValue(lightComponent, out int index) ? ComponentDataValues[index] : null;
         }
 
         protected override RenderLight GenerateComponentData(Entity entity, LightComponent component) => new RenderLight();

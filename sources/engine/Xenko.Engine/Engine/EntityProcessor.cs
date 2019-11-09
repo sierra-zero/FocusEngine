@@ -220,6 +220,7 @@ namespace Xenko.Engine
     {
         protected readonly List<TComponent> ComponentDataKeys = new List<TComponent>();
         protected readonly List<TData> ComponentDataValues = new List<TData>();
+        protected readonly Dictionary<TComponent, int> KeyIndex = new System.Collections.Generic.Dictionary<TComponent, int>();
         private readonly HashSet<Entity> reentrancyCheck = new HashSet<Entity>();
         private readonly FastList<TypeInfo> checkRequiredTypes = new FastList<TypeInfo>();
 
@@ -254,8 +255,7 @@ namespace Xenko.Engine
             var entityComponent = (TComponent)entityComponentArg;
             // If forceRemove is true, no need to check if entity matches.
             var entityMatch = !forceRemove && EntityMatch(entity);
-            int index = ComponentDataKeys.IndexOf(entityComponent);
-            var entityAdded = index != -1;
+            bool entityAdded = KeyIndex.TryGetValue(entityComponent, out int index);
             var entityData = entityAdded ? ComponentDataValues[index] : null;
 
             if (entityMatch && !entityAdded)
@@ -276,6 +276,7 @@ namespace Xenko.Engine
                 OnEntityComponentAdding(entity, entityComponent, data);
 
                 // Associate the component to its data
+                KeyIndex[entityComponent] = ComponentDataKeys.Count;
                 ComponentDataKeys.Add(entityComponent);
                 ComponentDataValues.Add(data);
 
@@ -289,12 +290,33 @@ namespace Xenko.Engine
                 // Notify component being removed
                 OnEntityComponentRemoved(entity, entityComponent, entityData);
 
-                // get new index
-                index = ComponentDataKeys.IndexOf(entityComponent);
+                // get new index that needs replacement
+                index = KeyIndex[entityComponent];
 
-                // Removes it from the component => data map
-                ComponentDataKeys.RemoveAt(index);
-                ComponentDataValues.RemoveAt(index);
+                // if we are the last element, just remove
+                if (index == ComponentDataKeys.Count - 1)
+                {
+                    ComponentDataKeys.RemoveAt(index);
+                    ComponentDataValues.RemoveAt(index);
+                    KeyIndex.Remove(entityComponent);
+                }
+                else
+                {
+                    // take the last one on the list and replace it at index
+                    // this prevents shifting the whole list down
+                    int lastIndex = ComponentDataKeys.Count - 1;
+                    TComponent lastKey = ComponentDataKeys[lastIndex];
+                    ComponentDataKeys[index] = lastKey;
+                    ComponentDataValues[index] = ComponentDataValues[lastIndex];
+                    KeyIndex[lastKey] = index;
+
+                    // Remove the last one we just moved
+                    ComponentDataKeys.RemoveAt(lastIndex);
+                    ComponentDataValues.RemoveAt(lastIndex);
+
+                    // remove the key index for this component
+                    KeyIndex.Remove(entityComponent);
+                }
             }
             else if (entityMatch) // && entityMatch
             {
@@ -304,10 +326,7 @@ namespace Xenko.Engine
                     entityData = GenerateComponentData(entity, entityComponent);
                     OnEntityComponentAdding(entity, entityComponent, entityData);
 
-                    // get new index
-                    index = ComponentDataKeys.IndexOf(entityComponent);
-
-                    ComponentDataValues[index] = entityData;
+                    ComponentDataValues[KeyIndex[entityComponent]] = entityData;
                 }
             }
         }
