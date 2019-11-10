@@ -83,6 +83,7 @@ public static class EntityPool {
         // Return an object to the inactive pool.
         public void ReturnToPool(Entity obj, ref bool active) {
             if (active) inactive.Push(obj);
+            obj.Scene = null;
             active = false;
         }
     }
@@ -147,7 +148,6 @@ public static class EntityPool {
             e.UsingPool.myPool == null || e.UsingPool.active == false)
             return false;
 
-        e.Scene = null;
         e.UsingPool.myPool.ReturnToPool(e, ref e.UsingPool.active);
 
         return true;

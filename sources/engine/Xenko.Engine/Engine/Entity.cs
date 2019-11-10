@@ -127,7 +127,6 @@ namespace Xenko.Engine
             if (UsingPool == null) return false;
             if (UsingPool.active == false) return false;
             UsingPool.myPool.ReturnToPool(this, ref UsingPool.active);
-            Scene = null;
             return true;
         }
 
