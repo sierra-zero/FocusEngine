@@ -221,14 +221,14 @@ namespace Xenko.Graphics
                     Subpass = 0,
                 };
                 
+                GraphicsDevice.QueueLock.EnterReadLock();
                 try {
-                    GraphicsDevice.QueueLock.EnterReadLock();
                     NativePipeline = GraphicsDevice.NativeDevice.CreateGraphicsPipelines(PipelineCache.Null, 1, &createInfo);
-                    GraphicsDevice.QueueLock.ExitReadLock();
                 } catch (Exception e) {
                     errorDuringCreate = true;
                     NativePipeline = Pipeline.Null;
                 }
+                GraphicsDevice.QueueLock.ExitReadLock();
             }
 
             // Cleanup shader modules
