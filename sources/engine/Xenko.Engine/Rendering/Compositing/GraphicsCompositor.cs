@@ -80,18 +80,22 @@ namespace Xenko.Rendering.Compositing
         [DataMemberIgnore]
         public List<PostProcessingEffects> PostProcessing {
             get {
-                if (cachedProcessor == null && Game is SceneCameraRenderer) {
+                if (cachedProcessor == null && Game is SceneCameraRenderer cgame) {
                     // find them
                     cachedProcessor = new List<PostProcessingEffects>();
-                    SceneCameraRenderer cgame = (SceneCameraRenderer)Game;
-                    if (cgame.Child is SceneRendererCollection) {
-                        SceneRendererCollection src = (SceneRendererCollection)cgame.Child;
+                    if (cgame.Child is SceneRendererCollection src) {
                         List<ISceneRenderer> renderers = src.Children;
                         for (int i=0;i<renderers.Count;i++) {
-                            if (renderers[i] is ForwardRenderer) {
-                                IPostProcessingEffects check = ((ForwardRenderer)renderers[i]).PostEffects;
-                                if (check != null && check is PostProcessingEffects) {
-                                    cachedProcessor.Add((PostProcessingEffects)check);
+                            if (renderers[i] is ForwardRenderer fr) {
+                                IPostProcessingEffects check = fr.PostEffects;
+                                if (check != null && check is PostProcessingEffects c) {
+                                    cachedProcessor.Add(c);
+                                }
+                            } else if (renderers[i] is SceneCameraRenderer scc &&
+                                       scc.Child is ForwardRenderer cfr) {
+                                IPostProcessingEffects check = cfr.PostEffects;
+                                if (check != null && check is PostProcessingEffects c) {
+                                    cachedProcessor.Add(c);
                                 }
                             }
                         }
