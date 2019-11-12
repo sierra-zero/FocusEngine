@@ -1407,6 +1407,8 @@ namespace Xenko.Graphics
             {
                 var renderTarget = RenderTargetCount > 0 ? renderTargets[0] : depthStencilBuffer;
 
+                if (renderTarget == null) return;
+
                 if (framebufferDirty)
                 {
                     // Create new frame buffer
