@@ -74,32 +74,38 @@ namespace Xenko.Rendering.Compositing
         /// </summary>
         public ISceneRenderer Editor { get; set; }
 
+        private void gatherPostProcessors(ISceneRenderer renderer)
+        {
+            if (renderer is SceneCameraRenderer scr)
+            {
+                gatherPostProcessors(scr.Child);
+            }
+            else if (renderer is SceneRendererCollection src)
+            {
+                List<ISceneRenderer> renderers = src.Children;
+                for (int i = 0; i < renderers.Count; i++)
+                    gatherPostProcessors(renderers[i]);
+            }
+            else if (renderer is ForwardRenderer fr)
+            {
+                IPostProcessingEffects check = fr.PostEffects;
+                if (check != null && check is PostProcessingEffects c)
+                {
+                    cachedProcessor.Add(c);
+                }
+            }
+        }
+
         /// <summary>
         /// Shortcut to getting post processing effects
         /// </summary>
         [DataMemberIgnore]
         public List<PostProcessingEffects> PostProcessing {
             get {
-                if (cachedProcessor == null && Game is SceneCameraRenderer cgame) {
+                if (cachedProcessor == null) {
                     // find them
                     cachedProcessor = new List<PostProcessingEffects>();
-                    if (cgame.Child is SceneRendererCollection src) {
-                        List<ISceneRenderer> renderers = src.Children;
-                        for (int i=0;i<renderers.Count;i++) {
-                            if (renderers[i] is ForwardRenderer fr) {
-                                IPostProcessingEffects check = fr.PostEffects;
-                                if (check != null && check is PostProcessingEffects c) {
-                                    cachedProcessor.Add(c);
-                                }
-                            } else if (renderers[i] is SceneCameraRenderer scc &&
-                                       scc.Child is ForwardRenderer cfr) {
-                                IPostProcessingEffects check = cfr.PostEffects;
-                                if (check != null && check is PostProcessingEffects c) {
-                                    cachedProcessor.Add(c);
-                                }
-                            }
-                        }
-                    }
+                    gatherPostProcessors(Game);
                 }
                 return cachedProcessor;
             }
