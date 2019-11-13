@@ -84,11 +84,11 @@ namespace Xenko.Graphics
                 // are we still OK to present?
                 if (runPresenter == false) return;
 
+                presentWaiter.Reset();
+
                 GraphicsDevice.QueueLock.EnterWriteLock();
                 GraphicsDevice.NativeCommandQueue.Present(ref presentInfo);        
                 GraphicsDevice.QueueLock.ExitWriteLock();
-
-                presentWaiter.Reset();
             }
         }
 
@@ -96,10 +96,12 @@ namespace Xenko.Graphics
         {
             // collect and let presenter thread know to present
             presentingIndex = currentBufferIndex;
-            presentWaiter.Set();
 
             // Get next image
             Result r = GraphicsDevice.NativeDevice.AcquireNextImageWithResult(swapChain, ulong.MaxValue, GraphicsDevice.GetNextPresentSemaphore(), Fence.Null, out currentBufferIndex);
+
+            // ok, present the frame
+            presentWaiter.Set();
 
             if (r == Result.ErrorOutOfDate) {
                 // re-create and do a "lite" re-present
