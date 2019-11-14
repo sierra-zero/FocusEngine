@@ -82,6 +82,7 @@ public static class EntityPool {
 
         // Return an object to the inactive pool.
         public void ReturnToPool(Entity obj, ref bool active) {
+            if (Xenko.Engine.SceneSystem.DoNotDisposeOnNextRemoval) return;
             if (active) inactive.Push(obj);
             obj.Scene = null;
             active = false;

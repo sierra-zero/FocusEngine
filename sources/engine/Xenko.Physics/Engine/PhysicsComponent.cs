@@ -683,7 +683,7 @@ namespace Xenko.Engine
 
             if (ColliderShape != null)
             {
-                if (!ColliderShape.DoNotDispose && !ColliderShape.DoNotDisposeAnyOnNextDetach)
+                if (!ColliderShape.DoNotDispose && !SceneSystem.physicsDoNotDisposeNextRemoval)
                 {
                     ColliderShape.Dispose();
                     ColliderShape = null;
@@ -788,7 +788,7 @@ namespace Xenko.Engine
             // Actually call the detach
             OnDetach();
 
-            if (ColliderShape != null && !ColliderShape.DoNotDispose && !ColliderShape.DoNotDisposeAnyOnNextDetach)
+            if (ColliderShape != null && !ColliderShape.DoNotDispose && !Xenko.Engine.SceneSystem.physicsDoNotDisposeNextRemoval)
             {
                 ColliderShape.Dispose();
                 ColliderShape = null;

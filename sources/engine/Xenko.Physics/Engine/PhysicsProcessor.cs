@@ -183,7 +183,7 @@ namespace Xenko.Physics
             }
         }
 
-        protected override void OnSystemAdd()
+        protected internal override void OnSystemAdd()
         {
             physicsSystem = (Bullet2PhysicsSystem)Services.GetService<IPhysicsSystem>();
             if (physicsSystem == null)
@@ -209,7 +209,7 @@ namespace Xenko.Physics
             sceneSystem = Services.GetSafeServiceAs<SceneSystem>();
         }
 
-        protected override void OnSystemRemove()
+        protected internal override void OnSystemRemove()
         {
             physicsSystem.Release(this);
             ((IReferencable)physicsSystem).Release();
@@ -301,8 +301,7 @@ namespace Xenko.Physics
                 currentFrameRemovals.Clear();
             }
 
-            // reset flag after removals/detaches
-            ColliderShape.DoNotDisposeAnyOnNextDetach = false;
+            SceneSystem.physicsDoNotDisposeNextRemoval = false;
         }
     }
 }

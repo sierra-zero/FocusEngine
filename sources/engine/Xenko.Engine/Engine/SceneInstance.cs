@@ -218,6 +218,9 @@ namespace Xenko.Engine
                 foreach (var entity in entitiesToRemove)
                     Remove(entity);
             }
+
+            // clear flag, just incase we used it
+            SceneSystem.DoNotDisposeOnNextRemoval = false;
         }
 
         private void Entities_CollectionChanged(object sender, TrackingCollectionChangedEventArgs e)

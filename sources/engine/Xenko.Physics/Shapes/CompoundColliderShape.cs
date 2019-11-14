@@ -32,7 +32,7 @@ namespace Xenko.Physics
             {
                 InternalCompoundShape.RemoveChildShape(shape.InternalShape);
 
-                if (!shape.DoNotDispose && !ColliderShape.DoNotDisposeAnyOnNextDetach)
+                if (!shape.DoNotDispose && !Xenko.Engine.SceneSystem.physicsDoNotDisposeNextRemoval)
                 {
                     shape.Dispose();
                 }

@@ -77,7 +77,27 @@ namespace Xenko.Engine
         /// </summary>
         public bool SplashScreenEnabled { get; set; }
 
+        /// <summary>
+        /// If you are detaching things with the intention of bringing them back, use this global flag during the detach.
+        /// </summary>
+        [DataMemberIgnore]
+        public static bool DoNotDisposeOnNextRemoval
+        {
+            get
+            {
+                return doNotDisposeNextRemoval;
+            }
+            set
+            {
+                doNotDisposeNextRemoval = value;
+                if (value) physicsDoNotDisposeNextRemoval = true;
+            }
+        }
+        internal static bool physicsDoNotDisposeNextRemoval;
+        private static bool doNotDisposeNextRemoval;
+
         public GraphicsCompositor GraphicsCompositor { get; set; }
+
 
         private Task<Scene> sceneTask;
         private Task<GraphicsCompositor> compositorTask;

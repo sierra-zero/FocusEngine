@@ -36,3 +36,4 @@ using System.Runtime.InteropServices;
 [assembly: InternalsVisibleTo("Xenko.Engine.Tests" + Xenko.PublicKeys.Default)]
 [assembly: InternalsVisibleTo("XenkoEngineTests" + Xenko.PublicKeys.Default)]
 [assembly: InternalsVisibleTo("Xenko.VirtualReality" + Xenko.PublicKeys.Default)]
+[assembly: InternalsVisibleTo("Xenko.Physics" + Xenko.PublicKeys.Default)]

@@ -143,11 +143,6 @@ namespace Xenko.Physics
         internal bool NeedsCustomCollisionCallback;
 
         /// <summary>
-        /// If you are detaching things with the intention of bringing them back, use this global flag during the detach.
-        /// </summary>
-        public static bool DoNotDisposeAnyOnNextDetach = false;
-
-        /// <summary>
         /// If you want the ColliderShape to stick around after a Detach or Dispose for reuse, set this to true.
         /// </summary>
         public bool DoNotDispose = false;
