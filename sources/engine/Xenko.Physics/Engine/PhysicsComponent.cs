@@ -777,7 +777,7 @@ namespace Xenko.Engine
 
         internal void Detach()
         {
-            if (DoNotDispose) Data = null;
+            if (!DoNotDispose) Data = null;
 
             //this is mostly required for the game studio gizmos
             if (Simulation.DisableSimulation)
