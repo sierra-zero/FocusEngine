@@ -11,7 +11,7 @@ namespace Xenko.Core
     /// </summary>
     public class ErrorFileLogger
     {
-        private static string savePath = null, savePrefix = null;
+        private static string savePath = null, savePrefix = null, _version = "Default";
 
         private static UnhandledExceptionEventHandler globalHandler = null;
 
@@ -36,6 +36,11 @@ namespace Xenko.Core
             AppDomain.CurrentDomain.UnhandledException += globalHandler;
         }
 
+        public static void SetVersionTag(string version)
+        {
+            _version = version;
+        }
+
         public static void Disable()
         {
             if (globalHandler != null)
@@ -54,6 +59,7 @@ namespace Xenko.Core
             message = "\n--------------------- NEW ENTRY ------------------------\n" +
                       "Executable: " + System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName + "\n" +
                       "Thread: " + Thread.CurrentThread.Name + "\n" +
+                      "Version: " + _version + "\n" +
                       "Time: " + time + "\n" + 
                       "Message: " + message + "\n------------------------ END ENTRY -------------------\n";
 
