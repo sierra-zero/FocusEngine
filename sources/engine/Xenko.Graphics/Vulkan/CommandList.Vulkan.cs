@@ -405,7 +405,8 @@ namespace Xenko.Graphics
 
             activePipeline = pipelineState;
 
-            currentCommandList.NativeCommandBuffer.BindPipeline(PipelineBindPoint.Graphics, pipelineState.NativePipeline);
+            if (pipelineState.CurrentState() != PipelineState.PIPELINE_STATE.ERROR)
+                currentCommandList.NativeCommandBuffer.BindPipeline(PipelineBindPoint.Graphics, pipelineState.NativePipeline);
         }
 
         public unsafe void SetVertexBuffer(int index, Buffer buffer, int offset, int stride)
