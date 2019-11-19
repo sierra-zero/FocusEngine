@@ -9,6 +9,8 @@ using System.Runtime.InteropServices;
 using SharpVulkan;
 using System.Threading;
 using ImageLayout = SharpVulkan.ImageLayout;
+using Xenko.Core;
+using Xenko.Core.Threading;
 
 namespace Xenko.Graphics
 {
@@ -84,9 +86,10 @@ namespace Xenko.Graphics
                 // are we still OK to present?
                 if (runPresenter == false) return;
 
-                GraphicsDevice.QueueLock.EnterWriteLock();
-                GraphicsDevice.NativeCommandQueue.Present(ref presentInfo);        
-                GraphicsDevice.QueueLock.ExitWriteLock();
+                using (GraphicsDevice.QueueLock.WriteLock())
+                {
+                    GraphicsDevice.NativeCommandQueue.Present(ref presentInfo);        
+                }
 
                 presentWaiter.Reset();
             }

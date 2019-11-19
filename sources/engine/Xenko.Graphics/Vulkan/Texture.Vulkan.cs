@@ -6,6 +6,7 @@ using System.Threading;
 using System.Linq;
 using SharpVulkan;
 using Xenko.Core;
+using Xenko.Core.Threading;
 using Xenko.Core.Mathematics;
 
 namespace Xenko.Graphics
@@ -295,9 +296,10 @@ namespace Xenko.Graphics
                 CommandBufferCount = 1,
             };     
 
-            GraphicsDevice.QueueLock.EnterReadLock();
-            GraphicsDevice.NativeDevice.AllocateCommandBuffers(ref commandBufferAllocateInfo, &commandBuffer);
-            GraphicsDevice.QueueLock.ExitReadLock();
+            using (GraphicsDevice.QueueLock.ReadLock())
+            {
+                GraphicsDevice.NativeDevice.AllocateCommandBuffers(ref commandBufferAllocateInfo, &commandBuffer);
+            }
 
             commandBuffer.Begin(ref beginInfo);
 
@@ -357,12 +359,13 @@ namespace Xenko.Graphics
                 }
 
                 // Copy from upload buffer to image
-                GraphicsDevice.QueueLock.EnterReadLock();
-                fixed (BufferImageCopy* copiesPointer = copies)
+                using (GraphicsDevice.QueueLock.ReadLock())
                 {
-                    commandBuffer.CopyBufferToImage(uploadResource, NativeImage, ImageLayout.TransferDestinationOptimal, (uint)copies.Length, copiesPointer);
+                    fixed (BufferImageCopy* copiesPointer = copies)
+                    {
+                        commandBuffer.CopyBufferToImage(uploadResource, NativeImage, ImageLayout.TransferDestinationOptimal, (uint)copies.Length, copiesPointer);
+                    }
                 }
-                GraphicsDevice.QueueLock.ExitReadLock();
 
                 IsInitialized = true;
             }
@@ -375,12 +378,13 @@ namespace Xenko.Graphics
             submitInfo.CommandBuffers = new IntPtr(&commandBuffer);
 
             // Close and submit
-            GraphicsDevice.QueueLock.EnterWriteLock();
-            commandBuffer.PipelineBarrier(PipelineStageFlags.Transfer, PipelineStageFlags.AllCommands, DependencyFlags.None, 0, null, 0, null, 1, &imageMemoryBarrier);
-            commandBuffer.End();
-            GraphicsDevice.NativeCommandQueue.Submit(1, &submitInfo, fence);
-            GraphicsDevice.NativeDevice.WaitForFences(1, &fence, true, ulong.MaxValue);
-            GraphicsDevice.QueueLock.ExitWriteLock();
+            using (GraphicsDevice.QueueLock.WriteLock())
+            {
+                commandBuffer.PipelineBarrier(PipelineStageFlags.Transfer, PipelineStageFlags.AllCommands, DependencyFlags.None, 0, null, 0, null, 1, &imageMemoryBarrier);
+                commandBuffer.End();
+                GraphicsDevice.NativeCommandQueue.Submit(1, &submitInfo, fence);
+                GraphicsDevice.NativeDevice.WaitForFences(1, &fence, true, ulong.MaxValue);
+            }
 
             GraphicsDevice.NativeDevice.FreeCommandBuffers(GraphicsDevice.NativeCopyCommandPool, 1, &commandBuffer);
             GraphicsDevice.NativeDevice.DestroyFence(fence);

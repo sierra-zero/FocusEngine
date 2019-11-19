@@ -221,9 +221,10 @@ namespace Xenko.Graphics
                 WaitDstStageMask = new IntPtr(&pipelineStageFlags),
             };
 
-            QueueLock.EnterReadLock();
-            NativeCommandQueue.Submit(1, &submitInfo, fence);
-            QueueLock.ExitReadLock();
+            using (QueueLock.ReadLock())
+            {
+                NativeCommandQueue.Submit(1, &submitInfo, fence);
+            }
 
             presentSemaphore = Semaphore.Null;
             nativeResourceCollector.Release();
@@ -527,9 +528,10 @@ namespace Xenko.Graphics
                 WaitDstStageMask = new IntPtr(&pipelineStageFlags),
             };
 
-            QueueLock.EnterReadLock();
-            NativeCommandQueue.Submit(1, &submitInfo, fence);
-            QueueLock.ExitReadLock();
+            using (QueueLock.ReadLock())
+            {
+                NativeCommandQueue.Submit(1, &submitInfo, fence);
+            }
 
             presentSemaphore = Semaphore.Null;
             nativeResourceCollector.Release();

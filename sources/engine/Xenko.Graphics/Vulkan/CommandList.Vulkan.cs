@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using SharpVulkan;
 using Xenko.Core;
+using Xenko.Core.Threading;
 using Xenko.Core.Collections;
 using Xenko.Core.Mathematics;
 
@@ -122,13 +123,10 @@ namespace Xenko.Graphics
         public void Flush()
         {
             CompiledCommandList ccl;
-            // some hardware sometimes causes a read lock to hold here
-            // that shouldn't happen, but apparently does
-            // this assures that read lock is freed up before trying to get the write lock
-            if (GraphicsDevice.QueueLock.IsReadLockHeld) GraphicsDevice.QueueLock.ExitReadLock();
-            GraphicsDevice.QueueLock.EnterWriteLock();
-            ccl = Close();
-            GraphicsDevice.QueueLock.ExitWriteLock();
+            using (GraphicsDevice.QueueLock.WriteLock()) 
+            {
+                ccl = Close();
+            }
             GraphicsDevice.ExecuteCommandList(ccl);
         }
 

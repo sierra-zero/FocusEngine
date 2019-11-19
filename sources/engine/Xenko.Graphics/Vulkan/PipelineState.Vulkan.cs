@@ -8,6 +8,7 @@ using SharpVulkan;
 using System.Runtime.ExceptionServices;
 using System.Security;
 using Xenko.Core;
+using Xenko.Core.Threading;
 using Xenko.Core.Collections;
 using Xenko.Core.Serialization;
 using Xenko.Shaders;
@@ -221,14 +222,14 @@ namespace Xenko.Graphics
                     Subpass = 0,
                 };
                 
-                try {
-                    GraphicsDevice.QueueLock.EnterReadLock();
-                    NativePipeline = GraphicsDevice.NativeDevice.CreateGraphicsPipelines(PipelineCache.Null, 1, &createInfo);
-                } catch (Exception e) {
-                    errorDuringCreate = true;
-                    NativePipeline = Pipeline.Null;
-                } finally {
-                    GraphicsDevice.QueueLock.ExitReadLock();
+                using (GraphicsDevice.QueueLock.ReadLock())
+                {
+                    try {
+                        NativePipeline = GraphicsDevice.NativeDevice.CreateGraphicsPipelines(PipelineCache.Null, 1, &createInfo);
+                    } catch (Exception e) {
+                        errorDuringCreate = true;
+                        NativePipeline = Pipeline.Null;
+                    }
                 }
             }
 
