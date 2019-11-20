@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 
+using Xenko.Input;
 using Xenko.Core;
 using Xenko.Core.Mathematics;
 using Xenko.Games;
@@ -161,6 +162,14 @@ namespace Xenko.UI.Controls
         [Display(category: BehaviorCategory)]
         [DefaultValue(1.0f)]
         public float ScrollSensitivity { get; set; } = 1.0f;
+
+        /// <summary>
+        /// Scroll speed multiplier with mouse wheel. Can be negative to reverse scrolling.
+        /// </summary>
+        [DataMember]
+        [Display(category: BehaviorCategory)]
+        [DefaultValue(1.0f)]
+        public float MouseWheelScrollSensitivity { get; set; } = 10.0f;
 
         /// <summary>
         /// Gets or sets the value indicating if the element should snap its scrolling to anchors.
@@ -374,6 +383,13 @@ namespace Xenko.UI.Controls
             var elapsedSeconds = (float)time.Elapsed.TotalSeconds;
             if (elapsedSeconds < MathUtil.ZeroTolerance)
                 return;
+
+            if (MouseWheelScrollSensitivity != 0f &&
+                InputManager.instance != null &&
+                MouseOverState != MouseOverState.MouseOverNone)
+            {
+                WheelScroll(InputManager.instance.MouseWheelDelta);
+            }
 
             if (IsUserScrollingViewer || userManuallyScrolled) // scrolling is controlled by the user.
             {
@@ -838,6 +854,16 @@ namespace Xenko.UI.Controls
 
             IsUserScrollingViewer = false;
             IsTouchedDown = false;
+        }
+
+        protected void WheelScroll(float amount)
+        {
+            if (amount == 0f) return;
+
+            accumulatedTranslation.Y = -amount * MouseWheelScrollSensitivity;
+            CurrentScrollingSpeed.Y = accumulatedTranslation.Y;
+            lastFrameTranslation = accumulatedTranslation;
+            IsUserScrollingViewer = true;
         }
 
         protected override void OnPreviewTouchMove(TouchEventArgs args)

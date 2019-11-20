@@ -28,6 +28,7 @@ namespace Xenko.Input
         public static float GameControllerAxisDeadZone = 0.05f;
         
         internal static Logger Logger = GlobalLogger.GetLogger("Input");
+        internal static InputManager instance;
 
         private readonly List<IInputDevice> devices = new List<IInputDevice>();
 
@@ -293,6 +294,8 @@ namespace Xenko.Input
 
         public override void Initialize()
         {
+            instance = this;
+
             base.Initialize();
 
             Game.Activated += OnApplicationResumed;
