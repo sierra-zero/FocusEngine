@@ -12,9 +12,6 @@ namespace Xenko.Core.Threading
     /// <summary>
     /// Thread pool for scheduling actions.
     /// </summary>
-    /// <remarks>
-    /// Base on Stephen Toub's ManagedThreadPool
-    /// </remarks>
     internal class ThreadPool
     {
         public static readonly ThreadPool Instance = new ThreadPool();
