@@ -242,7 +242,10 @@ namespace Xenko.Graphics
                 commandBuffer.PipelineBarrier(PipelineStageFlags.Transfer, PipelineStageFlags.AllCommands, DependencyFlags.None, 0, null, 1, &bufferMemoryBarrier, 0, null);
 
                 // Close and submit
-                commandBuffer.End();
+                using (GraphicsDevice.QueueLock.ReadLock())
+                {
+                    commandBuffer.End();
+                }
 
                 var submitInfo = new SubmitInfo
                 {

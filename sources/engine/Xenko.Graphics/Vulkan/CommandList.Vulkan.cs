@@ -98,11 +98,30 @@ namespace Xenko.Graphics
         /// <returns>The executable command list.</returns>
         public CompiledCommandList Close()
         {
+            return Close(false);
+        }
+
+        /// <summary>
+        /// Closes the command list for recording and returns an executable token.
+        /// </summary>
+        /// <returns>The executable command list.</returns>
+        public CompiledCommandList Close(bool writeLock = false)
+        {
             // End active render pass
             CleanupRenderPass();
 
             // Close
-            currentCommandList.NativeCommandBuffer.End();
+            if (writeLock)
+            {
+                using (GraphicsDevice.QueueLock.WriteLock())
+                {
+                    currentCommandList.NativeCommandBuffer.End();
+                }
+            }
+            else
+            {
+                currentCommandList.NativeCommandBuffer.End();
+            }
 
             // Staging resources not updated anymore
             foreach (var stagingResource in currentCommandList.StagingResources)
@@ -123,10 +142,7 @@ namespace Xenko.Graphics
         public void Flush()
         {
             CompiledCommandList ccl;
-            using (GraphicsDevice.QueueLock.WriteLock()) 
-            {
-                ccl = Close();
-            }
+            ccl = Close(true);
             GraphicsDevice.ExecuteCommandList(ccl);
         }
 
