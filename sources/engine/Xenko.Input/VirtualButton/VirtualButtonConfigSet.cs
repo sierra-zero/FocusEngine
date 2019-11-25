@@ -20,7 +20,7 @@ namespace Xenko.Input
         {
         }
 
-        public virtual float GetValue(InputManager inputManager, int configIndex, object name)
+        public virtual float GetValue(int configIndex, object name)
         {
             if (configIndex < 0 || configIndex >= Count)
             {
@@ -28,7 +28,7 @@ namespace Xenko.Input
             }
 
             var config = this[configIndex];
-            return config != null ? config.GetValue(inputManager, name) : 0.0f;
+            return config != null ? config.GetValue(name) : 0.0f;
         }
     }
 }

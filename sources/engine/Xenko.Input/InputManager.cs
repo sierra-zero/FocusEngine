@@ -927,7 +927,7 @@ namespace Xenko.Input
                     {
                         foreach (var name in config.BindingNames)
                         {
-                            mapNameToValue[name] = config.GetValue(this, name);
+                            mapNameToValue[name] = config.GetValue(name);
                         }
                     }
                 }

@@ -62,11 +62,11 @@ namespace Xenko.Input
             /// </summary>
             public static readonly VirtualButton DeltaY = new Mouse("DeltaY", 8, true);
 
-            public override float GetValue(InputManager manager)
+            public override float GetValue()
             {
                 if (Index < 5)
                 {
-                    if (IsDown(manager))
+                    if (IsDown())
                         return 1.0f;
                 }
                 else
@@ -74,32 +74,32 @@ namespace Xenko.Input
                     switch (Index)
                     {
                         case 5:
-                            return manager.MousePosition.X;
+                            return InputManager.instance.MousePosition.X;
                         case 6:
-                            return manager.MousePosition.Y;
+                            return InputManager.instance.MousePosition.Y;
                         case 7:
-                            return manager.MouseDelta.X;
+                            return InputManager.instance.MouseDelta.X;
                         case 8:
-                            return manager.MouseDelta.Y;
+                            return InputManager.instance.MouseDelta.Y;
                     }
                 }
 
                 return 0.0f;
             }
 
-            public override bool IsDown(InputManager manager)
+            public override bool IsDown()
             {
-                return Index < 5 ? manager.IsMouseButtonDown((MouseButton)Index) : false;
+                return Index < 5 ? InputManager.instance.IsMouseButtonDown((MouseButton)Index) : false;
             }
 
-            public override bool IsPressed(InputManager manager)
+            public override bool IsPressed()
             {
-                return Index < 5 ? manager.IsMouseButtonPressed((MouseButton)Index) : false;
+                return Index < 5 ? InputManager.instance.IsMouseButtonPressed((MouseButton)Index) : false;
             }
 
-            public override bool IsReleased(InputManager manager)
+            public override bool IsReleased()
             {
-                return Index < 5 ? manager.IsMouseButtonReleased((MouseButton)Index) : false;
+                return Index < 5 ? InputManager.instance.IsMouseButtonReleased((MouseButton)Index) : false;
             }
         }
     }

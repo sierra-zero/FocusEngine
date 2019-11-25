@@ -41,9 +41,9 @@ namespace Xenko.Input
         /// Gets the value for a particular binding.
         /// </summary>
         /// <returns>Value of the binding</returns>
-        public virtual float GetValue(InputManager manager)
+        public virtual float GetValue()
         {
-            return Button != null ? Button.GetValue(manager) : 0.0f;
+            return Button != null ? Button.GetValue() : 0.0f;
         }
 
         public override string ToString()

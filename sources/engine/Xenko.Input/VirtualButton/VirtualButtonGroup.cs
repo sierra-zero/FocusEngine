@@ -60,12 +60,12 @@ namespace Xenko.Input
             return combination;
         }
 
-        public virtual float GetValue(InputManager manager)
+        public virtual float GetValue()
         {
             float value = 0.0f;
             foreach (var virtualButton in Items)
             {
-                float newValue = virtualButton != null ? virtualButton.GetValue(manager) : 0.0f;
+                float newValue = virtualButton != null ? virtualButton.GetValue() : 0.0f;
 
                 // In case of a || (disjunction) set, we return the latest non-zero value.
                 if (IsDisjunction)
@@ -104,41 +104,41 @@ namespace Xenko.Input
             return text.ToString();
         }
 
-        public bool IsDown(InputManager manager)
+        public bool IsDown()
         {
-            return CheckAnyOrAll(manager, IsDown);
+            return CheckAnyOrAll(IsDown);
         }
 
-        public bool IsPressed(InputManager manager)
+        public bool IsPressed()
         {
-            return CheckAnyOrAll(manager, IsPressed);
+            return CheckAnyOrAll(IsPressed);
         }
 
-        public bool IsReleased(InputManager manager)
+        public bool IsReleased()
         {
-            return CheckAnyOrAll(manager, IsReleased);
+            return CheckAnyOrAll(IsReleased);
         }
 
-        private bool IsDown(IVirtualButton button, InputManager manager)
+        private bool IsDown(IVirtualButton button)
         {
-            return button.IsDown(manager);
+            return button.IsDown();
         }
 
-        private bool IsReleased(IVirtualButton button, InputManager manager)
+        private bool IsReleased(IVirtualButton button)
         {
-            return button.IsReleased(manager);
+            return button.IsReleased();
         }
 
-        private bool IsPressed(IVirtualButton button, InputManager manager)
+        private bool IsPressed(IVirtualButton button)
         {
-            return button.IsPressed(manager);
+            return button.IsPressed();
         }
 
-        private bool CheckAnyOrAll(InputManager manager, Func<IVirtualButton, InputManager, bool> check)
+        private bool CheckAnyOrAll(Func<IVirtualButton, bool> check)
         {
             foreach (var virtualButton in Items)
             {
-                var isDown = check(virtualButton, manager);
+                var isDown = check(virtualButton);
 
                 if (IsDisjunction && isDown)
                     return true;

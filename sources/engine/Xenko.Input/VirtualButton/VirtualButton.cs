@@ -137,21 +137,21 @@ namespace Xenko.Input
         /// </summary>
         /// <param name="manager">Your game's InputManager</param>
         /// <returns>A pressed VirtualButton, null if nothing was pressed</returns>
-        public static VirtualButton GetAnyPressed(InputManager manager)
+        public static VirtualButton GetAnyPressed()
         {
             foreach (VirtualButton vb in Registered)
             {
                 if (vb == Pointer.State) continue; // skip you, which is always apparently down
-                if (vb.IsPressed(manager)) return vb;
+                if (vb.IsPressed()) return vb;
             }
             return null;
         }
 
-        public abstract float GetValue(InputManager manager);
+        public abstract float GetValue();
 
-        public abstract bool IsDown(InputManager manager);
-        public abstract bool IsPressed(InputManager manager);
-        public abstract bool IsReleased(InputManager manager);
+        public abstract bool IsDown();
+        public abstract bool IsPressed();
+        public abstract bool IsReleased();
 
         protected virtual string BuildButtonName()
         {

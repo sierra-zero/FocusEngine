@@ -150,20 +150,20 @@ namespace Xenko.Input
                 return PadIndex < 0 ? base.BuildButtonName() : Type.ToString() + PadIndex + "." + ShortName;
             }
 
-            private IGamePadDevice GetGamePad(InputManager manager)
+            private IGamePadDevice GetGamePad()
             {
-                return PadIndex >= 0 ? manager.GetGamePadByIndex(PadIndex) : manager.DefaultGamePad;
+                return PadIndex >= 0 ? InputManager.instance.GetGamePadByIndex(PadIndex) : InputManager.instance.DefaultGamePad;
             }
 
-            public override float GetValue(InputManager manager)
+            public override float GetValue()
             {
-                var gamePad = GetGamePad(manager);
+                var gamePad = GetGamePad();
                 if (gamePad == null)
                     return 0.0f;
 
                 if (Index <= 15)
                 {
-                    if (IsDown(manager))
+                    if (IsDown())
                         return 1.0f;
                 }
                 else
@@ -189,9 +189,9 @@ namespace Xenko.Input
                 return 0.0f;
             }
 
-            public override bool IsDown(InputManager manager)
+            public override bool IsDown()
             {
-                var gamePad = GetGamePad(manager);
+                var gamePad = GetGamePad();
                 if (gamePad == null)
                     return false;
                 
@@ -211,9 +211,9 @@ namespace Xenko.Input
                 return false;
             }
 
-            public override bool IsPressed(InputManager manager)
+            public override bool IsPressed()
             {
-                var gamePad = GetGamePad(manager);
+                var gamePad = GetGamePad();
                 if (gamePad == null)
                     return false;
                 
@@ -223,9 +223,9 @@ namespace Xenko.Input
                 return gamePad.IsButtonPressed((GamePadButton)(1 << Index));
             }
 
-            public override bool IsReleased(InputManager manager)
+            public override bool IsReleased()
             {
-                var gamePad = GetGamePad(manager);
+                var gamePad = GetGamePad();
                 if (gamePad == null)
                     return false;
 

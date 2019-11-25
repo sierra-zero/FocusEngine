@@ -124,7 +124,7 @@ namespace Xenko.VirtualReality
         {
         }
 
-        public override float GetValue(InputManager manager)
+        public override float GetValue()
         {
             TouchController tc = VRDeviceSystem.GetSystem?.GetController((Index & (1 << 16)) != 0 ? TouchControllerHand.Right : TouchControllerHand.Left);
             if (tc == null) return 0f;
@@ -144,21 +144,21 @@ namespace Xenko.VirtualReality
             }
         }
 
-        public override bool IsDown(InputManager manager)
+        public override bool IsDown()
         {
             TouchController tc = VRDeviceSystem.GetSystem?.GetController((Index & (1 << 16)) != 0 ? TouchControllerHand.Right : TouchControllerHand.Left);
             if (tc == null) return false;
             return tc.IsPressed((TouchControllerButton)(Index & 0xFF));
         }
 
-        public override bool IsPressed(InputManager manager)
+        public override bool IsPressed()
         {
             TouchController tc = VRDeviceSystem.GetSystem?.GetController((Index & (1 << 16)) != 0 ? TouchControllerHand.Right : TouchControllerHand.Left);
             if (tc == null) return false;
             return tc.IsPressedDown((TouchControllerButton)(Index & 0xFF));
         }
 
-        public override bool IsReleased(InputManager manager)
+        public override bool IsReleased()
         {
             TouchController tc = VRDeviceSystem.GetSystem?.GetController((Index & (1 << 16)) != 0 ? TouchControllerHand.Right : TouchControllerHand.Left);
             if (tc == null) return false;

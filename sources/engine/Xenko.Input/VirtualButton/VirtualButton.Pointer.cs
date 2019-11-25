@@ -76,44 +76,44 @@ namespace Xenko.Input
                 return PointerId < 0 ? base.BuildButtonName() : Type.ToString() + PointerId + "." + ShortName;
             }
 
-            public override float GetValue(InputManager manager)
+            public override float GetValue()
             {
                 int index = (Id & TypeIdMask);
                 switch (index)
                 {
                     case 0:
-                        return IsDown(manager) ? 1f : 0f;
+                        return IsDown() ? 1f : 0f;
                     case 1:
-                        return FromFirstMatchingEvent(manager, GetPositionX);
+                        return FromFirstMatchingEvent(GetPositionX);
                     case 2:
-                        return FromFirstMatchingEvent(manager, GetPositionY);
+                        return FromFirstMatchingEvent(GetPositionY);
                     case 3:
-                        return FromFirstMatchingEvent(manager, GetDeltaX);
+                        return FromFirstMatchingEvent(GetDeltaX);
                     case 4:
-                        return FromFirstMatchingEvent(manager, GetDeltaY);
+                        return FromFirstMatchingEvent(GetDeltaY);
                 }
 
                 return 0.0f;
             }
 
-            public override bool IsDown(InputManager manager)
+            public override bool IsDown()
             {
-                return Index == 0 ? AnyPointerInState(manager, GetDownPointers) : false;
+                return Index == 0 ? AnyPointerInState(GetDownPointers) : false;
             }
 
-            public override bool IsPressed(InputManager manager)
+            public override bool IsPressed()
             {
-                return Index == 0 ? AnyPointerInState(manager, GetPressedPointers) : false;
+                return Index == 0 ? AnyPointerInState(GetPressedPointers) : false;
             }
 
-            public override bool IsReleased(InputManager manager)
+            public override bool IsReleased()
             {
-                return Index == 0 ? AnyPointerInState(manager, GetReleasedPointers) : false;
+                return Index == 0 ? AnyPointerInState(GetReleasedPointers) : false;
             }
 
-            private float FromFirstMatchingEvent(InputManager manager, Func<PointerEvent, float> valueGetter)
+            private float FromFirstMatchingEvent(Func<PointerEvent, float> valueGetter)
             {
-                foreach (var pointerEvent in manager.PointerEvents)
+                foreach (var pointerEvent in InputManager.instance.PointerEvents)
                 {
                     if (PointerId < 0 || pointerEvent.PointerId == PointerId)
                         return valueGetter(pointerEvent);
@@ -121,9 +121,9 @@ namespace Xenko.Input
                 return 0f;
             }
 
-            private bool AnyPointerInState(InputManager manager, Func<IPointerDevice, IReadOnlySet<PointerPoint>> stateGetter)
+            private bool AnyPointerInState(Func<IPointerDevice, IReadOnlySet<PointerPoint>> stateGetter)
             {
-                foreach (var pointerDevice in manager.Pointers)
+                foreach (var pointerDevice in InputManager.instance.Pointers)
                 {
                     foreach (var pointerPoint in stateGetter(pointerDevice))
                     {

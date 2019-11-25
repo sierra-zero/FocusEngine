@@ -12,27 +12,27 @@ namespace Xenko.Input
         /// </summary>
         /// <param name="manager">The manager.</param>
         /// <returns>System.Single.</returns>
-        float GetValue(InputManager manager);
+        float GetValue();
 
         /// <summary>
         /// Indicate if the button is currently down
         /// </summary>
         /// <param name="manager">The input manager</param>
         /// <returns></returns>
-        bool IsDown(InputManager manager);
+        bool IsDown();
 
         /// <summary>
         /// Indicate if the button has been pressed since the last frame
         /// </summary>
         /// <param name="manager">The input manager</param>
         /// <returns></returns>
-        bool IsPressed(InputManager manager);
+        bool IsPressed();
 
         /// <summary>
         /// Indicate if the button has been released since the last frame
         /// </summary>
         /// <param name="manager">The input manager</param>
         /// <returns></returns>
-        bool IsReleased(InputManager manager);
+        bool IsReleased();
     }
 }

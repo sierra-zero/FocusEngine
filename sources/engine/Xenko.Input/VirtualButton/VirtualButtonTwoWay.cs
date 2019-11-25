@@ -43,24 +43,24 @@ namespace Xenko.Input
         /// <value>The positive button.</value>
         public IVirtualButton PositiveButton { get; set; }
 
-        public virtual float GetValue(InputManager manager)
+        public virtual float GetValue()
         {
-            float negativeValue = ((NegativeButton != null) ? NegativeButton.GetValue(manager) : 0.0f);
-            float positiveValue = (PositiveButton != null) ? PositiveButton.GetValue(manager) : 0.0f;
+            float negativeValue = ((NegativeButton != null) ? NegativeButton.GetValue() : 0.0f);
+            float positiveValue = (PositiveButton != null) ? PositiveButton.GetValue() : 0.0f;
             return positiveValue - negativeValue;
         }
 
-        public bool IsDown(InputManager manager)
+        public bool IsDown()
         {
             return false;
         }
 
-        public bool IsPressed(InputManager manager)
+        public bool IsPressed()
         {
             return false;
         }
 
-        public bool IsReleased(InputManager manager)
+        public bool IsReleased()
         {
             return false;
         }

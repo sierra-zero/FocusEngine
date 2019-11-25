@@ -35,7 +35,7 @@ namespace Xenko.Input
             }
         }
 
-        public virtual float GetValue(InputManager inputManager, object name)
+        public virtual float GetValue(object name)
         {
             float value = 0.0f;
             List<VirtualButtonBinding> bindingsPerName;
@@ -43,7 +43,7 @@ namespace Xenko.Input
             {
                 foreach (var virtualButtonBinding in bindingsPerName)
                 {
-                    float newValue = virtualButtonBinding.GetValue(inputManager);
+                    float newValue = virtualButtonBinding.GetValue();
                     if (Math.Abs(newValue) > Math.Abs(value))
                     {
                         value = newValue;

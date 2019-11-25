@@ -857,24 +857,24 @@ namespace Xenko.Input
             {
             }
 
-            public override float GetValue(InputManager manager)
+            public override float GetValue()
             {
-                return IsDown(manager) ? 1.0f : 0.0f;
+                return IsDown() ? 1.0f : 0.0f;
             }
 
-            public override bool IsDown(InputManager manager)
+            public override bool IsDown()
             {
-                return manager.IsKeyDown((Keys)Index);
+                return InputManager.instance.IsKeyDown((Keys)Index);
             }
 
-            public override bool IsPressed(InputManager manager)
+            public override bool IsPressed()
             {
-                return manager.IsKeyPressed((Keys)Index);
+                return InputManager.instance.IsKeyPressed((Keys)Index);
             }
 
-            public override bool IsReleased(InputManager manager)
+            public override bool IsReleased()
             {
-                return manager.IsKeyReleased((Keys)Index);
+                return InputManager.instance.IsKeyReleased((Keys)Index);
             }
         }
     }
