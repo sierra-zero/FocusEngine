@@ -286,13 +286,15 @@ namespace Xenko.Graphics
                 QueuePriorities = new IntPtr(&queuePriorities)
             };
 
+            NativePhysicalDevice.GetFeatures(out PhysicalDeviceFeatures features);
+
             var enabledFeature = new PhysicalDeviceFeatures
             {
-                FillModeNonSolid = true,
-                ShaderClipDistance = true,
-                ShaderCullDistance = true,
-                SamplerAnisotropy = true,
-                DepthClamp = true,
+                FillModeNonSolid = features.FillModeNonSolid,
+                ShaderClipDistance = features.ShaderClipDistance,
+                ShaderCullDistance = features.ShaderCullDistance,
+                SamplerAnisotropy = features.SamplerAnisotropy,
+                DepthClamp = features.DepthClamp,
             };
 
             var extensionProperties = NativePhysicalDevice.GetDeviceExtensionProperties();
