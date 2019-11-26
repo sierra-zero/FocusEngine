@@ -1064,12 +1064,16 @@ namespace Xenko.Physics
                 simpleFrameContacts.CollisionFilterMask = (int)component.CanCollideWith;
                 simpleFrameContacts.CollisionFilterGroup = (int)component.CollisionGroup;
                 component.processingPhysicalContacts[component.processingPhysicalContactsIndex ^ 1].Clear();
+                if (simulationLocker != null) simulationLocker.EnterReadLock();
                 collisionWorld.ContactTest(component.NativeCollisionObject, simpleFrameContacts);
+                if (simulationLocker != null) simulationLocker.ExitReadLock();
                 component.processingPhysicalContactsIndex ^= 1; // switch what list to return
             } else {
                 currentFrameContacts.CollisionFilterMask = (int)component.CanCollideWith;
                 currentFrameContacts.CollisionFilterGroup = (int)component.CollisionGroup;
+                if (simulationLocker != null) simulationLocker.EnterReadLock();
                 collisionWorld.ContactTest(component.NativeCollisionObject, currentFrameContacts);
+                if (simulationLocker != null) simulationLocker.ExitReadLock();
             }
         }
 
