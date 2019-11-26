@@ -25,6 +25,7 @@ namespace Xenko.Graphics
         private Texture backbuffer;
         private SwapChainImageInfo[] swapchainImages;
         private volatile uint currentBufferIndex;
+        private Fence presentFence;
 
         private struct SwapChainImageInfo
         {
@@ -102,7 +103,7 @@ namespace Xenko.Graphics
             presentWaiter.Set();
 
             // Get next image
-            Result r = GraphicsDevice.NativeDevice.AcquireNextImageWithResult(swapChain, ulong.MaxValue, GraphicsDevice.GetNextPresentSemaphore(), Fence.Null, out currentBufferIndex);
+            Result r = GraphicsDevice.NativeDevice.AcquireNextImageWithResult(swapChain, ulong.MaxValue, SharpVulkan.Semaphore.Null, presentFence, out currentBufferIndex);
 
             if (r == Result.ErrorOutOfDate) {
                 // re-create and do a "lite" re-present
@@ -111,6 +112,12 @@ namespace Xenko.Graphics
                 presentingIndex = currentBufferIndex;
                 presentWaiter.Set();
                 return;
+            }
+
+            // reset dummy fence
+            fixed (Fence* fences = &presentFence)
+            {
+                GraphicsDevice.NativeDevice.ResetFences(1, fences);
             }
 
             // Flip render targets
@@ -408,7 +415,16 @@ namespace Xenko.Graphics
             GraphicsDevice.NativeCommandQueue.WaitIdle();
             commandBuffer.Reset(CommandBufferResetFlags.None);
             
-            currentBufferIndex = GraphicsDevice.NativeDevice.AcquireNextImage(swapChain, ulong.MaxValue, GraphicsDevice.GetNextPresentSemaphore(), Fence.Null);
+            // need to make a fence, but can immediately reset it, as it acts as a dummy
+            var fenceCreateInfo = new FenceCreateInfo { StructureType = StructureType.FenceCreateInfo };
+            presentFence = GraphicsDevice.NativeDevice.CreateFence(ref fenceCreateInfo);
+
+            currentBufferIndex = GraphicsDevice.NativeDevice.AcquireNextImage(swapChain, ulong.MaxValue, SharpVulkan.Semaphore.Null, presentFence);
+
+            fixed (Fence* fences = &presentFence)
+            {
+                GraphicsDevice.NativeDevice.ResetFences(1, fences);
+            }
 
             // Apply the first swap chain image to the texture
             backbuffer.SetNativeHandles(swapchainImages[currentBufferIndex].NativeImage, swapchainImages[currentBufferIndex].NativeColorAttachmentView);

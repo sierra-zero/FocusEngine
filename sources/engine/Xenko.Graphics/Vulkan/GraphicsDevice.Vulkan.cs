@@ -210,14 +210,13 @@ namespace Xenko.Graphics
 
             // Submit commands
             var pipelineStageFlags = PipelineStageFlags.BottomOfPipe;
-            var presentSemaphoreCopy = presentSemaphore;
             var submitInfo = new SubmitInfo
             {
                 StructureType = StructureType.SubmitInfo,
                 CommandBufferCount = (uint)count,
                 CommandBuffers = new IntPtr(commandBuffers),
-                WaitSemaphoreCount = presentSemaphore != Semaphore.Null ? 1U : 0U,
-                WaitSemaphores = new IntPtr(&presentSemaphoreCopy),
+                WaitSemaphoreCount = 0U,
+                WaitSemaphores = IntPtr.Zero,
                 WaitDstStageMask = new IntPtr(&pipelineStageFlags),
             };
 
@@ -226,7 +225,6 @@ namespace Xenko.Graphics
                 NativeCommandQueue.Submit(1, &submitInfo, fence);
             }
 
-            presentSemaphore = Semaphore.Null;
             nativeResourceCollector.Release();
             graphicsResourceLinkCollector.Release();
         }
@@ -519,14 +517,13 @@ namespace Xenko.Graphics
             var nativeCommandBufferCopy = commandList.NativeCommandBuffer;
             var pipelineStageFlags = PipelineStageFlags.BottomOfPipe;
 
-            var presentSemaphoreCopy = presentSemaphore;
             var submitInfo = new SubmitInfo
             {
                 StructureType = StructureType.SubmitInfo,
                 CommandBufferCount = 1,
                 CommandBuffers = new IntPtr(&nativeCommandBufferCopy),
-                WaitSemaphoreCount = presentSemaphore != Semaphore.Null ? 1U : 0U,
-                WaitSemaphores = new IntPtr(&presentSemaphoreCopy),
+                WaitSemaphoreCount = 0U,
+                WaitSemaphores = IntPtr.Zero,
                 WaitDstStageMask = new IntPtr(&pipelineStageFlags),
             };
 
@@ -535,7 +532,6 @@ namespace Xenko.Graphics
                 NativeCommandQueue.Submit(1, &submitInfo, fence);
             }
 
-            presentSemaphore = Semaphore.Null;
             nativeResourceCollector.Release();
             graphicsResourceLinkCollector.Release();
 
@@ -617,16 +613,6 @@ namespace Xenko.Graphics
                     lastCompletedFence = fenceValue;
                 }
             }
-        }
-
-        private Semaphore presentSemaphore;
-
-        public unsafe Semaphore GetNextPresentSemaphore()
-        {
-            var createInfo = new SemaphoreCreateInfo { StructureType = StructureType.SemaphoreCreateInfo };
-            presentSemaphore = NativeDevice.CreateSemaphore(ref createInfo);
-            Collect(presentSemaphore);
-            return presentSemaphore;
         }
 
         internal void Collect(NativeResource nativeResource)
