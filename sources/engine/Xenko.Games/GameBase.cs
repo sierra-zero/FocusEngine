@@ -901,15 +901,17 @@ namespace Xenko.Games
         protected virtual void OnWindowCreated() {
             WindowCreated?.Invoke(this, EventArgs.Empty);
 
+            // make sure we render frames faster than vysnc if we are in vulkan
+            int vsyncWiggleRoom = GraphicsDevice.Platform == GraphicsPlatform.Vulkan ? 1 : 0;
             // If we still have default values, let's set these based on SDL refresh rate (if we can)
             if (gamePlatform.MainWindow is GameWindowSDL) {
                 if (TargetElapsedTime == defaultTimeSpan) {
                     ((GameWindowSDL)gamePlatform.MainWindow).GetDisplayInformation(out int width, out int height, out int refresh_rate);
-                    TargetElapsedTime = TimeSpan.FromTicks(TimeSpan.TicksPerSecond / refresh_rate);
+                    TargetElapsedTime = TimeSpan.FromTicks(TimeSpan.TicksPerSecond / (refresh_rate + vsyncWiggleRoom));
                 }
                 if (WindowMinimumUpdateRate.MinimumElapsedTime == defaultTimeSpan) WindowMinimumUpdateRate.MinimumElapsedTime = TargetElapsedTime;
             } else if (TargetElapsedTime == defaultTimeSpan) {
-                TargetElapsedTime = TimeSpan.FromTicks(TimeSpan.TicksPerSecond / 60); // target elapsed time is by default 60Hz
+                TargetElapsedTime = TimeSpan.FromTicks(TimeSpan.TicksPerSecond / (60 + vsyncWiggleRoom)); // target elapsed time is by default 60Hz
             }
         }
 
