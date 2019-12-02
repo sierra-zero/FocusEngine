@@ -12,11 +12,12 @@ namespace Xenko.UI
     /// </summary>
     public class GridList
     {
-        private Grid myGrid;
         private UILibrary template;
-        private Dictionary<object, Dictionary<string, UIElement>> entryElements = new Dictionary<object, Dictionary<string, UIElement>>();
-        private string templateName;
-        private float entryHeight;
+
+        protected string templateName;
+        protected Dictionary<object, Dictionary<string, UIElement>> entryElements = new Dictionary<object, Dictionary<string, UIElement>>();
+        protected float entryHeight, entryWidth;
+        protected Grid myGrid;
 
         /// <summary>
         /// Sort alphabetically?
@@ -24,9 +25,14 @@ namespace Xenko.UI
         public bool AlphabeticalSort = false;
 
         /// <summary>
+        /// When adding entries, adjust their width to the grid?
+        /// </summary>
+        public bool FitEntriesToWidth = true;
+
+        /// <summary>
         /// Maximum number of ToggleButtons that can be checked
         /// </summary>
-        public int MaxCheckedAllowed = 1;
+        virtual public int MaxCheckedAllowed { get; set; } = 1;
 
         /// <summary>
         /// Action to take when a button is clicked or ToggleButton is checked, argument is the value of the entry
@@ -54,6 +60,8 @@ namespace Xenko.UI
             }
             else templateName = templateRootName;
             entryHeight = entryTemplate.UIElements[templateName].Height;
+            entryWidth = myGrid.Width;
+            if (float.IsNaN(entryWidth)) entryWidth = myGrid.ActualWidth;
         }
 
         /// <summary>
@@ -105,6 +113,23 @@ namespace Xenko.UI
         }
 
         /// <summary>
+        /// Gets whether an entry is toggled
+        /// </summary>
+        /// <param name="value">Value of entry</param>
+        /// <returns>togglestate of toggle button</returns>
+        public ToggleState GetToggledState(object value)
+        {
+            if (entryElements.TryGetValue(value, out var uied))
+            {
+                foreach (UIElement uie in uied.Values)
+                {
+                    if (uie is ToggleButton tb) return tb.State;
+                }
+            }
+            return ToggleState.Indeterminate;
+        }
+
+        /// <summary>
         /// Add a list of entries to the list
         /// </summary>
         /// <param name="entries">The list, values will be the same as the display value</param>
@@ -116,13 +141,40 @@ namespace Xenko.UI
         }
 
         /// <summary>
+        /// Toggle an option on the list
+        /// </summary>
+        /// <param name="value">What option to select</param>
+        /// <param name="toggleState"></param>
+        /// <param name="deselectOthers">if true, deselect others</param>
+        virtual public void Select(object value, ToggleState toggleState = ToggleState.Checked, bool deselectOthers = false)
+        {
+            foreach (var uie in entryElements)
+            {
+                foreach (UIElement uiec in uie.Value.Values)
+                {
+                    if (uiec is ToggleButton tb)
+                    {
+                        if (uie.Key == value)
+                        {
+                            tb.State = toggleState;
+                        }
+                        else if (deselectOthers)
+                        {
+                            tb.State = ToggleState.UnChecked;
+                        }
+                    }
+                }
+            }
+        }
+
+        /// <summary>
         /// Add a specific entry to the list
         /// </summary>
         /// <param name="displayName">What string to display for the entry</param>
         /// <param name="value">What is the underlying value of this entry, can't be duplicates</param>
         /// <param name="rebuildVisualListAfter">If you intend to add more items and want to defer visually updating, set to false</param>
         /// <returns></returns>
-        public UIElement AddEntry(string displayName, object value = null, bool rebuildVisualListAfter = true)
+        virtual public UIElement AddEntry(string displayName, object value = null, bool rebuildVisualListAfter = true)
         {
             if (value == null) value = displayName;
             UIElement newEntry = template.InstantiateElement<UIElement>(templateName);
@@ -135,6 +187,7 @@ namespace Xenko.UI
                 }
                 else if (uie is ToggleButton tbn)
                 {
+                    if (FitEntriesToWidth) tbn.Width = entryWidth;
                     tbn.Checked += delegate {
                         int alreadyChecked = GetCheckedCount();
                         if (alreadyChecked == 2 && MaxCheckedAllowed == 1)
@@ -157,9 +210,14 @@ namespace Xenko.UI
                 }
                 else if (uie is Button bn)
                 {
+                    if (FitEntriesToWidth) bn.Width = entryWidth;
                     bn.Click += delegate {
                         EntrySelectedAction(value);
                     };
+                } 
+                else if (uie is Grid g)
+                {
+                    if (FitEntriesToWidth) g.Width = entryWidth;
                 }
             }
             entryElements[value] = allElements;
@@ -233,13 +291,13 @@ namespace Xenko.UI
             return retList;
         }
 
-        private void AddToList(UIElement uie)
+        protected void AddToList(UIElement uie)
         {
             uie.Margin = new Thickness(0f, uie.Height * myGrid.Children.Count, 0f, 0f);
             myGrid.Children.Add(uie);
         }
 
-        public void RebuildVisualList()
+        virtual public void RebuildVisualList()
         {
             myGrid.Children.Clear();
             if (AlphabeticalSort)
