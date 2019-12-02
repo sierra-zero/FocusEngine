@@ -85,7 +85,27 @@ namespace Xenko.Rendering.Compositing
 
             var camera = Camera?.Camera;
             if (camera == null && !cameraResolutionFailed)
+            {
+                // no slot set, try to set one automatically
+                SceneSystem ss = renderContext.Services.GetService<SceneSystem>();
+                GraphicsCompositor gc = ss?.GraphicsCompositor;
+                if (gc != null)
+                {
+                    foreach (Entity e in ss.SceneInstance.RootScene.Entities)
+                    {
+                        CameraComponent cam = e.Get<CameraComponent>();
+                        if (cam != null)
+                        {
+                            cam.Slot = gc.Cameras[0].ToSlotId();
+                            camera = cam;
+                            break;
+                        }
+                    }
+                }
+
+                if (camera == null)
                     Logger.Warning($"{nameof(SceneCameraRenderer)} [{Id}] has no camera assigned to its {nameof(CameraComponent.Slot)}[{Camera.Name}]. Make sure a camera is enabled and assigned to the corresponding {nameof(CameraComponent.Slot)}.");
+            }
 
             cameraResolutionFailed = camera == null;
 
