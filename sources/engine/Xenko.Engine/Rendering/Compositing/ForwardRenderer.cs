@@ -327,9 +327,18 @@ namespace Xenko.Rendering.Compositing
                         Vector3.TransformCoordinate(ref cameraPos, ref cameraRot, out cameraPos);
                     }
 
-                    if (VRSettings.IgnoreCameraRotation)
+                    if (VRSettings.IgnoreCameraRotation || camera.VRHeadSetsTransform)
                     {
-                        cameraRot = Matrix.Identity;
+                        // only remove the local rotation of the camera
+                        cameraRot *= Matrix.RotationQuaternion(Quaternion.Invert(camera.Entity.Transform.Rotation));
+                    }
+
+                    if (camera.VRHeadSetsTransform)
+                    {
+                        // take out my local position, which isn't meant to be passed on, but set by the VR head
+                        cameraPos -= camera.Entity.Transform.Position;
+                        camera.Entity.Transform.Position = VRSettings.VRDevice.HeadPosition;
+                        camera.Entity.Transform.Rotation = VRSettings.VRDevice.HeadRotation;
                     }
 
                     // Compute both view and projection matrices

@@ -144,6 +144,12 @@ namespace Xenko.Engine
         public SceneCameraSlotId Slot;
 
         /// <summary>
+        /// If this is a VR camera, have the local transform follow the head?
+        /// </summary>
+        [DataMember]
+        public bool VRHeadSetsTransform = false;
+
+        /// <summary>
         /// Gets or sets a value indicating whether to use custom <see cref="ViewMatrix"/>. Default is <c>false</c>
         /// </summary>
         /// <value><c>true</c> if use custom <see cref="ViewMatrix"/>; otherwise, <c>false</c>.</value>
