@@ -209,16 +209,20 @@ namespace Xenko.Rendering.Compositing
                 }
                 else
                 {
-                    vrSystem.Enabled = false;
-                    vrSystem.Visible = false;
-
+                    VRRenderers.Remove(this);
                     VRSettings.VRDevice = null;
 
-                    if (vrSystem.Device != null) //we had a device before so we know we need to restore the camera
+                    if (VRRenderers.Count == 0)
                     {
-                        camera.UseCustomViewMatrix = vrSystem.PreviousUseCustomViewMatrix;
-                        camera.UseCustomProjectionMatrix = vrSystem.PreviousUseCustomProjectionMatrix;
-                        camera.ProjectionMatrix = vrSystem.PreviousCameraProjection;
+                        vrSystem.Enabled = false;
+                        vrSystem.Visible = false;
+
+                        if (vrSystem.Device != null) //we had a device before so we know we need to restore the camera
+                        {
+                            camera.UseCustomViewMatrix = vrSystem.PreviousUseCustomViewMatrix;
+                            camera.UseCustomProjectionMatrix = vrSystem.PreviousUseCustomProjectionMatrix;
+                            camera.ProjectionMatrix = vrSystem.PreviousCameraProjection;
+                        }
                     }
                 }
             }
@@ -663,7 +667,7 @@ namespace Xenko.Rendering.Compositing
                     if (!isFullViewport)
                         return;
 
-                    var hasPostEffects = PostEffects != null;
+                    bool hasPostEffects = PostEffects != null, presentingVR = this == VRRenderers[VRRenderers.Count - 1];
 
                     Texture vrFullSurface;
                     using (drawContext.PushRenderTargetsAndRestore())
@@ -704,6 +708,12 @@ namespace Xenko.Rendering.Compositing
                                     // last eye, draw post effects over both eyes if we have some
                                     if (hasPostEffects && i == 1)
                                     {
+                                        if (presentingVR)
+                                        {
+                                            var renderTargetDescription = TextureDescription.New2D(frameSize.Width, frameSize.Height, 1, PixelFormat.R8G8B8A8_UNorm_SRgb, TextureFlags.ShaderResource | TextureFlags.RenderTarget);
+                                            vrFullSurface = PushScopedResource(drawContext.GraphicsContext.Allocator.GetTemporaryTexture2D(renderTargetDescription));
+                                        }
+
                                         PostEffects.Draw(drawContext, OpaqueRenderStage.OutputValidator, currentRenderTargets.Items, currentDepthStencil, vrFullSurface);
                                     }
                                 }
@@ -721,8 +731,7 @@ namespace Xenko.Rendering.Compositing
                             }
 
                             // if we are on our last forward renderer and our scene is ready for submission
-                            if (this == VRRenderers[VRRenderers.Count - 1])
-                                VRSettings.VRDevice.Commit(drawContext.CommandList, vrFullSurface);
+                            if (presentingVR) VRSettings.VRDevice.Commit(drawContext.CommandList, vrFullSurface);
                         }
                     }
 
