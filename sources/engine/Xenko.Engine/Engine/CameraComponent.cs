@@ -35,6 +35,9 @@ namespace Xenko.Engine
 
         public const float DefaultFarClipPlane = 1000.0f;
 
+        internal ulong VRProjectionPose;
+        internal Matrix[] cachedVRProjections;
+
         /// <summary>
         /// Create a new <see cref="CameraComponent"/> instance.
         /// </summary>

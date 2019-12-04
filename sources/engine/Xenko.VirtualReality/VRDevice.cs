@@ -40,6 +40,8 @@ namespace Xenko.VirtualReality
 
         public abstract TrackedItem[] TrackedItems { get; }
 
+        public abstract ulong PoseCount { get; }
+
         public VRApi VRApi { get; protected set; }
 
         /// <summary>
@@ -61,7 +63,7 @@ namespace Xenko.VirtualReality
         {         
         }
 
-        public abstract void Enable(GraphicsDevice device, GraphicsDeviceManager graphicsDeviceManager, bool requireMirror, int mirrorWidth, int mirrorHeight);
+        public abstract void Enable(GraphicsDevice device, GraphicsDeviceManager graphicsDeviceManager, bool requireMirror);
 
         public virtual void Recenter()
         {

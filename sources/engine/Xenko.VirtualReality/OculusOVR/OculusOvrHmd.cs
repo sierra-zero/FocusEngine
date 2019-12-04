@@ -23,6 +23,8 @@ namespace Xenko.VirtualReality
         private IntPtr ovrSession;
         private Texture[] textures;
 
+        public override ulong PoseCount => 0;
+
         private OculusTouchController leftHandController;
         private OculusTouchController rightHandController;
         private readonly List<OculusOverlay> overlays = new List<OculusOverlay>();
@@ -31,7 +33,7 @@ namespace Xenko.VirtualReality
         internal OculusOvrHmd()
         {
             SupportsOverlays = true;
-            VRApi = VRApi.Oculus;
+            //VRApi = VRApi.Oculus;
         }
 
         public override void Dispose()
@@ -48,9 +50,9 @@ namespace Xenko.VirtualReality
             }
         }
 
-        public override void Enable(GraphicsDevice device, GraphicsDeviceManager graphicsDeviceManager, bool requireMirror, int mirrorWidth, int mirrorHeight)
+        public override void Enable(GraphicsDevice device, GraphicsDeviceManager graphicsDeviceManager, bool requireMirror)
         {
-            graphicsDevice = device;
+            /*graphicsDevice = device;
             long adapterId;
             ovrSession = OculusOvr.CreateSessionDx(out adapterId);
             //Game.GraphicsDeviceManager.RequiredAdapterUid = adapterId.ToString(); //should not be needed
@@ -84,7 +86,7 @@ namespace Xenko.VirtualReality
             ActualRenderFrameSize = new Size2(textures[0].Width, textures[0].Height);
 
             leftHandController = new OculusTouchController(TouchControllerHand.Left);
-            rightHandController = new OculusTouchController(TouchControllerHand.Right);
+            rightHandController = new OculusTouchController(TouchControllerHand.Right);*/
         }
 
         private OculusOvr.PosesProperties currentPoses;

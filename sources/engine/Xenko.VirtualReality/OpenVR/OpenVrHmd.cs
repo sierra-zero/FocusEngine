@@ -12,9 +12,6 @@ namespace Xenko.VirtualReality
     {
         private RectangleF leftView = new RectangleF(0.0f, 0.0f, 0.5f, 1.0f);
         private RectangleF rightView = new RectangleF(0.5f, 0.0f, 1.0f, 1.0f);
-        private Texture bothEyesMirror;
-        private Texture leftEyeMirror;
-        private Texture rightEyeMirror;
         private DeviceState state;
         private OpenVRTouchController leftHandController;
         private OpenVRTouchController rightHandController;
@@ -27,8 +24,17 @@ namespace Xenko.VirtualReality
         private Quaternion currentHeadRot;
         private GameBase mainGame;
         private int HMDindex;
+        private ulong poseCount;
 
         public override bool CanInitialize => OpenVR.InitDone || OpenVR.Init();
+
+        public override ulong PoseCount
+        {
+            get
+            {
+                return poseCount;
+            }
+        }
 
         public OpenVRHmd(GameBase game)
         {
@@ -37,30 +43,11 @@ namespace Xenko.VirtualReality
             SupportsOverlays = true;
         }
 
-        public override void Enable(GraphicsDevice device, GraphicsDeviceManager graphicsDeviceManager, bool requireMirror, int mirrorWidth, int mirrorHeight)
+        public override void Enable(GraphicsDevice device, GraphicsDeviceManager graphicsDeviceManager, bool requireMirror)
         {
-            Size2 renderSize = OptimalRenderFrameSize;
-            var width = (int)(renderSize.Width * RenderFrameScaling);
-            width += width % 2;
-            var height = (int)(renderSize.Height * RenderFrameScaling);
-            height += height % 2;
+            ActualRenderFrameSize = OptimalRenderFrameSize;
 
-            ActualRenderFrameSize = new Size2(width, height);
-
-#if XENKO_GRAPHICS_API_VULKAN
-            needsMirror = false; // Vulkan doesn't support mirrors :/
-#else
             needsMirror = requireMirror;
-#endif
-
-            if (needsMirror)
-            {
-                bothEyesMirror = Texture.New2D(device, width, height, PixelFormat.R8G8B8A8_UNorm_SRgb, TextureFlags.RenderTarget | TextureFlags.ShaderResource);
-            }
-
-            leftEyeMirror = OpenVR.GetMirrorTexture(device, 0);
-            rightEyeMirror = OpenVR.GetMirrorTexture(device, 1);
-            MirrorTexture = bothEyesMirror;
 
             leftHandController = new OpenVRTouchController(TouchControllerHand.Left);
             rightHandController = new OpenVRTouchController(TouchControllerHand.Right);
@@ -90,6 +77,7 @@ namespace Xenko.VirtualReality
             state = OpenVR.GetHeadPose(out currentHead, out currentHeadLinearVelocity, out currentHeadAngularVelocity);
             Vector3 scale;
             currentHead.Decompose(out scale, out currentHeadRot, out currentHeadPos);
+            poseCount++;
         }
 
         public override void Update(GameTime gameTime)
@@ -132,13 +120,6 @@ namespace Xenko.VirtualReality
         {
             OpenVR.Submit(0, renderFrame, ref leftView);
             OpenVR.Submit(1, renderFrame, ref rightView);
-
-            if (needsMirror)
-            {
-                var wholeRegion = new ResourceRegion(0, 0, 0, ActualRenderFrameSize.Width, ActualRenderFrameSize.Height, 1);
-                commandList.CopyRegion(leftEyeMirror, 0, wholeRegion, bothEyesMirror, 0);
-                commandList.CopyRegion(rightEyeMirror, 0, wholeRegion, bothEyesMirror, 0, ActualRenderFrameSize.Width / 2);
-            }
         }
         public override void Recenter()
         {
@@ -176,6 +157,10 @@ namespace Xenko.VirtualReality
             get {
                 uint width = 0, height = 0;
                 Valve.VR.OpenVR.System.GetRecommendedRenderTargetSize(ref width, ref height);
+                width = (uint)(width * RenderFrameScaling);
+                width += width % 2;
+                height = (uint)(height * RenderFrameScaling);
+                height += height % 2;
                 return new Size2((int)width, (int)height);
             }
         }

@@ -21,13 +21,15 @@ namespace Xenko.VirtualReality
         private const float EyeHeight = 0.08f;
         private const float EyeForward = -0.04f;
 
+        public override ulong PoseCount => 0;
+
         internal FoveHmd()
         {
             referenceMatrixInv = Matrix.RotationZ(MathUtil.Pi);
             referenceMatrixInv.Invert();
         }
 
-        public override void Enable(GraphicsDevice device, GraphicsDeviceManager graphicsDeviceManager, bool requireMirror, int mirrorWidth, int mirrorHeight)
+        public override void Enable(GraphicsDevice device, GraphicsDeviceManager graphicsDeviceManager, bool requireMirror)
         {
 //            RenderFrame = Texture.New2D(device, RenderFrameSize.Width, RenderFrameSize.Height, PixelFormat.R8G8B8A8_UNorm_SRgb, TextureFlags.RenderTarget | TextureFlags.ShaderResource);
 //            nonSrgbFrame = Texture.New2D(device, RenderFrameSize.Width, RenderFrameSize.Height, PixelFormat.R8G8B8A8_UNorm, TextureFlags.RenderTarget | TextureFlags.ShaderResource);

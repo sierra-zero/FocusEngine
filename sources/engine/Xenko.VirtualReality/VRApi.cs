@@ -4,7 +4,7 @@ namespace Xenko.VirtualReality
 {
     public enum VRApi
     {
-        Oculus = 0,
+        //Oculus = 0,
         OpenVR = 1,
         //WindowsMixedReality = 2,
         Dummy = 100,

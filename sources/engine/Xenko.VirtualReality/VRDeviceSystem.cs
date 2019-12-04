@@ -70,10 +70,6 @@ namespace Xenko.VirtualReality
 
         public bool RequireMirror;
 
-        public int MirrorWidth;
-
-        public int MirrorHeight;
-
         public bool PreviousUseCustomProjectionMatrix;
 
         public bool PreviousUseCustomViewMatrix;
@@ -108,14 +104,14 @@ namespace Xenko.VirtualReality
                             Device = new DummyDevice(Services);
                             break;
                         }
-                        case VRApi.Oculus:
+                        /*case VRApi.Oculus:
                         {
 #if XENKO_GRAPHICS_API_DIRECT3D11
                             Device = new OculusOvrHmd();
                                 
 #endif
                             break;
-                        }
+                        }*/
                         case VRApi.OpenVR:
                         {
 #if XENKO_GRAPHICS_API_VULKAN || XENKO_GRAPHICS_API_DIRECT3D11
@@ -177,7 +173,7 @@ postswitch:
                     deviceManager.SynchronizeWithVerticalRetrace = false;
 
                     Device.RenderFrameScaling = PreferredScalings[Device.VRApi];
-                    Device.Enable(GraphicsDevice, deviceManager, RequireMirror, MirrorWidth, MirrorHeight);
+                    Device.Enable(GraphicsDevice, deviceManager, RequireMirror);
                     Device.SetTrackingSpace(TrackingSpace.Standing);
                     physicalDeviceInUse = true;
 
@@ -205,7 +201,7 @@ postswitch:
                         Game = Game,
                         RenderFrameScaling = 1.0f,
                     };
-                    Device.Enable(GraphicsDevice, deviceManager, RequireMirror, MirrorWidth, MirrorHeight);
+                    Device.Enable(GraphicsDevice, deviceManager, RequireMirror);
                 }
 
                 // init virtual buttons for use with VR input

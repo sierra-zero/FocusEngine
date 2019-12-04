@@ -41,6 +41,8 @@ namespace Xenko.Rendering.Compositing
         private Texture currentDepthStencil;
         private Texture currentDepthStencilNonMSAA;
 
+        private static List<ForwardRenderer> VRRenderers = new List<ForwardRenderer>();
+
         protected Texture viewOutputTarget;
         protected Texture viewDepthStencil;
 
@@ -155,50 +157,52 @@ namespace Xenko.Rendering.Compositing
 
             var camera = Context.GetCurrentCamera();
 
+            // only update vrSystem if it isn't already enabled
             vrSystem = Services.GetService<VRDeviceSystem>();
             if (vrSystem != null)
             {
                 if (VRSettings.Enabled)
                 {
-                    var requiredDescs = VRSettings.RequiredApis.ToArray();
-                    vrSystem.PreferredApis = requiredDescs.Select(x => x.Api).Distinct().ToArray();
+                    VRRenderers.Add(this);
 
-                    // remove VR API duplicates and keep first desired config only
-                    var preferredScalings = new Dictionary<VRApi, float>();
-                    foreach (var desc in requiredDescs)
+                    if (vrSystem.Enabled)
                     {
-                        if (!preferredScalings.ContainsKey(desc.Api))
-                            preferredScalings[desc.Api] = desc.ResolutionScale;
+                        // VR is already enabled, grab the device
+                        VRSettings.VRDevice = vrSystem.Device;
                     }
-                    vrSystem.PreferredScalings = preferredScalings;
-
-                    if( GraphicsDevice.Platform == GraphicsPlatform.Vulkan ) {
-                        // no mirror support for vulkan
-                        vrSystem.RequireMirror = false;
-                        VRSettings.CopyMirror = false;
-                    } else {
-                        vrSystem.RequireMirror = VRSettings.CopyMirror;
-                    }
-
-                    vrSystem.MirrorWidth = GraphicsDevice.Presenter.BackBuffer.Width;
-                    vrSystem.MirrorHeight = GraphicsDevice.Presenter.BackBuffer.Height;
-
-                    vrSystem.Enabled = true; //careful this will trigger the whole chain of initialization!
-                    vrSystem.Visible = true;
-
-                    VRSettings.VRDevice = vrSystem.Device;
-
-                    vrSystem.PreviousUseCustomProjectionMatrix = camera.UseCustomProjectionMatrix;
-                    vrSystem.PreviousUseCustomViewMatrix = camera.UseCustomViewMatrix;
-                    vrSystem.PreviousCameraProjection = camera.ProjectionMatrix;
-
-                    if (VRSettings.VRDevice.SupportsOverlays)
+                    else
                     {
-                        foreach (var overlay in VRSettings.Overlays)
+                        var requiredDescs = VRSettings.RequiredApis.ToArray();
+                        vrSystem.PreferredApis = requiredDescs.Select(x => x.Api).Distinct().ToArray();
+
+                        // remove VR API duplicates and keep first desired config only
+                        var preferredScalings = new Dictionary<VRApi, float>();
+                        foreach (var desc in requiredDescs)
                         {
-                            if (overlay != null && overlay.Texture != null)
+                            if (!preferredScalings.ContainsKey(desc.Api))
+                                preferredScalings[desc.Api] = desc.ResolutionScale;
+                        }
+                        vrSystem.PreferredScalings = preferredScalings;
+
+                        vrSystem.RequireMirror = VRSettings.CopyMirror;
+
+                        vrSystem.Enabled = true; //careful this will trigger the whole chain of initialization!
+                        vrSystem.Visible = true;
+
+                        VRSettings.VRDevice = vrSystem.Device;
+
+                        vrSystem.PreviousUseCustomProjectionMatrix = camera.UseCustomProjectionMatrix;
+                        vrSystem.PreviousUseCustomViewMatrix = camera.UseCustomViewMatrix;
+                        vrSystem.PreviousCameraProjection = camera.ProjectionMatrix;
+
+                        if (VRSettings.VRDevice.SupportsOverlays)
+                        {
+                            foreach (var overlay in VRSettings.Overlays)
                             {
-                                overlay.Overlay = VRSettings.VRDevice.CreateOverlay(overlay.Texture.Width, overlay.Texture.Height, overlay.Texture.MipLevels, (int)overlay.Texture.MultisampleCount);
+                                if (overlay != null && overlay.Texture != null)
+                                {
+                                    overlay.Overlay = VRSettings.VRDevice.CreateOverlay(overlay.Texture.Width, overlay.Texture.Height, overlay.Texture.MipLevels, (int)overlay.Texture.MultisampleCount);
+                                }
                             }
                         }
                     }
@@ -312,48 +316,71 @@ namespace Xenko.Rendering.Compositing
 
                 if (VRSettings.Enabled && VRSettings.VRDevice != null)
                 {
-                    Vector3 cameraPos, cameraScale;
-                    Matrix cameraRot;
+                    Matrix* viewMatrices = stackalloc Matrix[2];
+                    Matrix* projectionMatrices = stackalloc Matrix[2];
 
-                    if (!vrSystem.PreviousUseCustomViewMatrix)
+                    // only update the camera once, if we have multiple forward renderers on the same camera
+                    ulong poseCount = VRSettings.VRDevice.PoseCount;
+                    if (poseCount == 0 || poseCount != camera.VRProjectionPose)
                     {
-                        camera.Entity.Transform.WorldMatrix.Decompose(out cameraScale, out cameraRot, out cameraPos);
+                        camera.VRProjectionPose = poseCount;
+
+                        Vector3 cameraPos, cameraScale;
+                        Matrix cameraRot;
+
+                        if (!vrSystem.PreviousUseCustomViewMatrix)
+                        {
+                            camera.Entity.Transform.WorldMatrix.Decompose(out cameraScale, out cameraRot, out cameraPos);
+                        }
+                        else
+                        {
+                            camera.ViewMatrix.Decompose(out cameraScale, out cameraRot, out cameraPos);
+                            cameraRot.Transpose();
+                            Vector3.Negate(ref cameraPos, out cameraPos);
+                            Vector3.TransformCoordinate(ref cameraPos, ref cameraRot, out cameraPos);
+                        }
+
+                        if (VRSettings.IgnoreCameraRotation || camera.VRHeadSetsTransform)
+                        {
+                            // only remove the local rotation of the camera
+                            cameraRot *= Matrix.RotationQuaternion(Quaternion.Invert(camera.Entity.Transform.Rotation));
+                        }
+
+                        if (camera.VRHeadSetsTransform)
+                        {
+                            // take out my local position, which isn't meant to be passed on, but set by the VR head
+                            cameraPos -= camera.Entity.Transform.Position;
+                            camera.Entity.Transform.Position = VRSettings.VRDevice.HeadPosition;
+                            camera.Entity.Transform.Rotation = VRSettings.VRDevice.HeadRotation;
+                        }
+
+                        // Compute both view and projection matrices
+                        for (var i = 0; i < 2; ++i)
+                            VRSettings.VRDevice.ReadEyeParameters(i == 0 ? Eyes.Left : Eyes.Right, camera.NearClipPlane, camera.FarClipPlane, ref cameraPos, ref cameraRot, VRSettings.IgnoreDeviceRotation, VRSettings.IgnoreDevicePosition, out viewMatrices[i], out projectionMatrices[i]);
+
+                        // cache these projection values
+                        if (camera.cachedVRProjections == null) camera.cachedVRProjections = new Matrix[4];
+                        camera.cachedVRProjections[0] = viewMatrices[0];
+                        camera.cachedVRProjections[1] = viewMatrices[1];
+                        camera.cachedVRProjections[2] = projectionMatrices[0];
+                        camera.cachedVRProjections[3] = projectionMatrices[1];
+
+                        // if the VRDevice disagreed with the near and far plane, we must re-discover them and follow:
+                        var near = projectionMatrices[0].M43 / projectionMatrices[0].M33;
+                        var far = near * (-projectionMatrices[0].M33 / (-projectionMatrices[0].M33 - 1));
+                        if (Math.Abs(near - camera.NearClipPlane) > 1e-8f)
+                            camera.NearClipPlane = near;
+                        if (Math.Abs(near - camera.FarClipPlane) > 1e-8f)
+                            camera.FarClipPlane = far;
                     }
                     else
                     {
-                        camera.ViewMatrix.Decompose(out cameraScale, out cameraRot, out cameraPos);
-                        cameraRot.Transpose();
-                        Vector3.Negate(ref cameraPos, out cameraPos);
-                        Vector3.TransformCoordinate(ref cameraPos, ref cameraRot, out cameraPos);
+                        // already calculated this camera, use the cached information
+                        viewMatrices[0] = camera.cachedVRProjections[0];
+                        viewMatrices[1] = camera.cachedVRProjections[1];
+                        projectionMatrices[0] = camera.cachedVRProjections[2];
+                        projectionMatrices[1] = camera.cachedVRProjections[3];
                     }
-
-                    if (VRSettings.IgnoreCameraRotation || camera.VRHeadSetsTransform)
-                    {
-                        // only remove the local rotation of the camera
-                        cameraRot *= Matrix.RotationQuaternion(Quaternion.Invert(camera.Entity.Transform.Rotation));
-                    }
-
-                    if (camera.VRHeadSetsTransform)
-                    {
-                        // take out my local position, which isn't meant to be passed on, but set by the VR head
-                        cameraPos -= camera.Entity.Transform.Position;
-                        camera.Entity.Transform.Position = VRSettings.VRDevice.HeadPosition;
-                        camera.Entity.Transform.Rotation = VRSettings.VRDevice.HeadRotation;
-                    }
-
-                    // Compute both view and projection matrices
-                    Matrix* viewMatrices = stackalloc Matrix[2];
-                    Matrix* projectionMatrices = stackalloc Matrix[2];
-                    for (var i = 0; i < 2; ++i)
-                        VRSettings.VRDevice.ReadEyeParameters(i == 0 ? Eyes.Left : Eyes.Right, camera.NearClipPlane, camera.FarClipPlane, ref cameraPos, ref cameraRot, VRSettings.IgnoreDeviceRotation, VRSettings.IgnoreDevicePosition, out viewMatrices[i], out projectionMatrices[i]);
-
-                    // if the VRDevice disagreed with the near and far plane, we must re-discover them and follow:
-                    var near = projectionMatrices[0].M43 / projectionMatrices[0].M33;
-                    var far = near * (-projectionMatrices[0].M33 / (-projectionMatrices[0].M33 - 1));
-                    if (Math.Abs(near - camera.NearClipPlane) > 1e-8f)
-                        camera.NearClipPlane = near;
-                    if (Math.Abs(near - camera.FarClipPlane) > 1e-8f)
-                        camera.FarClipPlane = far;
 
                     // Compute a view matrix and projection matrix that cover both eyes for shadow map and culling
                     ComputeCommonViewMatrices(context, viewMatrices, projectionMatrices);
@@ -598,7 +625,7 @@ namespace Xenko.Rendering.Compositing
                 {
                     // Run post effects
                     // Note: OpaqueRenderStage can't be null otherwise colorTargetIndex would be -1
-                    PostEffects.Draw(drawContext, OpaqueRenderStage.OutputValidator, renderTargets.Items, depthStencil, viewOutputTarget);
+                    if (eyeCount == 1) PostEffects.Draw(drawContext, OpaqueRenderStage.OutputValidator, renderTargets.Items, depthStencil, viewOutputTarget);
                 }
                 else
                 {
@@ -636,80 +663,49 @@ namespace Xenko.Rendering.Compositing
                     if (!isFullViewport)
                         return;
 
-                    var hasPostEffects = PostEffects != null; // When we have post effect we need to bind a different framebuffer for each view to be sure effects impinge on the other view.
+                    var hasPostEffects = PostEffects != null;
 
                     Texture vrFullSurface;
                     using (drawContext.PushRenderTargetsAndRestore())
                     {
                         var currentRenderTarget = drawContext.CommandList.RenderTarget;
-                        var vrFullFrameSize = VRSettings.VRDevice.ActualRenderFrameSize;
-                        var desiredRenderTargetSize = !hasPostEffects ? vrFullFrameSize : new Size2(vrFullFrameSize.Width / 2, vrFullFrameSize.Height);
-                        if (hasPostEffects || desiredRenderTargetSize.Width != currentRenderTarget.Width || desiredRenderTargetSize.Height != currentRenderTarget.Height)
+                        var desiredRenderTargetSize = VRSettings.VRDevice.ActualRenderFrameSize;
+
+                        if (desiredRenderTargetSize.Width != currentRenderTarget.Width || desiredRenderTargetSize.Height != currentRenderTarget.Height)
                             drawContext.CommandList.SetRenderTargets(null, null); // force to create and bind a new render target
 
                         PrepareRenderTargets(drawContext, desiredRenderTargetSize);
 
-                        //prepare the final VR target
                         vrFullSurface = viewOutputTarget;
-                        if (hasPostEffects)
-                        {
-                            var frameSize = VRSettings.VRDevice.ActualRenderFrameSize;
-                            var renderTargetDescription = TextureDescription.New2D(frameSize.Width, frameSize.Height, 1, PixelFormat.R8G8B8A8_UNorm_SRgb, TextureFlags.ShaderResource | TextureFlags.RenderTarget);
-                            vrFullSurface = PushScopedResource(drawContext.GraphicsContext.Allocator.GetTemporaryTexture2D(renderTargetDescription));
-                        }
 
                         //draw per eye
                         using (context.SaveViewportAndRestore())
                         using (drawContext.PushRenderTargetsAndRestore())
                         {
                             ViewCount = 2;
-                            bool isWindowsMixedReality = false;
 
                             for (var i = 0; i < 2; i++)
                             {
-#if XENKO_PLATFORM_UWP
-                                if (GraphicsDevice.Platform == GraphicsPlatform.Direct3D11 && drawContext.GraphicsDevice.Presenter is WindowsMixedRealityGraphicsPresenter graphicsPresenter)
-                                {
-                                    isWindowsMixedReality = true;
-
-                                    MSAALevel = MultisampleCount.None;
-                                    currentRenderTargets.Clear();
-
-                                    if (i == 0)
-                                    {
-                                        currentRenderTargets.Add(graphicsPresenter.LeftEyeBuffer);
-                                    }
-                                    else
-                                    {
-                                        currentRenderTargets.Add(graphicsPresenter.RightEyeBuffer);
-                                    }
-                                }
-#endif
-
                                 drawContext.CommandList.SetRenderTargets(currentDepthStencil, currentRenderTargets.Count, currentRenderTargets.Items);
 
-                                if (!hasPostEffects && !isWindowsMixedReality) // need to change the viewport between each eye
-                                {
-                                    var frameSize = VRSettings.VRDevice.ActualRenderFrameSize;
-                                    drawContext.CommandList.SetViewport(new Viewport(i * frameSize.Width / 2, 0, frameSize.Width / 2, frameSize.Height));
-                                }
-                                else if (i == 0) // the viewport is the same for both eyes so we set it only once
-                                {
-                                    drawContext.CommandList.SetViewport(new Viewport(0.0f, 0.0f, VRSettings.VRDevice.ActualRenderFrameSize.Width / 2.0f, VRSettings.VRDevice.ActualRenderFrameSize.Height));
-                                }
+                                var frameSize = VRSettings.VRDevice.ActualRenderFrameSize;
+                                drawContext.CommandList.SetViewport(new Viewport(i * frameSize.Width / 2, 0, frameSize.Width / 2, frameSize.Height));
 
                                 using (context.PushRenderViewAndRestore(VRSettings.RenderViews[i]))
                                 {
                                     // Clear render target and depth stencil
-                                    if (hasPostEffects || i == 0) // need to clear for each eye in the case we have two different render targets
-                                        Clear?.Draw(drawContext);
+                                    if (i == 0) Clear?.Draw(drawContext);
 
                                     ViewIndex = i;
 
+                                    // draw view, but skip post processing (it will not do it, since eye count > 1)
                                     DrawView(context, drawContext, i, 2);
 
-                                    if (hasPostEffects) // copy the rendered view into the vr full view framebuffer
-                                        drawContext.CommandList.CopyRegion(viewOutputTarget, 0, null, vrFullSurface, 0, VRSettings.VRDevice.ActualRenderFrameSize.Width / 2 * i);
+                                    // last eye, draw post effects over both eyes if we have some
+                                    if (hasPostEffects && i == 1)
+                                    {
+                                        PostEffects.Draw(drawContext, OpaqueRenderStage.OutputValidator, currentRenderTargets.Items, currentDepthStencil, vrFullSurface);
+                                    }
                                 }
                             }
 
@@ -724,19 +720,15 @@ namespace Xenko.Rendering.Compositing
                                 }
                             }
 
-                            VRSettings.VRDevice.Commit(drawContext.CommandList, vrFullSurface);
+                            // if we are on our last forward renderer and our scene is ready for submission
+                            if (this == VRRenderers[VRRenderers.Count - 1])
+                                VRSettings.VRDevice.Commit(drawContext.CommandList, vrFullSurface);
                         }
                     }
 
-                    //draw mirror to backbuffer (if size is matching and full viewport)
+                    //draw mirror if desired
                     if (VRSettings.CopyMirror)
-                    {
-                        CopyOrScaleTexture(drawContext, VRSettings.VRDevice.MirrorTexture, drawContext.CommandList.RenderTarget);
-                    }
-                    else if (hasPostEffects)
-                    {
                         CopyOrScaleTexture(drawContext, vrFullSurface, drawContext.CommandList.RenderTarget);
-                    }
                 }
                 else
                 {
@@ -829,7 +821,7 @@ namespace Xenko.Rendering.Compositing
 
             for (int index = 0; index < renderTargets.Count; index++)
             {
-                if (renderTargets[index].Semantic is ColorTargetSemantic && PostEffects == null && actualMultisampleCount == MultisampleCount.None)
+                if (renderTargets[index].Semantic is ColorTargetSemantic && actualMultisampleCount == MultisampleCount.None)
                 {
                     currentRenderTargets[index] = outputRenderTarget;
                 }

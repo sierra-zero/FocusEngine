@@ -43,6 +43,8 @@ namespace Xenko.VirtualReality
 
         public override TouchController RightHand => null;
 
+        public override ulong PoseCount => 0;
+
         public override TrackedItem[] TrackedItems => new TrackedItem[0];
 
         public override bool CanInitialize => true;
@@ -97,9 +99,9 @@ namespace Xenko.VirtualReality
             window = services.GetService<IGame>().Window;
         }
 
-        public override void Enable(GraphicsDevice device, GraphicsDeviceManager graphicsDeviceManager, bool requireMirror, int mirrorWidth, int mirrorHeight)
+        public override void Enable(GraphicsDevice device, GraphicsDeviceManager graphicsDeviceManager, bool requireMirror)
         {
-            ActualRenderFrameSize = optimalRenderFrameSize = new Size2(mirrorWidth, mirrorHeight);
+            ActualRenderFrameSize = optimalRenderFrameSize = new Size2(2560, 1440);
             MirrorTexture = Texture.New2D(device, ActualRenderFrameSize.Width, ActualRenderFrameSize.Height, PixelFormat.R8G8B8A8_UNorm_SRgb, TextureFlags.RenderTarget | TextureFlags.ShaderResource);
         }
 
