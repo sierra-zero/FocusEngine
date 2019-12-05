@@ -74,6 +74,9 @@ namespace Xenko.Rendering.Compositing
         /// </summary>
         public ISceneRenderer Editor { get; set; }
 
+        [DataMemberIgnore]
+        private List<PostProcessingEffects> cachedProcessor;
+
         private void gatherPostProcessors(ISceneRenderer renderer)
         {
             if (renderer is SceneCameraRenderer scr)
@@ -111,8 +114,31 @@ namespace Xenko.Rendering.Compositing
             }
         }
 
-        [DataMemberIgnore]
-        private List<PostProcessingEffects> cachedProcessor;
+        /// <summary>
+        /// Shortcut to setting VR settings on renderers to enable or disable. Only renderers with Required APIs set will be enabled via this method.
+        /// </summary>
+        /// <param name="enable">Whether to enable or disable VR settings on renderers</param>
+        public void SetVRRenderers(bool enable)
+        {
+            recursiveVRSet(Game, enable);
+        }
+
+        private void recursiveVRSet(ISceneRenderer r, bool enable)
+        {
+            if (r is ForwardRenderer fr)
+            {
+                fr.VRSettings.Enabled = enable && fr.VRSettings.RequiredApis.Count > 0;
+            }
+            else if (r is SceneCameraRenderer scr)
+            {
+                recursiveVRSet(scr.Child, enable);
+            }
+            else if (r is SceneRendererCollection src)
+            {
+                foreach (ISceneRenderer isr in src.Children)
+                    recursiveVRSet(isr, enable);
+            }
+        }
 
         /// <inheritdoc/>
         protected override void InitializeCore()
