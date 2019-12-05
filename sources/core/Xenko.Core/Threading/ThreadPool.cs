@@ -144,7 +144,7 @@ namespace Xenko.Core.Threading
                     // We're idle, push this thread onto the stack to wait for signal
                     if (pool.TryPush(this) == false)
                         return;
-
+                    
                     SpinWait sw = new SpinWait();
                     do
                     {
