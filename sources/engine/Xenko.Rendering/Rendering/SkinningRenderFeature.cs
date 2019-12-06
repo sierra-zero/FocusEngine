@@ -112,27 +112,29 @@ namespace Xenko.Rendering
         {
             var renderModelObjectInfoData = RootRenderFeature.RenderData.GetData(renderModelObjectInfoKey);
 
-            Dispatcher.ForEach(((RootEffectRenderFeature)RootRenderFeature).RenderNodes, (ref RenderNode renderNode) =>
-            {
-                var perDrawLayout = renderNode.RenderEffect.Reflection?.PerDrawLayout;
-                if (perDrawLayout == null)
-                    return;
-
-                var blendMatricesOffset = perDrawLayout.GetConstantBufferOffset(blendMatrices);
-                if (blendMatricesOffset == -1)
-                    return;
-
-                var renderModelObjectInfo = renderModelObjectInfoData[renderNode.RenderObject.ObjectNode];
-                if (renderModelObjectInfo == null)
-                    return;
-
-                var mappedCB = renderNode.Resources.ConstantBuffer.Data + blendMatricesOffset;
-
-                fixed (Matrix* blendMatricesPtr = &renderModelObjectInfo[0])
+            var nodes = ((RootEffectRenderFeature)RootRenderFeature).RenderNodes;
+            Dispatcher.ForEach(nodes, (@this: this, nodes, renderModelObjectInfoData),
+                delegate (ref (SkinningRenderFeature @this, ConcurrentCollector<RenderNode> nodes, ObjectPropertyData<Matrix[]> renderModelObjectInfoData) p, RenderNode renderNode)
                 {
-                    Utilities.CopyMemory(mappedCB, new IntPtr(blendMatricesPtr), renderModelObjectInfo.Length * sizeof(Matrix));
-                }
-            });
+                    var perDrawLayout = renderNode.RenderEffect.Reflection?.PerDrawLayout;
+                    if (perDrawLayout == null)
+                        return;
+
+                    var blendMatricesOffset = perDrawLayout.GetConstantBufferOffset(p.@this.blendMatrices);
+                    if (blendMatricesOffset == -1)
+                        return;
+
+                    var renderModelObjectInfo = p.renderModelObjectInfoData[renderNode.RenderObject.ObjectNode];
+                    if (renderModelObjectInfo == null)
+                        return;
+
+                    var mappedCB = renderNode.Resources.ConstantBuffer.Data + blendMatricesOffset;
+
+                    fixed (Matrix* blendMatricesPtr = &renderModelObjectInfo[0])
+                    {
+                        Utilities.CopyMemory(mappedCB, new IntPtr(blendMatricesPtr), renderModelObjectInfo.Length * sizeof(Matrix));
+                    }
+                });
         }
     }
 }

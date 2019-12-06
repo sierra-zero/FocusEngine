@@ -280,36 +280,37 @@ namespace Xenko.Rendering.Lights
             var directLightShaders = GetReadonlyShaderSources(shaderPermutation.DirectLightShaders);
             var environmentLightShaders = GetReadonlyShaderSources(shaderPermutation.EnvironmentLightShaders);
 
-            Dispatcher.ForEach(RootRenderFeature.RenderObjects, renderObject =>
-            {
-                var renderMesh = (RenderMesh)renderObject;
-
-                if (!renderMesh.MaterialPass.IsLightDependent)
-                    return;
-
-                var staticObjectNode = renderMesh.StaticObjectNode;
-
-                for (int i = 0; i < effectSlotCount; ++i)
+            Dispatcher.ForEach(RootRenderFeature.RenderObjects, (this, renderEffects, effectSlotCount, directLightShaders, environmentLightShaders),
+                delegate (ref (ForwardLightingRenderFeature @this, StaticObjectPropertyData<RenderEffect> renderEffects, int effectSlotCount, ShaderSourceCollection directLightShaders, ShaderSourceCollection environmentLightShaders) p, RenderObject renderObject)
                 {
-                    // Don't apply lighting for shadow casters
-                    if (ignoredEffectSlots.Contains(i))
+                    var renderMesh = (RenderMesh)renderObject;
+
+                    if (!renderMesh.MaterialPass.IsLightDependent)
+                        return;
+
+                    var staticObjectNode = renderMesh.StaticObjectNode;
+
+                    for (int i = 0; i < p.effectSlotCount; ++i)
+                    {
+                        // Don't apply lighting for shadow casters
+                        if (p.@this.ignoredEffectSlots.Contains(i))
                             continue;
 
-                    var staticEffectObjectNode = staticObjectNode * effectSlotCount + i;
-                    var renderEffect = renderEffects[staticEffectObjectNode];
+                        var staticEffectObjectNode = staticObjectNode * p.effectSlotCount + i;
+                        var renderEffect = p.renderEffects[staticEffectObjectNode];
 
-                    // Skip effects not used during this frame
-                    if (renderEffect == null || !renderEffect.IsUsedDuringThisFrame(RenderSystem))
-                        continue;
+                        // Skip effects not used during this frame
+                        if (renderEffect == null || !renderEffect.IsUsedDuringThisFrame(p.@this.RenderSystem))
+                            continue;
 
-                    renderEffect.EffectValidator.ValidateParameter(LightingKeys.DirectLightGroups, directLightShaders);
-                    renderEffect.EffectValidator.ValidateParameter(LightingKeys.EnvironmentLights, environmentLightShaders);
+                        renderEffect.EffectValidator.ValidateParameter(LightingKeys.DirectLightGroups, p.directLightShaders);
+                        renderEffect.EffectValidator.ValidateParameter(LightingKeys.EnvironmentLights, p.environmentLightShaders);
 
-                    // Some light groups have additional effect permutation
-                    foreach (var lightGroup in shaderPermutation.PermutationLightGroups)
-                        lightGroup.ApplyEffectPermutations(renderEffect);
-                }
-            });
+                        // Some light groups have additional effect permutation
+                        foreach (var lightGroup in p.@this.shaderPermutation.PermutationLightGroups)
+                            lightGroup.ApplyEffectPermutations(renderEffect);
+                    }
+                });
         }
 
         /// <summary>
@@ -405,8 +406,11 @@ namespace Xenko.Rendering.Lights
                 }
 
                 // PerDraw
-                Dispatcher.ForEach(viewFeature.RenderNodes, () => prepareThreadLocals.Value, (renderNodeReference, locals) =>
+                //Dispatcher.ForEach(viewFeature.RenderNodes, () => prepareThreadLocals.Value, (renderNodeReference, locals) =>
+                Dispatcher.ForEach(viewFeature.RenderNodes, (@this: this, context, viewIndex),
+                    delegate (ref (ForwardLightingRenderFeature @this, RenderDrawContext context, int viewIndex) p, RenderNodeReference renderNodeReference, PrepareThreadLocals locals)
                 {
+                    var (@this, pContext, pViewIndex) = p;
                     var renderNode = RootRenderFeature.GetRenderNode(renderNodeReference);
 
                     // Ignore fallback effects
@@ -417,7 +421,7 @@ namespace Xenko.Rendering.Lights
                     if (drawLayout == null)
                         return;
 
-                    var drawLighting = drawLayout.GetLogicalGroup(drawLightingKey);
+                    var drawLighting = drawLayout.GetLogicalGroup(@this.drawLightingKey);
                     if (drawLighting.Hash == ObjectId.Empty)
                         return;
 
@@ -437,18 +441,18 @@ namespace Xenko.Rendering.Lights
                     Debug.Assert(drawLighting.Hash == locals.DrawLayoutHash, "PerDraw Lighting layout differs between different RenderObject in the same RenderView");
 
                     // Compute PerDraw lighting
-                    foreach (var directLightGroup in shaderPermutation.DirectLightGroups)
+                    foreach (var directLightGroup in @this.shaderPermutation.DirectLightGroups)
                     {
-                        directLightGroup.ApplyDrawParameters(context, viewIndex, locals.DrawParameters, ref renderNode.RenderObject.BoundingBox);
+                        directLightGroup.ApplyDrawParameters(pContext, pViewIndex, locals.DrawParameters, ref renderNode.RenderObject.BoundingBox);
                     }
-                    foreach (var environmentLight in shaderPermutation.EnvironmentLights)
+                    foreach (var environmentLight in @this.shaderPermutation.EnvironmentLights)
                     {
-                        environmentLight.ApplyDrawParameters(context, viewIndex, locals.DrawParameters, ref renderNode.RenderObject.BoundingBox);
+                        environmentLight.ApplyDrawParameters(pContext, pViewIndex, locals.DrawParameters, ref renderNode.RenderObject.BoundingBox);
                     }
 
                     // Update resources
                     renderNode.Resources.UpdateLogicalGroup(ref drawLighting, locals.DrawParameters);
-                });
+                }, (ref (ForwardLightingRenderFeature @this, RenderDrawContext context, int viewIndex) p) => p.@this.prepareThreadLocals.Value);
             }
         }
 

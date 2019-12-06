@@ -147,29 +147,33 @@ namespace Xenko.Rendering
             updatedViews.Clear();
 
             // Update cbuffer for previous WVP matrix
-            Dispatcher.ForEach(((RootEffectRenderFeature)RootRenderFeature).RenderNodes, (ref RenderNode renderNode) =>
+            var nodes = ((RootEffectRenderFeature)RootRenderFeature).RenderNodes;
+            Dispatcher.ForEach(nodes, (@this: this, previousTransformationInfoData, previousTransformationViewInfoData, renderModelObjectInfoData),
+                delegate (ref (MeshVelocityRenderFeature @this, StaticObjectPropertyData<StaticObjectInfo> previousTransformationInfoData, ViewObjectPropertyData<PreviousObjectViewInfo> previousTransformationViewInfoData, ObjectPropertyData<TransformRenderFeature.RenderModelFrameInfo> renderModelObjectInfoData) p, RenderNode renderNode)
             {
+                var (meshVelocityRenderFeature, staticObjectPropertyData, viewObjectPropertyData, objectPropertyData) = p;
                 var perDrawLayout = renderNode.RenderEffect.Reflection?.PerDrawLayout;
                 if (perDrawLayout == null)
                     return;
 
-                var previousWvpOffset = perDrawLayout.GetConstantBufferOffset(previousWorldViewProjection);
+                var previousWvpOffset = perDrawLayout.GetConstantBufferOffset(meshVelocityRenderFeature.previousWorldViewProjection);
                 if (previousWvpOffset == -1)
                     return;
-                
+
                 var mappedCB = renderNode.Resources.ConstantBuffer.Data;
                 var previousPerDraw = (PreviousPerDraw*)((byte*)mappedCB + previousWvpOffset);
 
-                var renderModelFrameInfo = renderModelObjectInfoData[renderNode.RenderObject.ObjectNode];
-                var renderModelPreviousFrameInfo = previousTransformationViewInfoData[renderNode.ViewObjectNode];
-                
+                var renderModelFrameInfo = objectPropertyData[renderNode.RenderObject.ObjectNode];
+                var renderModelPreviousFrameInfo = viewObjectPropertyData[renderNode.ViewObjectNode];
+
                 // Shift current world transform into previous transform
-                previousTransformationInfoData[renderNode.RenderObject.StaticObjectNode] = new StaticObjectInfo
+                staticObjectPropertyData[renderNode.RenderObject.StaticObjectNode] = new StaticObjectInfo
                 {
                     World = renderModelFrameInfo.World,
                 };
-                
+
                 previousPerDraw->PreviousWorldViewProjection = renderModelPreviousFrameInfo.WorldViewProjection;
+
             });
         }
 

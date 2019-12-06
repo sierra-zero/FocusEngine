@@ -95,7 +95,7 @@ namespace Xenko.Engine.Processors
 
         internal void UpdateTransformations(FastCollection<TransformComponent> transformationComponents)
         {
-            Dispatcher.ForEach(transformationComponents, UpdateTransformationAndChildren);
+            Dispatcher.ForEach(transformationComponents, i => UpdateTransformationAndChildren(i));
 
             // Re-update model node links to avoid one frame delay compared reference model (ideally entity should be sorted to avoid this in future).
             if (ModelNodeLinkProcessor != null)
@@ -105,7 +105,7 @@ namespace Xenko.Engine.Processors
                 {
                     modelNodeLinkComponents.Add(ModelNodeLinkProcessor.ModelNodeLinkComponents[i].Entity.Transform);
                 }
-                Dispatcher.ForEach(modelNodeLinkComponents, UpdateTransformationAndChildren);
+                Dispatcher.ForEach(modelNodeLinkComponents, i => UpdateTransformationAndChildren(i));
             }
         }
 

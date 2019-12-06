@@ -248,19 +248,20 @@ namespace Xenko.Navigation
                     long buildTimeStamp = DateTime.UtcNow.Ticks;
 
                     ConcurrentCollector<Tuple<Point, NavigationMeshTile>> builtTiles = new ConcurrentCollector<Tuple<Point, NavigationMeshTile>>(tilesToBuild.Count);
-                    Dispatcher.ForEach(tilesToBuild.ToArray(), tileCoordinate =>
-                    {
-                        // Allow cancellation while building tiles
-                        if (cancellationToken.IsCancellationRequested)
-                            return;
+                    Dispatcher.ForEach(tilesToBuild.ToArray(), (this, buildSettings, boundingBoxes, cancellationToken, inputVertices, inputIndices, currentAgentSettings, buildTimeStamp, builtTiles),
+                        delegate (ref (NavigationMeshBuilder @this, NavigationMeshBuildSettings buildSettings, ICollection<BoundingBox> boundingBoxes, CancellationToken cancellationToken, Vector3[] inputVertices, int[] inputIndices, NavigationAgentSettings currentAgentSettings, long buildTimeStamp, ConcurrentCollector<Tuple<Point, NavigationMeshTile>> builtTiles) p, Point tileCoordinate)
+                        {
+                            // Allow cancellation while building tiles
+                            if (p.cancellationToken.IsCancellationRequested)
+                                return;
 
-                        // Builds the tile, or returns null when there is nothing generated for this tile (empty tile)
-                        NavigationMeshTile meshTile = BuildTile(tileCoordinate, buildSettings, currentAgentSettings, boundingBoxes,
-                            inputVertices, inputIndices, buildTimeStamp);
+                            // Builds the tile, or returns null when there is nothing generated for this tile (empty tile)
+                            NavigationMeshTile meshTile = p.@this.BuildTile(tileCoordinate, p.buildSettings, p.currentAgentSettings, p.boundingBoxes,
+                                p.inputVertices, p.inputIndices, p.buildTimeStamp);
 
-                        // Add the result to the list of built tiles
-                        builtTiles.Add(new Tuple<Point, NavigationMeshTile>(tileCoordinate, meshTile));
-                    });
+                            // Add the result to the list of built tiles
+                            p.builtTiles.Add(new Tuple<Point, NavigationMeshTile>(tileCoordinate, meshTile));
+                        });
 
                     if (cancellationToken.IsCancellationRequested)
                     {

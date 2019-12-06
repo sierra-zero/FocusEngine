@@ -677,145 +677,167 @@ namespace Xenko.Rendering
             {
                 var viewFeature = view.Features[Index];
 
-                Dispatcher.ForEach(viewFeature.RenderNodes, () => prepareThreadContext.Value, (renderNodeReference, batch) =>
-                {
-                    var threadContext = batch.Context;
-                    var renderNode = this.GetRenderNode(renderNodeReference);
-                    var renderObject = renderNode.RenderObject;
-
-                    // Get RenderEffect
-                    var staticObjectNode = renderObject.StaticObjectNode;
-                    var staticEffectObjectNode = staticObjectNode * effectSlotCount + effectSlots[renderNode.RenderStage.Index].Index;
-                    var renderEffect = renderEffects[staticEffectObjectNode];
-
-                    // Not compiled yet?
-                    if (renderEffect.Effect == null || renderEffect.Reflection == null)
+                Dispatcher.ForEach(viewFeature.RenderNodes, (this, view, viewFeature, effectSlotCount, renderEffects),
+                    delegate (ref (RootEffectRenderFeature @this, RenderView view, RenderViewFeature viewFeature, int effectSlotCount, StaticObjectPropertyData<RenderEffect> renderEffects) p,
+                        RenderNodeReference renderNodeReference, PrepareThreadContext batch)
                     {
-                        renderNode.RenderEffect = renderEffect;
-                        renderNode.EffectObjectNode = EffectObjectNodeReference.Invalid;
-                        renderNode.Resources = null;
-                        RenderNodes[renderNodeReference.Index] = renderNode;
-                        return;
-                    }
+                        var threadContext = batch.Context;
+                        var renderNode = p.@this.GetRenderNode(renderNodeReference);
+                        var renderObject = renderNode.RenderObject;
 
-                    var renderEffectReflection = renderEffect.Reflection;
+                        // Get RenderEffect
+                        var staticObjectNode = renderObject.StaticObjectNode;
+                        var staticEffectObjectNode = staticObjectNode * p.effectSlotCount + p.@this.effectSlots[renderNode.RenderStage.Index].Index;
+                        var renderEffect = p.renderEffects[staticEffectObjectNode];
 
-                    // PerView resources/cbuffer
-                    var viewLayout = renderEffectReflection?.PerViewLayout;
-                    if (viewLayout != null)
-                    {
-                        var viewCount = RenderSystem.Views.Count;
-                        if (viewLayout.Entries?.Length < viewCount)
+                        // Not compiled yet?
+                        if (renderEffect.Effect == null)
                         {
-                            // TODO: Should this be a first loop?
-                            lock (viewLayout)
+                            renderNode.RenderEffect = renderEffect;
+                            renderNode.EffectObjectNode = EffectObjectNodeReference.Invalid;
+                            renderNode.Resources = null;
+                            p.@this.RenderNodes[renderNodeReference.Index] = renderNode;
+                            return;
+                        }
+
+                        var renderEffectReflection = renderEffect.Reflection;
+
+                        // PerView resources/cbuffer
+                        var viewLayout = renderEffectReflection.PerViewLayout;
+                        if (viewLayout != null)
+
+
+
+                        {
+                            var viewCount = p.@this.RenderSystem.Views.Count;
+                            if (viewLayout.Entries?.Length < viewCount)
                             {
-                                if (viewLayout.Entries?.Length < viewCount)
+                                // TODO: Should this be a first loop?
+                                lock (viewLayout)
                                 {
-                                    var newEntries = new ResourceGroupEntry[viewCount];
+                                    if (viewLayout.Entries?.Length < viewCount)
+                                    {
+                                        var newEntries = new ResourceGroupEntry[viewCount];
 
-                                    for (int index = 0; index < viewLayout.Entries.Length; index++)
-                                        newEntries[index] = viewLayout.Entries[index];
+                                        for (int index = 0; index < viewLayout.Entries.Length; index++)
+                                            newEntries[index] = viewLayout.Entries[index];
 
-                                    for (int index = viewLayout.Entries.Length; index < viewCount; index++)
-                                        newEntries[index].Resources = new ResourceGroup();
+                                        for (int index = viewLayout.Entries.Length; index < viewCount; index++)
+                                            newEntries[index].Resources = new ResourceGroup();
 
-                                    viewLayout.Entries = newEntries;
+                                        viewLayout.Entries = newEntries;
+                                    }
                                 }
+                            }
+
+                            if (viewLayout.Entries[p.view.Index].MarkAsUsed(p.@this.RenderSystem))
+                            {
+                                threadContext.ResourceGroupAllocator.PrepareResourceGroup(viewLayout, BufferPoolAllocationType.UsedMultipleTime, viewLayout.Entries[p.view.Index].Resources);
+
+                                // Register it in list of view layouts to update for this frame
+                                p.viewFeature.Layouts.Add(viewLayout);
                             }
                         }
 
-                        if (viewLayout.Entries[view.Index].MarkAsUsed(RenderSystem))
+                        // PerFrame resources/cbuffer
+                        var frameLayout = renderEffect.Reflection.PerFrameLayout;
+                        if (frameLayout != null && frameLayout.Entry.MarkAsUsed(p.@this.RenderSystem))
                         {
-                            threadContext.ResourceGroupAllocator.PrepareResourceGroup(viewLayout, BufferPoolAllocationType.UsedMultipleTime, viewLayout.Entries[view.Index].Resources);
+                            threadContext.ResourceGroupAllocator.PrepareResourceGroup(frameLayout, BufferPoolAllocationType.UsedMultipleTime, frameLayout.Entry.Resources);
 
                             // Register it in list of view layouts to update for this frame
-                            viewFeature.Layouts.Add(viewLayout);
+                            p.@this.FrameLayouts.Add(frameLayout);
                         }
-                    }
 
-                    // PerFrame resources/cbuffer
-                    var frameLayout = renderEffect.Reflection?.PerFrameLayout;
-                    if (frameLayout != null && frameLayout.Entry.MarkAsUsed(RenderSystem))
-                    {
-                        threadContext.ResourceGroupAllocator.PrepareResourceGroup(frameLayout, BufferPoolAllocationType.UsedMultipleTime, frameLayout.Entry.Resources);
 
-                        // Register it in list of view layouts to update for this frame
-                        FrameLayouts.Add(frameLayout);
-                    }
+                        // PerDraw resources/cbuffer
+                        // Get nodes
+                        var viewObjectNode = p.@this.GetViewObjectNode(renderNode.ViewObjectNode);
 
-                    // PerDraw resources/cbuffer
-                    // Get nodes
-                    var viewObjectNode = GetViewObjectNode(renderNode.ViewObjectNode);
 
-                    // Allocate descriptor set
-                    renderNode.Resources = threadContext.ResourceGroupAllocator.AllocateResourceGroup();
-                    if (renderEffectReflection.PerDrawLayout != null)
-                    {
-                        threadContext.ResourceGroupAllocator.PrepareResourceGroup(renderEffectReflection.PerDrawLayout, BufferPoolAllocationType.UsedOnce, renderNode.Resources);
-                    }
 
-                    // Create EffectObjectNode
-                    var effectObjectNodeIndex = EffectObjectNodes.Add(new EffectObjectNode(renderEffect, viewObjectNode.ObjectNode));
-
-                    // Link to EffectObjectNode (created right after)
-                    // TODO: rewrite this
-                    renderNode.EffectObjectNode = new EffectObjectNodeReference(effectObjectNodeIndex);
-
-                    renderNode.RenderEffect = renderEffect;
-                    
-                    // Bind well-known descriptor sets
-                    var descriptorSetPoolOffset = ComputeResourceGroupOffset(renderNodeReference);
-                    ResourceGroupPool[descriptorSetPoolOffset + perFrameDescriptorSetSlot.Index] = frameLayout?.Entry.Resources;
-                    ResourceGroupPool[descriptorSetPoolOffset + perViewDescriptorSetSlot.Index] = renderEffect.Reflection.PerViewLayout?.Entries[view.Index].Resources;
-                    ResourceGroupPool[descriptorSetPoolOffset + perDrawDescriptorSetSlot.Index] = renderNode.Resources;
-
-                    // Create resource group for everything else in case of fallback effects
-                    if (renderEffect.State != RenderEffectState.Normal && renderEffect.FallbackParameters != null)
-                    {
-                        if (renderEffect.FallbackParameterUpdater.ResourceGroups == null)
+                        // Allocate descriptor set
+                        renderNode.Resources = threadContext.ResourceGroupAllocator.AllocateResourceGroup();
+                        if (renderEffectReflection.PerDrawLayout != null)
                         {
-                            // First time
-                            renderEffect.FallbackParameterUpdater = new EffectParameterUpdater(renderEffect.Reflection.FallbackUpdaterLayout, renderEffect.FallbackParameters);
+                            threadContext.ResourceGroupAllocator.PrepareResourceGroup(renderEffectReflection.PerDrawLayout, BufferPoolAllocationType.UsedOnce, renderNode.Resources);
                         }
 
-                        renderEffect.FallbackParameterUpdater.Update(RenderSystem.GraphicsDevice, threadContext.ResourceGroupAllocator, renderEffect.FallbackParameters);
 
-                        var fallbackResourceGroupMapping = renderEffect.Reflection.FallbackResourceGroupMapping;
-                        for (int i = 0; i < fallbackResourceGroupMapping.Length; ++i)
+                        // Create EffectObjectNode
+                        var effectObjectNodeIndex = p.@this.EffectObjectNodes.Add(new EffectObjectNode(renderEffect, viewObjectNode.ObjectNode));
+
+
+
+
+
+                        // Link to EffectObjectNode (created right after)
+                        // TODO: rewrite this
+                        renderNode.EffectObjectNode = new EffectObjectNodeReference(effectObjectNodeIndex);
+
+                        renderNode.RenderEffect = renderEffect;
+
+
+
+                        // Bind well-known descriptor sets
+                        var descriptorSetPoolOffset = p.@this.ComputeResourceGroupOffset(renderNodeReference);
+                        p.@this.ResourceGroupPool[descriptorSetPoolOffset + p.@this.perFrameDescriptorSetSlot.Index] = frameLayout?.Entry.Resources;
+                        p.@this.ResourceGroupPool[descriptorSetPoolOffset + p.@this.perViewDescriptorSetSlot.Index] = renderEffect.Reflection.PerViewLayout?.Entries[p.view.Index].Resources;
+                        p.@this.ResourceGroupPool[descriptorSetPoolOffset + p.@this.perDrawDescriptorSetSlot.Index] = renderNode.Resources;
+
+
+
+                        // Create resource group for everything else in case of fallback effects
+                        if (renderEffect.State != RenderEffectState.Normal && renderEffect.FallbackParameters != null)
+
+
                         {
-                            ResourceGroupPool[descriptorSetPoolOffset + fallbackResourceGroupMapping[i]] = renderEffect.FallbackParameterUpdater.ResourceGroups[i];
+                            if (renderEffect.FallbackParameterUpdater.ResourceGroups == null)
+                            {
+                                // First time
+                                renderEffect.FallbackParameterUpdater = new EffectParameterUpdater(renderEffect.Reflection.FallbackUpdaterLayout, renderEffect.FallbackParameters);
+                            }
+
+                            renderEffect.FallbackParameterUpdater.Update(p.@this.RenderSystem.GraphicsDevice, threadContext.ResourceGroupAllocator, renderEffect.FallbackParameters);
+
+                            var fallbackResourceGroupMapping = renderEffect.Reflection.FallbackResourceGroupMapping;
+                            for (int i = 0; i < fallbackResourceGroupMapping.Length; ++i)
+                            {
+                                p.@this.ResourceGroupPool[descriptorSetPoolOffset + fallbackResourceGroupMapping[i]] = renderEffect.FallbackParameterUpdater.ResourceGroups[i];
+                            }
                         }
-                    }
 
-                    // Compile pipeline state object (if first time or need change)
-                    // TODO GRAPHICS REFACTOR how to invalidate if we want to change some state? (setting to null should be fine)
-                    if (renderEffect.PipelineState == null)
-                    {
-                        var mutablePipelineState = batch.MutablePipelineState;
-                        var pipelineState = mutablePipelineState.State;
-                        pipelineState.SetDefaults();
 
-                        // Effect
-                        pipelineState.EffectBytecode = renderEffect.Effect.Bytecode;
-                        pipelineState.RootSignature = renderEffect.Reflection.RootSignature;
+                        // Compile pipeline state object (if first time or need change)
+                        // TODO GRAPHICS REFACTOR how to invalidate if we want to change some state? (setting to null should be fine)
+                        if (renderEffect.PipelineState == null)
+                        {
+                            var mutablePipelineState = batch.MutablePipelineState;
+                            var pipelineState = mutablePipelineState.State;
+                            pipelineState.SetDefaults();
 
-                        // Extract outputs from render stage
-                        pipelineState.Output = renderNode.RenderStage.Output;
-                        pipelineState.RasterizerState.MultisampleCount = renderNode.RenderStage.Output.MultisampleCount;
+                            // Effect
+                            pipelineState.EffectBytecode = renderEffect.Effect.Bytecode;
+                            pipelineState.RootSignature = renderEffect.Reflection.RootSignature;
 
-                        // Bind VAO
-                        ProcessPipelineState(Context, renderNodeReference, ref renderNode, renderObject, pipelineState);
+                            // Extract outputs from render stage
+                            pipelineState.Output = renderNode.RenderStage.Output;
+                            pipelineState.RasterizerState.MultisampleCount = renderNode.RenderStage.Output.MultisampleCount;
 
-                        foreach (var pipelineProcessor in PipelineProcessors)
-                            pipelineProcessor.Process(renderNodeReference, ref renderNode, renderObject, pipelineState);
+                            // Bind VAO
+                            p.@this.ProcessPipelineState(p.@this.Context, renderNodeReference, ref renderNode, renderObject, pipelineState);
 
-                        mutablePipelineState.Update();
-                        renderEffect.PipelineState = mutablePipelineState.CurrentState;
-                    }
+                            foreach (var pipelineProcessor in p.@this.PipelineProcessors)
+                                pipelineProcessor.Process(renderNodeReference, ref renderNode, renderObject, pipelineState);
 
-                    RenderNodes[renderNodeReference.Index] = renderNode;
-                });
+                            mutablePipelineState.Update();
+                            renderEffect.PipelineState = mutablePipelineState.CurrentState;
+                        }
+
+                        p.@this.RenderNodes[renderNodeReference.Index] = renderNode;
+                    },
+                    (ref (RootEffectRenderFeature @this, RenderView, RenderViewFeature, int, StaticObjectPropertyData<RenderEffect>) p) => p.@this.prepareThreadContext.Value);
+
 
                 viewFeature.RenderNodes.Close();
                 viewFeature.Layouts.Close();
