@@ -266,6 +266,8 @@ namespace Xenko.Rendering.Images
 
         public bool RequiresSpecularRoughnessBuffer => LocalReflections.Enabled;
 
+        public bool RequiresRenderTargetChange => BrightFilter.Enabled || ColorTransforms.Enabled;
+
         protected override void DrawCore(RenderDrawContext context)
         {
             var input = GetInput(0);

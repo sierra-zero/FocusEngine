@@ -830,7 +830,7 @@ namespace Xenko.Rendering.Compositing
 
             for (int index = 0; index < renderTargets.Count; index++)
             {
-                if (renderTargets[index].Semantic is ColorTargetSemantic && actualMultisampleCount == MultisampleCount.None)
+                if (renderTargets[index].Semantic is ColorTargetSemantic && (PostEffects == null || PostEffects.RequiresRenderTargetChange == false) && actualMultisampleCount == MultisampleCount.None)
                 {
                     currentRenderTargets[index] = outputRenderTarget;
                 }

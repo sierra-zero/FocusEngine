@@ -18,5 +18,7 @@ namespace Xenko.Rendering.Images
         bool RequiresNormalBuffer { get; }
 
         bool RequiresSpecularRoughnessBuffer { get; }
+
+        bool RequiresRenderTargetChange { get; }
     }
 }
