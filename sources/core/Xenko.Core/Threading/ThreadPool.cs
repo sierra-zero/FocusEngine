@@ -21,7 +21,7 @@ namespace Xenko.Core.Threading
 
         /// <summary> Maximum amount of idle threads waiting for work. </summary>
         public readonly int PoolSize;
-        
+
         /// <summary>
         /// OS semaphores are close to two times faster to signal multiple
         /// threads than doing the same thing through monitor like
@@ -48,7 +48,7 @@ namespace Xenko.Core.Threading
             {
                 throw new ArgumentNullException(nameof(workItem));
             }
-            
+
             Dispatch(workItem, amount);
         }
 
@@ -81,12 +81,12 @@ namespace Xenko.Core.Threading
         {
             if ((Volatile.Read(ref sleeping) + Volatile.Read(ref spinningCount)) >= PoolSize)
                 return false;
-            
+
             Interlocked.Increment(ref spinningCount);
             var spin = new SpinWait();
             while (spin.NextSpinWillYield == false)
             {
-                int spinRelease = Volatile.Read(ref spinToRelease);
+                int spinRelease = spinToRelease;
                 if (spinRelease > 0 && Interlocked.CompareExchange(ref spinToRelease, spinRelease - 1, spinRelease) == spinRelease)
                 {
                     Interlocked.Decrement(ref spinningCount);
@@ -95,14 +95,14 @@ namespace Xenko.Core.Threading
 
                 spin.SpinOnce();
             }
-            
+
             Interlocked.Increment(ref sleeping);
             Interlocked.Decrement(ref spinningCount);
 
             semaphore.WaitOne();
             return true;
         }
-        
+
         private void SignalThreads(int releaseCount, out int leftThatCouldntBeReleased)
         {
             if (releaseCount < 1)
@@ -114,7 +114,7 @@ namespace Xenko.Core.Threading
             {
                 spin.SpinOnce();
             }
-            
+
             // Retrieve amount that wasn't released
             releaseCount = Interlocked.Exchange(ref spinToRelease, 0);
             if (releaseCount == 0)
@@ -122,12 +122,12 @@ namespace Xenko.Core.Threading
                 leftThatCouldntBeReleased = 0;
                 return;
             }
-            
+
             spin = new SpinWait();
             int semaphoreToRelease;
             while (true)
             {
-                var sleepingSample = Volatile.Read(ref sleeping);
+                var sleepingSample = sleeping;
                 semaphoreToRelease = sleepingSample > releaseCount ? releaseCount : sleepingSample;
                 if (Interlocked.CompareExchange(ref sleeping, sleepingSample - semaphoreToRelease, sleepingSample) == sleepingSample)
                     break;
@@ -166,7 +166,7 @@ namespace Xenko.Core.Threading
                     object scheduledOp = pool.jobs.Acquire();
                     if (scheduledOp == null)
                         throw new NullReferenceException("Missing job in pool");
-                        
+
                     if (scheduledOp is IConcurrentJob pooledJob)
                     {
                         pooledJob.Work();

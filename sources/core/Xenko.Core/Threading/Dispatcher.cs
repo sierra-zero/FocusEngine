@@ -555,7 +555,7 @@ namespace Xenko.Core.Threading
         private class BatchState : ThreadPool.IConcurrentJob
         {
             private static readonly ConcurrentFixedPool<BatchState> pool = new ConcurrentFixedPool<BatchState>(64, () => new BatchState());
-            
+
             public readonly ManualResetEventSlim Finished = new ManualResetEventSlim(false);
 
             private int startInclusive;
