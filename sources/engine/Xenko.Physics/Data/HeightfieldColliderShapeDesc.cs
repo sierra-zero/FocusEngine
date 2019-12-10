@@ -72,7 +72,7 @@ namespace Xenko.Physics
 
             var heightScaleComparison = other.HeightScale?.Match(HeightScale) ?? HeightScale == null;
 
-            var initialHeightsComparison = (other.InitialHeights == InitialHeights);
+            var initialHeightsComparison = other.InitialHeights?.Match(InitialHeights) ?? InitialHeights == null;
 
             return initialHeightsComparison &&
                 other.HeightfieldType == HeightfieldType &&
