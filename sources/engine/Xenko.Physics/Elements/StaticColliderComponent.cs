@@ -18,7 +18,7 @@ namespace Xenko.Physics
                 UserObject = this,
             };
 
-            NativeCollisionObject.CollisionFlags |= BulletSharp.CollisionFlags.NoContactResponse;
+            NativeCollisionObject.CollisionFlags |= BulletSharp.CollisionFlags.NoContactResponse | BulletSharp.CollisionFlags.StaticObject;
 
             if (ColliderShape.NeedsCustomCollisionCallback)
             {

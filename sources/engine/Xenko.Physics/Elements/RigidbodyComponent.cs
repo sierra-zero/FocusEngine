@@ -234,36 +234,29 @@ namespace Xenko.Physics
             }
             set
             {
+                if (type == value) return;
+
                 type = value;
 
                 if (InternalRigidBody == null) return;
 
+                InternalRigidBody.InterpolationAngularVelocity = Vector3.Zero;
+                InternalRigidBody.LinearVelocity = Vector3.Zero;
+                InternalRigidBody.InterpolationAngularVelocity = Vector3.Zero;
+                InternalRigidBody.AngularVelocity = Vector3.Zero;
+
                 switch (value)
                 {
                     case RigidBodyTypes.Dynamic:
-                        if (((int)InternalRigidBody.CollisionFlags & (int)BulletSharp.CollisionFlags.StaticObject) != 0) InternalRigidBody.CollisionFlags ^= BulletSharp.CollisionFlags.StaticObject;
-                        if (((int)InternalRigidBody.CollisionFlags & (int)BulletSharp.CollisionFlags.KinematicObject) != 0) InternalRigidBody.CollisionFlags ^= BulletSharp.CollisionFlags.KinematicObject;
-                        if (InternalRigidBody != null && Simulation != null && !OverrideGravity) InternalRigidBody.Gravity = Simulation.Gravity;
-                        if (InternalRigidBody != null)
-                        {
-                            InternalRigidBody.InterpolationAngularVelocity = Vector3.Zero;
-                            InternalRigidBody.LinearVelocity = Vector3.Zero;
-                            InternalRigidBody.InterpolationAngularVelocity = Vector3.Zero;
-                            InternalRigidBody.AngularVelocity = Vector3.Zero;
-                        }
+                        if (Simulation != null && !OverrideGravity) InternalRigidBody.Gravity = Simulation.Gravity;
+                        InternalRigidBody.CollisionFlags &= ~BulletSharp.CollisionFlags.StaticObject;
+                        InternalRigidBody.CollisionFlags &= ~BulletSharp.CollisionFlags.KinematicObject;
                         break;
 
                     case RigidBodyTypes.Kinematic:
-                        if (((int)InternalRigidBody.CollisionFlags & (int)BulletSharp.CollisionFlags.StaticObject) != 0) InternalRigidBody.CollisionFlags ^= BulletSharp.CollisionFlags.StaticObject;
+                        InternalRigidBody.CollisionFlags &= ~BulletSharp.CollisionFlags.StaticObject;
                         InternalRigidBody.CollisionFlags |= BulletSharp.CollisionFlags.KinematicObject;
-                        if (InternalRigidBody != null && !OverrideGravity) InternalRigidBody.Gravity = Vector3.Zero;
-                        if (InternalRigidBody != null)
-                        {
-                            InternalRigidBody.InterpolationAngularVelocity = Vector3.Zero;
-                            InternalRigidBody.LinearVelocity = Vector3.Zero;
-                            InternalRigidBody.InterpolationAngularVelocity = Vector3.Zero;
-                            InternalRigidBody.AngularVelocity = Vector3.Zero;
-                        }
+                        if (!OverrideGravity) InternalRigidBody.Gravity = Vector3.Zero;
                         break;
                 }
             }
