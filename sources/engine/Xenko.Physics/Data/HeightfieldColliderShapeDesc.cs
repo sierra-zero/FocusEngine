@@ -108,64 +108,68 @@ namespace Xenko.Physics
 
         public ColliderShape CreateShape()
         {
-                if (HeightStickSize.X <= 1 ||
-                    HeightStickSize.Y <= 1 ||
-                    HeightRange.Y < HeightRange.X ||
-                    Math.Abs(HeightRange.Y - HeightRange.X) < float.Epsilon)
-                {
-                    return null;
-                }
-
-                float heightScale = (HeightfieldType != HeightfieldTypes.Float) && HeightScale.Enabled ? HeightScale.Scale : CalculateHeightScale();
+            if (InitialHeights == null ||
+                !IsValidHeightStickSize(InitialHeights.HeightStickSize) ||
+                HeightRange.Y < HeightRange.X ||
+                Math.Abs(HeightRange.Y - HeightRange.X) < float.Epsilon)
+            {
+                return null;
+            }
 
                 if (Math.Abs(heightScale) < float.Epsilon)
                 {
                     return null;
                 }
+            float heightScale = (InitialHeights.HeightType != HeightfieldTypes.Float) && HeightScale.Enabled ? HeightScale.Scale : CalculateHeightScale();
 
-                var arrayLength = HeightStickSize.X * HeightStickSize.Y;
+            if (Math.Abs(heightScale) < float.Epsilon)
+            {
+                return null;
+            }
 
-                object unmanagedArray;
+            var arrayLength = InitialHeights.HeightStickSize.X * InitialHeights.HeightStickSize.Y;
 
-                switch (HeightfieldType)
+            object unmanagedArray;
+
+            switch (InitialHeights.HeightType)
+            {
+                case HeightfieldTypes.Float:
                 {
-                    case HeightfieldTypes.Float:
-                    {
-                        unmanagedArray = CreateHeights(arrayLength, InitialHeights?.Floats);
-                        break;
-                    }
-                    case HeightfieldTypes.Short:
-                    {
-                        unmanagedArray = CreateHeights(arrayLength, InitialHeights?.Shorts);
-                        break;
-                    }
-                    case HeightfieldTypes.Byte:
-                    {
-                        unmanagedArray = CreateHeights(arrayLength, InitialHeights?.Bytes);
-                        break;
-                    }
-
-                    default:
-                        return null;
+                    unmanagedArray = CreateHeights(arrayLength, InitialHeights.Floats);
+                    break;
+                }
+                case HeightfieldTypes.Short:
+                {
+                    unmanagedArray = CreateHeights(arrayLength, InitialHeights.Shorts);
+                    break;
+                }
+                case HeightfieldTypes.Byte:
+                {
+                    unmanagedArray = CreateHeights(arrayLength, InitialHeights.Bytes);
+                    break;
                 }
 
-                var shape = new HeightfieldColliderShape
-                            (
-                                HeightStickSize.X,
-                                HeightStickSize.Y,
-                                HeightfieldType,
-                                unmanagedArray,
-                                heightScale,
-                                HeightRange.X,
-                                HeightRange.Y,
-                                FlipQuadEdges
-                            )
-                            {
-                                LocalOffset = LocalOffset,
-                                LocalRotation = LocalRotation,
-                            };
+                default:
+                    return null;
+            }
 
-                return shape;
+            var shape = new HeightfieldColliderShape
+                        (
+                            InitialHeights.HeightStickSize.X,
+                            InitialHeights.HeightStickSize.Y,
+                            InitialHeights.HeightType,
+                            unmanagedArray,
+                            heightScale,
+                            HeightRange.X,
+                            HeightRange.Y,
+                            FlipQuadEdges
+                        )
+                        {
+                            LocalOffset = LocalOffset,
+                            LocalRotation = LocalRotation,
+                        };
+
+            return shape;
         }
 
         public float CalculateHeightScale()
