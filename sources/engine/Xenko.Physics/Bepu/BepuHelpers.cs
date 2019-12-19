@@ -144,8 +144,8 @@ namespace Xenko.Physics.Bepu
 
         public static unsafe bool GenerateMeshShape(Xenko.Rendering.Mesh modelMesh, out BepuPhysics.Collidables.Mesh outMesh, Vector3? scale = null)
         {
-            Vector3[] positions;
-            int[] indicies;
+            List<Vector3> positions;
+            List<int> indicies;
 
             if (modelMesh.Draw is StagedMeshDraw)
             {
@@ -156,21 +156,21 @@ namespace Xenko.Physics.Bepu
                 if (verts is VertexPositionNormalColor[])
                 {
                     VertexPositionNormalColor[] vpnc = verts as VertexPositionNormalColor[];
-                    positions = new Vector3[vpnc.Length];
+                    positions = new List<Vector3>(vpnc.Length);
                     for (int k = 0; k < vpnc.Length; k++)
                         positions[k] = vpnc[k].Position;
                 }
                 else if (verts is VertexPositionNormalTexture[])
                 {
                     VertexPositionNormalTexture[] vpnc = verts as VertexPositionNormalTexture[];
-                    positions = new Vector3[vpnc.Length];
+                    positions = new List<Vector3>(vpnc.Length);
                     for (int k = 0; k < vpnc.Length; k++)
                         positions[k] = vpnc[k].Position;
                 }
                 else if (verts is VertexPositionNormalTextureTangent[])
                 {
                     VertexPositionNormalTextureTangent[] vpnc = verts as VertexPositionNormalTextureTangent[];
-                    positions = new Vector3[vpnc.Length];
+                    positions = new List<Vector3>(vpnc.Length);
                     for (int k = 0; k < vpnc.Length; k++)
                         positions[k] = vpnc[k].Position;
                 }
@@ -181,7 +181,7 @@ namespace Xenko.Physics.Bepu
                 }
 
                 // take care of indicies
-                indicies = (int[])(object)smd.Indicies;
+                indicies = new List<int>((int[])(object)smd.Indicies);
             }
             else
             {
@@ -195,7 +195,7 @@ namespace Xenko.Physics.Bepu
                 }
 
                 if (ModelBatcher.UnpackRawVertData(buf.VertIndexData, modelMesh.Draw.VertexBuffers[0].Declaration,
-                                                   out positions, out Core.Mathematics.Vector3[] normals, out Core.Mathematics.Vector2[] uvs,
+                                                   out Vector3[] arraypositions, out Core.Mathematics.Vector3[] normals, out Core.Mathematics.Vector2[] uvs,
                                                    out Color4[] colors, out Vector4[] tangents) == false)
                 {
                     outMesh = new Mesh();
@@ -210,7 +210,7 @@ namespace Xenko.Physics.Bepu
                         var dst = (uint*)pdst;
 
                         int numIndices = ibuf.VertIndexData.Length / sizeof(uint);
-                        indicies = new int[numIndices];
+                        indicies = new List<int>(numIndices);
                         for (var k = 0; k < numIndices; k++)
                         {
                             // Offset indices
@@ -222,7 +222,7 @@ namespace Xenko.Physics.Bepu
                         var dst = (ushort*)pdst;
 
                         int numIndices = ibuf.VertIndexData.Length / sizeof(ushort);
-                        indicies = new int[numIndices];
+                        indicies = new List<int>(numIndices);
                         for (var k = 0; k < numIndices; k++)
                         {
                             // Offset indices
@@ -230,18 +230,21 @@ namespace Xenko.Physics.Bepu
                         }
                     }
                 }
+
+                // take care of positions
+                positions = new List<Vector3>(arraypositions);
             }
 
             return GenerateMeshShape(positions, indicies, out outMesh, scale);
         }
 
-        public static unsafe bool GenerateMeshShape(Vector3[] positions, int[] indicies, out BepuPhysics.Collidables.Mesh outMesh, Vector3? scale = null)
+        public static unsafe bool GenerateMeshShape(List<Vector3> positions, List<int> indicies, out BepuPhysics.Collidables.Mesh outMesh, Vector3? scale = null)
         {
             // ok, should have what we need to make triangles
-            var memory = stackalloc Triangle[indicies.Length];
-            BepuUtilities.Memory.Buffer<Triangle> triangles = new BepuUtilities.Memory.Buffer<Triangle>(memory, indicies.Length);
+            var memory = stackalloc Triangle[indicies.Count];
+            BepuUtilities.Memory.Buffer<Triangle> triangles = new BepuUtilities.Memory.Buffer<Triangle>(memory, indicies.Count);
 
-            for (int i = 0; i < indicies.Length; i += 3)
+            for (int i = 0; i < indicies.Count; i += 3)
             {
                 triangles[i].A = ToBepu(positions[indicies[i]]);
                 triangles[i].B = ToBepu(positions[indicies[i+1]]);
