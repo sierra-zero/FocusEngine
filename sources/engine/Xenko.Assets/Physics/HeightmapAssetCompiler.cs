@@ -65,8 +65,8 @@ namespace Xenko.Assets.Physics
                         {
                             // Resize the image if need
 
-                            var size = Parameters.Size.Enabled && Parameters.Size.Size.X > 1 && Parameters.Size.Size.Y > 1 ?
-                                Parameters.Size.Size :
+                            var size = Parameters.Resizing.Enabled ?
+                                Parameters.Resizing.Size :
                                 new Int2(texImage.Width, texImage.Height);
 
                             if (texImage.Width != size.X || texImage.Height != size.Y)
