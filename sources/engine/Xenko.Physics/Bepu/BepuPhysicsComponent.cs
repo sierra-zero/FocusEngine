@@ -36,6 +36,15 @@ namespace Xenko.Engine
             return AddedHandle;
         }
 
+        /// <summary>
+        /// Allow BepuHelpers.AddAllBodiesToSimulation to add this?
+        /// </summary>
+        [DataMember]
+        public bool AllowHelperToAdd { get; set; } = true;
+
+        [DataMemberIgnore]
+        public virtual bool AddedToScene { get; set; }
+
         public BepuPhysicsComponent()
         {
             BepuHelpers.AssureServiceAdded();
@@ -102,8 +111,6 @@ namespace Xenko.Engine
         [DataMember]
         public SpringSettings SpringSettings = new SpringSettings(30f, 1f);
 
-        #region Utility
-
         /// <summary>
         /// Computes the physics transformation from the TransformComponent values
         /// </summary>
@@ -148,7 +155,5 @@ namespace Xenko.Engine
         /// </summary>
         [DataMember]
         public bool GhostBody { get; set; }
-
-        #endregion Utility
     }
 }

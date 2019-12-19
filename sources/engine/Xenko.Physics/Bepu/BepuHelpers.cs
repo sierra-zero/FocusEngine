@@ -44,6 +44,30 @@ namespace Xenko.Physics.Bepu
             }
         }
 
+        /// <summary>
+        /// Goes through the whole scene and adds bepu physics objects to the simulation. Only will add if AllowHelperToAdd is true (which is set to true by default)
+        /// and if the body isn't added already.
+        /// </summary>
+        /// <param name="rootScene"></param>
+        public static void AddAllBodiesToSimulation(Scene rootScene)
+        {
+            foreach (Entity e in rootScene.Entities)
+                AddAllBodiesToSimulation(e);
+        }
+
+        /// <summary>
+        /// Goes through the entity and children and adds bepu physics objects to the simulation. Only will add if AllowHelperToAdd is true (which is set to true by default)
+        /// and if the body isn't added already.
+        /// </summary>
+        /// <param name="rootEntity"></param>
+        public static void AddAllBodiesToSimulation(Entity rootEntity)
+        {
+            BepuPhysicsComponent pc = rootEntity.Get<BepuPhysicsComponent>();
+            if (pc?.AllowHelperToAdd ?? false) pc.AddedToScene = true;
+            foreach (Entity e in rootEntity.GetChildren())
+                AddAllBodiesToSimulation(e);
+        }
+
         public static unsafe bool GenerateMeshShape(Xenko.Rendering.Mesh modelMesh, out BepuPhysics.Collidables.Mesh outMesh, Vector3? scale = null)
         {
             Vector3[] positions;

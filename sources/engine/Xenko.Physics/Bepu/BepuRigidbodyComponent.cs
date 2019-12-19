@@ -21,10 +21,16 @@ namespace Xenko.Physics.Bepu
     [Display("Bepu Rigidbody")]
     public sealed class BepuRigidbodyComponent : BepuPhysicsComponent
     {
+        /// <summary>
+        /// Description of the body to be created when added to the scene
+        /// </summary>
         public BodyDescription bodyDescription;
 
         private BodyReference _internalReference = new BodyReference();
 
+        /// <summary>
+        /// Reference to the body after being added to the scene
+        /// </summary>
         public BodyReference InternalBody
         {
             get
@@ -35,6 +41,9 @@ namespace Xenko.Physics.Bepu
             }
         }
 
+        /// <summary>
+        /// Action to be called after simulation, but before transforms are set to new positions. Arguments are this and simulation time.
+        /// </summary>
         public Action<BepuRigidbodyComponent, float> ActionPerSimulationTick;
 
         /// <summary>
@@ -316,8 +325,12 @@ namespace Xenko.Physics.Bepu
             }
         }
 
+        /// <summary>
+        /// Set this to true to add this object to the physics simulation. Will automatically remove itself when the entity. is removed from the scene. Will NOT automatically add the rigidbody
+        /// to the scene when the entity is added, though.
+        /// </summary>
         [DataMemberIgnore]
-        public bool AddedToScene
+        public override bool AddedToScene
         {
             get
             {

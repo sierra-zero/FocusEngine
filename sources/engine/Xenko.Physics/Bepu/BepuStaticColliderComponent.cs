@@ -74,8 +74,12 @@ namespace Xenko.Physics.Bepu
             }
         }
 
+        /// <summary>
+        /// Set this to true to add this object to the physics simulation. Will automatically remove itself when the entity. is removed from the scene. Will NOT automatically add the rigidbody
+        /// to the scene when the entity is added, though.
+        /// </summary>
         [DataMemberIgnore]
-        public bool AddedToScene
+        public override bool AddedToScene
         {
             get
             {
