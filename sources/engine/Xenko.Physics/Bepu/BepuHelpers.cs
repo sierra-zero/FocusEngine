@@ -45,6 +45,39 @@ namespace Xenko.Physics.Bepu
         }
 
         /// <summary>
+        /// Easily makes a Compound shape for you, given a list of individual shapes and how they should be offset.
+        /// </summary>
+        /// <param name="shapes">List of shapes, must be IConvexShape if isDynamic is true</param>
+        /// <param name="offsets">Matching length list of offsets of bodies, can be null if nothing has an offset</param>
+        /// <param name="rotations">Matching length list of rotations of bodies, can be null if nothing is rotated</param>
+        /// <param name="isDynamic">True if intended to use in a dynamic situation, false if kinematic or static</param>
+        /// <returns></returns>
+        public static ICompoundShape MakeCompound(List<IShape> shapes, List<Vector3> offsets = null, List<Quaternion> rotations = null, bool isDynamic = true, int bigThreshold = 5)
+        {
+            using (var compoundBuilder = new CompoundBuilder(BepuSimulation.instance.pBufferPool, BepuSimulation.instance.internalSimulation.Shapes, shapes.Count))
+            {
+                bool allConvex = true;
+
+                //All allocations from the buffer pool used for the final compound shape will be disposed when the demo is disposed. Don't have to worry about leaks in these demos.
+                for (int i=0; i<shapes.Count; i++)
+                {
+                    if (isDynamic)
+                    {
+                        compoundBuilder.AddEasy(shapes[i] as IConvexShape, new BepuPhysics.RigidPose(ToBepu(offsets?[i] ?? Vector3.Zero), ToBepu(rotations?[i] ?? Quaternion.Identity)), 1f);
+                    } 
+                    else
+                    {
+                        if (shapes[i] is IConvexShape == false) allConvex = false;
+
+                        compoundBuilder.AddForKinematicEasy(shapes[i], new BepuPhysics.RigidPose(ToBepu(offsets?[i] ?? Vector3.Zero), ToBepu(rotations?[i] ?? Quaternion.Identity)), 1f);
+                    }
+                }
+
+                return compoundBuilder.BuildCompleteCompoundShape(BepuSimulation.instance.internalSimulation.Shapes, BepuSimulation.instance.pBufferPool, isDynamic, allConvex ? bigThreshold : int.MaxValue);
+            }
+        }
+
+        /// <summary>
         /// Goes through the whole scene and adds bepu physics objects to the simulation. Only will add if AllowHelperToAdd is true (which is set to true by default)
         /// and if the body isn't added already.
         /// </summary>
