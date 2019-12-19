@@ -27,7 +27,7 @@ namespace Xenko.Physics
         private readonly HashSet<PhysicsSkinnedComponentBase> boneElements = new HashSet<PhysicsSkinnedComponentBase>();
         private readonly HashSet<CharacterComponent> characters = new HashSet<CharacterComponent>();
 
-        private Bullet2PhysicsSystem physicsSystem;
+        private PhysicsSystem physicsSystem;
         private SceneSystem sceneSystem;
         private Scene debugScene;
 
@@ -185,10 +185,10 @@ namespace Xenko.Physics
 
         protected internal override void OnSystemAdd()
         {
-            physicsSystem = (Bullet2PhysicsSystem)Services.GetService<IPhysicsSystem>();
+            physicsSystem = (PhysicsSystem)Services.GetService<IPhysicsSystem>();
             if (physicsSystem == null)
             {
-                physicsSystem = new Bullet2PhysicsSystem(Services);
+                physicsSystem = new PhysicsSystem(Services);
                 Services.AddService<IPhysicsSystem>(physicsSystem);
                 var gameSystems = Services.GetSafeServiceAs<IGameSystemCollection>();
                 gameSystems.Add(physicsSystem);
@@ -204,7 +204,7 @@ namespace Xenko.Physics
                 gameSystems.Add(debugShapeRendering);
             }
 
-            Simulation = OverlapTest.mySimulation = physicsSystem.Create(this);
+            Simulation = OverlapTest.mySimulation = physicsSystem.Create(this) as Simulation;
 
             sceneSystem = Services.GetSafeServiceAs<SceneSystem>();
         }

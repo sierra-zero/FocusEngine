@@ -40,6 +40,13 @@ namespace Xenko.Core
         /// <inheritdoc />
         public event EventHandler<ServiceEventArgs> ServiceRemoved;
 
+        public static ServiceRegistry instance { get; private set; }
+
+        public ServiceRegistry(bool setMainInstance = false)
+        {
+            if (setMainInstance) instance = this;
+        }
+
         /// <inheritdoc />
         public T GetService<T>()
             where T : class

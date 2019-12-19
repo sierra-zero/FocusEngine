@@ -50,10 +50,10 @@ namespace Xenko.Games
         /// <remarks>
         /// The GameSystem is expecting the following services to be registered: <see cref="IGame"/> and <see cref="IContentManager"/>.
         /// </remarks>
-        protected GameSystemBase([NotNull] IServiceRegistry registry)
+        protected GameSystemBase(IServiceRegistry registry)
         {
-            Services = registry ?? throw new ArgumentNullException(nameof(registry));
-            Game = (GameBase)Services.GetService<IGame>();
+            Services = registry ?? ServiceRegistry.instance;
+            Game = (GameBase)Services?.GetService<IGame>();
         }
 
         /// <summary>

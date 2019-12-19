@@ -7,7 +7,7 @@ namespace Xenko.Physics
 {
     public interface IPhysicsSystem : IGameSystemBase
     {
-        Simulation Create(PhysicsProcessor processor, PhysicsEngineFlags flags = PhysicsEngineFlags.None);
+        object Create(PhysicsProcessor processor, PhysicsEngineFlags flags = PhysicsEngineFlags.None, bool bepu = false);
         void Release(PhysicsProcessor processor);
     }
 }

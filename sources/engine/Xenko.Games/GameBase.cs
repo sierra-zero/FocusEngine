@@ -111,7 +111,7 @@ namespace Xenko.Games
             updateCountAverageSlowLimit = (float)(maxLastCount + (lastUpdateCount.Length - maxLastCount)) / lastUpdateCount.Length;
 
             // Externals
-            Services = new ServiceRegistry();
+            Services = new ServiceRegistry(true);
 
             // Database file provider
             Services.AddService<IDatabaseFileProviderService>(new DatabaseFileProviderService(null));
