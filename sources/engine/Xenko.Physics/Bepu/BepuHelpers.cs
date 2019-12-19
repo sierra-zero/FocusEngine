@@ -44,6 +44,47 @@ namespace Xenko.Physics.Bepu
             }
         }
 
+        private static Vector3 getBounds(Entity e)
+        {
+            ModelComponent mc = e.Get<ModelComponent>();
+            if (mc == null || mc.Model == null || mc.Model.Meshes.Count < 0f) return Vector3.Zero;
+
+            Vector3 biggest = Vector3.Zero;
+            for (int i=0; i<mc.Model.Meshes.Count; i++)
+            {
+                Xenko.Rendering.Mesh m = mc.Model.Meshes[i];
+                Vector3 extent = m.BoundingBox.Extent;
+                if (extent.X > biggest.X) biggest.X = extent.X;
+                if (extent.Y > biggest.Y) biggest.Y = extent.Y;
+                if (extent.Z > biggest.Z) biggest.Z = extent.Z;
+            }
+            return biggest * e.Transform.WorldScale();
+        }
+
+        public static Box GenerateBoxOfEntity(Entity e, float scale = 1f)
+        {
+            Vector3 b = getBounds(e) * scale * 2f;
+            return new Box(b.X, b.Y, b.Z);
+        }
+
+        public static Sphere GenerateSphereOfEntity(Entity e, float scale = 1f)
+        {
+            Vector3 b = getBounds(e);
+            return new Sphere(Math.Max(b.Z, Math.Max(b.X, b.Y)) * scale);
+        }
+
+        public static Capsule GenerateCapsuleOfEntity(Entity e, float scale = 1f, bool XZradius = true)
+        {
+            Vector3 b = getBounds(e) * scale;
+            return XZradius ? new Capsule(Math.Max(b.X, b.Z), b.Y * 2f) : new Capsule(b.Y, 2f * Math.Max(b.X, b.Z));
+        }
+
+        public static Cylinder GenerateCylinderOfEntity(Entity e, float scale = 1f, bool XZradius = true)
+        {
+            Vector3 b = getBounds(e) * scale;
+            return XZradius ? new Cylinder(Math.Max(b.X, b.Z), b.Y * 2f) : new Cylinder(b.Y, 2f * Math.Max(b.X, b.Z));
+        }
+
         /// <summary>
         /// Easily makes a Compound shape for you, given a list of individual shapes and how they should be offset.
         /// </summary>
