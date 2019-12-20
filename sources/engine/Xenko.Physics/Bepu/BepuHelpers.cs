@@ -255,18 +255,18 @@ namespace Xenko.Physics.Bepu
         public static unsafe bool GenerateMeshShape(List<Vector3> positions, List<int> indicies, out BepuPhysics.Collidables.Mesh outMesh, Vector3? scale = null)
         {
             // ok, should have what we need to make triangles
-            var memory = stackalloc Triangle[indicies.Count];
-            BepuUtilities.Memory.Buffer<Triangle> triangles = new BepuUtilities.Memory.Buffer<Triangle>(memory, indicies.Count);
+            int triangleCount = indicies.Count / 3;
+            BepuSimulation.instance.pBufferPool.Take<Triangle>(triangleCount, out BepuUtilities.Memory.Buffer<Triangle> triangles);
 
-            for (int i = 0; i < indicies.Count; i += 3)
+            for (int i = 0; i < triangleCount; i ++)
             {
-                triangles[i].A = ToBepu(positions[indicies[i]]);
-                triangles[i].B = ToBepu(positions[indicies[i+1]]);
-                triangles[i].C = ToBepu(positions[indicies[i+2]]);
+                int shiftedi = i * 3;
+                triangles[i].A = ToBepu(positions[indicies[shiftedi]]);
+                triangles[i].B = ToBepu(positions[indicies[shiftedi+1]]);
+                triangles[i].C = ToBepu(positions[indicies[shiftedi+2]]);
             }
 
             outMesh = new Mesh(triangles, new System.Numerics.Vector3(scale?.X ?? 1f, scale?.Y ?? 1f, scale?.Z ?? 1f), BepuSimulation.instance.pBufferPool);
-
             return true;
         }
 

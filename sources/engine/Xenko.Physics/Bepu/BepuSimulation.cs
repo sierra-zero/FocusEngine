@@ -284,7 +284,16 @@ namespace Xenko.Physics.Bepu
         /// </summary>
         public void Dispose()
         {
+            pBufferPool.Clear();
+        }
 
+        /// <summary>
+        /// Free up memory used to store triangles for a mesh collision shape
+        /// </summary>
+        /// <param name="m"></param>
+        public void DisposeMesh(BepuPhysics.Collidables.Mesh m)
+        {
+            m.Dispose(pBufferPool);
         }
 
         public RenderGroup ColliderShapesRenderGroup { get; set; } = RenderGroup.Group0;

@@ -24,7 +24,6 @@ namespace Xenko.Engine
     [Display("BepuPhysics", Expand = ExpandRule.Once)]
     [AllowMultipleComponents]
     [ComponentOrder(3100)]
-    //[ComponentCategory("BepuPhysics")]
     public abstract class BepuPhysicsComponent : ActivableEntityComponent
     {
         protected static Logger logger = GlobalLogger.GetLogger("BepuPhysicsComponent");
