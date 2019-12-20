@@ -98,9 +98,45 @@ namespace Xenko.Physics.Bepu
         }
 
         /// <summary>
+        /// Since you can't have non-convex shapes (e.g. mesh's) in a compound object, this helper will generate a bunch of individual static components to attach to an entity, with each shape.
+        /// </summary>
+        /// <param name="e">Entity to add static components to</param>
+        /// <param name="shapes">shapes that will generate a static component for each</param>
+        /// <param name="offsets">optional offset for each</param>
+        /// <param name="rotations">optional rotation for each</param>
+        public static void GenerateStaticComponents(Entity e, List<IShape> shapes, List<Vector3> offsets = null, List<Quaternion> rotations = null)
+        {
+            for (int i=0; i<shapes.Count; i++)
+            {
+                BepuStaticColliderComponent sc = new BepuStaticColliderComponent();
+                sc.ColliderShape = shapes[i];
+                sc.Position = offsets?[i] ?? Vector3.Zero;
+                sc.Rotation = rotations?[i] ?? Quaternion.Identity;
+                e.Add(sc);
+            }
+        }
+
+        /// <summary>
+        /// Disposes of all mesh buffers used on an entity, of all static colliders
+        /// </summary>
+        /// <param name="e">Entity to dispose of static mesh colliders</param>
+        public static void DisposeAllStaticMeshes(Entity e)
+        {
+            foreach(BepuStaticColliderComponent sc in e.GetAll<BepuStaticColliderComponent>())
+            {
+                if (sc.ColliderShape is Mesh m)
+                {
+                    sc.AddedToScene = false;
+                    m.Dispose(BepuSimulation.instance.pBufferPool);
+                    sc.ColliderShape = null;
+                }
+            }
+        }
+
+        /// <summary>
         /// Easily makes a Compound shape for you, given a list of individual shapes and how they should be offset.
         /// </summary>
-        /// <param name="shapes">List of shapes, must be IConvexShape if isDynamic is true</param>
+        /// <param name="shapes">List of convex shapes</param>
         /// <param name="offsets">Matching length list of offsets of bodies, can be null if nothing has an offset</param>
         /// <param name="rotations">Matching length list of rotations of bodies, can be null if nothing is rotated</param>
         /// <param name="isDynamic">True if intended to use in a dynamic situation, false if kinematic or static</param>
