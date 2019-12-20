@@ -57,7 +57,7 @@ namespace Xenko.Physics.Bepu
             return biggest * e.Transform.WorldScale();
         }
 
-        public static IShape OffsetSingleShape(IShape shape, Vector3? offset = null, Quaternion? rotation = null)
+        public static IShape OffsetSingleShape(IConvexShape shape, Vector3? offset = null, Quaternion? rotation = null)
         {
             if (offset.HasValue == false && rotation.HasValue == false) return shape;
 
@@ -105,7 +105,7 @@ namespace Xenko.Physics.Bepu
         /// <param name="rotations">Matching length list of rotations of bodies, can be null if nothing is rotated</param>
         /// <param name="isDynamic">True if intended to use in a dynamic situation, false if kinematic or static</param>
         /// <returns></returns>
-        public static ICompoundShape MakeCompound(List<IShape> shapes, List<Vector3> offsets = null, List<Quaternion> rotations = null, bool isDynamic = true, int bigThreshold = 5)
+        public static ICompoundShape MakeCompound(List<IConvexShape> shapes, List<Vector3> offsets = null, List<Quaternion> rotations = null, bool isDynamic = true, int bigThreshold = 5)
         {
             using (var compoundBuilder = new CompoundBuilder(BepuSimulation.instance.pBufferPool, BepuSimulation.instance.internalSimulation.Shapes, shapes.Count))
             {
