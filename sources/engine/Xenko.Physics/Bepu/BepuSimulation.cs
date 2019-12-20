@@ -29,7 +29,20 @@ namespace Xenko.Physics.Bepu
         private const CollisionFilterGroupFlags DefaultFlags = CollisionFilterGroupFlags.AllFilter;
 
         public BepuPhysics.Simulation internalSimulation;
-        public static BepuSimulation instance;
+
+        private static BepuSimulation _instance;
+        public static BepuSimulation instance
+        {
+            get
+            {
+                if (_instance == null) BepuHelpers.AssureBepuSystemCreated();
+                return _instance;
+            }
+            private set
+            {
+                _instance = value;
+            }
+        }
 
         private PoseIntegratorCallbacks poseCallbacks;
         internal BufferPool pBufferPool;

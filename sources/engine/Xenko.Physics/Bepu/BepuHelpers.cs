@@ -1,10 +1,3 @@
-/*
- * - need to switch between which list index is processing for contact collection
- *   - need to clear list of index we will start populating
- * - throw out contact information without normal or position information...? when count == 0...?
- *
- */
-
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -23,7 +16,10 @@ namespace Xenko.Physics.Bepu
     {
         internal static PhysicsSystem physicsSystem;
 
-        internal static void AssureServiceAdded()
+        /// <summary>
+        /// Good to call this at the start of your application. Will automatically get called in some situations, but not be soon enough.
+        /// </summary>
+        public static void AssureBepuSystemCreated()
         {
             if (physicsSystem == null)
             {
@@ -64,6 +60,8 @@ namespace Xenko.Physics.Bepu
         public static IShape OffsetSingleShape(IShape shape, Vector3? offset = null, Quaternion? rotation = null)
         {
             if (offset.HasValue == false && rotation.HasValue == false) return shape;
+
+            if (shape is ICompoundShape) throw new InvalidOperationException("Cannot offset a compound shape. Can't support nested compounds.");
 
             using (var compoundBuilder = new CompoundBuilder(BepuSimulation.instance.pBufferPool, BepuSimulation.instance.internalSimulation.Shapes, 1))
             {
@@ -116,6 +114,8 @@ namespace Xenko.Physics.Bepu
                 //All allocations from the buffer pool used for the final compound shape will be disposed when the demo is disposed. Don't have to worry about leaks in these demos.
                 for (int i=0; i<shapes.Count; i++)
                 {
+                    if (shapes[i] is ICompoundShape) throw new InvalidOperationException("Cannot include compounds in another compound shape.");
+
                     if (isDynamic)
                     {
                         compoundBuilder.AddEasy(shapes[i] as IConvexShape, new BepuPhysics.RigidPose(ToBepu(offsets?[i] ?? Vector3.Zero), ToBepu(rotations?[i] ?? Quaternion.Identity)), 1f);

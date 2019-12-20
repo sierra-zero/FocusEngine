@@ -46,7 +46,7 @@ namespace Xenko.Engine
 
         public BepuPhysicsComponent()
         {
-            BepuHelpers.AssureServiceAdded();
+            BepuHelpers.AssureBepuSystemCreated();
         }
 
         /// <summary>
