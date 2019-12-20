@@ -61,6 +61,20 @@ namespace Xenko.Physics.Bepu
             return biggest * e.Transform.WorldScale();
         }
 
+        public static IShape OffsetSingleShape(IShape shape, Vector3? offset = null, Quaternion? rotation = null)
+        {
+            if (offset.HasValue == false && rotation.HasValue == false) return shape;
+
+            using (var compoundBuilder = new CompoundBuilder(BepuSimulation.instance.pBufferPool, BepuSimulation.instance.internalSimulation.Shapes, 1))
+            {
+                compoundBuilder.AddForKinematicEasy(shape, new BepuPhysics.RigidPose(ToBepu(offset ?? Vector3.Zero), ToBepu(rotation ?? Quaternion.Identity)), 1f);
+
+                compoundBuilder.BuildKinematicCompound(out var children);
+
+                return new Compound(children);
+            }
+        }
+
         public static Box GenerateBoxOfEntity(Entity e, float scale = 1f)
         {
             Vector3 b = getBounds(e) * scale * 2f;
