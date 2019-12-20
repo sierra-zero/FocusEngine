@@ -15,13 +15,9 @@ namespace Xenko.Physics
     public class HeightfieldColliderShapeDesc : IInlineColliderShapeDesc
     {
         [DataMember(10)]
-        public Heightmap InitialHeights { get; set; }
-
-        [DataMember(30)]
-        public HeightfieldTypes HeightfieldType;
-
-        [DataMember(40)]
-        public Int2 HeightStickSize;
+        [NotNull]
+        [Display(Expand = ExpandRule.Always)]
+        public IInitialHeightData InitialHeights { get; set; } = new HeightDataFromHeightmap();
 
         [DataMember(50)]
         public Vector2 HeightRange;
@@ -45,9 +41,6 @@ namespace Xenko.Physics
 
         public HeightfieldColliderShapeDesc()
         {
-            InitialHeights = null;
-            HeightfieldType = HeightfieldTypes.Float;
-            HeightStickSize = new Int2(65, 65);
             HeightRange = new Vector2(-10, 10);
             HeightScale = new HeightScaleFromHeightRange();
             FlipQuadEdges = false;
@@ -75,12 +68,15 @@ namespace Xenko.Physics
             var initialHeightsComparison = other.InitialHeights?.Match(InitialHeights) ?? InitialHeights == null;
 
             return initialHeightsComparison &&
-                other.HeightfieldType == HeightfieldType &&
-                other.HeightStickSize == HeightStickSize &&
                 other.HeightRange == HeightRange &&
                 heightScaleComparison &&
                 other.FlipQuadEdges == FlipQuadEdges &&
                 other.IsRecenteringOffsetted == IsRecenteringOffsetted;
+        }
+
+        public static bool IsValidHeightStickSize(Int2 size)
+        {
+            return size.X >= HeightfieldColliderShape.MinimumHeightStickWidth && size.Y >= HeightfieldColliderShape.MinimumHeightStickLength;
         }
 
         private static void FillHeights<T>(UnmanagedArray<T> unmanagedArray, T value) where T : struct
@@ -134,20 +130,20 @@ namespace Xenko.Physics
             switch (InitialHeights.HeightType)
             {
                 case HeightfieldTypes.Float:
-                {
-                    unmanagedArray = CreateHeights(arrayLength, InitialHeights.Floats);
-                    break;
-                }
+                    {
+                        unmanagedArray = CreateHeights(arrayLength, InitialHeights.Floats);
+                        break;
+                    }
                 case HeightfieldTypes.Short:
-                {
-                    unmanagedArray = CreateHeights(arrayLength, InitialHeights.Shorts);
-                    break;
-                }
+                    {
+                        unmanagedArray = CreateHeights(arrayLength, InitialHeights.Shorts);
+                        break;
+                    }
                 case HeightfieldTypes.Byte:
-                {
-                    unmanagedArray = CreateHeights(arrayLength, InitialHeights.Bytes);
-                    break;
-                }
+                    {
+                        unmanagedArray = CreateHeights(arrayLength, InitialHeights.Bytes);
+                        break;
+                    }
 
                 default:
                     return null;
@@ -166,10 +162,10 @@ namespace Xenko.Physics
                             HeightRange.Y,
                             FlipQuadEdges
                         )
-                        {
-                            LocalOffset = LocalOffset + new Vector3(0, offsetToCancelRecenter, 0),
-                            LocalRotation = LocalRotation,
-                        };
+            {
+                LocalOffset = LocalOffset + new Vector3(0, offsetToCancelRecenter, 0),
+                LocalRotation = LocalRotation,
+            };
 
             return shape;
         }

@@ -26,7 +26,7 @@ namespace Xenko.Assets.Navigation
 {
     [AssetCompiler(typeof(NavigationMeshAsset), typeof(AssetCompilationContext))]
     class NavigationMeshAssetCompiler : AssetCompilerBase
-    { 
+    {
         public override IEnumerable<BuildDependencyInfo> GetInputTypes(AssetItem assetItem)
         {
             yield return new BuildDependencyInfo(typeof(SceneAsset), typeof(AssetCompilationContext), BuildDependencyType.CompileAsset);
@@ -62,6 +62,21 @@ namespace Xenko.Assets.Navigation
                                 if (assetReference != null)
                                 {
                                     yield return new ObjectUrl(UrlType.Content, assetReference.Url);
+                                }
+                            }
+                            else if (desc is HeightfieldColliderShapeDesc)
+                            {
+                                var heightfieldDesc = desc as HeightfieldColliderShapeDesc;
+                                var initialHeights = heightfieldDesc?.InitialHeights as HeightDataFromHeightmap;
+
+                                if (initialHeights?.Heightmap != null)
+                                {
+                                    var url = AttachedReferenceManager.GetUrl(initialHeights.Heightmap);
+
+                                    if (!string.IsNullOrEmpty(url))
+                                    {
+                                        yield return new ObjectUrl(UrlType.Content, url);
+                                    }
                                 }
                             }
                         }
@@ -105,7 +120,7 @@ namespace Xenko.Assets.Navigation
                 gameSettingsAsset = context.GetGameSettingsAsset();
                 asset = value;
                 assetUrl = url;
-                
+
                 Version = 1; // Removed separate debug model stored in the navigation mesh
             }
 
@@ -116,11 +131,11 @@ namespace Xenko.Assets.Navigation
                 EnsureClonedSceneAndHash();
                 writer.Write(sceneHash);
                 writer.Write(asset.SelectedGroups);
-                
+
                 var navigationSettings = gameSettingsAsset.GetOrCreate<NavigationSettings>();
                 writer.Write(navigationSettings.Groups);
             }
-            
+
             protected override Task<ResultStatus> DoCommandOverride(ICommandContext commandContext)
             {
                 var intermediateDataId = ComputeAssetIntermediateDataId();
@@ -131,7 +146,7 @@ namespace Xenko.Assets.Navigation
 
                 foreach (var colliderData in staticColliderDatas)
                     navigationMeshBuilder.Add(colliderData);
-                
+
                 var navigationSettings = gameSettingsAsset.GetOrCreate<NavigationSettings>();
                 var groupsLookup = navigationSettings.Groups.ToDictionary(x => x.Id, x => x);
 
@@ -151,7 +166,7 @@ namespace Xenko.Assets.Navigation
                 }
 
                 var result = navigationMeshBuilder.Build(asset.BuildSettings, groups, asset.IncludedCollisionGroups, boundingBoxes, CancellationToken.None);
-                
+
                 // Unload loaded collider shapes
                 foreach (var pair in loadedColliderShapes)
                 {
@@ -264,7 +279,7 @@ namespace Xenko.Assets.Navigation
 
                             if (boundingBoxComponent == null && colliderComponent == null)
                                 continue;
-                            
+
                             // Update world transform
                             entity.Transform.UpdateWorldMatrix();
 
@@ -306,22 +321,21 @@ namespace Xenko.Assets.Navigation
                                             }
                                             shapeAssetDesc.Shape = loadedColliderShape;
                                         }
-                                        else
+                                        else if (desc is HeightfieldColliderShapeDesc)
                                         {
-                                            if (desc.GetType() == typeof(HeightfieldColliderShapeDesc))
+                                            var heightfieldDesc = desc as HeightfieldColliderShapeDesc;
+                                            var initialHeights = heightfieldDesc?.InitialHeights as HeightDataFromHeightmap;
+
+                                            if (initialHeights?.Heightmap != null)
                                             {
-                                                var heightfieldDesc = ((HeightfieldColliderShapeDesc)desc);
-                                                if (heightfieldDesc.InitialHeights != null)
+                                                var assetReference = AttachedReferenceManager.GetAttachedReference(initialHeights.Heightmap);
+                                                object loadedHeightfieldInitialData;
+                                                if (!loadedHeightfieldInitialDatas.TryGetValue(assetReference.Url, out loadedHeightfieldInitialData))
                                                 {
-                                                    var assetReference = AttachedReferenceManager.GetAttachedReference(heightfieldDesc.InitialHeights);
-                                                    object loadedHeightfieldInitialData;
-                                                    if (!loadedHeightfieldInitialDatas.TryGetValue(assetReference.Url, out loadedHeightfieldInitialData))
-                                                    {
-                                                        loadedHeightfieldInitialData = contentManager.Load(typeof(Heightmap), assetReference.Url);
-                                                        loadedHeightfieldInitialDatas.Add(assetReference.Url, loadedHeightfieldInitialData);
-                                                    }
-                                                    heightfieldDesc.InitialHeights = loadedHeightfieldInitialData as Heightmap;
+                                                    loadedHeightfieldInitialData = contentManager.Load(typeof(Heightmap), assetReference.Url);
+                                                    loadedHeightfieldInitialDatas.Add(assetReference.Url, loadedHeightfieldInitialData);
                                                 }
+                                                initialHeights.Heightmap = loadedHeightfieldInitialData as Heightmap;
                                             }
                                         }
                                     }

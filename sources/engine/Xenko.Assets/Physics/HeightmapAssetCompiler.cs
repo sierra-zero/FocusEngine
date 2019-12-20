@@ -1,7 +1,6 @@
 // Copyright (c) Xenko contributors (https://xenko.com)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Xenko.Assets.Textures;
 using Xenko.Core.Assets;
@@ -69,6 +68,11 @@ namespace Xenko.Assets.Physics
                                 Parameters.Resizing.Size :
                                 new Int2(texImage.Width, texImage.Height);
 
+                            if (!HeightfieldColliderShapeDesc.IsValidHeightStickSize(size))
+                            {
+                                continue;
+                            }
+
                             if (texImage.Width != size.X || texImage.Height != size.Y)
                             {
                                 textureTool.Resize(texImage, size.X, size.Y, Filter.Rescaling.Nearest);
@@ -76,7 +80,7 @@ namespace Xenko.Assets.Physics
 
                             // Convert pixel format of the image
 
-                            var heightfieldType = Parameters.Type;
+                            var heightfieldType = Parameters.HeightType;
 
                             switch (heightfieldType)
                             {
@@ -214,9 +218,8 @@ namespace Xenko.Assets.Physics
 
                                 // Set rest of properties
 
-                                heightmap.HeightfieldType = heightfieldType;
-                                heightmap.Width = size.X;
-                                heightmap.Length = size.Y;
+                                heightmap.HeightType = heightfieldType;
+                                heightmap.Size = size;
                             }
                         }
                     }
