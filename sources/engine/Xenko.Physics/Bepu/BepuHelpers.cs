@@ -104,7 +104,8 @@ namespace Xenko.Physics.Bepu
         /// <param name="shapes">shapes that will generate a static component for each</param>
         /// <param name="offsets">optional offset for each</param>
         /// <param name="rotations">optional rotation for each</param>
-        public static void GenerateStaticComponents(Entity e, List<IShape> shapes, List<Vector3> offsets = null, List<Quaternion> rotations = null)
+        public static void GenerateStaticComponents(Entity e, List<IShape> shapes, List<Vector3> offsets = null, List<Quaternion> rotations = null,
+                                                    CollisionFilterGroups group = CollisionFilterGroups.DefaultFilter, CollisionFilterGroupFlags collidesWith = CollisionFilterGroupFlags.AllFilter)
         {
             for (int i=0; i<shapes.Count; i++)
             {
@@ -112,6 +113,8 @@ namespace Xenko.Physics.Bepu
                 sc.ColliderShape = shapes[i];
                 sc.Position = offsets?[i] ?? Vector3.Zero;
                 sc.Rotation = rotations?[i] ?? Quaternion.Identity;
+                sc.CanCollideWith = collidesWith;
+                sc.CollisionGroup = group;
                 e.Add(sc);
             }
         }
