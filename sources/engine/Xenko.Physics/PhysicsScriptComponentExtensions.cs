@@ -2,6 +2,7 @@
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using Xenko.Engine;
+using Xenko.Physics.Bepu;
 
 namespace Xenko.Physics
 {
@@ -18,6 +19,16 @@ namespace Xenko.Physics
         public static Simulation GetSimulation(this ScriptComponent scriptComponent)
         {
             return scriptComponent.SceneSystem.SceneInstance.GetProcessor<PhysicsProcessor>()?.Simulation;
+        }
+
+        /// <summary>
+        /// Gets the curent <see cref="BepuSimulation"/>.
+        /// </summary>
+        /// <param name="scriptComponent">The script component to query bepu physics from</param>
+        /// <returns>The simulation object or null if there are no bepu simulation running for the current scene.</returns>
+        public static BepuSimulation GetBepuSimulation(this ScriptComponent scriptComponent)
+        {
+            return BepuSimulation.instance;
         }
     }
 }
