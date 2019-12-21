@@ -432,6 +432,25 @@ namespace Xenko.Physics.Bepu
         /// <param name="filterGroup">The collision group of this raycast</param>
         /// <param name="hitGroups">The collision group that this raycast can collide with</param>
         /// <returns>The list with hit results.</returns>
+        public BepuHitResult Raycast(Vector3 from, Vector3 to, CollisionFilterGroupFlags hitGroups = DefaultFlags)
+        {
+            Vector3 diff = to - from;
+            float length = diff.Length();
+            float inv = 1.0f / length;
+            diff.X *= inv;
+            diff.Y *= inv;
+            diff.Z *= inv;
+            return Raycast(from, diff, length, hitGroups);
+        }
+
+        /// <summary>
+        /// Raycasts and returns the closest hit
+        /// </summary>
+        /// <param name="from">From.</param>
+        /// <param name="to">To.</param>
+        /// <param name="filterGroup">The collision group of this raycast</param>
+        /// <param name="hitGroups">The collision group that this raycast can collide with</param>
+        /// <returns>The list with hit results.</returns>
         public BepuHitResult Raycast(Vector3 from, Vector3 direction, float length, CollisionFilterGroupFlags hitGroups = DefaultFlags)
         {
             RayHitClosestHandler rhch = new RayHitClosestHandler()
@@ -441,6 +460,26 @@ namespace Xenko.Physics.Bepu
             };
             internalSimulation.RayCast(new System.Numerics.Vector3(from.X, from.Y, from.Z), new System.Numerics.Vector3(direction.X, direction.Y, direction.Z), length, ref rhch);
             return rhch.HitCollidable;
+        }
+
+        /// <summary>
+        /// Raycasts penetrating any shape the ray encounters.
+        /// Filtering by CollisionGroup
+        /// </summary>
+        /// <param name="from">From.</param>
+        /// <param name="to">To.</param>
+        /// <param name="resultsOutput">The list to fill with results.</param>
+        /// <param name="filterGroup">The collision group of this raycast</param>
+        /// <param name="hitGroups">The collision group that this raycast can collide with</param>
+        public void RaycastPenetrating(Vector3 from, Vector3 to, List<BepuHitResult> resultsOutput, CollisionFilterGroupFlags hitGroups = DefaultFlags)
+        {
+            Vector3 diff = to - from;
+            float length = diff.Length();
+            float inv = 1.0f / length;
+            diff.X *= inv;
+            diff.Y *= inv;
+            diff.Z *= inv;
+            RaycastPenetrating(from, diff, length, resultsOutput, hitGroups);
         }
 
         /// <summary>
@@ -623,6 +662,27 @@ namespace Xenko.Physics.Bepu
         /// <param name="filterFlags">The collision group that this shape sweep can collide with</param>
         /// <returns></returns>
         /// <exception cref="System.Exception">This kind of shape cannot be used for a ShapeSweep.</exception>
+        public BepuHitResult ShapeSweep(IConvexShape shape, Vector3 position, Xenko.Core.Mathematics.Quaternion rotation, Vector3 endpoint, CollisionFilterGroupFlags hitGroups = DefaultFlags)
+        {
+            Vector3 diff = endpoint - position;
+            float length = diff.Length();
+            float inv = 1.0f / length;
+            diff.X *= inv;
+            diff.Y *= inv;
+            diff.Z *= inv;
+            return ShapeSweep(shape, position, rotation, diff, length, hitGroups);
+        }
+
+        /// <summary>
+        /// Performs a sweep test using a collider shape and returns the closest hit
+        /// </summary>
+        /// <param name="shape">The shape.</param>
+        /// <param name="from">From.</param>
+        /// <param name="to">To.</param>
+        /// <param name="filterGroup">The collision group of this shape sweep</param>
+        /// <param name="filterFlags">The collision group that this shape sweep can collide with</param>
+        /// <returns></returns>
+        /// <exception cref="System.Exception">This kind of shape cannot be used for a ShapeSweep.</exception>
         public BepuHitResult ShapeSweep(IConvexShape shape, Vector3 position, Xenko.Core.Mathematics.Quaternion rotation, Vector3 direction, float length, CollisionFilterGroupFlags hitGroups = DefaultFlags)
         {
             SweepTestFirst sshh = new SweepTestFirst()
@@ -640,6 +700,27 @@ namespace Xenko.Physics.Bepu
             rp.Orientation.W = rotation.W;
             internalSimulation.Sweep(shape, rp, new BodyVelocity(new System.Numerics.Vector3(direction.X, direction.Y, direction.Z)), length, pBufferPool, ref sshh);
             return sshh.result;
+        }
+
+        /// <summary>
+        /// Performs a sweep test using a collider shape and never stops until "to"
+        /// </summary>
+        /// <param name="shape">The shape.</param>
+        /// <param name="from">From.</param>
+        /// <param name="to">To.</param>
+        /// <param name="resultsOutput">The list to fill with results.</param>
+        /// <param name="filterGroup">The collision group of this shape sweep</param>
+        /// <param name="filterFlags">The collision group that this shape sweep can collide with</param>
+        /// <exception cref="System.Exception">This kind of shape cannot be used for a ShapeSweep.</exception>
+        public void ShapeSweepPenetrating(IConvexShape shape, Vector3 position, Xenko.Core.Mathematics.Quaternion rotation, Vector3 endpoint, List<BepuHitResult> output, CollisionFilterGroupFlags hitGroups = DefaultFlags)
+        {
+            Vector3 diff = endpoint - position;
+            float length = diff.Length();
+            float inv = 1.0f / length;
+            diff.X *= inv;
+            diff.Y *= inv;
+            diff.Z *= inv;
+            ShapeSweepPenetrating(shape, position, rotation, diff, length, output, hitGroups);
         }
 
         /// <summary>
