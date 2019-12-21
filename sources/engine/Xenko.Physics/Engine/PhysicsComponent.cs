@@ -393,6 +393,9 @@ namespace Xenko.Engine
             }
         }
 
+
+        private Dictionary<PhysicsComponent, CollisionState> ignoreCollisionBuffer;
+        
         /// <summary>
         /// When updating the associated TransformComponent, should we not set rotation?
         /// </summary>
@@ -773,6 +776,15 @@ namespace Xenko.Engine
             BoneIndex = -1;
 
             OnAttach();
+
+            if(ignoreCollisionBuffer != null && NativeCollisionObject != null)
+            {
+                foreach(var kvp in ignoreCollisionBuffer)
+                {
+                    IgnoreCollisionWith(kvp.Key, kvp.Value);
+                }
+                ignoreCollisionBuffer = null;
+            }
         }
 
         internal void Detach()
@@ -856,6 +868,24 @@ namespace Xenko.Engine
         public void IgnoreCollisionWith(PhysicsComponent other, CollisionState state)
         {
             var otherNative = other.NativeCollisionObject;
+            if(NativeCollisionObject == null || other.NativeCollisionObject == null)
+            {
+                if(ignoreCollisionBuffer != null || other.ignoreCollisionBuffer == null)
+                {
+                    if(ignoreCollisionBuffer == null)
+                        ignoreCollisionBuffer = new Dictionary<PhysicsComponent, CollisionState>();
+                    if(ignoreCollisionBuffer.ContainsKey(other))
+                        ignoreCollisionBuffer[other] = state;
+                    else
+                        ignoreCollisionBuffer.Add(other, state);
+                }
+                else
+                {
+                    other.IgnoreCollisionWith(this, state);
+                }
+                return;
+            }
+            
             switch(state)
             {
                 // Note that we're calling 'SetIgnoreCollisionCheck' on both objects as bullet doesn't
@@ -886,7 +916,22 @@ namespace Xenko.Engine
 
         public bool IsIgnoringCollisionWith(PhysicsComponent other)
         {
-            return ! NativeCollisionObject.CheckCollideWith(other.NativeCollisionObject);
+            if(ignoreCollisionBuffer != null)
+            {
+                return ignoreCollisionBuffer.TryGetValue(other, out var state) && state == CollisionState.Ignore;
+            }
+            else if(other.ignoreCollisionBuffer != null)
+            {
+                return other.IsIgnoringCollisionWith(this);
+            }
+            else if(other.NativeCollisionObject == null || NativeCollisionObject == null)
+            {
+                return false;
+            }
+            else
+            {
+                return ! NativeCollisionObject.CheckCollideWith(other.NativeCollisionObject);
+            }
         }
 
         [DataContract]
