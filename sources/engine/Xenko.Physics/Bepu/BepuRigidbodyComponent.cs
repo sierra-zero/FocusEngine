@@ -426,7 +426,7 @@ namespace Xenko.Physics.Bepu
                 bodyDescription.Pose.Orientation.X = value.X;
                 bodyDescription.Pose.Orientation.Y = value.Y;
                 bodyDescription.Pose.Orientation.Z = value.Z;
-                bodyDescription.Pose.Orientation.Z = value.W;
+                bodyDescription.Pose.Orientation.W = value.W;
 
                 if (InternalBody.Exists)
                 {

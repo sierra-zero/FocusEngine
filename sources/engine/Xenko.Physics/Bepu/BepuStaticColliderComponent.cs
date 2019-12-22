@@ -65,7 +65,7 @@ namespace Xenko.Physics.Bepu
                 staticDescription.Pose.Orientation.X = value.X;
                 staticDescription.Pose.Orientation.Y = value.Y;
                 staticDescription.Pose.Orientation.Z = value.Z;
-                staticDescription.Pose.Orientation.Z = value.W;
+                staticDescription.Pose.Orientation.W = value.W;
 
                 if (InternalStatic.Exists)
                 {
