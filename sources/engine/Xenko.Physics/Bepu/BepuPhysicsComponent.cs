@@ -39,7 +39,7 @@ namespace Xenko.Engine
         /// Allow BepuHelpers.AddAllBodiesToSimulation to add this?
         /// </summary>
         [DataMember]
-        public bool AllowHelperToAdd { get; set; } = true;
+        public bool AllowHelperToManage { get; set; } = true;
 
         [DataMemberIgnore]
         public virtual bool AddedToScene { get; set; }
