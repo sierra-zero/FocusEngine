@@ -351,7 +351,7 @@ namespace Xenko.Physics.Bepu
         struct RayHitClosestHandler : IRayHitHandler
         {
             public CollisionFilterGroupFlags findGroups;
-            public float T, startLength;
+            public float furthestHitSoFar, startLength;
             public BepuHitResult HitCollidable;
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public bool AllowTest(CollidableReference collidable)
@@ -368,10 +368,10 @@ namespace Xenko.Physics.Bepu
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public void OnRayHit(in RayData ray, ref float maximumT, float t, in System.Numerics.Vector3 normal, CollidableReference collidable, int childIndex)
             {
-                if (t < T)
+                if (t < furthestHitSoFar)
                 {
                     //Cache the earliest impact.
-                    T = t;
+                    furthestHitSoFar = t;
                     HitCollidable.HitFraction = t / startLength;
                     HitCollidable.Normal.X = normal.X;
                     HitCollidable.Normal.Y = normal.Y;
@@ -456,7 +456,8 @@ namespace Xenko.Physics.Bepu
             RayHitClosestHandler rhch = new RayHitClosestHandler()
             {
                 findGroups = hitGroups,
-                startLength = length
+                startLength = length,
+                furthestHitSoFar = float.MaxValue
             };
             internalSimulation.RayCast(new System.Numerics.Vector3(from.X, from.Y, from.Z), new System.Numerics.Vector3(direction.X, direction.Y, direction.Z), length, ref rhch);
             return rhch.HitCollidable;
@@ -506,7 +507,7 @@ namespace Xenko.Physics.Bepu
         {
             public CollisionFilterGroupFlags hitGroups;
             public BepuHitResult result;
-            public float T, startLength;
+            public float furthestHitSoFar, startLength;
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public bool AllowTest(CollidableReference collidable)
@@ -523,9 +524,9 @@ namespace Xenko.Physics.Bepu
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public void OnHit(ref float maximumT, float t, in System.Numerics.Vector3 hitLocation, in System.Numerics.Vector3 hitNormal, CollidableReference collidable)
             {
-                if (t < T)
+                if (t < furthestHitSoFar)
                 {
-                    T = t;
+                    furthestHitSoFar = t;
                     result.Succeeded = true;
                     result.Collider = getFromReference(collidable);
                     result.Normal.X = hitNormal.X;
@@ -549,7 +550,7 @@ namespace Xenko.Physics.Bepu
                 result.Succeeded = true;
                 result.Collider = getFromReference(collidable);
                 maximumT = 0;
-                T = 0;
+                furthestHitSoFar = 0;
             }
         }
 
@@ -611,6 +612,7 @@ namespace Xenko.Physics.Bepu
             {
                 hitGroups = hitGroups,
                 startLength = 0f,
+                furthestHitSoFar = float.MaxValue
             };
             RigidPose rp = new RigidPose();
             rp.Position.X = position.X;
@@ -689,6 +691,7 @@ namespace Xenko.Physics.Bepu
             {
                 hitGroups = hitGroups,
                 startLength = length,
+                furthestHitSoFar = float.MaxValue
             };
             RigidPose rp = new RigidPose();
             rp.Position.X = position.X;
