@@ -196,6 +196,18 @@ namespace Xenko.Physics.Bepu
                 SetBodiesInSimulation(e, add);
         }
 
+        /// <summary>
+        /// Shortcut to clearing the simulation of all bodies. Optionally clears all the buffers too (e.g. mesh colliders), which is enabled by default
+        /// </summary>
+        public static void ClearSimulation(bool clearBuffers = true)
+        {
+            BepuSimulation.instance.Clear(clearBuffers);
+        }
+
+        /// <summary>
+        /// Generate a mesh collider from a given mesh. The mesh must have a readable buffer behind it to generate veriticies from
+        /// </summary>
+        /// <returns>Returns false if no mesh could be made</returns>
         public static unsafe bool GenerateMeshShape(Xenko.Rendering.Mesh modelMesh, out BepuPhysics.Collidables.Mesh outMesh, Vector3? scale = null)
         {
             List<Vector3> positions;

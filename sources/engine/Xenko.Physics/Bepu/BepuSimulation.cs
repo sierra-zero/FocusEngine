@@ -62,6 +62,26 @@ namespace Xenko.Physics.Bepu
 
         internal List<BepuRigidbodyComponent> AllRigidbodies = new List<BepuRigidbodyComponent>();
 
+        /// <summary>
+        /// Clears out the whole simulation of bodies, optionally clears all related buffers (like meshes) too
+        /// </summary>
+        /// <param name="clearBuffers">Clear out all buffers, like mesh shapes? Defaults to true</param>
+        public void Clear(bool clearBuffers = true)
+        {
+            internalSimulation.Clear();
+
+            if (clearBuffers) pBufferPool.Clear();
+
+            for (int i = 0; i < AllRigidbodies.Count; i++)
+                AllRigidbodies[i].AddedHandle = -1;
+            foreach (BepuStaticColliderComponent sc in StaticMappings.Values)
+                sc.AddedHandle = -1;
+
+            StaticMappings.Clear();
+            RigidMappings.Clear();
+            AllRigidbodies.Clear();
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static BepuRigidbodyComponent getRigidFromIndex(int index)
         {
@@ -297,7 +317,7 @@ namespace Xenko.Physics.Bepu
         /// </summary>
         public void Dispose()
         {
-            pBufferPool.Clear();
+            Clear(true);
         }
 
         /// <summary>
