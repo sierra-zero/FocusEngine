@@ -54,6 +54,9 @@ namespace Xenko.Physics.Bepu
         /// </value>
         public bool IsActive => InternalBody.Awake;
 
+        /// <summary>
+        /// Use continuous collision detection? Set greater than 0 to use, 0 or less to disable
+        /// </summary>
         [DataMember(67)]
         public float CcdMotionThreshold
         {
@@ -64,12 +67,14 @@ namespace Xenko.Physics.Bepu
             set
             {
                 bodyDescription.Collidable.Continuity.SweepConvergenceThreshold = value;
+                bodyDescription.Collidable.Continuity.Mode = value > 0 ? ContinuousDetectionMode.Continuous : ContinuousDetectionMode.Discrete;
+                bodyDescription.Collidable.Continuity.MinimumSweepTimestep = value > 0 ? 1e-3f : 0f;
 
                 if (InternalBody.Exists)
-                    InternalBody.Collidable.Continuity.SweepConvergenceThreshold = value;
+                    InternalBody.Collidable.Continuity = bodyDescription.Collidable.Continuity;
             }
         }
-
+        
         /// <summary>
         /// Gets or sets if this element will store collisions in CurrentPhysicalContacts. Uses less CPU than ProcessCollisions
         /// </summary>
@@ -161,17 +166,9 @@ namespace Xenko.Physics.Bepu
         }
 
         /// <summary>
-        /// Gets or sets the rolling friction of this element
+        /// How slow does this need to be to sleep? Set less than 0 to never sleep
         /// </summary>
-        /// <value>
-        /// true, false
-        /// </value>
-        /// <userdoc>
-        /// The rolling friction
-        /// </userdoc>
-        [DataMember(66)]
-        public float RollingFriction => 0f;
-
+        [DataMember]
         public float SleepThreshold
         {
             get
@@ -249,6 +246,9 @@ namespace Xenko.Physics.Bepu
             }
         }
 
+        /// <summary>
+        /// If you made a modification to the existing ColliderShape (like changed its radius), try reloading it via this function.
+        /// </summary>
         public void ReloadColliderShape()
         {
             if (_myshape == null || AddedToScene == false) return;
@@ -368,8 +368,7 @@ namespace Xenko.Physics.Bepu
         /// <param name="impulse">The impulse.</param>
         public void ApplyImpulse(Vector3 impulse)
         {
-            System.Numerics.Vector3 i = new System.Numerics.Vector3(impulse.X, impulse.Y, impulse.Z);
-            InternalBody.ApplyLinearImpulse(i);
+            InternalBody.ApplyLinearImpulse(BepuHelpers.ToBepu(impulse));
         }
 
         /// <summary>
@@ -379,9 +378,7 @@ namespace Xenko.Physics.Bepu
         /// <param name="localOffset">The local offset.</param>
         public void ApplyImpulse(Vector3 impulse, Vector3 localOffset)
         {
-            System.Numerics.Vector3 i = new System.Numerics.Vector3(impulse.X, impulse.Y, impulse.Z);
-            System.Numerics.Vector3 o = new System.Numerics.Vector3(localOffset.X, localOffset.Y, localOffset.Z);
-            InternalBody.ApplyImpulse(i, o);
+            InternalBody.ApplyImpulse(BepuHelpers.ToBepu(impulse), BepuHelpers.ToBepu(localOffset));
         }
 
         /// <summary>

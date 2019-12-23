@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Text;
 using BepuPhysics.Collidables;
 using BepuPhysics.Constraints;
@@ -309,21 +310,25 @@ namespace Xenko.Physics.Bepu
             return true;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static unsafe System.Numerics.Vector3 ToBepu(Xenko.Core.Mathematics.Vector3 v)
         {
             return *((System.Numerics.Vector3*)(void*)&v);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static unsafe Xenko.Core.Mathematics.Vector3 ToXenko(System.Numerics.Vector3 v)
         {
             return *((Xenko.Core.Mathematics.Vector3*)(void*)&v);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static unsafe Xenko.Core.Mathematics.Quaternion ToXenko(BepuUtilities.Quaternion q)
         {
             return *((Xenko.Core.Mathematics.Quaternion*)(void*)&q);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static unsafe BepuUtilities.Quaternion ToBepu(Xenko.Core.Mathematics.Quaternion q)
         {
             return *((BepuUtilities.Quaternion*)(void*)&q);
