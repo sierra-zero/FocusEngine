@@ -165,6 +165,9 @@ namespace Xenko.Physics.Bepu
 
             public void RecordContact<TManifold>(BepuPhysicsComponent A, BepuPhysicsComponent B, TManifold manifold) where TManifold : struct, IContactManifold<TManifold>
             {
+                // sanity checking
+                if (A == null || B == null || manifold.Count == 0) return;
+
                 BepuRigidbodyComponent ar = (A as BepuRigidbodyComponent);
                 BepuRigidbodyComponent br = (B as BepuRigidbodyComponent);
                 bool Acollect = (ar?.CollectCollisions ?? false);

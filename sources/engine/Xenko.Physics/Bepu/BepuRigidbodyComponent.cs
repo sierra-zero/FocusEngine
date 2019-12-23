@@ -94,16 +94,32 @@ namespace Xenko.Physics.Bepu
             }
             set
             {
-                if (value && processingPhysicalContacts == null)
+                if (_collectCollisions == value) return;
+
+                if (value)
                 {
-                    processingPhysicalContacts = new List<BepuContact>[2];
-                    processingPhysicalContacts[0] = new List<BepuContact>();
-                    processingPhysicalContacts[1] = new List<BepuContact>();
+                    if (processingPhysicalContacts == null)
+                    {
+                        processingPhysicalContacts = new List<BepuContact>[2];
+                        processingPhysicalContacts[0] = new List<BepuContact>();
+                        processingPhysicalContacts[1] = new List<BepuContact>();
+                        _currentContacts = new List<BepuContact>();
+                    }
                 }
+                else if (processingPhysicalContacts != null)
+                {
+                    _currentContacts.Clear();
+                    _currentContacts = null;
+                    processingPhysicalContacts[0].Clear();
+                    processingPhysicalContacts[1].Clear();
+                    processingPhysicalContacts = null;
+                }
+
                 _collectCollisions = value;
             }
         }
         private bool _collectCollisions = false;
+        private List<BepuContact> _currentContacts;
 
         /// <summary>
         /// If we are using ProcessCollisionSlim, this list will maintain all current collisions
@@ -113,9 +129,16 @@ namespace Xenko.Physics.Bepu
         {
             get
             {
-                if (processingPhysicalContacts == null) return null;
+                if (_currentContacts == null) return null;
 
-                return new List<BepuContact>(processingPhysicalContacts[processingPhysicalContactsIndex]);
+                _currentContacts.Clear();
+
+                List<BepuContact> getFrom = processingPhysicalContacts[processingPhysicalContactsIndex];
+
+                for (int i = 0; i < getFrom.Count; i++)
+                    _currentContacts.Add(getFrom[i]);
+
+                return _currentContacts;
             }
         }
 
@@ -123,8 +146,8 @@ namespace Xenko.Physics.Bepu
         {
             if (processingPhysicalContacts == null || IsActive == false) return;
 
-            processingPhysicalContacts[processingPhysicalContactsIndex].Clear();
             processingPhysicalContactsIndex ^= 1;
+            processingPhysicalContacts[processingPhysicalContactsIndex ^ 1].Clear();
         }
 
         internal List<BepuContact>[] processingPhysicalContacts;
