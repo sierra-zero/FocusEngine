@@ -171,8 +171,8 @@ namespace Xenko.Physics.Bepu
 
                 BepuRigidbodyComponent ar = (A as BepuRigidbodyComponent);
                 BepuRigidbodyComponent br = (B as BepuRigidbodyComponent);
-                bool Acollect = (ar?.CollectCollisions ?? false);
-                bool Bcollect = (br?.CollectCollisions ?? false);
+                bool Acollect = ar == null ? false : ar.CollectCollisions && ar.CollectCollisionMaximumCount > ar.processingPhysicalContacts[ar.processingPhysicalContactsIndex].Count;
+                bool Bcollect = br == null ? false : br.CollectCollisions && br.CollectCollisionMaximumCount > br.processingPhysicalContacts[br.processingPhysicalContactsIndex].Count;
                 // do we want to store this collision?
                 if (Acollect || Bcollect)
                 {
@@ -183,8 +183,8 @@ namespace Xenko.Physics.Bepu
                         Normal = BepuHelpers.ToXenko(manifold.SimpleGetNormal()),
                         Position = B.Position - BepuHelpers.ToXenko(manifold.SimpleGetOffset())
                     };
-                    if (Acollect) ar.processingPhysicalContacts[ar.processingPhysicalContactsIndex ^ 1].Add(bc);
-                    if (Bcollect) br.processingPhysicalContacts[br.processingPhysicalContactsIndex ^ 1].Add(bc);
+                    if (Acollect) ar.processingPhysicalContacts[ar.processingPhysicalContactsIndex].Add(bc);
+                    if (Bcollect) br.processingPhysicalContacts[br.processingPhysicalContactsIndex].Add(bc);
                 }
             }
 

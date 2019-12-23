@@ -74,6 +74,12 @@ namespace Xenko.Physics.Bepu
                     InternalBody.Collidable.Continuity = bodyDescription.Collidable.Continuity;
             }
         }
+
+        /// <summary>
+        /// If we are collecting collisions, how many to store before we stop storing them? Defaults to 32. Prevents crazy counts when objects are heavily overlapping.
+        /// </summary>
+        [DataMember]
+        public int CollectCollisionMaximumCount = 32;
         
         /// <summary>
         /// Gets or sets if this element will store collisions in CurrentPhysicalContacts. Uses less CPU than ProcessCollisions
@@ -133,7 +139,7 @@ namespace Xenko.Physics.Bepu
 
                 _currentContacts.Clear();
 
-                List<BepuContact> getFrom = processingPhysicalContacts[processingPhysicalContactsIndex];
+                List<BepuContact> getFrom = processingPhysicalContacts[processingPhysicalContactsIndex^1];
 
                 for (int i = 0; i < getFrom.Count; i++)
                     _currentContacts.Add(getFrom[i]);
@@ -147,7 +153,7 @@ namespace Xenko.Physics.Bepu
             if (processingPhysicalContacts == null || IsActive == false) return;
 
             processingPhysicalContactsIndex ^= 1;
-            processingPhysicalContacts[processingPhysicalContactsIndex ^ 1].Clear();
+            processingPhysicalContacts[processingPhysicalContactsIndex].Clear();
         }
 
         internal List<BepuContact>[] processingPhysicalContacts;
