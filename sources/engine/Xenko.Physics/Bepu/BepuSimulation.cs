@@ -163,6 +163,7 @@ namespace Xenko.Physics.Bepu
                 return CanCollide(pair.A, pair.B);
             }
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public void RecordContact<TManifold>(BepuPhysicsComponent A, BepuPhysicsComponent B, TManifold manifold) where TManifold : struct, IContactManifold<TManifold>
             {
                 // sanity checking
