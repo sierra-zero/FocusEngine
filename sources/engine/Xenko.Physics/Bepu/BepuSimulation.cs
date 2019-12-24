@@ -2,6 +2,7 @@
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Runtime.ExceptionServices;
@@ -14,10 +15,13 @@ using BepuPhysics.Constraints;
 using BepuPhysics.Trees;
 using BepuUtilities;
 using BepuUtilities.Memory;
+using Xenko.Core;
 using Xenko.Core.Collections;
 using Xenko.Core.Diagnostics;
 using Xenko.Core.Mathematics;
 using Xenko.Engine;
+using Xenko.Engine.Design;
+using Xenko.Games;
 using Xenko.Physics.Engine;
 using Xenko.Rendering;
 
@@ -29,6 +33,8 @@ namespace Xenko.Physics.Bepu
         private const CollisionFilterGroupFlags DefaultFlags = CollisionFilterGroupFlags.AllFilter;
 
         public BepuPhysics.Simulation internalSimulation;
+
+        internal ConcurrentQueue<BepuPhysicsComponent> ToBeAdded = new ConcurrentQueue<BepuPhysicsComponent>(), ToBeRemoved = new ConcurrentQueue<BepuPhysicsComponent>();
 
         private static BepuSimulation _instance;
         public static BepuSimulation instance
@@ -46,6 +52,7 @@ namespace Xenko.Physics.Bepu
 
         private PoseIntegratorCallbacks poseCallbacks;
         internal BufferPool pBufferPool;
+        internal int clearRequested;
         private BepuSimpleThreadDispatcher threadDispatcher = new BepuSimpleThreadDispatcher(Environment.ProcessorCount);
 
 #if DEBUG
@@ -66,20 +73,30 @@ namespace Xenko.Physics.Bepu
         /// Clears out the whole simulation of bodies, optionally clears all related buffers (like meshes) too
         /// </summary>
         /// <param name="clearBuffers">Clear out all buffers, like mesh shapes? Defaults to true</param>
-        public void Clear(bool clearBuffers = true)
+        /// <param name="forceRightNow">Clear everything right now. Might cause crashes if simulation is happening at the same time!</param>
+        public void Clear(bool clearBuffers = true, bool forceRightNow = false)
         {
-            internalSimulation.Clear();
+            if (forceRightNow)
+            {
+                clearRequested = 0;
 
-            if (clearBuffers) pBufferPool.Clear();
+                internalSimulation.Clear();
 
-            for (int i = 0; i < AllRigidbodies.Count; i++)
-                AllRigidbodies[i].AddedHandle = -1;
-            foreach (BepuStaticColliderComponent sc in StaticMappings.Values)
-                sc.AddedHandle = -1;
+                if (clearBuffers) pBufferPool.Clear();
 
-            StaticMappings.Clear();
-            RigidMappings.Clear();
-            AllRigidbodies.Clear();
+                for (int i = 0; i < AllRigidbodies.Count; i++)
+                    AllRigidbodies[i].AddedHandle = -1;
+                foreach (BepuStaticColliderComponent sc in StaticMappings.Values)
+                    sc.AddedHandle = -1;
+
+                StaticMappings.Clear();
+                RigidMappings.Clear();
+                AllRigidbodies.Clear();
+
+                return;
+            }
+
+            clearRequested = clearBuffers ? 2 : 1;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -307,6 +324,11 @@ namespace Xenko.Physics.Bepu
         /// <exception cref="System.NotImplementedException">SoftBody processing is not yet available</exception>
         internal BepuSimulation(PhysicsSettings configuration)
         {
+            Game GameService = ServiceRegistry.instance.GetService<IGame>() as Game;
+            GameService.SceneSystem.SceneInstance.EntityAdded += EntityAdded;
+            GameService.SceneSystem.SceneInstance.EntityRemoved += EntityRemoved;
+            GameService.SceneSystem.SceneInstance.ComponentChanged += ComponentChanged;
+
             MaxSubSteps = configuration.MaxSubSteps;
             FixedTimeStep = configuration.FixedTimeStep;
 
@@ -316,12 +338,33 @@ namespace Xenko.Physics.Bepu
             instance = this;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void EntityAdded(object sender, Entity e)
+        {
+            foreach (BepuPhysicsComponent bpc in e.GetAll<BepuPhysicsComponent>())
+                if (bpc.AutomaticAdd) bpc.AddedToScene = true;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void EntityRemoved(object sender, Entity e)
+        {
+            foreach (BepuPhysicsComponent bpc in e.GetAll<BepuPhysicsComponent>())
+                bpc.AddedToScene = false;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void ComponentChanged(object sender, EntityComponentEventArgs e)
+        {
+            if (e.PreviousComponent is BepuPhysicsComponent rem) rem.AddedToScene = false;
+            if (e.NewComponent is BepuPhysicsComponent add && add.AutomaticAdd) add.AddedToScene = true;
+        }
+
         /// <summary>
         /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
         /// </summary>
         public void Dispose()
         {
-            Clear(true);
+            Clear(true, true);
         }
 
         /// <summary>
@@ -335,41 +378,63 @@ namespace Xenko.Physics.Bepu
 
         public RenderGroup ColliderShapesRenderGroup { get; set; } = RenderGroup.Group0;
 
-        internal void AddCollider(BepuStaticColliderComponent component, CollisionFilterGroupFlags group, CollisionFilterGroupFlags mask)
+        internal void ProcessAdds()
         {
-            if (component.AddedHandle > -1) return; // already added
-            component.staticDescription.Collidable = component.ColliderShape.GenerateDescription(internalSimulation);
-            component.AddedHandle = internalSimulation.Statics.Add(component.staticDescription);
-            StaticMappings[component.AddedHandle] = component;
+            while (ToBeAdded.Count > 0)
+            {
+                if (ToBeAdded.TryDequeue(out var component))
+                {
+                    if (component.AddedHandle > -1) continue; // already added
+                    if (component is BepuStaticColliderComponent scc)
+                    {
+                        scc.staticDescription.Collidable = scc.ColliderShape.GenerateDescription(internalSimulation);
+                        scc.AddedHandle = internalSimulation.Statics.Add(scc.staticDescription);
+                        StaticMappings[scc.AddedHandle] = scc;
+                    }
+                    else if (component is BepuRigidbodyComponent rigidBody)
+                    {
+                        rigidBody.ColliderShape.ComputeInertia(rigidBody.Mass, out rigidBody.bodyDescription.LocalInertia);
+                        rigidBody.bodyDescription.Collidable = rigidBody.ColliderShape.GenerateDescription(internalSimulation);
+                        AllRigidbodies.Add(rigidBody);
+                        rigidBody.AddedHandle = internalSimulation.Bodies.Add(rigidBody.bodyDescription);
+                        RigidMappings[rigidBody.AddedHandle] = rigidBody;
+                        rigidBody.SleepThreshold = rigidBody.bodyDescription.Activity.SleepThreshold;
+                    }
+                    component.Position = component.Entity.Transform.WorldPosition();
+                    component.Rotation = component.Entity.Transform.WorldRotation();
+                }   
+            }
         }
 
-        internal void RemoveCollider(BepuStaticColliderComponent component)
+        internal void ProcessRemovals()
         {
-            int addedIndex = component.AddedHandle;
-            if (addedIndex == -1) return; // already removed
-            internalSimulation.Statics.Remove(addedIndex);
-            component.AddedHandle = -1;
-            StaticMappings.Remove(addedIndex);
-        }
+            while (ToBeRemoved.Count > 0)
+            {
+                if (ToBeRemoved.TryDequeue(out var component))
+                {
+                    int addedIndex = component.AddedHandle;
+                    if (addedIndex == -1) continue; // already removed
+                    if (component is BepuStaticColliderComponent scc)
+                    {
+                        scc.AddedHandle = -1;
+                        internalSimulation.Statics.Remove(addedIndex);
+                        StaticMappings.Remove(addedIndex);
+                    } 
+                    else if (component is BepuRigidbodyComponent rigidBody)
+                    {
+                        rigidBody.AddedHandle = -1;
+                        internalSimulation.Bodies.Remove(addedIndex);
+                        RigidMappings.Remove(addedIndex);
+                        AllRigidbodies.Remove(rigidBody);
 
-        internal void AddRigidBody(BepuRigidbodyComponent rigidBody, CollisionFilterGroupFlags group, CollisionFilterGroupFlags mask)
-        {
-            if (rigidBody.AddedHandle > -1) return; // already added
-            rigidBody.ColliderShape.ComputeInertia(rigidBody.Mass, out rigidBody.bodyDescription.LocalInertia);
-            rigidBody.bodyDescription.Collidable = rigidBody.ColliderShape.GenerateDescription(internalSimulation);
-            rigidBody.AddedHandle = internalSimulation.Bodies.Add(rigidBody.bodyDescription);
-            RigidMappings[rigidBody.AddedHandle] = rigidBody;
-            AllRigidbodies.Add(rigidBody);
-        }
-
-        internal void RemoveRigidBody(BepuRigidbodyComponent rigidBody)
-        {
-            int addedIndex = rigidBody.AddedHandle;
-            if (addedIndex == -1) return; // already removed
-            internalSimulation.Bodies.Remove(addedIndex);
-            rigidBody.AddedHandle = -1;
-            RigidMappings.Remove(rigidBody.AddedHandle);
-            AllRigidbodies.Remove(rigidBody);
+                        if (rigidBody.processingPhysicalContacts != null)
+                        {
+                            rigidBody.processingPhysicalContacts[0].Clear();
+                            rigidBody.processingPhysicalContacts[1].Clear();
+                        }
+                    }
+                }
+            }
         }
 
         struct RayHitClosestHandler : IRayHitHandler

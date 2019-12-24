@@ -36,10 +36,10 @@ namespace Xenko.Engine
         }
 
         /// <summary>
-        /// Allow BepuHelpers.AddAllBodiesToSimulation to add this?
+        /// Allow the physics system to automatically add, based on changes to the entity in the scene?
         /// </summary>
         [DataMember]
-        public bool AllowHelperToManage { get; set; } = true;
+        public bool AutomaticAdd { get; set; } = true;
 
         [DataMemberIgnore]
         public virtual bool AddedToScene { get; set; }

@@ -58,6 +58,37 @@ namespace Xenko.Physics.Bepu
             return biggest * e.Transform.WorldScale();
         }
 
+        /// <summary>
+        /// Is this an OK shape? Checks for 0 or negative sizes, or compounds with no children etc...
+        /// </summary>
+        /// <param name="shape">Shape to check</param>
+        /// <returns>true is this shape is sane, false if it has problems</returns>
+        public static bool SanityCheckShape(IShape shape)
+        {
+            if (shape is Box box)
+                return box.HalfHeight > 0f && box.HalfLength > 0f && box.HalfWidth > 0f;
+
+            if (shape is Sphere sphere)
+                return sphere.Radius > 0f;
+
+            if (shape is Cylinder cylinder)
+                return cylinder.Radius > 0f && cylinder.HalfLength > 0f;
+
+            if (shape is Capsule capsule)
+                return capsule.HalfLength > 0f && capsule.Radius > 0f;
+
+            if (shape is Triangle triangle)
+                return triangle.A != triangle.B && triangle.A != triangle.C && triangle.B != triangle.C;
+
+            if (shape is ICompoundShape compound)
+                return compound.ChildCount > 0;
+
+            if (shape is Mesh mesh)
+                return mesh.ChildCount > 0;
+
+            return shape != null;
+        }
+
         public static IShape OffsetSingleShape(IConvexShape shape, Vector3? offset = null, Quaternion? rotation = null)
         {
             if (offset.HasValue == false && rotation.HasValue == false) return shape;
@@ -195,7 +226,7 @@ namespace Xenko.Physics.Bepu
         public static void SetBodiesInSimulation(Entity rootEntity, bool add = true)
         {
             foreach (BepuPhysicsComponent pc in rootEntity.GetAll<BepuPhysicsComponent>())
-                if (pc.AllowHelperToManage) pc.AddedToScene = add;
+                if (pc.AutomaticAdd) pc.AddedToScene = add;
             foreach (Entity e in rootEntity.GetChildren())
                 SetBodiesInSimulation(e, add);
         }

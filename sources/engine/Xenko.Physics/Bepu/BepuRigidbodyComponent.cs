@@ -257,7 +257,7 @@ namespace Xenko.Physics.Bepu
             }
         }
 
-        private IConvexShape _myshape;
+        private IConvexShape _myshape = null;
 
         public IConvexShape ColliderShape
         {
@@ -369,24 +369,21 @@ namespace Xenko.Physics.Bepu
             {
                 if (AddedToScene == value) return;
 
+                if (ColliderShape == null)
+                    throw new InvalidOperationException(Entity.Name + " has no ColliderShape, can't be added!");
+
+                if (BepuHelpers.SanityCheckShape(ColliderShape) == false)
+                    throw new InvalidOperationException(Entity.Name + " has a broken ColliderShape! Check sizes and/or children count.");
+
                 if (value)
                 {
                     Mass = mass;
                     RigidBodyType = type;
-                    BepuSimulation.instance.AddRigidBody(this, (CollisionFilterGroupFlags)CollisionGroup, CanCollideWith);
-                    SleepThreshold = bodyDescription.Activity.SleepThreshold;
-                    Position = Entity.Transform.WorldPosition();
-                    Rotation = Entity.Transform.WorldRotation();
+                    BepuSimulation.instance.ToBeAdded.Enqueue(this);
                 }
                 else
                 {
-                    if (processingPhysicalContacts != null)
-                    {
-                        processingPhysicalContacts[0].Clear();
-                        processingPhysicalContacts[1].Clear();
-                    }
-
-                    BepuSimulation.instance.RemoveRigidBody(this);
+                    BepuSimulation.instance.ToBeRemoved.Enqueue(this);
                 }
             }
         }
@@ -397,7 +394,8 @@ namespace Xenko.Physics.Bepu
         /// <param name="impulse">The impulse.</param>
         public void ApplyImpulse(Vector3 impulse)
         {
-            InternalBody.ApplyLinearImpulse(BepuHelpers.ToBepu(impulse));
+            if (InternalBody.Exists)
+                InternalBody.ApplyLinearImpulse(BepuHelpers.ToBepu(impulse));
         }
 
         /// <summary>
@@ -407,7 +405,8 @@ namespace Xenko.Physics.Bepu
         /// <param name="localOffset">The local offset.</param>
         public void ApplyImpulse(Vector3 impulse, Vector3 localOffset)
         {
-            InternalBody.ApplyImpulse(BepuHelpers.ToBepu(impulse), BepuHelpers.ToBepu(localOffset));
+            if (InternalBody.Exists)
+                InternalBody.ApplyImpulse(BepuHelpers.ToBepu(impulse), BepuHelpers.ToBepu(localOffset));
         }
 
         /// <summary>
@@ -416,8 +415,8 @@ namespace Xenko.Physics.Bepu
         /// <param name="torque">The torque.</param>
         public void ApplyTorqueImpulse(Vector3 torque)
         {
-            System.Numerics.Vector3 i = new System.Numerics.Vector3(torque.X, torque.Y, torque.Z);
-            InternalBody.ApplyAngularImpulse(i);
+            if (InternalBody.Exists)
+                InternalBody.ApplyAngularImpulse(BepuHelpers.ToBepu(torque));
         }
 
         [DataMemberIgnore]

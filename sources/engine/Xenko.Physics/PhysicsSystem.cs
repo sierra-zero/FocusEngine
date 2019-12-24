@@ -126,44 +126,55 @@ namespace Xenko.Physics
                     //first process any needed cleanup
                     physicsScene.Processor.UpdateRemovals();
 
-                    //read skinned meshes bone positions and write them to the physics engine
-                    physicsScene.Processor.UpdateBones();
+                    // after we took care of cleanup, are we disabled?
+                    if (Simulation.DisableSimulation == false)
+                    {
+                        //read skinned meshes bone positions and write them to the physics engine
+                        physicsScene.Processor.UpdateBones();
 
-                    //simulate physics
-                    physicsScene.Simulation.Simulate(time);
+                        //simulate physics
+                        physicsScene.Simulation.Simulate(time);
 
-                    //update character bound entity's transforms from physics engine simulation
-                    physicsScene.Processor.UpdateCharacters();
+                        //update character bound entity's transforms from physics engine simulation
+                        physicsScene.Processor.UpdateCharacters();
 
-                    //Perform clean ups before test contacts in this frame
-                    physicsScene.Simulation.BeginContactTesting();
+                        //Perform clean ups before test contacts in this frame
+                        physicsScene.Simulation.BeginContactTesting();
 
-                    //handle frame contacts
-                    physicsScene.Processor.UpdateContacts();
+                        //handle frame contacts
+                        physicsScene.Processor.UpdateContacts();
 
-                    //This is the heavy contact logic
-                    physicsScene.Simulation.EndContactTesting();
+                        //This is the heavy contact logic
+                        physicsScene.Simulation.EndContactTesting();
 
-                    //send contact events
-                    physicsScene.Simulation.SendEvents();
+                        //send contact events
+                        physicsScene.Simulation.SendEvents();
+                    }
                 } 
 
                 if (physicsScene.BepuSimulation != null)
                 {
-                    physicsScene.BepuSimulation.Simulate(time);
+                    // remove all bodies set to be removed
+                    physicsScene.BepuSimulation.ProcessRemovals();
 
-                    // update all rigidbodies
-                    for (int j=0; j<physicsScene.BepuSimulation.AllRigidbodies.Count; j++)
+                    // did we request a clear?
+                    int clearMode = physicsScene.BepuSimulation.clearRequested;
+                    if (clearMode > 0) physicsScene.BepuSimulation.Clear(clearMode == 2, true);
+
+                    // add everyone waiting (which could have been something just removed)
+                    physicsScene.BepuSimulation.ProcessAdds();
+
+                    if (Simulation.DisableSimulation == false)
                     {
-                        // are we still in the scene?
-                        BepuRigidbodyComponent rb = physicsScene.BepuSimulation.AllRigidbodies[j];
-                        if (rb.Entity.Scene != Game.SceneSystem.SceneInstance.RootScene)
+                        // simulate!
+                        physicsScene.BepuSimulation.Simulate(time);
+
+                        // update all rigidbodies
+                        for (int j = 0; j < physicsScene.BepuSimulation.AllRigidbodies.Count; j++)
                         {
-                            physicsScene.BepuSimulation.RemoveRigidBody(rb);
-                            j--;
-                        }
-                        else
-                        {
+                            // are we still in the scene?
+                            BepuRigidbodyComponent rb = physicsScene.BepuSimulation.AllRigidbodies[j];
+
                             rb.swapProcessingContactsList();
 
                             // per-rigidbody update
@@ -195,8 +206,6 @@ namespace Xenko.Physics
 
         public override void Update(GameTime gameTime)
         {
-            if (Simulation.DisableSimulation) return;
-
             if (isMultithreaded)
             {
                 timeToSimulate += (float)gameTime.Elapsed.TotalSeconds;

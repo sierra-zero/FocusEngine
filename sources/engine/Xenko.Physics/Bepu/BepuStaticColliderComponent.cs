@@ -1,6 +1,7 @@
 // Copyright (c) Xenko contributors (https://xenko.com) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
+using System;
 using BepuPhysics;
 using BepuPhysics.Collidables;
 using Xenko.Core;
@@ -89,15 +90,19 @@ namespace Xenko.Physics.Bepu
             {
                 if (AddedToScene == value) return;
 
+                if (ColliderShape == null)
+                    throw new InvalidOperationException(Entity.Name + " has no ColliderShape, can't be added!");
+
+                if (BepuHelpers.SanityCheckShape(ColliderShape) == false)
+                    throw new InvalidOperationException(Entity.Name + " has a broken ColliderShape! Check sizes and/or children count.");
+
                 if (value)
                 {
-                    BepuSimulation.instance.AddCollider(this, (CollisionFilterGroupFlags)CollisionGroup, CanCollideWith);
-                    Position = Entity.Transform.WorldPosition();
-                    Rotation = Entity.Transform.WorldRotation();
+                    BepuSimulation.instance.ToBeAdded.Enqueue(this);
                 }
                 else
                 {
-                    BepuSimulation.instance.RemoveCollider(this);
+                    BepuSimulation.instance.ToBeRemoved.Enqueue(this);
                 }
             }
         }
