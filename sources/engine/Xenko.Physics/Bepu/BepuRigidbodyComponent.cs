@@ -14,6 +14,7 @@ using Xenko.Engine;
 using Xenko.Physics;
 using BepuPhysics.Collidables;
 using BepuPhysics.Constraints;
+using System.Runtime.CompilerServices;
 
 namespace Xenko.Physics.Bepu
 {
@@ -21,11 +22,15 @@ namespace Xenko.Physics.Bepu
     [Display("Bepu Rigidbody")]
     public sealed class BepuRigidbodyComponent : BepuPhysicsComponent
     {
+        internal const int CONTACT_LIST_LENGTH = 4;
+
         /// <summary>
         /// Description of the body to be created when added to the scene
         /// </summary>
+        [DataMember]
         public BodyDescription bodyDescription;
 
+        [DataMemberIgnore]
         private BodyReference _internalReference = new BodyReference();
 
         /// <summary>
@@ -44,6 +49,7 @@ namespace Xenko.Physics.Bepu
         /// <summary>
         /// Action to be called after simulation, but before transforms are set to new positions. Arguments are this and simulation time.
         /// </summary>
+        [DataMemberIgnore]
         public Action<BepuRigidbodyComponent, float> ActionPerSimulationTick;
 
         /// <summary>
@@ -52,7 +58,23 @@ namespace Xenko.Physics.Bepu
         /// <value>
         ///   <c>true</c> if this instance is active; otherwise, <c>false</c>.
         /// </value>
-        public bool IsActive => InternalBody.Awake;
+        [DataMemberIgnore]
+        public bool IsActive
+        {
+            get => CheckCurrentValid() && InternalBody.Awake;
+            set
+            {
+                if (CheckCurrentValid() == false || InternalBody.Awake == value) return;
+
+                BepuSimulation.instance.ActionsBeforeSimulationStep.Enqueue(delegate { 
+                    if (CheckCurrentValid())
+                    {
+                        BodyReference ib = InternalBody;
+                        ib.Awake = value;
+                    }
+                });
+            }
+        }
 
         /// <summary>
         /// Use continuous collision detection? Set greater than 0 to use, 0 or less to disable
@@ -70,7 +92,7 @@ namespace Xenko.Physics.Bepu
                 bodyDescription.Collidable.Continuity.Mode = value > 0 ? ContinuousDetectionMode.Continuous : ContinuousDetectionMode.Discrete;
                 bodyDescription.Collidable.Continuity.MinimumSweepTimestep = value > 0 ? 1e-3f : 0f;
 
-                if (InternalBody.Exists)
+                if (CheckCurrentValid())
                     InternalBody.Collidable.Continuity = bodyDescription.Collidable.Continuity;
             }
         }
@@ -106,9 +128,8 @@ namespace Xenko.Physics.Bepu
                 {
                     if (processingPhysicalContacts == null)
                     {
-                        processingPhysicalContacts = new List<BepuContact>[2];
-                        processingPhysicalContacts[0] = new List<BepuContact>();
-                        processingPhysicalContacts[1] = new List<BepuContact>();
+                        processingPhysicalContacts = new List<BepuContact>[CONTACT_LIST_LENGTH];
+                        for (int i=0; i< CONTACT_LIST_LENGTH; i++) processingPhysicalContacts[i] = new List<BepuContact>();
                         _currentContacts = new List<BepuContact>();
                     }
                 }
@@ -116,15 +137,17 @@ namespace Xenko.Physics.Bepu
                 {
                     _currentContacts.Clear();
                     _currentContacts = null;
-                    processingPhysicalContacts[0].Clear();
-                    processingPhysicalContacts[1].Clear();
                     processingPhysicalContacts = null;
                 }
 
                 _collectCollisions = value;
             }
         }
+
+        [DataMemberIgnore]
         private bool _collectCollisions = false;
+
+        [DataMemberIgnore]
         private List<BepuContact> _currentContacts;
 
         /// <summary>
@@ -139,10 +162,18 @@ namespace Xenko.Physics.Bepu
 
                 _currentContacts.Clear();
 
-                List<BepuContact> getFrom = processingPhysicalContacts[processingPhysicalContactsIndex^1];
+                List<BepuContact> getFrom = processingPhysicalContacts[(processingPhysicalContactsIndex+1)%CONTACT_LIST_LENGTH];
 
-                for (int i = 0; i < getFrom.Count; i++)
-                    _currentContacts.Add(getFrom[i]);
+                // make sure to only add legit contact points, and to not crash if threading blips happen
+                try
+                {
+                    for (int i = 0; i < getFrom.Count; i++)
+                    {
+                        BepuContact bc = getFrom[i];
+                        if (bc.A != null && bc.B != null) _currentContacts.Add(bc);
+                    }
+                }
+                catch (Exception e) { }
 
                 return _currentContacts;
             }
@@ -152,11 +183,22 @@ namespace Xenko.Physics.Bepu
         {
             if (processingPhysicalContacts == null || IsActive == false) return;
 
-            processingPhysicalContactsIndex ^= 1;
+            if (processingPhysicalContactsIndex == 0)
+            {
+                processingPhysicalContactsIndex = CONTACT_LIST_LENGTH - 1;
+            }
+            else
+            {
+                processingPhysicalContactsIndex--;
+            }
+
             processingPhysicalContacts[processingPhysicalContactsIndex].Clear();
         }
 
+        [DataMemberIgnore]
         internal List<BepuContact>[] processingPhysicalContacts;
+
+        [DataMemberIgnore]
         internal int processingPhysicalContactsIndex;
 
         private static readonly BodyInertia KinematicInertia = new BodyInertia()
@@ -179,20 +221,13 @@ namespace Xenko.Physics.Bepu
         public BepuRigidbodyComponent() : base()
         {
             bodyDescription = new BodyDescription();
+            bodyDescription.Pose.Orientation.W = 1f;
             bodyDescription.LocalInertia.InverseMass = 1f;
             bodyDescription.Activity.MinimumTimestepCountUnderThreshold = 32;
             bodyDescription.Activity.SleepThreshold = 0.01f;
         }
 
-        /// <summary>
-        /// Attempts to awake the collider.
-        /// </summary>
-        /// <param name="forceActivation">if set to <c>true</c> [force activation].</param>
-        public void Activate()
-        {
-            BodyReference ib = InternalBody;
-            ib.Awake = true;
-        }
+        public override TypedIndex ShapeIndex { get => bodyDescription.Collidable.Shape; }
 
         /// <summary>
         /// How slow does this need to be to sleep? Set less than 0 to never sleep
@@ -208,7 +243,7 @@ namespace Xenko.Physics.Bepu
             {
                 bodyDescription.Activity.SleepThreshold = value;
 
-                if (InternalBody.Exists)
+                if (CheckCurrentValid())
                     InternalBody.Activity.SleepThreshold = value;
             }
         }
@@ -246,42 +281,33 @@ namespace Xenko.Physics.Bepu
             {
                 bodyDescription.LocalInertia = KinematicInertia;
             }
-            else if (ColliderShape != null)
+            else if (ColliderShape is IConvexShape ics)
             { 
-                ColliderShape.ComputeInertia(mass, out bodyDescription.LocalInertia);
+                ics.ComputeInertia(mass, out bodyDescription.LocalInertia);
             }
 
-            if (InternalBody.Exists)
+            if (CheckCurrentValid())
             {
-                InternalBody.LocalInertia = bodyDescription.LocalInertia;
+                InternalBody.SetLocalInertia(bodyDescription.LocalInertia);
             }
         }
 
-        private IConvexShape _myshape = null;
-
-        public IConvexShape ColliderShape
+        [DataMemberIgnore]
+        public override IShape ColliderShape
         {
-            get => _myshape;
+            get => base.ColliderShape;
             set
             {
-                bool wasAddedToScene = AddedToScene;
+                if (AddedToScene)
+                {
+                    // remove and readd me to update shape
+                    BepuSimulation.instance.ToBeRemoved.Enqueue(this);
+                    BepuSimulation.instance.ToBeAdded.Enqueue(this);
+                }
 
-                AddedToScene = false;
-
-                _myshape = value;
+                base.ColliderShape = value;
                 UpdateInertia();
-
-                AddedToScene = wasAddedToScene;
             }
-        }
-
-        /// <summary>
-        /// If you made a modification to the existing ColliderShape (like changed its radius), try reloading it via this function.
-        /// </summary>
-        public void ReloadColliderShape()
-        {
-            if (_myshape == null || AddedToScene == false) return;
-            ColliderShape = _myshape;
         }
 
         private float mass = 1f;
@@ -394,7 +420,7 @@ namespace Xenko.Physics.Bepu
         /// <param name="impulse">The impulse.</param>
         public void ApplyImpulse(Vector3 impulse)
         {
-            if (InternalBody.Exists)
+            if (CheckCurrentValid())
                 InternalBody.ApplyLinearImpulse(BepuHelpers.ToBepu(impulse));
         }
 
@@ -405,7 +431,7 @@ namespace Xenko.Physics.Bepu
         /// <param name="localOffset">The local offset.</param>
         public void ApplyImpulse(Vector3 impulse, Vector3 localOffset)
         {
-            if (InternalBody.Exists)
+            if (CheckCurrentValid())
                 InternalBody.ApplyImpulse(BepuHelpers.ToBepu(impulse), BepuHelpers.ToBepu(localOffset));
         }
 
@@ -415,7 +441,7 @@ namespace Xenko.Physics.Bepu
         /// <param name="torque">The torque.</param>
         public void ApplyTorqueImpulse(Vector3 torque)
         {
-            if (InternalBody.Exists)
+            if (CheckCurrentValid())
                 InternalBody.ApplyAngularImpulse(BepuHelpers.ToBepu(torque));
         }
 
@@ -424,7 +450,7 @@ namespace Xenko.Physics.Bepu
         {
             get
             {
-                return BepuHelpers.ToXenko(InternalBody.Exists ? InternalBody.Pose.Position : bodyDescription.Pose.Position);
+                return BepuHelpers.ToXenko(CheckCurrentValid() ? InternalBody.Pose.Position : bodyDescription.Pose.Position);
             }
             set
             {
@@ -432,7 +458,7 @@ namespace Xenko.Physics.Bepu
                 bodyDescription.Pose.Position.Y = value.Y;
                 bodyDescription.Pose.Position.Z = value.Z;
 
-                if (InternalBody.Exists)
+                if (CheckCurrentValid())
                 {
                     InternalBody.Pose.Position = bodyDescription.Pose.Position;
                 }
@@ -444,7 +470,7 @@ namespace Xenko.Physics.Bepu
         {
             get
             {
-                return BepuHelpers.ToXenko(InternalBody.Exists ? InternalBody.Pose.Orientation : bodyDescription.Pose.Orientation);
+                return BepuHelpers.ToXenko(CheckCurrentValid() ? InternalBody.Pose.Orientation : bodyDescription.Pose.Orientation);
             }
             set
             {
@@ -453,7 +479,7 @@ namespace Xenko.Physics.Bepu
                 bodyDescription.Pose.Orientation.Z = value.Z;
                 bodyDescription.Pose.Orientation.W = value.W;
 
-                if (InternalBody.Exists)
+                if (CheckCurrentValid())
                 {
                     InternalBody.Pose.Orientation = bodyDescription.Pose.Orientation;
                 }
@@ -471,7 +497,7 @@ namespace Xenko.Physics.Bepu
         {
             get
             {
-                return BepuHelpers.ToXenko(InternalBody.Exists ? InternalBody.Velocity.Angular : bodyDescription.Velocity.Angular);
+                return CheckCurrentValid() ? BepuHelpers.ToXenko(InternalBody.Velocity.Angular) : Vector3.Zero;
             }
             set
             {
@@ -479,7 +505,7 @@ namespace Xenko.Physics.Bepu
                 bodyDescription.Velocity.Angular.Y = value.Y;
                 bodyDescription.Velocity.Angular.Z = value.Z;
 
-                if (InternalBody.Exists)
+                if (CheckCurrentValid())
                 {
                     InternalBody.Velocity.Angular = bodyDescription.Velocity.Angular;
                 }
@@ -497,7 +523,7 @@ namespace Xenko.Physics.Bepu
         {
             get
             {
-                return BepuHelpers.ToXenko(InternalBody.Exists ? InternalBody.Velocity.Linear : bodyDescription.Velocity.Linear);
+                return CheckCurrentValid() ? BepuHelpers.ToXenko(InternalBody.Velocity.Linear) : Vector3.Zero;
             }
             set
             {
@@ -505,18 +531,24 @@ namespace Xenko.Physics.Bepu
                 bodyDescription.Velocity.Linear.Y = value.Y;
                 bodyDescription.Velocity.Linear.Z = value.Z;
 
-                if (InternalBody.Exists)
+                if (CheckCurrentValid())
                 {
                     InternalBody.Velocity.Linear = bodyDescription.Velocity.Linear;
                 }
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal override bool CheckCurrentValid()
+        {
+            return base.CheckCurrentValid() && InternalBody.Exists;
+        }
+
         /// <summary>
         /// Updades the graphics transformation from the given physics transformation
         /// </summary>
         /// <param name="physicsTransform"></param>
-        internal override void UpdateTransformationComponent()
+        internal void UpdateTransformationComponent()
         {
             var entity = Entity;
 
@@ -524,6 +556,5 @@ namespace Xenko.Physics.Bepu
             if (LocalPhysicsOffset.HasValue) entity.Transform.Position += LocalPhysicsOffset.Value;
             if (IgnorePhysicsRotation == false) entity.Transform.Rotation = Rotation;
         }
-
     }
 }

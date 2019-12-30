@@ -1,6 +1,7 @@
 // Copyright (c) Xenko contributors (https://xenko.com) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -24,6 +25,8 @@ namespace Xenko.Physics
         private bool runThread;
         private ManualResetEventSlim doUpdateEvent;
         private Thread physicsThread;
+
+        public static float TimeScale = 1f;
 
         private readonly List<PhysicsScene> scenes = new List<PhysicsScene>();
 
@@ -154,6 +157,9 @@ namespace Xenko.Physics
 
                 if (physicsScene.BepuSimulation != null)
                 {
+                    // do anything before simulation
+                    while (physicsScene.BepuSimulation.ActionsBeforeSimulationStep.TryDequeue(out Action<float> a)) a(time);
+
                     // remove all bodies set to be removed
                     physicsScene.BepuSimulation.ProcessRemovals();
 
@@ -208,12 +214,12 @@ namespace Xenko.Physics
         {
             if (isMultithreaded)
             {
-                timeToSimulate += (float)gameTime.Elapsed.TotalSeconds;
+                timeToSimulate += (float)gameTime.Elapsed.TotalSeconds * TimeScale;
                 doUpdateEvent.Set();
             } 
             else
             {
-                RunPhysicsSimulation((float)gameTime.Elapsed.TotalSeconds);
+                RunPhysicsSimulation((float)gameTime.Elapsed.TotalSeconds * TimeScale);
             }
         }
     }

@@ -2,6 +2,7 @@
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
+using System.Runtime.CompilerServices;
 using BepuPhysics;
 using BepuPhysics.Collidables;
 using Xenko.Core;
@@ -16,8 +17,6 @@ namespace Xenko.Physics.Bepu
         public StaticDescription staticDescription;
         private StaticReference _internalStatic;
 
-        public IShape ColliderShape;
-
         public StaticReference InternalStatic
         {
             get
@@ -26,12 +25,15 @@ namespace Xenko.Physics.Bepu
                 _internalStatic.Handle = AddedHandle;
                 return _internalStatic;
             }
-        } 
+        }
+
+        public override TypedIndex ShapeIndex { get => staticDescription.Collidable.Shape; }
 
         public BepuStaticColliderComponent() : base ()
         {
             _internalStatic = new StaticReference();
             staticDescription = new StaticDescription();
+            staticDescription.Pose.Orientation.W = 1f;
         }
 
         [DataMemberIgnore]
@@ -39,7 +41,7 @@ namespace Xenko.Physics.Bepu
         {
             get
             {
-                return BepuHelpers.ToXenko(InternalStatic.Exists ? InternalStatic.Pose.Position : staticDescription.Pose.Position);
+                return BepuHelpers.ToXenko(CheckCurrentValid() ? InternalStatic.Pose.Position : staticDescription.Pose.Position);
             }
             set
             {
@@ -47,7 +49,7 @@ namespace Xenko.Physics.Bepu
                 staticDescription.Pose.Position.Y = value.Y;
                 staticDescription.Pose.Position.Z = value.Z;
 
-                if (InternalStatic.Exists)
+                if (CheckCurrentValid())
                 {
                     InternalStatic.Pose.Position = staticDescription.Pose.Position;
                 }
@@ -59,7 +61,7 @@ namespace Xenko.Physics.Bepu
         {
             get
             {
-                return BepuHelpers.ToXenko(InternalStatic.Exists ? InternalStatic.Pose.Orientation : staticDescription.Pose.Orientation);
+                return BepuHelpers.ToXenko(CheckCurrentValid() ? InternalStatic.Pose.Orientation : staticDescription.Pose.Orientation);
             }
             set
             {
@@ -68,11 +70,17 @@ namespace Xenko.Physics.Bepu
                 staticDescription.Pose.Orientation.Z = value.Z;
                 staticDescription.Pose.Orientation.W = value.W;
 
-                if (InternalStatic.Exists)
+                if (CheckCurrentValid())
                 {
                     InternalStatic.Pose.Orientation = staticDescription.Pose.Orientation;
                 }
             }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal override bool CheckCurrentValid()
+        {
+            return base.CheckCurrentValid() && InternalStatic.Exists;
         }
 
         /// <summary>

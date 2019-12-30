@@ -95,7 +95,7 @@ namespace Xenko.Physics.Bepu
 
             if (shape is ICompoundShape) throw new InvalidOperationException("Cannot offset a compound shape. Can't support nested compounds.");
 
-            using (var compoundBuilder = new CompoundBuilder(BepuSimulation.instance.pBufferPool, BepuSimulation.instance.internalSimulation.Shapes, 1))
+            using (var compoundBuilder = new CompoundBuilder(BepuSimulation.safeBufferPool, BepuSimulation.instance.internalSimulation.Shapes, 1))
             {
                 compoundBuilder.AddForKinematicEasy(shape, new BepuPhysics.RigidPose(ToBepu(offset ?? Vector3.Zero), ToBepu(rotation ?? Quaternion.Identity)), 1f);
 
@@ -166,7 +166,7 @@ namespace Xenko.Physics.Bepu
                 if (sc.ColliderShape is Mesh m)
                 {
                     sc.AddedToScene = false;
-                    m.Dispose(BepuSimulation.instance.pBufferPool);
+                    DisposeMesh(m);
                     sc.ColliderShape = null;
                 }
             }
@@ -182,7 +182,7 @@ namespace Xenko.Physics.Bepu
         /// <returns></returns>
         public static ICompoundShape MakeCompound(List<IConvexShape> shapes, List<Vector3> offsets = null, List<Quaternion> rotations = null, bool isDynamic = true, int bigThreshold = 5)
         {
-            using (var compoundBuilder = new CompoundBuilder(BepuSimulation.instance.pBufferPool, BepuSimulation.instance.internalSimulation.Shapes, shapes.Count))
+            using (var compoundBuilder = new CompoundBuilder(BepuSimulation.safeBufferPool, BepuSimulation.instance.internalSimulation.Shapes, shapes.Count))
             {
                 bool allConvex = true;
 
@@ -203,7 +203,7 @@ namespace Xenko.Physics.Bepu
                     }
                 }
 
-                return compoundBuilder.BuildCompleteCompoundShape(BepuSimulation.instance.internalSimulation.Shapes, BepuSimulation.instance.pBufferPool, isDynamic, allConvex ? bigThreshold : int.MaxValue);
+                return compoundBuilder.BuildCompleteCompoundShape(BepuSimulation.instance.internalSimulation.Shapes, BepuSimulation.safeBufferPool, isDynamic, allConvex ? bigThreshold : int.MaxValue);
             }
         }
 
@@ -339,11 +339,15 @@ namespace Xenko.Physics.Bepu
             return GenerateMeshShape(positions, indicies, out outMesh, scale);
         }
 
+        private static Dictionary<Mesh, BepuUtilities.Memory.BufferPool> BufferPoolMap = new Dictionary<Mesh, BepuUtilities.Memory.BufferPool>();
+
         public static unsafe bool GenerateMeshShape(List<Vector3> positions, List<int> indicies, out BepuPhysics.Collidables.Mesh outMesh, Vector3? scale = null)
         {
+            var usePool = BepuSimulation.safeBufferPool;
+
             // ok, should have what we need to make triangles
             int triangleCount = indicies.Count / 3;
-            BepuSimulation.instance.pBufferPool.Take<Triangle>(triangleCount, out BepuUtilities.Memory.Buffer<Triangle> triangles);
+            usePool.Take<Triangle>(triangleCount, out BepuUtilities.Memory.Buffer<Triangle> triangles);
 
             for (int i = 0; i < triangleCount; i ++)
             {
@@ -353,8 +357,26 @@ namespace Xenko.Physics.Bepu
                 triangles[i].C = ToBepu(positions[indicies[shiftedi+2]]);
             }
 
-            outMesh = new Mesh(triangles, new System.Numerics.Vector3(scale?.X ?? 1f, scale?.Y ?? 1f, scale?.Z ?? 1f), BepuSimulation.instance.pBufferPool);
+            outMesh = new Mesh(triangles, new System.Numerics.Vector3(scale?.X ?? 1f, scale?.Y ?? 1f, scale?.Z ?? 1f), usePool);
+
+            BufferPoolMap[outMesh] = usePool;
+
             return true;
+        }
+
+        /// <summary>
+        /// Mesh had to have been made by BepuHelpers for the BufferPool to be tracked
+        /// </summary>
+        /// <param name="m"></param>
+        /// <returns>true if memory was cleared</returns>
+        public static bool DisposeMesh(Mesh m)
+        {
+            if(BufferPoolMap.TryGetValue(m, out var bp))
+            {
+                m.Dispose(bp);
+                return true;
+            }
+            return false;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

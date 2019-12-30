@@ -4,7 +4,9 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using BepuPhysics;
+using BepuPhysics.Collidables;
 using BepuPhysics.Constraints;
 using Xenko.Core;
 using Xenko.Core.Annotations;
@@ -110,6 +112,12 @@ namespace Xenko.Engine
         [DataMember]
         public SpringSettings SpringSettings = new SpringSettings(30f, 1f);
 
+        [DataMember]
+        virtual public IShape ColliderShape { get; set; }
+
+        [DataMemberIgnore]
+        virtual public TypedIndex ShapeIndex { get; }
+
         /// <summary>
         /// Computes the physics transformation from the TransformComponent values
         /// </summary>
@@ -141,7 +149,17 @@ namespace Xenko.Engine
             Matrix.Multiply(ref rotation, ref translationMatrix, out outMatrix);
         }
 
-        internal virtual void UpdateTransformationComponent() { }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal virtual bool CheckCurrentValid()
+        {
+            if (AddedHandle == -1) return false;
+            ref var location = ref BepuSimulation.instance.internalSimulation.Bodies.HandleToLocation[AddedHandle];
+            if (location.SetIndex < 0 || location.SetIndex >= BepuSimulation.instance.internalSimulation.Bodies.Sets.Length) return false;
+            ref var set = ref BepuSimulation.instance.internalSimulation.Bodies.Sets[location.SetIndex];
+            if (location.Index < 0 || location.Index >= set.Count) return false;
+            if (set.IndexToHandle[location.Index] != AddedHandle) return false;
+            return true;
+        }
 
         [DataMemberIgnore]
         public virtual Vector3 Position { get; set; }

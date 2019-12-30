@@ -23,6 +23,7 @@ using Xenko.Engine;
 using Xenko.Engine.Design;
 using Xenko.Games;
 using Xenko.Physics.Engine;
+using Xenko.Core.Threading;
 using Xenko.Rendering;
 
 namespace Xenko.Physics.Bepu
@@ -35,6 +36,10 @@ namespace Xenko.Physics.Bepu
         public BepuPhysics.Simulation internalSimulation;
 
         internal ConcurrentQueue<BepuPhysicsComponent> ToBeAdded = new ConcurrentQueue<BepuPhysicsComponent>(), ToBeRemoved = new ConcurrentQueue<BepuPhysicsComponent>();
+
+        public ReaderWriterLockSlim simulationLocker { get; private set; } = new ReaderWriterLockSlim();
+
+        public ConcurrentQueue<Action<float>> ActionsBeforeSimulationStep = new ConcurrentQueue<Action<float>>();
 
         private static BepuSimulation _instance;
         public static BepuSimulation instance
@@ -50,8 +55,29 @@ namespace Xenko.Physics.Bepu
             }
         }
 
+        [ThreadStatic]
+        private static BufferPool threadStaticPool;
+
+        /// <summary>
+        /// Gets a thread-safe buffer pool
+        /// </summary>
+        public static BufferPool safeBufferPool
+        {
+            get
+            {
+                if (threadStaticPool == null)
+                {
+                    threadStaticPool = new BufferPool();
+                    allBufferPools.Add(threadStaticPool);
+                }
+                return threadStaticPool;
+            }
+        }
+
         private PoseIntegratorCallbacks poseCallbacks;
-        internal BufferPool pBufferPool;
+
+        private static List<BufferPool> allBufferPools = new List<BufferPool>();
+
         internal int clearRequested;
         private BepuSimpleThreadDispatcher threadDispatcher = new BepuSimpleThreadDispatcher(Environment.ProcessorCount);
 
@@ -80,18 +106,25 @@ namespace Xenko.Physics.Bepu
             {
                 clearRequested = 0;
 
-                internalSimulation.Clear();
+                using (simulationLocker.WriteLock())
+                {
+                    internalSimulation.Clear();
 
-                if (clearBuffers) pBufferPool.Clear();
+                    if (clearBuffers)
+                    {
+                        for (int i = 0; i < allBufferPools.Count; i++)
+                            allBufferPools[i].Clear();
+                    }
 
-                for (int i = 0; i < AllRigidbodies.Count; i++)
-                    AllRigidbodies[i].AddedHandle = -1;
-                foreach (BepuStaticColliderComponent sc in StaticMappings.Values)
-                    sc.AddedHandle = -1;
+                    for (int i = 0; i < AllRigidbodies.Count; i++)
+                        AllRigidbodies[i].AddedHandle = -1;
+                    foreach (BepuStaticColliderComponent sc in StaticMappings.Values)
+                        sc.AddedHandle = -1;
 
-                StaticMappings.Clear();
-                RigidMappings.Clear();
-                AllRigidbodies.Clear();
+                    StaticMappings.Clear();
+                    RigidMappings.Clear();
+                    AllRigidbodies.Clear();
+                }
 
                 return;
             }
@@ -329,12 +362,10 @@ namespace Xenko.Physics.Bepu
             GameService.SceneSystem.SceneInstance.EntityRemoved += EntityRemoved;
             GameService.SceneSystem.SceneInstance.ComponentChanged += ComponentChanged;
 
-            MaxSubSteps = configuration.MaxSubSteps;
-            FixedTimeStep = configuration.FixedTimeStep;
-
-            pBufferPool = new BufferPool();
             poseCallbacks = new PoseIntegratorCallbacks(new System.Numerics.Vector3(0f, -9.81f, 0f));
-            internalSimulation = BepuPhysics.Simulation.Create(pBufferPool, new NarrowPhaseCallbacks(), poseCallbacks);
+
+            // we will give the simulation its own bufferpool
+            internalSimulation = BepuPhysics.Simulation.Create(new BufferPool(), new NarrowPhaseCallbacks(), poseCallbacks);
             instance = this;
         }
 
@@ -367,15 +398,6 @@ namespace Xenko.Physics.Bepu
             Clear(true, true);
         }
 
-        /// <summary>
-        /// Free up memory used to store triangles for a mesh collision shape
-        /// </summary>
-        /// <param name="m"></param>
-        public void DisposeMesh(BepuPhysics.Collidables.Mesh m)
-        {
-            m.Dispose(pBufferPool);
-        }
-
         public RenderGroup ColliderShapesRenderGroup { get; set; } = RenderGroup.Group0;
 
         internal void ProcessAdds()
@@ -387,17 +409,24 @@ namespace Xenko.Physics.Bepu
                     if (component.AddedHandle > -1) continue; // already added
                     if (component is BepuStaticColliderComponent scc)
                     {
-                        scc.staticDescription.Collidable = scc.ColliderShape.GenerateDescription(internalSimulation);
-                        scc.AddedHandle = internalSimulation.Statics.Add(scc.staticDescription);
-                        StaticMappings[scc.AddedHandle] = scc;
+                        using (simulationLocker.WriteLock())
+                        {
+                            scc.staticDescription.Collidable = scc.ColliderShape.GenerateDescription(internalSimulation);
+                            scc.AddedHandle = internalSimulation.Statics.Add(scc.staticDescription);
+                            StaticMappings[scc.AddedHandle] = scc;
+                        }
                     }
                     else if (component is BepuRigidbodyComponent rigidBody)
                     {
-                        rigidBody.ColliderShape.ComputeInertia(rigidBody.Mass, out rigidBody.bodyDescription.LocalInertia);
-                        rigidBody.bodyDescription.Collidable = rigidBody.ColliderShape.GenerateDescription(internalSimulation);
-                        AllRigidbodies.Add(rigidBody);
-                        rigidBody.AddedHandle = internalSimulation.Bodies.Add(rigidBody.bodyDescription);
-                        RigidMappings[rigidBody.AddedHandle] = rigidBody;
+                        if (rigidBody.ColliderShape is IConvexShape ics)
+                            ics.ComputeInertia(rigidBody.Mass, out rigidBody.bodyDescription.LocalInertia);
+                        using (simulationLocker.WriteLock())
+                        {
+                            rigidBody.bodyDescription.Collidable = rigidBody.ColliderShape.GenerateDescription(internalSimulation);
+                            AllRigidbodies.Add(rigidBody);
+                            rigidBody.AddedHandle = internalSimulation.Bodies.Add(rigidBody.bodyDescription);
+                            RigidMappings[rigidBody.AddedHandle] = rigidBody;
+                        }
                         rigidBody.SleepThreshold = rigidBody.bodyDescription.Activity.SleepThreshold;
                     }
                     component.Position = component.Entity.Transform.WorldPosition();
@@ -416,21 +445,27 @@ namespace Xenko.Physics.Bepu
                     if (addedIndex == -1) continue; // already removed
                     if (component is BepuStaticColliderComponent scc)
                     {
-                        scc.AddedHandle = -1;
-                        internalSimulation.Statics.Remove(addedIndex);
-                        StaticMappings.Remove(addedIndex);
+                        using(simulationLocker.WriteLock())
+                        {
+                            scc.AddedHandle = -1;
+                            internalSimulation.Statics.Remove(addedIndex);
+                            StaticMappings.Remove(addedIndex);
+                        }
                     } 
                     else if (component is BepuRigidbodyComponent rigidBody)
                     {
-                        rigidBody.AddedHandle = -1;
-                        internalSimulation.Bodies.Remove(addedIndex);
-                        RigidMappings.Remove(addedIndex);
-                        AllRigidbodies.Remove(rigidBody);
+                        using(simulationLocker.WriteLock())
+                        {
+                            rigidBody.AddedHandle = -1;
+                            internalSimulation.Bodies.Remove(addedIndex);
+                            RigidMappings.Remove(addedIndex);
+                            AllRigidbodies.Remove(rigidBody);
+                        }
 
                         if (rigidBody.processingPhysicalContacts != null)
                         {
-                            rigidBody.processingPhysicalContacts[0].Clear();
-                            rigidBody.processingPhysicalContacts[1].Clear();
+                            for (int i = 0; i < rigidBody.processingPhysicalContacts.Length; i++)
+                                rigidBody.processingPhysicalContacts[i].Clear();
                         }
                     }
                 }
@@ -548,7 +583,10 @@ namespace Xenko.Physics.Bepu
                 startLength = length,
                 furthestHitSoFar = float.MaxValue
             };
-            internalSimulation.RayCast(new System.Numerics.Vector3(from.X, from.Y, from.Z), new System.Numerics.Vector3(direction.X, direction.Y, direction.Z), length, ref rhch);
+            using(simulationLocker.ReadLock())
+            {
+                internalSimulation.RayCast(new System.Numerics.Vector3(from.X, from.Y, from.Z), new System.Numerics.Vector3(direction.X, direction.Y, direction.Z), length, ref rhch);
+            }
             return rhch.HitCollidable;
         }
 
@@ -589,7 +627,10 @@ namespace Xenko.Physics.Bepu
                 HitCollidables = resultsOutput,
                 startLength = length
             };
-            internalSimulation.RayCast(new System.Numerics.Vector3(from.X, from.Y, from.Z), new System.Numerics.Vector3(direction.X, direction.Y, direction.Z), length, ref rhch);
+            using (simulationLocker.ReadLock())
+            {
+                internalSimulation.RayCast(new System.Numerics.Vector3(from.X, from.Y, from.Z), new System.Numerics.Vector3(direction.X, direction.Y, direction.Z), length, ref rhch);
+            }
         }
 
         struct SweepTestFirst : ISweepHitHandler
@@ -688,62 +729,6 @@ namespace Xenko.Physics.Bepu
         }
 
         /// <summary>
-        /// Performs a test to see if a collider shape collides with anything, and if so, returns the closest hit to the center of the shape.
-        /// </summary>
-        /// <param name="shape">The shape.</param>
-        /// <param name="position">Where to test.</param>
-        /// <param name="filterGroup">Group of the shape.</param>
-        /// <param name="hitGroups">What the shape should collide with</param>
-        /// <returns>PhysicsComponent of thing hitting shapetest</returns>
-        public BepuPhysicsComponent ShapeTest(IConvexShape shape, Vector3 position, Xenko.Core.Mathematics.Quaternion rotation, CollisionFilterGroupFlags hitGroups = DefaultFlags)
-        {
-            SweepTestFirst sshh = new SweepTestFirst()
-            {
-                hitGroups = hitGroups,
-                startLength = 0f,
-                furthestHitSoFar = float.MaxValue
-            };
-            RigidPose rp = new RigidPose();
-            rp.Position.X = position.X;
-            rp.Position.Y = position.Y;
-            rp.Position.Z = position.Z;
-            rp.Orientation.X = rotation.X;
-            rp.Orientation.Y = rotation.Y;
-            rp.Orientation.Z = rotation.Z;
-            rp.Orientation.W = rotation.W;
-            internalSimulation.Sweep(shape, rp, new BodyVelocity(), 0f, pBufferPool, ref sshh);
-            return sshh.result.Collider;
-        }
-
-        /// <summary>
-        /// Performs a test to see if a collider shape collides with anything, and if so, returns all results in a list
-        /// </summary>
-        /// <param name="shape">The shape.</param>
-        /// <param name="position">Where to test.</param>
-        /// <param name="resultsOutput">Where to store results</param>
-        /// <param name="filterGroup">Group of the shape.</param>
-        /// <param name="filterFlags">What the shape should collide with</param>
-        /// <returns></returns>
-        public void ShapeTestPenetrating(IConvexShape shape, Vector3 position, Xenko.Core.Mathematics.Quaternion rotation, List<BepuHitResult> output, CollisionFilterGroupFlags hitGroups = DefaultFlags)
-        {
-            SweepTestAll sshh = new SweepTestAll()
-            {
-                hitGroups = hitGroups,
-                startLength = 0f,
-                results = output
-            };
-            RigidPose rp = new RigidPose();
-            rp.Position.X = position.X;
-            rp.Position.Y = position.Y;
-            rp.Position.Z = position.Z;
-            rp.Orientation.X = rotation.X;
-            rp.Orientation.Y = rotation.Y;
-            rp.Orientation.Z = rotation.Z;
-            rp.Orientation.W = rotation.W;
-            internalSimulation.Sweep(shape, rp, new BodyVelocity(), 0f, pBufferPool, ref sshh);
-        }
-
-        /// <summary>
         /// Performs a sweep test using a collider shape and returns the closest hit
         /// </summary>
         /// <param name="shape">The shape.</param>
@@ -790,7 +775,10 @@ namespace Xenko.Physics.Bepu
             rp.Orientation.Y = rotation.Y;
             rp.Orientation.Z = rotation.Z;
             rp.Orientation.W = rotation.W;
-            internalSimulation.Sweep(shape, rp, new BodyVelocity(new System.Numerics.Vector3(direction.X, direction.Y, direction.Z)), length, pBufferPool, ref sshh);
+            using (simulationLocker.ReadLock())
+            {
+                internalSimulation.Sweep(shape, rp, new BodyVelocity(new System.Numerics.Vector3(direction.X, direction.Y, direction.Z)), length, safeBufferPool, ref sshh);
+            }
             return sshh.result;
         }
 
@@ -841,7 +829,10 @@ namespace Xenko.Physics.Bepu
             rp.Orientation.Y = rotation.Y;
             rp.Orientation.Z = rotation.Z;
             rp.Orientation.W = rotation.W;
-            internalSimulation.Sweep(shape, rp, new BodyVelocity(new System.Numerics.Vector3(direction.X, direction.Y, direction.Z)), length, pBufferPool, ref sshh);
+            using (simulationLocker.ReadLock())
+            {
+                internalSimulation.Sweep(shape, rp, new BodyVelocity(new System.Numerics.Vector3(direction.X, direction.Y, direction.Z)), length, safeBufferPool, ref sshh);
+            }
         }
 
         /// <summary>
@@ -869,74 +860,14 @@ namespace Xenko.Physics.Bepu
             }
         }
 
-        /// <summary>
-        /// The maximum number of steps that the Simulation is allowed to take each tick.
-        /// If the engine is running slow (large deltaTime), then you must increase the number of maxSubSteps to compensate for this, otherwise your simulation is “losing” time.
-        /// It's important that frame DeltaTime is always less than MaxSubSteps*FixedTimeStep, otherwise you are losing time.
-        /// </summary>
-        public int MaxSubSteps { get; set; }
-
-        /// <summary>
-        /// By decreasing the size of fixedTimeStep, you are increasing the “resolution” of the simulation.
-        /// Default is 1.0f / 60.0f or 60fps
-        /// </summary>
-        public float FixedTimeStep { get; set; }
-
-        public class SimulationArgs : EventArgs
-        {
-            public float DeltaTime;
-        }
-
-        /// <summary>
-        /// Called right before the physics simulation.
-        /// This event might not be fired by the main thread.
-        /// </summary>
-        public event EventHandler<SimulationArgs> SimulationBegin;
-
-        protected virtual void OnSimulationBegin(SimulationArgs e)
-        {
-            var handler = SimulationBegin;
-            handler?.Invoke(this, e);
-        }
-
-        internal int UpdatedRigidbodies;
-
-        private readonly SimulationArgs simulationArgs = new SimulationArgs();
-
-        internal ProfilingState SimulationProfiler;
-
         internal void Simulate(float deltaTime)
         {
             if (internalSimulation == null || DisableSimulation) return;
 
-            OnSimulationBegin(simulationArgs);
-
-            internalSimulation.Timestep(deltaTime, threadDispatcher);
-
-            OnSimulationEnd(simulationArgs);
-        }
-
-        /// <summary>
-        /// Called right after the physics simulation.
-        /// This event might not be fired by the main thread.
-        /// </summary>
-        public event EventHandler<SimulationArgs> SimulationEnd;
-
-        /// <summary>
-        /// Called right before processing a tick of the physics simulation.
-        /// </summary>
-        public event EventHandler<float> PreSimulationTick;
-
-        protected virtual void OnSimulationEnd(SimulationArgs e)
-        {
-            var handler = SimulationEnd;
-            handler?.Invoke(this, e);
-        }
-
-        protected virtual void OnPreSimulationTick(float timeStep)
-        {
-            var handler = PreSimulationTick;
-            handler?.Invoke(this, timeStep);
+            using (BepuSimulation.instance.simulationLocker.ReadLock())
+            {
+                internalSimulation.Timestep(deltaTime, threadDispatcher);
+            }
         }
     }
 }
