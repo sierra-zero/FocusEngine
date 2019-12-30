@@ -184,15 +184,15 @@ namespace Xenko.Graphics
                     CommandBufferCount = 1,
                     Level = CommandBufferLevel.Primary
                 };
+                var beginInfo = new CommandBufferBeginInfo { StructureType = StructureType.CommandBufferBeginInfo, Flags = CommandBufferUsageFlags.OneTimeSubmit };
+
                 CommandBuffer commandBuffer;
 
                 using (GraphicsDevice.QueueLock.ReadLock())
                 {
                     GraphicsDevice.NativeDevice.AllocateCommandBuffers(ref commandBufferAllocateInfo, &commandBuffer);
+                    commandBuffer.Begin(ref beginInfo);
                 }
-
-                var beginInfo = new CommandBufferBeginInfo { StructureType = StructureType.CommandBufferBeginInfo, Flags = CommandBufferUsageFlags.OneTimeSubmit };
-                commandBuffer.Begin(ref beginInfo);
 
                 // Copy to upload buffer
                 if (dataPointer != IntPtr.Zero)
