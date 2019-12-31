@@ -418,8 +418,6 @@ namespace Xenko.Physics.Bepu
                     }
                     else if (component is BepuRigidbodyComponent rigidBody)
                     {
-                        if (rigidBody.ColliderShape is IConvexShape ics)
-                            ics.ComputeInertia(rigidBody.Mass, out rigidBody.bodyDescription.LocalInertia);
                         using (simulationLocker.WriteLock())
                         {
                             rigidBody.bodyDescription.Collidable = rigidBody.ColliderShape.GenerateDescription(internalSimulation);
