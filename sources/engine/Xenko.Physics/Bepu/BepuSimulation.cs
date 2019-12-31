@@ -420,12 +420,23 @@ namespace Xenko.Physics.Bepu
                     {
                         using (simulationLocker.WriteLock())
                         {
-                            rigidBody.bodyDescription.Collidable = rigidBody.ColliderShape.GenerateDescription(internalSimulation);
+                            if (rigidBody.newShape != null)
+                            {
+                                TypedIndex ti = rigidBody.newShape.AddToShapes(internalSimulation.Shapes);
+                                rigidBody.bodyDescription.Collidable = new CollidableDescription(ti, 0.1f);
+                                rigidBody.InternalBody.SetShape(ti);
+                                rigidBody.swapNewShape();
+                            }
+                            else
+                            {
+                                rigidBody.bodyDescription.Collidable = rigidBody.ColliderShape.GenerateDescription(internalSimulation);
+                            }
                             AllRigidbodies.Add(rigidBody);
                             rigidBody.AddedHandle = internalSimulation.Bodies.Add(rigidBody.bodyDescription);
                             RigidMappings[rigidBody.AddedHandle] = rigidBody;
                         }
                         rigidBody.SleepThreshold = rigidBody.bodyDescription.Activity.SleepThreshold;
+                        rigidBody.CcdMotionThreshold = rigidBody.bodyDescription.Collidable.Continuity.SweepConvergenceThreshold;
                     }
                     component.Position = component.Entity.Transform.WorldPosition();
                     component.Rotation = component.Entity.Transform.WorldRotation();

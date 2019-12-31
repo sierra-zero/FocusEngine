@@ -271,17 +271,17 @@ namespace Xenko.Physics.Bepu
 
                 mass = value;
 
-                UpdateInertia();
+                UpdateInertia(newShape ?? ColliderShape);
             }
         }
 
-        private void UpdateInertia()
+        private void UpdateInertia(IShape useShape)
         {
             if (type == RigidBodyTypes.Kinematic)
             {
                 bodyDescription.LocalInertia = KinematicInertia;
             }
-            else if (ColliderShape is IConvexShape ics)
+            else if (useShape is IConvexShape ics)
             { 
                 ics.ComputeInertia(mass, out bodyDescription.LocalInertia);
             }
@@ -293,20 +293,46 @@ namespace Xenko.Physics.Bepu
         }
 
         [DataMemberIgnore]
+        internal IShape newShape;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal void swapNewShape()
+        {
+            base.ColliderShape = newShape;
+            newShape = null;
+        }
+
+        [DataMemberIgnore]
         public override IShape ColliderShape
         {
             get => base.ColliderShape;
             set
             {
+                if (value == null || value == ColliderShape) return;
+
+                newShape = null;
+
                 if (AddedToScene)
                 {
+                    if (ColliderShape != null)
+                    {
+                        newShape = value;
+                    }
+                    else
+                    {
+                        base.ColliderShape = value;
+                    }
+
                     // remove and readd me to update shape
                     BepuSimulation.instance.ToBeRemoved.Enqueue(this);
                     BepuSimulation.instance.ToBeAdded.Enqueue(this);
                 }
+                else
+                {
+                    base.ColliderShape = value;
+                }
 
-                base.ColliderShape = value;
-                UpdateInertia();
+                UpdateInertia(newShape ?? base.ColliderShape);
             }
         }
 
@@ -376,7 +402,7 @@ namespace Xenko.Physics.Bepu
             {
                 type = value;
 
-                UpdateInertia();
+                UpdateInertia(newShape ?? ColliderShape);
             }
         }
 
