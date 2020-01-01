@@ -486,6 +486,8 @@ namespace Xenko.Physics.Bepu
             public CollisionFilterGroupFlags findGroups;
             public float furthestHitSoFar, startLength;
             public BepuHitResult HitCollidable;
+            public bool skipAtZero;
+
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public bool AllowTest(CollidableReference collidable)
             {
@@ -501,6 +503,8 @@ namespace Xenko.Physics.Bepu
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public void OnRayHit(in RayData ray, ref float maximumT, float t, in System.Numerics.Vector3 normal, CollidableReference collidable, int childIndex)
             {
+                if (skipAtZero && t <= float.Epsilon) return;
+
                 if (t < furthestHitSoFar)
                 {
                     //Cache the earliest impact.
@@ -565,7 +569,7 @@ namespace Xenko.Physics.Bepu
         /// <param name="filterGroup">The collision group of this raycast</param>
         /// <param name="hitGroups">The collision group that this raycast can collide with</param>
         /// <returns>The list with hit results.</returns>
-        public BepuHitResult Raycast(Vector3 from, Vector3 to, CollisionFilterGroupFlags hitGroups = DefaultFlags)
+        public BepuHitResult Raycast(Vector3 from, Vector3 to, CollisionFilterGroupFlags hitGroups = DefaultFlags, bool skipAtZero = false)
         {
             Vector3 diff = to - from;
             float length = diff.Length();
@@ -573,7 +577,7 @@ namespace Xenko.Physics.Bepu
             diff.X *= inv;
             diff.Y *= inv;
             diff.Z *= inv;
-            return Raycast(from, diff, length, hitGroups);
+            return Raycast(from, diff, length, hitGroups, skipAtZero);
         }
 
         /// <summary>
@@ -584,13 +588,14 @@ namespace Xenko.Physics.Bepu
         /// <param name="filterGroup">The collision group of this raycast</param>
         /// <param name="hitGroups">The collision group that this raycast can collide with</param>
         /// <returns>The list with hit results.</returns>
-        public BepuHitResult Raycast(Vector3 from, Vector3 direction, float length, CollisionFilterGroupFlags hitGroups = DefaultFlags)
+        public BepuHitResult Raycast(Vector3 from, Vector3 direction, float length, CollisionFilterGroupFlags hitGroups = DefaultFlags, bool skipAtZero = false)
         {
             RayHitClosestHandler rhch = new RayHitClosestHandler()
             {
                 findGroups = hitGroups,
                 startLength = length,
-                furthestHitSoFar = float.MaxValue
+                furthestHitSoFar = float.MaxValue,
+                skipAtZero = skipAtZero
             };
             using(simulationLocker.ReadLock())
             {
@@ -647,6 +652,7 @@ namespace Xenko.Physics.Bepu
             public CollisionFilterGroupFlags hitGroups;
             public BepuHitResult result;
             public float furthestHitSoFar, startLength;
+            public bool skipAtZero;
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public bool AllowTest(CollidableReference collidable)
@@ -663,6 +669,8 @@ namespace Xenko.Physics.Bepu
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public void OnHit(ref float maximumT, float t, in System.Numerics.Vector3 hitLocation, in System.Numerics.Vector3 hitNormal, CollidableReference collidable)
             {
+                if (skipAtZero && t <= float.Epsilon) return;
+
                 if (t < furthestHitSoFar)
                 {
                     furthestHitSoFar = t;
@@ -686,6 +694,8 @@ namespace Xenko.Physics.Bepu
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public void OnHitAtZeroT(ref float maximumT, CollidableReference collidable)
             {
+                if (skipAtZero) return;
+
                 result.Succeeded = true;
                 result.Collider = getFromReference(collidable);
                 maximumT = 0;
@@ -747,7 +757,7 @@ namespace Xenko.Physics.Bepu
         /// <param name="filterFlags">The collision group that this shape sweep can collide with</param>
         /// <returns></returns>
         /// <exception cref="System.Exception">This kind of shape cannot be used for a ShapeSweep.</exception>
-        public BepuHitResult ShapeSweep(IConvexShape shape, Vector3 position, Xenko.Core.Mathematics.Quaternion rotation, Vector3 endpoint, CollisionFilterGroupFlags hitGroups = DefaultFlags)
+        public BepuHitResult ShapeSweep(IConvexShape shape, Vector3 position, Xenko.Core.Mathematics.Quaternion rotation, Vector3 endpoint, CollisionFilterGroupFlags hitGroups = DefaultFlags, bool skipAtZero = false)
         {
             Vector3 diff = endpoint - position;
             float length = diff.Length();
@@ -755,7 +765,7 @@ namespace Xenko.Physics.Bepu
             diff.X *= inv;
             diff.Y *= inv;
             diff.Z *= inv;
-            return ShapeSweep(shape, position, rotation, diff, length, hitGroups);
+            return ShapeSweep(shape, position, rotation, diff, length, hitGroups, skipAtZero);
         }
 
         /// <summary>
@@ -768,13 +778,14 @@ namespace Xenko.Physics.Bepu
         /// <param name="filterFlags">The collision group that this shape sweep can collide with</param>
         /// <returns></returns>
         /// <exception cref="System.Exception">This kind of shape cannot be used for a ShapeSweep.</exception>
-        public BepuHitResult ShapeSweep(IConvexShape shape, Vector3 position, Xenko.Core.Mathematics.Quaternion rotation, Vector3 direction, float length, CollisionFilterGroupFlags hitGroups = DefaultFlags)
+        public BepuHitResult ShapeSweep(IConvexShape shape, Vector3 position, Xenko.Core.Mathematics.Quaternion rotation, Vector3 direction, float length, CollisionFilterGroupFlags hitGroups = DefaultFlags, bool skipAtZero = false)
         {
             SweepTestFirst sshh = new SweepTestFirst()
             {
                 hitGroups = hitGroups,
                 startLength = length,
-                furthestHitSoFar = float.MaxValue
+                furthestHitSoFar = float.MaxValue,
+                skipAtZero = skipAtZero
             };
             RigidPose rp = new RigidPose();
             rp.Position.X = position.X;
