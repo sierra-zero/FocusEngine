@@ -345,6 +345,14 @@ namespace Xenko.Physics.Bepu
 
                     if (rb.AngularDamping > 0f)
                         velocity.Angular -= velocity.Angular * indt * rb.AngularDamping;
+
+                    // velocity cap?
+                    if (rb.MaximumSpeed > 0f)
+                    {
+                        float sqrmag = velocity.Linear.LengthSquared();
+                        if (sqrmag > rb.MaximumSpeed * rb.MaximumSpeed)
+                            velocity.Linear *= rb.MaximumSpeed / (float)Math.Sqrt(sqrmag);
+                    }
                 }
             }
         }

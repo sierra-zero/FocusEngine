@@ -86,15 +86,6 @@ namespace Xenko.Engine
         public CollisionFilterGroupFlags CanCollideWith { get; set; } = CollisionFilterGroupFlags.AllFilter;
 
         /// <summary>
-        /// When updating the associated TransformComponent, should we not set rotation?
-        /// </summary>
-        [DataMember(69)]
-        public bool IgnorePhysicsRotation = false;
-
-        [DataMemberIgnore]
-        public Vector3? LocalPhysicsOffset = null;
-
-        /// <summary>
         /// Gets or sets the tag.
         /// </summary>
         /// <value>

@@ -249,6 +249,12 @@ namespace Xenko.Physics.Bepu
         }
 
         /// <summary>
+        /// Forcefully cap the velocity of this rigidbody to this magnitude. Can prevent weird issues without the need of continuous collision detection.
+        /// </summary>
+        [DataMember]
+        public float MaximumSpeed = 0f;
+
+        /// <summary>
         /// Gets or sets the mass of this Rigidbody
         /// </summary>
         /// <value>
@@ -569,6 +575,15 @@ namespace Xenko.Physics.Bepu
         {
             return base.CheckCurrentValid() && InternalBody.Exists;
         }
+
+        /// <summary>
+        /// When updating the associated TransformComponent, should we not set rotation?
+        /// </summary>
+        [DataMember(69)]
+        public bool IgnorePhysicsRotation = false;
+
+        [DataMemberIgnore]
+        public Vector3? LocalPhysicsOffset = null;
 
         /// <summary>
         /// Updades the graphics transformation from the given physics transformation
