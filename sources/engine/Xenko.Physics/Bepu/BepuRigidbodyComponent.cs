@@ -204,15 +204,7 @@ namespace Xenko.Physics.Bepu
         private static readonly BodyInertia KinematicInertia = new BodyInertia()
         {
             InverseMass = 0f,
-            InverseInertiaTensor = new Symmetric3x3()
-            {
-                XX = 0f,
-                YX = 0f,
-                ZX = 0f,
-                YY = 0f,
-                ZY = 0f,
-                ZZ = 0f
-            }
+            InverseInertiaTensor = default
         };
 
         private RigidBodyTypes type = RigidBodyTypes.Dynamic;
@@ -255,6 +247,28 @@ namespace Xenko.Physics.Bepu
         public float MaximumSpeed = 0f;
 
         /// <summary>
+        /// Prevent this rigidbody from rotating or falling over?
+        /// </summary>
+        [DataMember]
+        public bool RotationLock
+        {
+            get
+            {
+                return _rotationLock;
+            }
+            set
+            {
+                if (_rotationLock == value) return;
+
+                _rotationLock = value;
+
+                UpdateInertia(newShape ?? ColliderShape);
+            }
+        }
+
+        private bool _rotationLock = false;
+
+        /// <summary>
         /// Gets or sets the mass of this Rigidbody
         /// </summary>
         /// <value>
@@ -287,9 +301,18 @@ namespace Xenko.Physics.Bepu
             {
                 bodyDescription.LocalInertia = KinematicInertia;
             }
-            else if (useShape is IConvexShape ics)
+            else if (useShape is IConvexShape ics && !_rotationLock)
             { 
                 ics.ComputeInertia(mass, out bodyDescription.LocalInertia);
+            }
+            else if (_rotationLock)
+            {
+                bodyDescription.LocalInertia.InverseMass = 1f / mass;
+                bodyDescription.LocalInertia.InverseInertiaTensor = default;
+            }
+            else if (useShape is BepuPhysics.Collidables.Mesh m)
+            {
+                m.ComputeInertia(mass, out bodyDescription.LocalInertia);
             }
 
             if (CheckCurrentValid())
