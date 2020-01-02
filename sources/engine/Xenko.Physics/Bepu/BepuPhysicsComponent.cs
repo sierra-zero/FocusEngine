@@ -101,7 +101,7 @@ namespace Xenko.Engine
         public float MaximumRecoveryVelocity = 2f;
 
         [DataMember]
-        public SpringSettings SpringSettings = new SpringSettings(30f, 1f);
+        public SpringSettings SpringSettings = new SpringSettings(30f, 20f);
 
         [DataMember]
         virtual public IShape ColliderShape { get; set; }

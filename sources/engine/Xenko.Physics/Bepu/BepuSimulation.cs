@@ -252,8 +252,9 @@ namespace Xenko.Physics.Bepu
                 BepuPhysicsComponent a = getFromReference(pair.A);
                 BepuPhysicsComponent b = getFromReference(pair.B);
                 pairMaterial.FrictionCoefficient = a.FrictionCoefficient * b.FrictionCoefficient;
-                pairMaterial.MaximumRecoveryVelocity = a.MaximumRecoveryVelocity * b.MaximumRecoveryVelocity;
-                pairMaterial.SpringSettings = a.SpringSettings;
+                pairMaterial.MaximumRecoveryVelocity = (a.MaximumRecoveryVelocity + b.MaximumRecoveryVelocity) * 0.5f;
+                pairMaterial.SpringSettings.AngularFrequency = (a.SpringSettings.AngularFrequency + b.SpringSettings.AngularFrequency) * 0.5f;
+                pairMaterial.SpringSettings.TwiceDampingRatio = (a.SpringSettings.TwiceDampingRatio + b.SpringSettings.TwiceDampingRatio) * 0.5f;
                 if (((uint)a.CanCollideWith & (uint)b.CollisionGroup) != 0)
                 {
                     RecordContact(a, b, manifold);

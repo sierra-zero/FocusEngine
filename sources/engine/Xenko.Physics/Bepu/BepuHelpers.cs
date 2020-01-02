@@ -138,7 +138,7 @@ namespace Xenko.Physics.Bepu
         /// <param name="rotations">optional rotation for each</param>
         public static void GenerateStaticComponents(Entity e, List<IShape> shapes, List<Vector3> offsets = null, List<Quaternion> rotations = null,
                                                     CollisionFilterGroups group = CollisionFilterGroups.DefaultFilter, CollisionFilterGroupFlags collidesWith = CollisionFilterGroupFlags.AllFilter,
-                                                    float FrictionCoefficient = 0.5f, float MaximumRecoverableVelocity = 3f, SpringSettings? springSettings = null)
+                                                    float FrictionCoefficient = 0.5f, float MaximumRecoverableVelocity = 2f, SpringSettings? springSettings = null)
         {
             for (int i=0; i<shapes.Count; i++)
             {
