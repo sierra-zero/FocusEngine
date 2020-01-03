@@ -96,8 +96,6 @@ namespace Xenko.Physics.Bepu
             }
             set
             {
-                if (AddedToScene == value) return;
-
                 if (ColliderShape == null)
                     throw new InvalidOperationException(Entity.Name + " has no ColliderShape, can't be added!");
 
@@ -106,11 +104,19 @@ namespace Xenko.Physics.Bepu
 
                 if (value)
                 {
-                    BepuSimulation.instance.ToBeAdded.Enqueue(this);
+                    lock (BepuSimulation.instance.ToBeAdded)
+                    {
+                        BepuSimulation.instance.ToBeAdded.Add(this);
+                        BepuSimulation.instance.ToBeRemoved.Remove(this);
+                    }
                 }
                 else
                 {
-                    BepuSimulation.instance.ToBeRemoved.Enqueue(this);
+                    lock (BepuSimulation.instance.ToBeAdded)
+                    {
+                        BepuSimulation.instance.ToBeAdded.Remove(this);
+                        BepuSimulation.instance.ToBeRemoved.Add(this);
+                    }
                 }
             }
         }

@@ -15,10 +15,15 @@ using Xenko.Core.Diagnostics;
 using Xenko.Core.Mathematics;
 using Xenko.Core.MicroThreading;
 using Xenko.Engine.Design;
+using Xenko.Extensions;
+using Xenko.Games;
+using Xenko.Graphics.GeometricPrimitives;
 using Xenko.Physics;
 using Xenko.Physics.Bepu;
 using Xenko.Physics.Engine;
 using Xenko.Rendering;
+using Xenko.Rendering.Materials;
+using Xenko.Rendering.Materials.ComputeColors;
 
 namespace Xenko.Engine
 {
@@ -163,5 +168,60 @@ namespace Xenko.Engine
         /// </summary>
         [DataMember]
         public bool GhostBody { get; set; }
+
+        private static Material debugShapeMaterial;
+        private static Xenko.Rendering.Mesh cubeMesh;
+
+        public Entity GenerateDebugColliderEntity()
+        {
+            System.Numerics.Vector3 min, max;
+            if (ColliderShape is IConvexShape ics)
+            {
+                ics.ComputeBounds(BepuHelpers.ToBepu(Quaternion.Identity), out min, out max);
+            }
+            else if (ColliderShape is BepuPhysics.Collidables.Mesh cm)
+            {
+                cm.ComputeBounds(BepuHelpers.ToBepu(Quaternion.Identity), out min, out max);
+            }
+            else return null;
+
+            Vector3 centerOffset = BepuHelpers.ToXenko(max + min) * 0.5f;
+
+            Game g = ServiceRegistry.instance.GetService<IGame>() as Game;
+
+            if (debugShapeMaterial == null)
+            {
+                var materialDescription = new MaterialDescriptor
+                {
+                    Attributes =
+                    {
+                        DiffuseModel = new MaterialDiffuseLambertModelFeature(),
+                        Diffuse = new MaterialDiffuseMapFeature(new ComputeColor { Key = MaterialKeys.DiffuseValue })
+                    }
+                };
+
+                debugShapeMaterial = Material.New(g.GraphicsDevice, materialDescription);
+                debugShapeMaterial.Passes[0].Parameters.Set(MaterialKeys.DiffuseValue, Color.Red);
+
+                var meshDraw = GeometricPrimitive.Cube.New(g.GraphicsDevice, Vector3.One).ToMeshDraw();
+
+                cubeMesh = new Rendering.Mesh { Draw = meshDraw };
+            }
+
+            Entity e = new Entity(Entity.Name + "-physicsBB");
+
+            Model m = new Model();
+            m.Add(debugShapeMaterial);
+            m.Meshes.Add(cubeMesh);
+
+            ModelComponent mc = e.GetOrCreate<ModelComponent>();
+            mc.Model = m;
+
+            e.Transform.Scale = new Vector3(max.X - min.X, max.Y - min.Y, max.Z - min.Z);
+            e.Transform.Position = Position + centerOffset;
+            e.Transform.Rotation = Rotation;
+
+            return e;
+        }
     }
 }

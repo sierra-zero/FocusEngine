@@ -262,7 +262,7 @@ namespace Xenko.Physics.Bepu
 
                 _rotationLock = value;
 
-                UpdateInertia(newShape ?? ColliderShape);
+                UpdateInertia();
             }
         }
 
@@ -291,17 +291,17 @@ namespace Xenko.Physics.Bepu
 
                 mass = value;
 
-                UpdateInertia(newShape ?? ColliderShape);
+                UpdateInertia();
             }
         }
 
-        private void UpdateInertia(IShape useShape)
+        private void UpdateInertia()
         {
             if (type == RigidBodyTypes.Kinematic)
             {
                 bodyDescription.LocalInertia = KinematicInertia;
             }
-            else if (useShape is IConvexShape ics && !_rotationLock)
+            else if (ColliderShape is IConvexShape ics && !_rotationLock)
             { 
                 ics.ComputeInertia(mass, out bodyDescription.LocalInertia);
             }
@@ -310,7 +310,7 @@ namespace Xenko.Physics.Bepu
                 bodyDescription.LocalInertia.InverseMass = 1f / mass;
                 bodyDescription.LocalInertia.InverseInertiaTensor = default;
             }
-            else if (useShape is BepuPhysics.Collidables.Mesh m)
+            else if (ColliderShape is BepuPhysics.Collidables.Mesh m)
             {
                 m.ComputeInertia(mass, out bodyDescription.LocalInertia);
             }
@@ -322,16 +322,6 @@ namespace Xenko.Physics.Bepu
         }
 
         [DataMemberIgnore]
-        internal IShape newShape;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal void swapNewShape()
-        {
-            base.ColliderShape = newShape;
-            newShape = null;
-        }
-
-        [DataMemberIgnore]
         public override IShape ColliderShape
         {
             get => base.ColliderShape;
@@ -339,29 +329,32 @@ namespace Xenko.Physics.Bepu
             {
                 if (value == null || value == ColliderShape) return;
 
-                newShape = null;
-
-                if (AddedToScene)
+                if (AddedToScene && ColliderShape != null)
                 {
-                    if (ColliderShape != null)
-                    {
-                        newShape = value;
-                    }
-                    else
-                    {
-                        base.ColliderShape = value;
-                    }
+                    base.ColliderShape = value;
 
-                    // remove and readd me to update shape
-                    BepuSimulation.instance.ToBeRemoved.Enqueue(this);
-                    BepuSimulation.instance.ToBeAdded.Enqueue(this);
+                    BepuSimulation.instance.ActionsBeforeSimulationStep.Enqueue((time) =>
+                    {
+                        // first check if we are removing this when we get here... if so, don't change shape
+                        if (BepuSimulation.instance.ToBeRemoved.Contains(this)) return;
+
+                        // remove the old shape
+                        BepuSimulation.instance.internalSimulation.Shapes.Remove(bodyDescription.Collidable.Shape);
+
+                        // add the new shape
+                        TypedIndex ti = ColliderShape.AddToShapes(BepuSimulation.instance.internalSimulation.Shapes);
+                        bodyDescription.Collidable = new CollidableDescription(ti, 0.1f);
+
+                        // set it to the internalbody
+                        InternalBody.SetShape(ti);
+                    });
                 }
                 else
                 {
                     base.ColliderShape = value;
                 }
 
-                UpdateInertia(newShape ?? base.ColliderShape);
+                UpdateInertia();
             }
         }
 
@@ -431,7 +424,7 @@ namespace Xenko.Physics.Bepu
             {
                 type = value;
 
-                UpdateInertia(newShape ?? ColliderShape);
+                UpdateInertia();
             }
         }
 
@@ -448,8 +441,6 @@ namespace Xenko.Physics.Bepu
             }
             set
             {
-                if (AddedToScene == value) return;
-
                 if (ColliderShape == null)
                     throw new InvalidOperationException(Entity.Name + " has no ColliderShape, can't be added!");
 
@@ -458,13 +449,19 @@ namespace Xenko.Physics.Bepu
 
                 if (value)
                 {
-                    Mass = mass;
-                    RigidBodyType = type;
-                    BepuSimulation.instance.ToBeAdded.Enqueue(this);
+                    lock (BepuSimulation.instance.ToBeAdded)
+                    {
+                        BepuSimulation.instance.ToBeAdded.Add(this);
+                        BepuSimulation.instance.ToBeRemoved.Remove(this);
+                    }
                 }
                 else
                 {
-                    BepuSimulation.instance.ToBeRemoved.Enqueue(this);
+                    lock (BepuSimulation.instance.ToBeAdded)
+                    {
+                        BepuSimulation.instance.ToBeRemoved.Add(this);
+                        BepuSimulation.instance.ToBeAdded.Remove(this);
+                    }
                 }
             }
         }

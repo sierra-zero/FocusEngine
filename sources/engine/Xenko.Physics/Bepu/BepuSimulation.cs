@@ -35,7 +35,7 @@ namespace Xenko.Physics.Bepu
 
         public BepuPhysics.Simulation internalSimulation;
 
-        internal ConcurrentQueue<BepuPhysicsComponent> ToBeAdded = new ConcurrentQueue<BepuPhysicsComponent>(), ToBeRemoved = new ConcurrentQueue<BepuPhysicsComponent>();
+        internal HashSet<BepuPhysicsComponent> ToBeAdded = new HashSet<BepuPhysicsComponent>(), ToBeRemoved = new HashSet<BepuPhysicsComponent>();
 
         public ReaderWriterLockSlim simulationLocker { get; private set; } = new ReaderWriterLockSlim();
 
@@ -411,83 +411,69 @@ namespace Xenko.Physics.Bepu
 
         internal void ProcessAdds()
         {
-            while (ToBeAdded.Count > 0)
+            foreach (BepuPhysicsComponent component in ToBeAdded)
             {
-                if (ToBeAdded.TryDequeue(out var component))
+                if (component.AddedHandle > -1) continue; // already added
+                if (component is BepuStaticColliderComponent scc)
                 {
-                    if (component.AddedHandle > -1) continue; // already added
-                    if (component is BepuStaticColliderComponent scc)
+                    using (simulationLocker.WriteLock())
                     {
-                        using (simulationLocker.WriteLock())
-                        {
-                            scc.staticDescription.Collidable = scc.ColliderShape.GenerateDescription(internalSimulation);
-                            scc.AddedHandle = internalSimulation.Statics.Add(scc.staticDescription);
-                            StaticMappings[scc.AddedHandle] = scc;
-                        }
+                        scc.staticDescription.Collidable = scc.ColliderShape.GenerateDescription(internalSimulation);
+                        scc.AddedHandle = internalSimulation.Statics.Add(scc.staticDescription);
+                        StaticMappings[scc.AddedHandle] = scc;
                     }
-                    else if (component is BepuRigidbodyComponent rigidBody)
+                }
+                else if (component is BepuRigidbodyComponent rigidBody)
+                {
+                    using (simulationLocker.WriteLock())
                     {
-                        using (simulationLocker.WriteLock())
-                        {
-                            if (rigidBody.newShape != null)
-                            {
-                                TypedIndex ti = rigidBody.newShape.AddToShapes(internalSimulation.Shapes);
-                                rigidBody.bodyDescription.Collidable = new CollidableDescription(ti, 0.1f);
-                                rigidBody.InternalBody.SetShape(ti);
-                                rigidBody.swapNewShape();
-                            }
-                            else
-                            {
-                                rigidBody.bodyDescription.Collidable = rigidBody.ColliderShape.GenerateDescription(internalSimulation);
-                            }
-                            AllRigidbodies.Add(rigidBody);
-                            rigidBody.AddedHandle = internalSimulation.Bodies.Add(rigidBody.bodyDescription);
-                            RigidMappings[rigidBody.AddedHandle] = rigidBody;
-                        }
-                        rigidBody.SleepThreshold = rigidBody.bodyDescription.Activity.SleepThreshold;
-                        rigidBody.CcdMotionThreshold = rigidBody.bodyDescription.Collidable.Continuity.SweepConvergenceThreshold;
+                        rigidBody.bodyDescription.Collidable = rigidBody.ColliderShape.GenerateDescription(internalSimulation);
+                        AllRigidbodies.Add(rigidBody);
+                        rigidBody.AddedHandle = internalSimulation.Bodies.Add(rigidBody.bodyDescription);
+                        RigidMappings[rigidBody.AddedHandle] = rigidBody;
                     }
-                    component.Position = component.Entity.Transform.WorldPosition();
-                    component.Rotation = component.Entity.Transform.WorldRotation();
-                }   
+                    rigidBody.SleepThreshold = rigidBody.bodyDescription.Activity.SleepThreshold;
+                    rigidBody.CcdMotionThreshold = rigidBody.bodyDescription.Collidable.Continuity.SweepConvergenceThreshold;
+                }
+                component.Position = component.Entity.Transform.WorldPosition();
+                component.Rotation = component.Entity.Transform.WorldRotation();
             }
+            ToBeAdded.Clear();
         }
 
         internal void ProcessRemovals()
         {
-            while (ToBeRemoved.Count > 0)
+            foreach (BepuPhysicsComponent component in ToBeRemoved)
             {
-                if (ToBeRemoved.TryDequeue(out var component))
+                int addedIndex = component.AddedHandle;
+                if (addedIndex == -1) continue; // already removed
+                if (component is BepuStaticColliderComponent scc)
                 {
-                    int addedIndex = component.AddedHandle;
-                    if (addedIndex == -1) continue; // already removed
-                    if (component is BepuStaticColliderComponent scc)
+                    using(simulationLocker.WriteLock())
                     {
-                        using(simulationLocker.WriteLock())
-                        {
-                            scc.AddedHandle = -1;
-                            internalSimulation.Statics.Remove(addedIndex);
-                            StaticMappings.Remove(addedIndex);
-                        }
-                    } 
-                    else if (component is BepuRigidbodyComponent rigidBody)
+                        scc.AddedHandle = -1;
+                        internalSimulation.Statics.Remove(addedIndex);
+                        StaticMappings.Remove(addedIndex);
+                    }
+                } 
+                else if (component is BepuRigidbodyComponent rigidBody)
+                {
+                    using(simulationLocker.WriteLock())
                     {
-                        using(simulationLocker.WriteLock())
-                        {
-                            rigidBody.AddedHandle = -1;
-                            internalSimulation.Bodies.Remove(addedIndex);
-                            RigidMappings.Remove(addedIndex);
-                            AllRigidbodies.Remove(rigidBody);
-                        }
+                        rigidBody.AddedHandle = -1;
+                        internalSimulation.Bodies.Remove(addedIndex);
+                        RigidMappings.Remove(addedIndex);
+                        AllRigidbodies.Remove(rigidBody);
+                    }
 
-                        if (rigidBody.processingPhysicalContacts != null)
-                        {
-                            for (int i = 0; i < rigidBody.processingPhysicalContacts.Length; i++)
-                                rigidBody.processingPhysicalContacts[i].Clear();
-                        }
+                    if (rigidBody.processingPhysicalContacts != null)
+                    {
+                        for (int i = 0; i < rigidBody.processingPhysicalContacts.Length; i++)
+                            rigidBody.processingPhysicalContacts[i].Clear();
                     }
                 }
             }
+            ToBeRemoved.Clear();
         }
 
         struct RayHitClosestHandler : IRayHitHandler

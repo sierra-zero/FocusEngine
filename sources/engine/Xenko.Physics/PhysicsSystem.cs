@@ -157,18 +157,21 @@ namespace Xenko.Physics
 
                 if (physicsScene.BepuSimulation != null)
                 {
-                    // do anything before simulation
+                    // do anything before simulation (which might modify ToBeAdded or ToBeRemoved)
                     while (physicsScene.BepuSimulation.ActionsBeforeSimulationStep.TryDequeue(out Action<float> a)) a(time);
 
-                    // remove all bodies set to be removed
-                    physicsScene.BepuSimulation.ProcessRemovals();
+                    lock (physicsScene.BepuSimulation.ToBeAdded)
+                    {
+                        // remove all bodies set to be removed
+                        physicsScene.BepuSimulation.ProcessRemovals();
 
-                    // did we request a clear?
-                    int clearMode = physicsScene.BepuSimulation.clearRequested;
-                    if (clearMode > 0) physicsScene.BepuSimulation.Clear(clearMode == 2, true);
+                        // did we request a clear?
+                        int clearMode = physicsScene.BepuSimulation.clearRequested;
+                        if (clearMode > 0) physicsScene.BepuSimulation.Clear(clearMode == 2, true);
 
-                    // add everyone waiting (which could have been something just removed)
-                    physicsScene.BepuSimulation.ProcessAdds();
+                        // add everyone waiting (which could have been something just removed)
+                        physicsScene.BepuSimulation.ProcessAdds();
+                    }
 
                     if (Simulation.DisableSimulation == false)
                     {
