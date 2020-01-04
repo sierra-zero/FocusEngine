@@ -35,6 +35,7 @@ Most of Focus is similar to Xenko and there shouldn't be any loss of functionali
 * Performance: lots of tweaks have been made throughout the engine to maximize performance. This includes reducing locks and enumeration reduction, for example.
 * Includes dfkeenan's toolkit designed for this fork (from https://github.com/dfkeenan/XenkoToolkit). May need to add the Toolkit Nuget package to use.
 * Takes good things from many different Xenko forks, including the original Xenko branch when it gets updated. May not get everything, like some of the tutorials, sample, non-PC platforms or launcher updates, which I don't maintain.
+* Simple binary distribution: No launcher needed. Just download and run the latest release (after making sure you have all of the Visual Studio build prerequisites, see https://github.com/phr00t/FocusEngine/releases.
 * Probably lots of other stuff: haven't kept that great of track of improvements, I usually fix things as needed and keep moving forward!
 
 ## License
