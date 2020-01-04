@@ -11,6 +11,31 @@ Xenko comes with an editor that allows you create and manage the content of your
 
 To learn more about Xenko, visit [xenko.com](https://xenko.com/).
 
+## Why this fork?
+
+My games require the engine to be developed at a faster pace than Xenko. I'm in need of fixes, new features and better performance. These changes will not be supported by the core team, and the absolute most recent changes may not be fully stable. However, you may find them very helpful, and in some cases, essential to projects.
+
+## What is different?
+
+Most of Focus is similar to Xenko and there shouldn't be any loss of functionality over the original. Changes are focused on fixes, performance improvements and new features.
+
+* Virtual Reality: frame rate management, resolution detection, Vulkan support, and automatic UI interaction are some of the VR improvements you'll get "out of the box". Tracking hands is much easier, as you can simply select which hand to track right from GameStudio. Support for multiple forward renderers in VR, with post processing.
+* Vulkan: Focus primarily uses Vulkan, which has been significantly overhauled to provide more performance you'd expect from the newer API.
+* BepuPhysics2 and Physics: Focus has an additional physics library integrated, which is much faster, multithreaded and pure C#. It isn't integrated with GameStudio though, like Bullet physics is. Look at the Xenko.Physics.Bepu namespace on how to use it. If you decide to still use Bullet, this fork can handle Bullet running in another thread with interpolation.
+* Ease of use: TransformComponents have nice shortcuts like WorldPosition and WorldRotation. There are also other very useful shortcuts, like Material.Clone to easily clone materials.
+* Lots of bugfixes: Lots of issues, and even GameStudio crashes and project corruption, have been fixed/improved in this fork. Some specific examples is crashes when entering invalid data into a color field, particle colors or rendering 3D text from multiple cameras.
+* EntityPool: Makes it really easy to reuse entities and prefabs. This can save lots of memory and processing, instead of recreating things that come and go (like enemies or projectiles).
+* UI improvements: View frustum is implemented in this fork, so UI elements outside of view won't be drawn for performance reasons. ScrollViewers can work with mouse wheels out of the box. Easily get UI elements to access in code from a Page using GatherUIDictionary. Easily make Lists and Pulldown selection boxes using GridList and PulldownList (not integrated with GameStudio yet, though).
+* ModelBatcher: Easily make batched models using lots of individual models (think grass and rocks for your whole terrain batched into one draw call and entity).
+* More Post Processing Effects: Fog and Outline post processing shaders work, out of the box.
+* Easy setting game resolution: Game.SetDefaultSettings(width, height, fullscreen) and Game.OverrideDefaultSettings to set and save resolution of your game.
+* Easy generating procedural meshes: StagedMeshDraw takes a list of verticies and indicies, no "buffer binding" or "GraphicsDevice" needed. Also will actually upload the mesh when it tries to get rendered automatically, saving time and resources if the mesh doesn't actually ever get viewed.
+* Less likely to lose work: files are not actually deleted from GameStudio, just moved to the Recylce Bin.
+* Performance: lots of tweaks have been made throughout the engine to maximize performance. This includes reducing locks and enumeration reduction, for example.
+* Includes dfkeenan's toolkit designed for this fork (from https://github.com/dfkeenan/XenkoToolkit). May need to add the Toolkit Nuget package to use.
+* Takes good things from many different Xenko forks, including the original Xenko branch when it gets updated. May not get everything, like some of the tutorials, sample, non-PC platforms or launcher updates, which I don't maintain.
+* Probably lots of other stuff: haven't kept that great of track of improvements, I usually fix things as needed and keep moving forward!
+
 ## License
 
 Focus is covered by [MIT](LICENSE.md), unless stated otherwise (i.e. for some files that are copied from other projects).
