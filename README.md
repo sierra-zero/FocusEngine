@@ -26,7 +26,7 @@ Most of Focus is similar to Xenko and there shouldn't be any loss of functionali
 * Lots of bugfixes: Lots of issues, and even GameStudio crashes and project corruption, have been fixed/improved in this fork. Some specific examples is crashes when entering invalid data into a color field, particle colors or rendering 3D text from multiple cameras.
 * EntityPool: Makes it really easy to reuse entities and prefabs. This can save lots of memory and processing, instead of recreating things that come and go (like enemies or projectiles).
 * UI improvements: View frustum is implemented in this fork, so UI elements outside of view won't be drawn for performance reasons. ScrollViewers can work with mouse wheels out of the box. Easily get UI elements to access in code from a Page using GatherUIDictionary. Easily make Lists and Pulldown selection boxes using GridList and PulldownList (not integrated with GameStudio yet, though).
-* UI Text features: vertically align text or use <color> tags to dynamically change text colors. Use <br> tags to have multiline text set straight from GameStudio.
+* UI Text features: vertically align text or use \<color> tags to dynamically change text colors. Use \<br> tags to have multiline text set straight from GameStudio.
 * ModelBatcher: Easily make batched models using lots of individual models (think grass and rocks for your whole terrain batched into one draw call and entity).
 * More Post Processing Effects: Fog and Outline post processing shaders work, out of the box.
 * Easy setting game resolution: Game.SetDefaultSettings(width, height, fullscreen) and Game.OverrideDefaultSettings to set and save resolution of your game.
