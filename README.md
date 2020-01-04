@@ -58,7 +58,7 @@ Find explanations and information about Xenko:
 Ask for help or report issues:
 * [Chat with the community on Discord](https://discord.gg/f6aerfE) [![Join the chat at https://discord.gg/f6aerfE](https://img.shields.io/discord/500285081265635328.svg?style=flat&logo=discord&label=discord)](https://discord.gg/f6aerfE)
 * [Discuss topics on our forums](http://forums.xenko.com/)
-* [Report engine issues](https://github.com/xenko3d/xenko/issues)
+* [Report engine issues](https://github.com/phr00t/xenko/issues)
 * [Donate to support the project](https://www.patreon.com/phr00tssoftware)
 
 ## Building from source
@@ -78,7 +78,3 @@ Ask for help or report issues:
 
 1. Clone Focus: `git clone https://github.com/phr00t/FocusEngine.git`
 2. Run `<FocusDir>\build\Xenko.PCPlatforms.bat`, which starts Visual Studio 2019, and build.
-
-### Contribution Guidelines
-
-Please check our [Contributing Guidelines](docs/CONTRIBUTING.md).
