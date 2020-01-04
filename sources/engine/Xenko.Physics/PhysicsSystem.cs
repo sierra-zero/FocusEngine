@@ -26,7 +26,7 @@ namespace Xenko.Physics
         private ManualResetEventSlim doUpdateEvent;
         private Thread physicsThread;
 
-        public static float TimeScale = 1f;
+        public static float MaximumSimulationTime = 0.5f;
 
         private readonly List<PhysicsScene> scenes = new List<PhysicsScene>();
 
@@ -51,6 +51,8 @@ namespace Xenko.Physics
         public override void Initialize()
         {
             physicsConfiguration = Game?.Settings != null ? Game.Settings.Configurations.Get<PhysicsSettings>() : new PhysicsSettings();
+
+            MaximumSimulationTime = physicsConfiguration.MaxSimulationTime;
 
             if (isMultithreaded)
             {
@@ -201,12 +203,13 @@ namespace Xenko.Physics
         {
             while (runThread)
             {
-                if (doUpdateEvent.Wait(1000) && timeToSimulate > 0f)
-                {
+                if (doUpdateEvent.Wait(1000)) {
                     float simulateThisInterval = timeToSimulate;
-                    timeToSimulate -= simulateThisInterval;
-
-                    RunPhysicsSimulation(simulateThisInterval);
+                    if (simulateThisInterval > 0f)
+                    {
+                        timeToSimulate -= simulateThisInterval;
+                        RunPhysicsSimulation(simulateThisInterval);
+                    }
                 }
 
                 doUpdateEvent.Reset();
@@ -217,12 +220,21 @@ namespace Xenko.Physics
         {
             if (isMultithreaded)
             {
-                timeToSimulate += (float)gameTime.Elapsed.TotalSeconds * TimeScale;
+                float gt = (float)gameTime.Elapsed.TotalSeconds;
+                if (timeToSimulate + gt > MaximumSimulationTime)
+                {
+                    timeToSimulate = MaximumSimulationTime;
+                }
+                else
+                {
+                    timeToSimulate += gt;
+                }
+
                 doUpdateEvent.Set();
             } 
             else
             {
-                RunPhysicsSimulation((float)gameTime.Elapsed.TotalSeconds * TimeScale);
+                RunPhysicsSimulation((float)Math.Min(MaximumSimulationTime, gameTime.Elapsed.TotalSeconds));
             }
         }
     }

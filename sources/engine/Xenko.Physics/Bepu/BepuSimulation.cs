@@ -41,6 +41,8 @@ namespace Xenko.Physics.Bepu
 
         public ConcurrentQueue<Action<float>> ActionsBeforeSimulationStep = new ConcurrentQueue<Action<float>>();
 
+        public static float TimeScale = 1f;
+
         private static BepuSimulation _instance;
         public static BepuSimulation instance
         {
@@ -881,7 +883,7 @@ namespace Xenko.Physics.Bepu
 
             using (BepuSimulation.instance.simulationLocker.ReadLock())
             {
-                internalSimulation.Timestep(deltaTime, threadDispatcher);
+                internalSimulation.Timestep(deltaTime * TimeScale, threadDispatcher);
             }
         }
     }

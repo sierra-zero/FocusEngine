@@ -24,5 +24,11 @@ namespace Xenko.Physics
         /// </userdoc>
         [DataMember(30)]
         public float FixedTimeStep = 1.0f / 60.0f;
+
+        /// <summary>
+        /// Default maximum time to simulate per frame.
+        /// </summary>
+        [DataMember]
+        public float MaxSimulationTime = 0.5f;
     }
 }
