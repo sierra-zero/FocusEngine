@@ -239,6 +239,11 @@ namespace Xenko.Physics
 
         protected override void OnAttach()
         {
+            BulletSharp.ConvexShape cshape = ColliderShape.InternalShape as BulletSharp.ConvexShape;
+
+            if (cshape == null)
+                throw new ArgumentException(Entity.Name + " needs a convex shape for its CharacterComponent!");
+
             NativeCollisionObject = new BulletSharp.PairCachingGhostObject
             {
                 CollisionShape = ColliderShape.InternalShape,
@@ -255,7 +260,7 @@ namespace Xenko.Physics
             NativeCollisionObject.ContactProcessingThreshold = !Simulation.CanCcd ? 1e18f : 1e30f;
 
             BulletSharp.Math.Vector3 unitY = new BulletSharp.Math.Vector3(0f, 1f, 0f);
-            KinematicCharacter = new BulletSharp.KinematicCharacterController((BulletSharp.PairCachingGhostObject)NativeCollisionObject, (BulletSharp.ConvexShape)ColliderShape.InternalShape, StepHeight, ref unitY);
+            KinematicCharacter = new BulletSharp.KinematicCharacterController((BulletSharp.PairCachingGhostObject)NativeCollisionObject, cshape, StepHeight, ref unitY);
 
             base.OnAttach();
 
