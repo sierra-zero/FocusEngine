@@ -172,7 +172,7 @@ namespace Xenko.Engine
         private static Material debugShapeMaterial;
         private static Xenko.Rendering.Mesh cubeMesh;
 
-        public Entity GenerateDebugColliderEntity()
+        public Entity AttachDebugShapeAsChild()
         {
             System.Numerics.Vector3 min, max;
             if (ColliderShape is IConvexShape ics)
@@ -217,9 +217,10 @@ namespace Xenko.Engine
             ModelComponent mc = e.GetOrCreate<ModelComponent>();
             mc.Model = m;
 
-            e.Transform.Scale = new Vector3(max.X - min.X, max.Y - min.Y, max.Z - min.Z);
-            e.Transform.Position = Position + centerOffset;
-            e.Transform.Rotation = Rotation;
+            e.Transform.Scale = new Vector3(max.X - min.X, max.Y - min.Y, max.Z - min.Z) / Entity.Transform.WorldScale();
+            e.Transform.Position = centerOffset / Entity.Transform.WorldScale();
+            if (this is BepuRigidbodyComponent rb && rb.IgnorePhysicsRotation) e.Transform.Rotation = Rotation;
+            e.Transform.Parent = Entity.Transform;
 
             return e;
         }
