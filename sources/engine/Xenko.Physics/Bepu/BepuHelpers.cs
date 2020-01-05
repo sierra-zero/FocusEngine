@@ -41,20 +41,25 @@ namespace Xenko.Physics.Bepu
             }
         }
 
-        private static Vector3 getBounds(Entity e)
+        private static Vector3 getBounds(Entity e, out Vector3 center)
         {
             ModelComponent mc = e.Get<ModelComponent>();
-            if (mc == null || mc.Model == null || mc.Model.Meshes.Count < 0f) return Vector3.Zero;
+            center = new Vector3();
+            if (mc == null || mc.Model == null || mc.Model.Meshes.Count <= 0f) return Vector3.Zero;
 
-            Vector3 biggest = Vector3.Zero;
-            for (int i=0; i<mc.Model.Meshes.Count; i++)
+            Vector3 biggest = new Vector3(0.05f, 0.05f, 0.05f);
+            int count = mc.Model.Meshes.Count;
+            for (int i=0; i<count; i++)
             {
                 Xenko.Rendering.Mesh m = mc.Model.Meshes[i];
-                Vector3 extent = m.BoundingBox.Extent;
+                BoundingBox bb = m.BoundingBox;
+                Vector3 extent = bb.Extent;
                 if (extent.X > biggest.X) biggest.X = extent.X;
                 if (extent.Y > biggest.Y) biggest.Y = extent.Y;
                 if (extent.Z > biggest.Z) biggest.Z = extent.Z;
+                center += bb.Center;
             }
+            center /= count;
             return biggest * e.Transform.WorldScale();
         }
 
@@ -89,7 +94,7 @@ namespace Xenko.Physics.Bepu
             return shape != null;
         }
 
-        public static IShape OffsetSingleShape(IConvexShape shape, Vector3? offset = null, Quaternion? rotation = null)
+        public static IShape OffsetSingleShape(IConvexShape shape, Vector3? offset = null, Quaternion? rotation = null, bool kinematic = false)
         {
             if (offset.HasValue == false && rotation.HasValue == false) return shape;
 
@@ -97,36 +102,49 @@ namespace Xenko.Physics.Bepu
 
             using (var compoundBuilder = new CompoundBuilder(BepuSimulation.safeBufferPool, BepuSimulation.instance.internalSimulation.Shapes, 1))
             {
-                compoundBuilder.AddForKinematicEasy(shape, new BepuPhysics.RigidPose(ToBepu(offset ?? Vector3.Zero), ToBepu(rotation ?? Quaternion.Identity)), 1f);
+                if (kinematic)
+                {
+                    compoundBuilder.AddForKinematicEasy(shape, new BepuPhysics.RigidPose(ToBepu(offset ?? Vector3.Zero), ToBepu(rotation ?? Quaternion.Identity)), 1f);
+                }
+                else
+                {
+                    compoundBuilder.AddEasy(shape, new BepuPhysics.RigidPose(ToBepu(offset ?? Vector3.Zero), ToBepu(rotation ?? Quaternion.Identity)), 1f);
+                }
 
-                compoundBuilder.BuildKinematicCompound(out var children);
-
-                return new Compound(children);
+                return compoundBuilder.BuildCompleteCompoundShape(BepuSimulation.instance.internalSimulation.Shapes, BepuSimulation.safeBufferPool, kinematic);
             }
         }
 
-        public static Box GenerateBoxOfEntity(Entity e, float scale = 1f)
+        public static IShape GenerateBoxOfEntity(Entity e, float scale = 1f, bool allowOffsetCompound = true)
         {
-            Vector3 b = getBounds(e) * scale * 2f;
-            return new Box(b.X, b.Y, b.Z);
+            Vector3 b = getBounds(e, out Vector3 center) * scale * 2f;
+            var box = new Box(b.X, b.Y, b.Z);
+            if (allowOffsetCompound && center.LengthSquared() > 0.01f) return OffsetSingleShape(box, center);
+            return box;
         }
 
-        public static Sphere GenerateSphereOfEntity(Entity e, float scale = 1f)
+        public static IShape GenerateSphereOfEntity(Entity e, float scale = 1f, bool allowOffsetCompound = true)
         {
-            Vector3 b = getBounds(e);
-            return new Sphere(Math.Max(b.Z, Math.Max(b.X, b.Y)) * scale);
+            Vector3 b = getBounds(e, out Vector3 center);
+            var box = new Sphere(Math.Max(b.Z, Math.Max(b.X, b.Y)) * scale);
+            if (allowOffsetCompound && center.LengthSquared() > 0.01f) return OffsetSingleShape(box, center);
+            return box;
         }
 
-        public static Capsule GenerateCapsuleOfEntity(Entity e, float scale = 1f, bool XZradius = true)
+        public static IShape GenerateCapsuleOfEntity(Entity e, float scale = 1f, bool XZradius = true, bool allowOffsetCompound = true)
         {
-            Vector3 b = getBounds(e) * scale;
-            return XZradius ? new Capsule(Math.Max(b.X, b.Z), b.Y * 2f) : new Capsule(b.Y, 2f * Math.Max(b.X, b.Z));
+            Vector3 b = getBounds(e, out Vector3 center) * scale;
+            var box = XZradius ? new Capsule(Math.Max(b.X, b.Z), b.Y * 2f) : new Capsule(b.Y, 2f * Math.Max(b.X, b.Z));
+            if (allowOffsetCompound && center.LengthSquared() > 0.01f) return OffsetSingleShape(box, center);
+            return box;
         }
 
-        public static Cylinder GenerateCylinderOfEntity(Entity e, float scale = 1f, bool XZradius = true)
+        public static IShape GenerateCylinderOfEntity(Entity e, float scale = 1f, bool XZradius = true, bool allowOffsetCompound = true)
         {
-            Vector3 b = getBounds(e) * scale;
-            return XZradius ? new Cylinder(Math.Max(b.X, b.Z), b.Y * 2f) : new Cylinder(b.Y, 2f * Math.Max(b.X, b.Z));
+            Vector3 b = getBounds(e, out Vector3 center) * scale;
+            var box = XZradius ? new Cylinder(Math.Max(b.X, b.Z), b.Y * 2f) : new Cylinder(b.Y, 2f * Math.Max(b.X, b.Z));
+            if (allowOffsetCompound && center.LengthSquared() > 0.01f) return OffsetSingleShape(box, center);
+            return box;
         }
 
         /// <summary>
