@@ -77,6 +77,19 @@ namespace Xenko.Physics.Bepu
             }
         }
 
+        [DataMember]
+        public override float SpeculativeMargin
+        {
+            get => base.SpeculativeMargin;
+            set
+            {
+                base.SpeculativeMargin = value;
+
+                if (CheckCurrentValid())
+                    InternalStatic.Collidable.SpeculativeMargin = value;
+            }
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal override bool CheckCurrentValid()
         {

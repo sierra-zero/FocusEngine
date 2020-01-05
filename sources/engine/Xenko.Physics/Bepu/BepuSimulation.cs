@@ -420,7 +420,7 @@ namespace Xenko.Physics.Bepu
                 {
                     using (simulationLocker.WriteLock())
                     {
-                        scc.staticDescription.Collidable = scc.ColliderShape.GenerateDescription(internalSimulation);
+                        scc.staticDescription.Collidable = scc.ColliderShape.GenerateDescription(internalSimulation, scc.SpeculativeMargin);
                         scc.AddedHandle = internalSimulation.Statics.Add(scc.staticDescription);
                         StaticMappings[scc.AddedHandle] = scc;
                     }
@@ -429,7 +429,7 @@ namespace Xenko.Physics.Bepu
                 {
                     using (simulationLocker.WriteLock())
                     {
-                        rigidBody.bodyDescription.Collidable = rigidBody.ColliderShape.GenerateDescription(internalSimulation);
+                        rigidBody.bodyDescription.Collidable = rigidBody.ColliderShape.GenerateDescription(internalSimulation, rigidBody.SpeculativeMargin);
                         AllRigidbodies.Add(rigidBody);
                         rigidBody.AddedHandle = internalSimulation.Bodies.Add(rigidBody.bodyDescription);
                         RigidMappings[rigidBody.AddedHandle] = rigidBody;

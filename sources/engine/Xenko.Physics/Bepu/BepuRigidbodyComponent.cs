@@ -321,6 +321,19 @@ namespace Xenko.Physics.Bepu
             }
         }
 
+        [DataMember]
+        public override float SpeculativeMargin
+        {
+            get => base.SpeculativeMargin;
+            set
+            {
+                base.SpeculativeMargin = value;
+
+                if (CheckCurrentValid())
+                    InternalBody.Collidable.SpeculativeMargin = value;
+            }
+        }
+
         [DataMemberIgnore]
         public override IShape ColliderShape
         {
@@ -343,7 +356,7 @@ namespace Xenko.Physics.Bepu
 
                         // add the new shape
                         TypedIndex ti = ColliderShape.AddToShapes(BepuSimulation.instance.internalSimulation.Shapes);
-                        bodyDescription.Collidable = new CollidableDescription(ti, 0.1f);
+                        bodyDescription.Collidable = new CollidableDescription(ti, SpeculativeMargin);
 
                         // set it to the internalbody
                         InternalBody.SetShape(ti);

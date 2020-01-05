@@ -169,6 +169,12 @@ namespace Xenko.Engine
         [DataMember]
         public bool GhostBody { get; set; }
 
+        /// <summary>
+        /// How much ahead-of-time to look for contacts? Defaults to 0.1
+        /// </summary>
+        [DataMember]
+        virtual public float SpeculativeMargin { get; set; } = 0.1f;
+
         private static Material debugShapeMaterial;
         private static Xenko.Rendering.Mesh cubeMesh;
 
