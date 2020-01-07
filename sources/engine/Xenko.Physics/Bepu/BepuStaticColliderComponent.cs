@@ -41,7 +41,7 @@ namespace Xenko.Physics.Bepu
         {
             get
             {
-                return BepuHelpers.ToXenko(CheckCurrentValid() ? InternalStatic.Pose.Position : staticDescription.Pose.Position);
+                return BepuHelpers.ToXenko(AddedToScene ? InternalStatic.Pose.Position : staticDescription.Pose.Position);
             }
             set
             {
@@ -49,10 +49,8 @@ namespace Xenko.Physics.Bepu
                 staticDescription.Pose.Position.Y = value.Y;
                 staticDescription.Pose.Position.Z = value.Z;
 
-                if (CheckCurrentValid())
-                {
+                if (AddedToScene)
                     InternalStatic.Pose.Position = staticDescription.Pose.Position;
-                }
             }
         }
 
@@ -61,7 +59,7 @@ namespace Xenko.Physics.Bepu
         {
             get
             {
-                return BepuHelpers.ToXenko(CheckCurrentValid() ? InternalStatic.Pose.Orientation : staticDescription.Pose.Orientation);
+                return BepuHelpers.ToXenko(AddedToScene ? InternalStatic.Pose.Orientation : staticDescription.Pose.Orientation);
             }
             set
             {
@@ -70,10 +68,8 @@ namespace Xenko.Physics.Bepu
                 staticDescription.Pose.Orientation.Z = value.Z;
                 staticDescription.Pose.Orientation.W = value.W;
 
-                if (CheckCurrentValid())
-                {
+                if (AddedToScene)
                     InternalStatic.Pose.Orientation = staticDescription.Pose.Orientation;
-                }
             }
         }
 
@@ -85,15 +81,9 @@ namespace Xenko.Physics.Bepu
             {
                 base.SpeculativeMargin = value;
 
-                if (CheckCurrentValid())
+                if (AddedToScene)
                     InternalStatic.Collidable.SpeculativeMargin = value;
             }
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal override bool CheckCurrentValid()
-        {
-            return base.CheckCurrentValid() && InternalStatic.Exists;
         }
 
         /// <summary>

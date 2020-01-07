@@ -19,11 +19,11 @@ using Xenko.Core;
 using Xenko.Core.Collections;
 using Xenko.Core.Diagnostics;
 using Xenko.Core.Mathematics;
+using Xenko.Core.Threading;
 using Xenko.Engine;
 using Xenko.Engine.Design;
 using Xenko.Games;
 using Xenko.Physics.Engine;
-using Xenko.Core.Threading;
 using Xenko.Rendering;
 
 namespace Xenko.Physics.Bepu
@@ -434,8 +434,6 @@ namespace Xenko.Physics.Bepu
                         rigidBody.AddedHandle = internalSimulation.Bodies.Add(rigidBody.bodyDescription);
                         RigidMappings[rigidBody.AddedHandle] = rigidBody;
                     }
-                    rigidBody.SleepThreshold = rigidBody.bodyDescription.Activity.SleepThreshold;
-                    rigidBody.CcdMotionThreshold = rigidBody.bodyDescription.Collidable.Continuity.SweepConvergenceThreshold;
                 }
                 component.Position = component.Entity.Transform.WorldPosition();
                 component.Rotation = component.Entity.Transform.WorldRotation();
@@ -881,10 +879,7 @@ namespace Xenko.Physics.Bepu
         {
             if (internalSimulation == null || DisableSimulation) return;
 
-            using (BepuSimulation.instance.simulationLocker.ReadLock())
-            {
-                internalSimulation.Timestep(deltaTime * TimeScale, threadDispatcher);
-            }
+            internalSimulation.Timestep(deltaTime * TimeScale, threadDispatcher);
         }
     }
 }

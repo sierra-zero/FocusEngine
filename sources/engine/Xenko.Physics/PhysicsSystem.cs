@@ -183,7 +183,6 @@ namespace Xenko.Physics
                         // update all rigidbodies
                         for (int j = 0; j < physicsScene.BepuSimulation.AllRigidbodies.Count; j++)
                         {
-                            // are we still in the scene?
                             BepuRigidbodyComponent rb = physicsScene.BepuSimulation.AllRigidbodies[j];
 
                             rb.swapProcessingContactsList();

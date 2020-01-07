@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading.Tasks;
 using BepuPhysics.Collidables;
 using BepuPhysics.Constraints;
 using Xenko.Core;
@@ -257,15 +258,8 @@ namespace Xenko.Physics.Bepu
             BepuSimulation.instance.Clear(clearBuffers);
         }
 
-        /// <summary>
-        /// Generate a mesh collider from a given mesh. The mesh must have a readable buffer behind it to generate veriticies from
-        /// </summary>
-        /// <returns>Returns false if no mesh could be made</returns>
-        public static unsafe bool GenerateMeshShape(Xenko.Rendering.Mesh modelMesh, out BepuPhysics.Collidables.Mesh outMesh, Vector3? scale = null)
+        private static unsafe bool getMeshOutputs(Xenko.Rendering.Mesh modelMesh, out List<Vector3> positions, out List<int> indicies)
         {
-            List<Vector3> positions;
-            List<int> indicies;
-
             if (modelMesh.Draw is StagedMeshDraw)
             {
                 StagedMeshDraw smd = modelMesh.Draw as StagedMeshDraw;
@@ -295,7 +289,8 @@ namespace Xenko.Physics.Bepu
                 }
                 else
                 {
-                    outMesh = new Mesh();
+                    positions = null;
+                    indicies = null;
                     return false;
                 }
 
@@ -309,7 +304,8 @@ namespace Xenko.Physics.Bepu
                 if (buf == null || buf.VertIndexData == null ||
                     ibuf == null || ibuf.VertIndexData == null)
                 {
-                    outMesh = new Mesh();
+                    positions = null;
+                    indicies = null;
                     return false;
                 }
 
@@ -317,7 +313,8 @@ namespace Xenko.Physics.Bepu
                                                    out Vector3[] arraypositions, out Core.Mathematics.Vector3[] normals, out Core.Mathematics.Vector2[] uvs,
                                                    out Color4[] colors, out Vector4[] tangents) == false)
                 {
-                    outMesh = new Mesh();
+                    positions = null;
+                    indicies = null;
                     return false;
                 }
 
@@ -354,7 +351,40 @@ namespace Xenko.Physics.Bepu
                 positions = new List<Vector3>(arraypositions);
             }
 
+            return true;
+        }
+
+        /// <summary>
+        /// Generate a mesh collider from a given mesh. The mesh must have a readable buffer behind it to generate veriticies from
+        /// </summary>
+        /// <returns>Returns false if no mesh could be made</returns>
+        public static unsafe bool GenerateMeshShape(Xenko.Rendering.Mesh modelMesh, out BepuPhysics.Collidables.Mesh outMesh, Vector3? scale = null)
+        {
+            if (getMeshOutputs(modelMesh, out var positions, out var indicies) == false)
+            {
+                outMesh = default;
+                return false;
+            }
+
             return GenerateMeshShape(positions, indicies, out outMesh, scale);
+        }
+
+        /// <summary>
+        /// Generate a mesh collider from a given mesh. The mesh must have a readable buffer behind it to generate veriticies from
+        /// </summary>
+        /// <returns>Returns false if no mesh could be made</returns>
+        public static unsafe bool GenerateBigMeshStaticColliders(Entity e, Xenko.Rendering.Mesh modelMesh, Vector3? scale = null,
+                                                                 CollisionFilterGroups group = CollisionFilterGroups.DefaultFilter, CollisionFilterGroupFlags collidesWith = CollisionFilterGroupFlags.AllFilter,
+                                                                 float friction = 0.5f, float maximumRecoverableVelocity = 1f, SpringSettings? springSettings = null)
+        {
+            if (getMeshOutputs(modelMesh, out var positions, out var indicies) == false)
+            {
+                return false;
+            }
+
+            GenerateBigMeshStaticColliders(e, positions, indicies, scale, group, collidesWith, friction, maximumRecoverableVelocity, springSettings);
+
+            return true;
         }
 
         private static Dictionary<Mesh, BepuUtilities.Memory.BufferPool> BufferPoolMap = new Dictionary<Mesh, BepuUtilities.Memory.BufferPool>();
@@ -380,6 +410,55 @@ namespace Xenko.Physics.Bepu
             BufferPoolMap[outMesh] = usePool;
 
             return true;
+        }
+
+        public static unsafe void GenerateBigMeshStaticColliders(Entity e, List<Vector3> positions, List<int> indicies, Vector3? scale = null,
+                                                                 CollisionFilterGroups group = CollisionFilterGroups.DefaultFilter, CollisionFilterGroupFlags collidesWith = CollisionFilterGroupFlags.AllFilter,
+                                                                 float friction = 0.5f, float maximumRecoverableVelocity = 1f, SpringSettings? springSettings = null)
+        {
+            // get a thread-safe buffer pool
+            var usePool = BepuSimulation.safeBufferPool;
+
+            // ok, should have what we need to make triangles
+            int triangleCount = indicies.Count / 3;
+            usePool.Take<Triangle>(triangleCount, out BepuUtilities.Memory.Buffer<Triangle> triangles);
+
+            for (int i = 0; i < triangleCount; i++)
+            {
+                int shiftedi = i * 3;
+                triangles[i].A = ToBepu(positions[indicies[shiftedi]]);
+                triangles[i].B = ToBepu(positions[indicies[shiftedi + 1]]);
+                triangles[i].C = ToBepu(positions[indicies[shiftedi + 2]]);
+            }
+
+            List<BepuUtilities.Memory.Buffer<Triangle>> meshBuffers = new List<BepuUtilities.Memory.Buffer<Triangle>>();
+
+            int sliced = 0;
+            while (sliced < triangleCount)
+            {
+                int grablen = Math.Min(triangleCount / System.Environment.ProcessorCount, triangleCount - sliced);
+                meshBuffers.Add(triangles.Slice(sliced, grablen));
+                sliced += grablen;
+            }
+
+            // list of meshes to make static colliders with
+            List<IShape> meshes = new List<IShape>();
+
+            // dispatch buffers to be made into meshes
+            Xenko.Core.Threading.Dispatcher.For(0, meshBuffers.Count, (index) =>
+            {
+                var pool = BepuSimulation.safeBufferPool;
+                var mesh = new Mesh(meshBuffers[index], new System.Numerics.Vector3(scale?.X ?? 1f, scale?.Y ?? 1f, scale?.Z ?? 1f), pool);
+
+                lock (meshes)
+                {
+                    meshes.Add(mesh);
+                    BufferPoolMap[mesh] = pool;
+                }
+            });
+
+            // generate a static collider for every mesh on the list for the entity e
+            GenerateStaticComponents(e, meshes, null, null, group, collidesWith, friction, maximumRecoverableVelocity, springSettings);
         }
 
         /// <summary>

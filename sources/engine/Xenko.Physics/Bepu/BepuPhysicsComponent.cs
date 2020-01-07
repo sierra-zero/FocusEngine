@@ -145,18 +145,6 @@ namespace Xenko.Engine
             Matrix.Multiply(ref rotation, ref translationMatrix, out outMatrix);
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal virtual bool CheckCurrentValid()
-        {
-            if (AddedHandle == -1) return false;
-            ref var location = ref BepuSimulation.instance.internalSimulation.Bodies.HandleToLocation[AddedHandle];
-            if (location.SetIndex < 0 || location.SetIndex >= BepuSimulation.instance.internalSimulation.Bodies.Sets.Length) return false;
-            ref var set = ref BepuSimulation.instance.internalSimulation.Bodies.Sets[location.SetIndex];
-            if (location.Index < 0 || location.Index >= set.Count) return false;
-            if (set.IndexToHandle[location.Index] != AddedHandle) return false;
-            return true;
-        }
-
         [DataMemberIgnore]
         public virtual Vector3 Position { get; set; }
 
