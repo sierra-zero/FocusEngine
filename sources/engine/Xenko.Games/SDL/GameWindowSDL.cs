@@ -2,6 +2,7 @@
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 #if XENKO_UI_SDL
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using SDL2;
 using Xenko.Core.Mathematics;
@@ -191,8 +192,16 @@ namespace Xenko.Games
         /// <summary>
         /// Gets refresh rate of window in Hz.
         /// </summary>
-        public void GetDisplayInformation(out int width, out int height, out int refresh_rate, int display = -1) {
-            Window.GetDisplayInformation(out width, out height, out refresh_rate, display == -1 ? window.GetWindowDisplay() : display);
+        public override void GetDisplayInformation(out int width, out int height, out int refresh_rate, int display = -1) {
+            Window.GetDisplayInformation(out width, out height, out refresh_rate, display == -1 ? window?.GetWindowDisplay() ?? 0 : display);
+        }
+
+        /// <summary>
+        /// Gets available display modes for a given display (-1 will just pick the current display).
+        /// </summary>
+        public override List<Vector3> GetDisplayModes(int display = -1, bool maxRefreshRateOnly = true)
+        {
+            return Window.GetDisplayModes(maxRefreshRateOnly, display == -1 ? window?.GetWindowDisplay() ?? 0 : display);
         }
 
         public override Int2 Position

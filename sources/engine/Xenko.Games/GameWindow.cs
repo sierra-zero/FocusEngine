@@ -23,6 +23,7 @@
 #pragma warning disable SA1402 // File may only contain a single type
 
 using System;
+using System.Collections.Generic;
 using Xenko.Core;
 using Xenko.Core.Mathematics;
 using Xenko.Graphics;
@@ -168,6 +169,16 @@ namespace Xenko.Games
         #endregion
 
         #region Public Methods and Operators
+
+        virtual public List<Vector3> GetDisplayModes(int display = -1, bool maxRefreshRateOnly = true)
+        {
+            throw new NotImplementedException("Only implemented for SDL windows");
+        }
+
+        virtual public void GetDisplayInformation(out int width, out int height, out int refresh_rate, int display = -1)
+        {
+            throw new NotImplementedException("Only implemented for SDL windows");
+        }
 
         public abstract void BeginScreenDeviceChange(bool willBeFullScreen);
 

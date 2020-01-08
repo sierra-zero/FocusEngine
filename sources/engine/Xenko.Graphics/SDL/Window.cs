@@ -6,6 +6,7 @@ using Xenko.Core.Mathematics;
 
 namespace Xenko.Graphics.SDL
 {
+    using System.Collections.Generic;
 #pragma warning disable SA1200 // Using directives must be placed correctly
     // Using is here otherwise it would conflict with the current namespace that also defines SDL.
     using SDL2;
@@ -45,7 +46,7 @@ namespace Xenko.Graphics.SDL
         /// <summary>
         /// Get the current display information of the display (defaults to 0, the first display).
         /// </summary>
-        static public void GetDisplayInformation(out int width, out int height, out int refresh_rate, int display = 0) {
+        public static void GetDisplayInformation(out int width, out int height, out int refresh_rate, int display = 0) {
             SDL.SDL_GetCurrentDisplayMode(display, out SDL.SDL_DisplayMode mode);
             width = mode.w;
             height = mode.h;
@@ -58,6 +59,36 @@ namespace Xenko.Graphics.SDL
         /// <returns></returns>
         public int GetWindowDisplay() {
             return SDL.SDL_GetWindowDisplayIndex(SdlHandle);
+        }
+
+        /// <summary>
+        /// Returns a list of supported resolutions and refresh rates.
+        /// </summary>
+        /// <returns>List of width, height and refresh rates</returns>
+        public static List<Vector3> GetDisplayModes(bool maxRefreshOnly = true, int display = 0)
+        {
+            int modes = SDL.SDL_GetNumDisplayModes(display);
+            List<Vector3> modeList = new List<Vector3>();
+            for (int i=0; i<modes; i++)
+            {
+                SDL.SDL_GetDisplayMode(display, i, out var mode);
+                if (maxRefreshOnly)
+                {
+                    for (int j=0; j<modeList.Count; j++)
+                    {
+                        if (modeList[j].X == mode.w &&
+                            modeList[j].Y == mode.h &&
+                            modeList[j].Z < mode.refresh_rate)
+                        {
+                            modeList[j] = new Vector3(mode.w, mode.h, mode.refresh_rate);
+                            goto next_mode;
+                        }
+                    }
+                }
+                modeList.Add(new Vector3(mode.w, mode.h, mode.refresh_rate));
+                next_mode:;
+            }
+            return modeList;
         }
 
         /// <summary>
