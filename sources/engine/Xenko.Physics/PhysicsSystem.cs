@@ -26,7 +26,7 @@ namespace Xenko.Physics
         private ManualResetEventSlim doUpdateEvent;
         private Thread physicsThread;
 
-        public static float MaximumSimulationTime = 0.5f;
+        public static float MaximumSimulationTime = 0.04f;
 
         private readonly List<PhysicsScene> scenes = new List<PhysicsScene>();
 

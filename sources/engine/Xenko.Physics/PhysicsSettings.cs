@@ -29,6 +29,6 @@ namespace Xenko.Physics
         /// Default maximum time to simulate per frame.
         /// </summary>
         [DataMember]
-        public float MaxSimulationTime = 0.5f;
+        public float MaxSimulationTime = 0.04f;
     }
 }
