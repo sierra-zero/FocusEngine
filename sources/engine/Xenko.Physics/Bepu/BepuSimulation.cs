@@ -42,6 +42,7 @@ namespace Xenko.Physics.Bepu
         public ConcurrentQueue<Action<float>> ActionsBeforeSimulationStep = new ConcurrentQueue<Action<float>>();
 
         public static float TimeScale = 1f;
+        public static int MaxSubSteps = 1;
 
         private static BepuSimulation _instance;
         public static BepuSimulation instance

@@ -17,7 +17,7 @@ namespace Xenko.Physics
         /// The maximum number of simulations the the physics engine can run in a frame to compensate for slowdown
         /// </userdoc>
         [DataMember(20)]
-        public int MaxSubSteps = 1;
+        public int MaxSubSteps = 2;
 
         /// <userdoc>
         /// The length in seconds of a physics simulation frame. The default is 0.016667 (one sixtieth of a second)
@@ -29,6 +29,6 @@ namespace Xenko.Physics
         /// Default maximum time to simulate per frame.
         /// </summary>
         [DataMember]
-        public float MaxSimulationTime = 0.04f;
+        public float MaxSimulationTime = 0.025f;
     }
 }

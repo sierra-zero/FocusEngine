@@ -26,7 +26,8 @@ namespace Xenko.Physics
         private ManualResetEventSlim doUpdateEvent;
         private Thread physicsThread;
 
-        public static float MaximumSimulationTime = 0.04f;
+        public static int MaxSubSteps = 2;
+        public static float MaximumSimulationTime = 0.025f;
 
         private readonly List<PhysicsScene> scenes = new List<PhysicsScene>();
 
@@ -178,7 +179,13 @@ namespace Xenko.Physics
                     if (Simulation.DisableSimulation == false)
                     {
                         // simulate!
-                        physicsScene.BepuSimulation.Simulate(time);
+                        float totalTime = time;
+                        for(int k=0; k<MaxSubSteps && totalTime > 0f; k++)
+                        {
+                            float simtime = Math.Min(MaximumSimulationTime, totalTime);
+                            physicsScene.BepuSimulation.Simulate(simtime);
+                            totalTime -= simtime;
+                        }
 
                         // update all rigidbodies
                         for (int j = 0; j < physicsScene.BepuSimulation.AllRigidbodies.Count; j++)
@@ -206,8 +213,8 @@ namespace Xenko.Physics
                     float simulateThisInterval = timeToSimulate;
                     if (simulateThisInterval > 0f)
                     {
-                        timeToSimulate -= simulateThisInterval;
                         RunPhysicsSimulation(simulateThisInterval);
+                        timeToSimulate -= simulateThisInterval;
                     }
                 }
 
@@ -220,9 +227,10 @@ namespace Xenko.Physics
             if (isMultithreaded)
             {
                 float gt = (float)gameTime.Elapsed.TotalSeconds;
-                if (timeToSimulate + gt > MaximumSimulationTime)
+                float totalTimeCap = MaximumSimulationTime * MaxSubSteps;
+                if (timeToSimulate + gt > totalTimeCap)
                 {
-                    timeToSimulate = MaximumSimulationTime;
+                    timeToSimulate = totalTimeCap;
                 }
                 else
                 {
@@ -233,7 +241,7 @@ namespace Xenko.Physics
             } 
             else
             {
-                RunPhysicsSimulation((float)Math.Min(MaximumSimulationTime, gameTime.Elapsed.TotalSeconds));
+                RunPhysicsSimulation((float)Math.Min(MaximumSimulationTime * MaxSubSteps, gameTime.Elapsed.TotalSeconds));
             }
         }
     }
