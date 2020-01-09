@@ -9,6 +9,7 @@ using Xenko.Core;
 using Xenko.Core.Annotations;
 using Xenko.Core.Collections;
 using Xenko.Core.Mathematics;
+using Xenko.Rendering.UI;
 using Xenko.UI.Controls;
 
 namespace Xenko.UI.Panels
@@ -143,6 +144,9 @@ namespace Xenko.UI.Panels
                 throw new UIInternalException("The parent of the removed children UIElement not null");
             SetParent(oldElement, null);
             SetVisualParent(oldElement, null);
+
+            if (oldElement.MouseOverState != MouseOverState.MouseOverNone)
+                MouseOverState = MouseOverState.MouseOverNone;
         }
 
         /// <summary>
