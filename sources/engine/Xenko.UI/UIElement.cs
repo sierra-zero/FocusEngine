@@ -760,6 +760,24 @@ namespace Xenko.UI
         public bool IsVisible => Visibility == Visibility.Visible;
 
         /// <summary>
+        /// This checks the whole UIElement parent tree for visibility
+        /// </summary>
+        public bool IsVisibleInTree
+        {
+            get
+            {
+                if (Visibility != Visibility.Visible) return false;
+                UIElement checkToRoot = this;
+                while (checkToRoot?.Parent != null)
+                {
+                    checkToRoot = checkToRoot.Parent;
+                    if (checkToRoot.Visibility != Visibility.Visible) return false;
+                }
+                return true;
+            }
+        }
+
+        /// <summary>
         /// Gets a value indicating whether this element takes some place in the user interface.
         /// </summary>
         public bool IsCollapsed => Visibility == Visibility.Collapsed;

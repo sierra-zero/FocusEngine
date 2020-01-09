@@ -13,6 +13,8 @@ using Xenko.Engine;
 using Xenko.Input;
 using Xenko.Rendering.UI;
 using Xenko.UI;
+using Xenko.Assets.Presentation.AssetEditors.UIEditor.ViewModels;
+using Xenko.Core;
 
 namespace Xenko.Assets.Presentation.AssetEditors.UIEditor.Game
 {
@@ -299,14 +301,31 @@ namespace Xenko.Assets.Presentation.AssetEditors.UIEditor.Game
 
         private bool TryGetElementIdAtPosition(ref Vector3 worldPosition, out Guid elementId)
         {
-            var hitResults = GetAdornerVisualsAtPosition(ref worldPosition);
-            var visual = hitResults?.OrderBy(r => -r.IntersectionPoint.Z).FirstOrDefault()?.Element;
-            if (visual == null || !visual.DependencyProperties.TryGetValue(AssociatedElementIdPropertyKey, out elementId))
+            var hitResults = GetAdornerVisualsAtPosition(ref worldPosition) as List<UIRenderFeature.HitTestResult>;
+            float smallestArea = float.MaxValue;
+            elementId = default;
+            for (int i=0; i<hitResults.Count; i++)
             {
-                elementId = Guid.Empty;
-                return false;
+                UIRenderFeature.HitTestResult hr = hitResults[i];
+                if (hr.Element.DependencyProperties.TryGetValue(AssociatedElementIdPropertyKey, out var thisElementId))
+                {
+                    var editor = Controller.Editor;
+                    var partId = new AbsoluteId(editor.Asset.Id, thisElementId);
+                    var element = editor.FindPartViewModel(partId);
+                    var uielement = (element as UIElementViewModel)?.AssetSideUIElement as UIElement;
+
+                    if (uielement?.IsVisibleInTree ?? false)
+                    {
+                        float mysize = uielement.Width * uielement.Height;
+                        if (mysize < smallestArea)
+                        {
+                            smallestArea = mysize;
+                            elementId = thisElementId;
+                        }
+                    }
+                }
             }
-            return true;
+            return smallestArea < float.MaxValue;
         }
     }
 }
