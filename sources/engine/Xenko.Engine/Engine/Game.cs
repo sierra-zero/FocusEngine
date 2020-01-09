@@ -205,7 +205,10 @@ namespace Xenko.Engine
         /// <summary>
         /// If AutoLoadDefaultSettings is true, these values will be set on game start. Set width & height to int.MaxValue to use highest native values.
         /// </summary>
+        /// <returns>true if default settings changed</returns>
         public bool SetDefaultSettings(int width, int height, bool fullscreen) {
+            GetDefaultSettings(out int current_width, out int current_height, out bool current_fullscreen);
+            if (width == current_width && height == current_height && current_fullscreen == fullscreen) return false;
             try {
                 System.IO.File.WriteAllText("DefaultResolution.txt", width.ToString() + "\n" +
                                                                      height.ToString() + "\n" +
