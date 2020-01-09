@@ -118,6 +118,7 @@ namespace Xenko.UI
 
         override public void RebuildVisualList()
         {
+            if (UpdateEntryWidth()) RepairWidth();
             myGrid.Children.Clear();
             foreach (var uie in entryElements.OrderBy(i => GetToggledState(i.Key)))
             {

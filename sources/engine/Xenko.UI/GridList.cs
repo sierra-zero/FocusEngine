@@ -39,6 +39,19 @@ namespace Xenko.UI
         /// </summary>
         public Action<object> EntrySelectedAction = (value) => { };
 
+        protected bool UpdateEntryWidth()
+        {
+            float newWidth = myGrid.Width;
+            if (float.IsNaN(newWidth)) newWidth = myGrid.ActualWidth;
+            if (!float.IsNaN(newWidth) &&
+                entryWidth != newWidth)
+            {
+                entryWidth = newWidth;
+                return true;
+            }
+            return false;
+        }
+
         /// <summary>
         /// Make a GridList for the given Grid
         /// </summary>
@@ -60,8 +73,7 @@ namespace Xenko.UI
             }
             else templateName = templateRootName;
             entryHeight = entryTemplate.UIElements[templateName].Height;
-            entryWidth = myGrid.Width;
-            if (float.IsNaN(entryWidth)) entryWidth = myGrid.ActualWidth;
+            UpdateEntryWidth();
         }
 
         /// <summary>
@@ -140,6 +152,22 @@ namespace Xenko.UI
             if (rebuildVisualListAfter) RebuildVisualList();
         }
 
+        protected void RepairWidth()
+        {
+            foreach (var uie in entryElements)
+            {
+                foreach (UIElement uiec in uie.Value.Values)
+                {
+                    if (uiec is ToggleButton ||
+                        uiec is Button ||
+                        uiec is Grid)
+                    {
+                        uiec.Width = entryWidth;
+                    }
+                }
+            }
+        }
+
         /// <summary>
         /// Toggle an option on the list
         /// </summary>
@@ -154,7 +182,7 @@ namespace Xenko.UI
                 {
                     if (uiec is ToggleButton tb)
                     {
-                        if (uie.Key == value)
+                        if (uie.Key.Equals(value))
                         {
                             tb.State = toggleState;
                         }
@@ -299,6 +327,7 @@ namespace Xenko.UI
 
         virtual public void RebuildVisualList()
         {
+            if (UpdateEntryWidth()) RepairWidth();
             myGrid.Children.Clear();
             if (AlphabeticalSort)
             {
