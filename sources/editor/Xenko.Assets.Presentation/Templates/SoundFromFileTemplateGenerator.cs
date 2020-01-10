@@ -52,7 +52,7 @@ namespace Xenko.Assets.Presentation.Templates
                             assetCopy.Index = audioTrack.Index;
                             assetCopy.SampleRate = audioTrack.SampleRate;
 
-                            importedAssets.Add(new AssetItem(assetItem.Location + " track " + audioTrack.Index, assetCopy));
+                            importedAssets.Add(new AssetItem(assetItem.Location + (audioTrack.Index > 0 ? " track " + audioTrack.Index : ""), assetCopy));
                         }
                     }
                 }
