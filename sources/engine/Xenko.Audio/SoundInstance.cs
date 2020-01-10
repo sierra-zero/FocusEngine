@@ -4,6 +4,7 @@
 using System;
 using System.Threading.Tasks;
 using Xenko.Core;
+using Xenko.Core.Mathematics;
 using Xenko.Media;
 
 namespace Xenko.Audio
@@ -27,6 +28,8 @@ namespace Xenko.Audio
         internal AudioLayer.Source Source;
 
         internal AudioListener Listener;
+
+        public bool IsSpatialized => spatialized;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SoundInstance"/> class using a dynamic sound source.
@@ -202,6 +205,29 @@ namespace Xenko.Audio
                 throw new ArgumentNullException(nameof(emitter));
 
             emitter.Apply3D(Source);
+        }
+
+        /// <summary>
+        /// Quick and easy way to apply 3D parameters without an AudioEmitter
+        /// </summary>
+        public void Apply3D(Vector3 Position, Vector3? velocity = null, Quaternion? direction = null, float distanceScale = 1f)
+        {
+            if (!spatialized) return;
+
+            if (distanceScale != 1f)
+                Vector3.Lerp(ref Listener.Position, ref Position, distanceScale, out Position);    
+
+            Vector3 vel = velocity ?? Vector3.Zero;
+            Vector3 dir = direction == null ? Vector3.UnitZ : Vector3.Transform(Vector3.UnitZ, direction.Value);
+            Vector3 up = direction == null ? Vector3.UnitY : Vector3.Transform(Vector3.UnitY, direction.Value);
+            Matrix m = Matrix.Transformation(Vector3.One, direction ?? Quaternion.Identity, Position);
+
+            if (engine.State == AudioEngineState.Invalidated)
+                return;
+
+            if (!spatialized) return;
+
+            AudioLayer.SourcePush3D(Source, ref Position, ref dir, ref up, ref vel, ref m);
         }
 
         /// <summary>
