@@ -415,6 +415,39 @@ namespace Xenko.Audio
         }
 
         /// <summary>
+        /// Sets the range of the sound to play.
+        /// </summary>
+        /// <param name="startPercent">% of when to start, 0.5 is starting at the exact middle</param>
+        /// <param name="endPercent">% of when to end. 1 is default (100%)</param>
+        public void SetRangePercent(double startPercent, double endPercent = 1f)
+        {
+            if (engine.State == AudioEngineState.Invalidated)
+                return;
+
+            var state = PlayState;
+
+            if (state == PlayState.Playing)
+            {
+                Stop();
+            }
+
+            if (soundSource == null)
+            {
+                double len = sound.TotalLength.TotalSeconds;
+                AudioLayer.SourceSetRange(Source, startPercent * len, endPercent * len);
+            }
+            else
+            {
+                throw new ArgumentException("SetRangePercent cannot work with streamed audio.");
+            }
+
+            if (state == PlayState.Playing)
+            {
+                Play();
+            }
+        }
+
+        /// <summary>
         /// Gets the position in time of this playing instance.
         /// </summary>
         public TimeSpan Position
