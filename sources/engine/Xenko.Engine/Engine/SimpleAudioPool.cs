@@ -14,6 +14,9 @@ using Xenko.Games;
 
 namespace Xenko.Engine
 {
+    /// <summary>
+    /// Efficiently plays and manages sound effects for an entire project
+    /// </summary>
     [Display("Simple Audio Pool", Expand = ExpandRule.Once)]
     [DataContract("SimpleAudioPool")]
     [ComponentOrder(7500)]
@@ -36,6 +39,126 @@ namespace Xenko.Engine
 
         [DataMember]
         public int MaxSameSoundOverlaps = 8;
+
+        public SoundInstance PlayCentralSound(string url, float pitch = 1f, float volume = 1f, float pan = 0.5f, bool looped = false)
+        {
+            SoundInstance s = getFreeInstance(url, false);
+            if (s != null)
+            {
+                s.Pitch = pitch;
+                s.Volume = volume;
+                s.IsLooping = looped;
+                s.Pan = pan;
+                s.Play();
+            }
+            return s;
+        }
+
+        public SoundInstance PlayPositionSound(string url, Vector3 position, float pitch = 1f, float volume = 1f, float pan = 0.5f, float distanceScale = 1f, bool looped = false)
+        {
+            float sqrDist = (position - Listener.Listener.Position).LengthSquared();
+            if (MaxSoundDistance > 0f && sqrDist >= MaxSoundDistance * MaxSoundDistance) return null;
+            SoundInstance s = getFreeInstance(url, true);
+            if (s == null) return null;
+            s.Pitch = pitch;
+            s.Volume = volume;
+            s.IsLooping = looped;
+            s.Pan = pan;
+            s.Apply3D(position, null, null, distanceScale);
+            s.Play();
+            return s;
+        }
+
+        public SoundInstance PlayAttachedSound(string url, Entity parent, float pitch = 1f, float volume = 1f, float pan = 0.5f, float distanceScale = 1f, bool looped = false)
+        {
+            Vector3 pos = parent.Transform.WorldPosition();
+            float sqrDist = (pos - Listener.Listener.Position).LengthSquared();
+            if (MaxSoundDistance > 0f && sqrDist >= MaxSoundDistance * MaxSoundDistance) return null;
+            SoundInstance s = getFreeInstance(url, true);
+            if (s == null) return null;
+            s.Pitch = pitch;
+            s.Volume = volume;
+            s.IsLooping = looped;
+            s.Pan = pan;
+            s.Apply3D(pos, null, null, distanceScale);
+            s.Play();
+            currentAttached.Add(new PositionalSound()
+            {
+                pos = pos,
+                soundInstance = s,
+                entity = parent,
+                distance_scale = distanceScale
+            });
+            return s;
+        }
+
+        public void UpdatePlayingSoundPositions()
+        {
+            for (int i = 0; i < currentAttached.Count; i++)
+            {
+                PositionalSound ps = currentAttached[i];
+                if (ps.entity.Scene == null)
+                {
+                    ps.soundInstance.Stop();
+                    currentAttached.RemoveAt(i);
+                    i--;
+                    continue;
+                }
+                else if (ps.soundInstance.PlayState == Media.PlayState.Stopped)
+                {
+                    currentAttached.RemoveAt(i);
+                    i--;
+                    continue;
+                }
+                Vector3 newpos = ps.entity.Transform.WorldPosition();
+                ps.soundInstance.Apply3D(newpos, newpos - ps.pos, null, ps.distance_scale);
+                ps.pos = newpos;
+            }
+        }
+
+        public void StopAllSounds()
+        {
+            foreach (List<SoundInstance> si in instances.Values)
+            {
+                for (int i = 0; i < si.Count; i++)
+                {
+                    si[i].Stop();
+                }
+            }
+            currentAttached.Clear();
+        }
+
+        public void StopSound(string url)
+        {
+            if (instances.TryGetValue(url, out var snds))
+            {
+                for (int i = 0; i < snds.Count; i++)
+                {
+                    snds[i].Stop();
+                }
+            }
+        }
+
+        public float RandomPitch(float range = 0.2f, float middle = 1f)
+        {
+            if (rand == null) rand = new Random(Environment.TickCount);
+            return (float)rand.NextDouble() * range * 2f + middle - range;
+        }
+
+        public void Reset()
+        {
+            StopAllSounds();
+            Sounds.Clear();
+            foreach (List<SoundInstance> si in instances.Values)
+            {
+                for (int i = 0; i < si.Count; i++)
+                {
+                    si[i].Dispose();
+                }
+                si.Clear();
+            }
+            instances.Clear();
+        }
 
         private Dictionary<string, Sound> Sounds = new Dictionary<string, Sound>();
         private Dictionary<string, List<SoundInstance>> instances = new Dictionary<string, List<SoundInstance>>();
@@ -93,126 +216,6 @@ namespace Xenko.Engine
             instances[url] = lsi;
             Sounds[url] = snd2;
             return si;
-        }
-
-        public void Reset()
-        {
-            StopAllSounds();
-            Sounds.Clear();
-            foreach (List<SoundInstance> si in instances.Values)
-            {
-                for (int i=0; i<si.Count; i++)
-                {
-                    si[i].Dispose();
-                }
-                si.Clear();
-            }
-            instances.Clear();
-        }
-
-        public void UpdatePlayingSoundPositions()
-        {
-            for (int i=0; i<currentAttached.Count; i++)
-            {
-                PositionalSound ps = currentAttached[i];
-                if (ps.entity.Scene == null)
-                {
-                    ps.soundInstance.Stop();
-                    currentAttached.RemoveAt(i);
-                    i--;
-                    continue;
-                }
-                else if (ps.soundInstance.PlayState == Media.PlayState.Stopped)
-                {
-                    currentAttached.RemoveAt(i);
-                    i--;
-                    continue;
-                }
-                Vector3 newpos = ps.entity.Transform.WorldPosition();
-                ps.soundInstance.Apply3D(newpos, newpos - ps.pos, null, ps.distance_scale);
-                ps.pos = newpos;
-            }
-        }
-
-        public void StopAllSounds()
-        {
-            foreach(List<SoundInstance> si in instances.Values)
-            {
-                for (int i=0; i<si.Count; i++)
-                {
-                    si[i].Stop();
-                }
-            }
-            currentAttached.Clear();
-        }
-
-        public void StopSound(string url)
-        {
-            if (instances.TryGetValue(url, out var snds))
-            {
-                for (int i=0; i<snds.Count; i++)
-                {
-                    snds[i].Stop();
-                }
-            }
-        }
-
-        public float RandomPitch(float range = 0.2f, float middle = 1f)
-        {
-            if (rand == null) rand = new Random(Environment.TickCount);
-            return (float)rand.NextDouble() * range * 2f + middle - range;
-        }
-
-        public SoundInstance PlayCentralSound(string url, float pitch = 1f, float volume = 1f, float pan = 0.5f, bool looped = false)
-        {
-            SoundInstance s = getFreeInstance(url, false);
-            if (s != null)
-            {
-                s.Pitch = pitch;
-                s.Volume = volume;
-                s.IsLooping = looped;
-                s.Pan = pan;
-                s.Play();
-            }
-            return s;
-        }
-
-        public SoundInstance PlayPositionSound(string url, Vector3 position, float pitch = 1f, float volume = 1f, float pan = 0.5f, float distanceScale = 1f, bool looped = false)
-        {
-            float sqrDist = (position - Listener.Listener.Position).LengthSquared();
-            if (MaxSoundDistance > 0f && sqrDist >= MaxSoundDistance * MaxSoundDistance) return null;
-            SoundInstance s = getFreeInstance(url, true);
-            if (s == null) return null;
-            s.Pitch = pitch;
-            s.Volume = volume;
-            s.IsLooping = looped;
-            s.Pan = pan;
-            s.Apply3D(position, null, null, distanceScale);
-            s.Play();
-            return s;
-        }
-
-        public SoundInstance PlayAttachedSound(string url, Entity parent, float pitch = 1f, float volume = 1f, float pan = 0.5f, float distanceScale = 1f, bool looped = false)
-        {
-            Vector3 pos = parent.Transform.WorldPosition();
-            float sqrDist = (pos - Listener.Listener.Position).LengthSquared();
-            if (MaxSoundDistance > 0f && sqrDist >= MaxSoundDistance * MaxSoundDistance) return null;
-            SoundInstance s = getFreeInstance(url, true);
-            if (s == null) return null;
-            s.Pitch = pitch;
-            s.Volume = volume;
-            s.IsLooping = looped;
-            s.Pan = pan;
-            s.Apply3D(pos, null, null, distanceScale);
-            s.Play();
-            currentAttached.Add(new PositionalSound()
-            {
-                pos = pos,
-                soundInstance = s,
-                entity = parent,
-                distance_scale = distanceScale
-            });
-            return s;
         }
     }
 }
