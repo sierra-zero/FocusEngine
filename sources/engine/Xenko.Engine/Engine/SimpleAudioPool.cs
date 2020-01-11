@@ -23,7 +23,7 @@ namespace Xenko.Engine
         private struct PositionalSound
         {
             public SoundInstance soundInstance;
-            public TransformComponent transform;
+            public Entity entity;
             public Vector3 pos;
             public float distance_scale;
         }
@@ -33,12 +33,14 @@ namespace Xenko.Engine
 
         private Dictionary<string, Sound> Sounds = new Dictionary<string, Sound>();
         private Dictionary<string, List<SoundInstance>> instances = new Dictionary<string, List<SoundInstance>>();
-        private List<PositionalSound> currentPositionals = new List<PositionalSound>();
+        private List<PositionalSound> currentAttached = new List<PositionalSound>();
         private System.Random rand;
         private Game internalGame;
 
         private SoundInstance getFreeInstance(string url, bool spatialized)
         {
+            if (url == null) return null;
+
             if (instances.TryGetValue(url, out var ins))
             {
                 for (int i=0; i<ins.Count; i++)
@@ -108,25 +110,25 @@ namespace Xenko.Engine
 
         public void UpdatePlayingSoundPositions()
         {
-            for (int i=0; i<currentPositionals.Count; i++)
+            for (int i=0; i<currentAttached.Count; i++)
             {
-                PositionalSound ps = currentPositionals[i];
-                if (ps.soundInstance.PlayState == Media.PlayState.Stopped)
+                PositionalSound ps = currentAttached[i];
+                if (ps.entity.Scene == null)
                 {
-                    currentPositionals.RemoveAt(i);
+                    ps.soundInstance.Stop();
+                    currentAttached.RemoveAt(i);
                     i--;
                     continue;
                 }
-                if (ps.transform != null)
+                else if (ps.soundInstance.PlayState == Media.PlayState.Stopped)
                 {
-                    Vector3 newpos = ps.transform.WorldPosition();
-                    ps.soundInstance.Apply3D(newpos, newpos - ps.pos, null, ps.distance_scale);
-                    ps.pos = newpos;
+                    currentAttached.RemoveAt(i);
+                    i--;
+                    continue;
                 }
-                else
-                {
-                    ps.soundInstance.Apply3D(ps.pos, null, null, ps.distance_scale);
-                }
+                Vector3 newpos = ps.entity.Transform.WorldPosition();
+                ps.soundInstance.Apply3D(newpos, newpos - ps.pos, null, ps.distance_scale);
+                ps.pos = newpos;
             }
         }
 
@@ -139,7 +141,7 @@ namespace Xenko.Engine
                     si[i].Stop();
                 }
             }
-            currentPositionals.Clear();
+            currentAttached.Clear();
         }
 
         public void StopSound(string url)
@@ -185,19 +187,12 @@ namespace Xenko.Engine
             s.Pan = pan;
             s.Apply3D(position, null, null, distanceScale);
             s.Play();
-            currentPositionals.Add(new PositionalSound()
-            {
-                pos = position,
-                soundInstance = s,
-                transform = null,
-                distance_scale = distanceScale
-            });
             return s;
         }
 
-        public SoundInstance PlayAttachedSound(string url, TransformComponent parent, float pitch = 1f, float volume = 1f, float pan = 0.5f, float distanceScale = 1f, bool looped = false)
+        public SoundInstance PlayAttachedSound(string url, Entity parent, float pitch = 1f, float volume = 1f, float pan = 0.5f, float distanceScale = 1f, bool looped = false)
         {
-            Vector3 pos = parent.WorldPosition();
+            Vector3 pos = parent.Transform.WorldPosition();
             float sqrDist = (pos - Listener.Listener.Position).LengthSquared();
             if (MaxSoundDistance > 0f && sqrDist >= MaxSoundDistance * MaxSoundDistance) return null;
             SoundInstance s = getFreeInstance(url, true);
@@ -208,11 +203,11 @@ namespace Xenko.Engine
             s.Pan = pan;
             s.Apply3D(pos, null, null, distanceScale);
             s.Play();
-            currentPositionals.Add(new PositionalSound()
+            currentAttached.Add(new PositionalSound()
             {
-                pos = default,
+                pos = pos,
                 soundInstance = s,
-                transform = parent,
+                entity = parent,
                 distance_scale = distanceScale
             });
             return s;
