@@ -28,8 +28,14 @@ namespace Xenko.Engine
             public float distance_scale;
         }
 
+        [DataMember]
         public AudioListenerComponent Listener;
+
+        [DataMember]
         public float MaxSoundDistance = 48f;
+
+        [DataMember]
+        public int MaxSameSoundOverlaps = 8;
 
         private Dictionary<string, Sound> Sounds = new Dictionary<string, Sound>();
         private Dictionary<string, List<SoundInstance>> instances = new Dictionary<string, List<SoundInstance>>();
@@ -48,6 +54,10 @@ namespace Xenko.Engine
                     if (ins[i].PlayState == Media.PlayState.Stopped)
                         return ins[i];
                 }
+
+                // have we reached our max sounds though?
+                if (ins.Count >= MaxSameSoundOverlaps) return null;
+
                 // don't have a free one to play, add a new one to the list
                 if (Sounds.TryGetValue(url, out var snd0))
                 {
@@ -71,15 +81,8 @@ namespace Xenko.Engine
             if (internalGame == null)
                 internalGame = ServiceRegistry.instance.GetService<IGame>() as Game;
 
-            Sound snd2;
-            try
-            {
-                snd2 = internalGame.Content.Load<Sound>(url);
-            }
-            catch(Exception)
-            {
-                return null;
-            }
+            // this might throw an exception if you provided a bad url
+            Sound snd2 = internalGame.Content.Load<Sound>(url);
 
             if (!snd2.Spatialized && spatialized)
                 throw new InvalidOperationException("Trying to play " + url + " positionally, yet it is a non-spatialized sound!");
@@ -90,7 +93,6 @@ namespace Xenko.Engine
             instances[url] = lsi;
             Sounds[url] = snd2;
             return si;
-
         }
 
         public void Reset()
