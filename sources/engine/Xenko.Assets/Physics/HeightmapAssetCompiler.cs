@@ -1,6 +1,8 @@
 // Copyright (c) Xenko contributors (https://xenko.com)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Xenko.Assets.Textures;
 using Xenko.Core.Assets;
@@ -80,7 +82,7 @@ namespace Xenko.Assets.Physics
 
                             // Convert pixel format of the image
 
-                            var heightfieldType = Parameters.HeightType;
+                            var heightfieldType = Parameters.HeightParameters.HeightType;
 
                             switch (heightfieldType)
                             {
@@ -179,36 +181,68 @@ namespace Xenko.Assets.Physics
                                     continue;
                             }
 
+                            // Range
+
+                            var heightRange = Parameters.HeightParameters.HeightRange;
+
+                            if (heightRange.Y < heightRange.X)
+                            {
+                                continue;
+                            }
+
                             // Read, scale and set heights
+
+                            var heightScale = Parameters.HeightParameters.HeightScale;
+
+                            if (Math.Abs(heightScale) < float.Epsilon)
+                            {
+                                continue;
+                            }
 
                             using (var image = textureTool.ConvertToXenkoImage(texImage))
                             {
                                 var pixelBuffer = image.PixelBuffer[0];
-                                var scale = Parameters.HeightScale;
 
                                 switch (heightfieldType)
                                 {
                                     case HeightfieldTypes.Float:
-                                        heightmap.Floats = pixelBuffer.GetPixels<float>();
-                                        for (int i = 0; i < heightmap.Floats.Length; ++i)
                                         {
-                                            heightmap.Floats[i] *= scale;
+                                            heightmap.Floats = pixelBuffer.GetPixels<float>();
+
+                                            var floatConversionParameters = Parameters.HeightParameters as FloatHeightmapHeightConversionParamters;
+                                            if (floatConversionParameters == null)
+                                            {
+                                                continue;
+                                            }
+
+                                            float scale = 1f;
+
+                                            if (floatConversionParameters.ScaleToFit)
+                                            {
+                                                var max = heightmap.Floats.Max(h => Math.Abs(h));
+                                                if ((max - 1f) < float.Epsilon)
+                                                {
+                                                    max = 1f;
+                                                }
+                                                scale = Math.Max(Math.Abs(heightRange.X), Math.Abs(heightRange.Y)) / max;
+                                            }
+
+                                            for (int i = 0; i < heightmap.Floats.Length; ++i)
+                                            {
+                                                heightmap.Floats[i] = MathUtil.Clamp(heightmap.Floats[i] * scale, heightRange.X, heightRange.Y);
+                                            }
                                         }
                                         break;
 
                                     case HeightfieldTypes.Short:
-                                        heightmap.Shorts = pixelBuffer.GetPixels<short>();
-                                        for (int i = 0; i < heightmap.Shorts.Length; ++i)
                                         {
-                                            heightmap.Shorts[i] = (short)MathUtil.Clamp(heightmap.Shorts[i] * scale, short.MinValue, short.MaxValue);
+                                            heightmap.Shorts = pixelBuffer.GetPixels<short>();
                                         }
                                         break;
 
                                     case HeightfieldTypes.Byte:
-                                        heightmap.Bytes = pixelBuffer.GetPixels<byte>();
-                                        for (int i = 0; i < heightmap.Bytes.Length; ++i)
                                         {
-                                            heightmap.Bytes[i] = (byte)MathUtil.Clamp(heightmap.Bytes[i] * scale, byte.MinValue, byte.MaxValue);
+                                            heightmap.Bytes = pixelBuffer.GetPixels<byte>();
                                         }
                                         break;
 
@@ -220,6 +254,8 @@ namespace Xenko.Assets.Physics
 
                                 heightmap.HeightType = heightfieldType;
                                 heightmap.Size = size;
+                                heightmap.HeightRange = heightRange;
+                                heightmap.HeightScale = heightScale;
                             }
                         }
                     }

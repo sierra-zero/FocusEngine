@@ -31,9 +31,15 @@ namespace Xenko.Physics
         public HeightfieldTypes HeightType;
 
         [DataMember(50)]
-        public Int2 Size { get; set; }
+        public Int2 Size;
 
-        public static Heightmap Create<T>(Int2 size, T[] data) where T : struct
+        [DataMember(60)]
+        public Vector2 HeightRange;
+
+        [DataMember(70)]
+        public float HeightScale;
+
+        public static Heightmap Create<T>(Int2 size, Vector2 range, float scale, T[] data) where T : struct
         {
             if (!HeightfieldColliderShapeDesc.IsValidHeightStickSize(size) || data == null)
             {
@@ -48,6 +54,8 @@ namespace Xenko.Physics
                 {
                     HeightType = HeightfieldTypes.Float,
                     Size = size,
+                    HeightRange = range,
+                    HeightScale = scale,
                     Floats = data as float[],
                 };
             }
@@ -57,6 +65,8 @@ namespace Xenko.Physics
                 {
                     HeightType = HeightfieldTypes.Short,
                     Size = size,
+                    HeightRange = range,
+                    HeightScale = scale,
                     Shorts = data as short[],
                 };
             }
@@ -66,6 +76,8 @@ namespace Xenko.Physics
                 {
                     HeightType = HeightfieldTypes.Byte,
                     Size = size,
+                    HeightRange = range,
+                    HeightScale = scale,
                     Bytes = data as byte[],
                 };
             }
