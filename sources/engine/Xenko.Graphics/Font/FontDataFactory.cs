@@ -14,14 +14,14 @@ namespace Xenko.Graphics.Font
     /// </summary>
     public class FontDataFactory : IFontFactory
     {
-        public SpriteFont NewStatic(float size, IList<Glyph> glyphs, IList<Texture> textures, float baseOffset, float defaultLineSpacing, IList<Kerning> kernings = null, float extraSpacing = 0, float extraLineSpacing = 0, char defaultCharacter = ' ')
+        public SpriteFont NewStatic(float size, IList<Glyph> glyphs, IList<Texture> textures, float baseOffset, float defaultLineSpacing, IList<Kerning> kernings = null, float extraSpacing = 0, float extraLineSpacing = 0, char defaultCharacter = ' ', int margin = 0)
         {
             if (textures == null) throw new ArgumentNullException("textures");
 
-            return new OfflineRasterizedSpriteFont(size, glyphs, textures, baseOffset, defaultLineSpacing, kernings, extraSpacing, extraLineSpacing, defaultCharacter);
+            return new OfflineRasterizedSpriteFont(size, glyphs, textures, baseOffset, defaultLineSpacing, kernings, extraSpacing, extraLineSpacing, defaultCharacter, margin);
         }
 
-        public SpriteFont NewStatic(float size, IList<Glyph> glyphs, IList<Image> images, float baseOffset, float defaultLineSpacing, IList<Kerning> kernings = null, float extraSpacing = 0, float extraLineSpacing = 0, char defaultCharacter = ' ')
+        public SpriteFont NewStatic(float size, IList<Glyph> glyphs, IList<Image> images, float baseOffset, float defaultLineSpacing, IList<Kerning> kernings = null, float extraSpacing = 0, float extraLineSpacing = 0, char defaultCharacter = ' ', int margin = 0)
         {
             // creates the textures from the images if any.
             Texture[] textures = null;
@@ -32,7 +32,7 @@ namespace Xenko.Graphics.Font
                     textures[i] = images[i].ToSerializableVersion();
             }
             
-            return new OfflineRasterizedSpriteFont(size, glyphs, textures, baseOffset, defaultLineSpacing, kernings, extraSpacing, extraLineSpacing, defaultCharacter);
+            return new OfflineRasterizedSpriteFont(size, glyphs, textures, baseOffset, defaultLineSpacing, kernings, extraSpacing, extraLineSpacing, defaultCharacter, margin);
         }
 
         public SpriteFont NewDynamic(float defaultSize, string fontName, FontStyle style, FontAntiAliasMode antiAliasMode, bool useKerning, float extraSpacing, float extraLineSpacing, char defaultCharacter)

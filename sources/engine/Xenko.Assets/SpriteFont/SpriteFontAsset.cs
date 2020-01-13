@@ -111,5 +111,10 @@ namespace Xenko.Assets.SpriteFont
         [DataMemberRange(-500, 500, 1, 10, 2)]
         [Display(null, "Rendering")]
         public float LineGapBaseLineFactor { get; set; } = 1.0f;
+
+        [DataMember]
+        [DefaultValue(0)]
+        [Display(null, "Rendering")]
+        public int GlyphPackingMargin { get; set; } = 0;
     }
 }

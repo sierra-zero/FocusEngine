@@ -285,6 +285,13 @@ namespace Xenko.Assets.SpriteFont.Compiler
         // Copies a single pixel within a bitmap, preserving RGB but forcing alpha to zero.
         static void CopyBorderPixel(PixelAccessor bitmapData, int sourceX, int sourceY, int destX, int destY)
         {
+            if (sourceX < 0 || sourceY < 0 || destX < 0 || destY < 0 ||
+                sourceX >= bitmapData.Region.Width ||
+                sourceY >= bitmapData.Region.Height ||
+                destX >= bitmapData.Region.Width ||
+                destY >= bitmapData.Region.Height)
+                return;
+
             DrawingColor color = bitmapData[sourceX, sourceY];
 
             bitmapData[destX, destY] = DrawingColor.FromArgb(0, color);

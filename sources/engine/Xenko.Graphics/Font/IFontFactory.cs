@@ -27,7 +27,7 @@ namespace Xenko.Graphics.Font
         /// The textures should be disposed manually (if useless) after that the sprite font is not used anymore.</remarks>
         /// <returns>The newly created static font</returns>
         SpriteFont NewStatic(float size, IList<Glyph> glyphs, IList<Texture> textures, float baseOffset, float defaultLineSpacing,
-                             IList<Kerning> kernings = null, float extraSpacing = 0f, float extraLineSpacing = 0f, char defaultCharacter = ' ');
+                             IList<Kerning> kernings = null, float extraSpacing = 0f, float extraLineSpacing = 0f, char defaultCharacter = ' ', int margin = 0);
 
         /// <summary>
         /// Create a new instance of a static font.
@@ -44,7 +44,7 @@ namespace Xenko.Graphics.Font
         /// <remarks>The font does not copy the provided glyphs information. Provided glyphs should not be modified after the creation of the font.</remarks>
         /// <returns>The newly created static font</returns>
         SpriteFont NewStatic(float size, IList<Glyph> glyphs, IList<Image> images, float baseOffset, float defaultLineSpacing,
-                             IList<Kerning> kernings = null, float extraSpacing = 0f, float extraLineSpacing = 0f, char defaultCharacter = ' ');
+                             IList<Kerning> kernings = null, float extraSpacing = 0f, float extraLineSpacing = 0f, char defaultCharacter = ' ', int margin = 0);
 
         /// <summary>
         /// Create a new instance of a dynamic font.

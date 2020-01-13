@@ -85,7 +85,7 @@ namespace Xenko.Assets.SpriteFont.Compiler
     // Helper for arranging many small bitmaps onto a single larger surface.
     internal static class GlyphPacker
     {
-        public static Bitmap ArrangeGlyphs(Glyph[] sourceGlyphs)
+        public static Bitmap ArrangeGlyphs(Glyph[] sourceGlyphs, int margin = 2)
         {
             // Build up a list of all the glyphs needing to be arranged.
             List<ArrangedGlyph> glyphs = new List<ArrangedGlyph>();
@@ -97,8 +97,8 @@ namespace Xenko.Assets.SpriteFont.Compiler
                 glyph.Source = sourceGlyphs[i];
 
                 // Leave a one pixel border around every glyph in the output bitmap.
-                glyph.Width = sourceGlyphs[i].Subrect.Width + 2;
-                glyph.Height = sourceGlyphs[i].Subrect.Height + 2;
+                glyph.Width = sourceGlyphs[i].Subrect.Width + margin;
+                glyph.Height = sourceGlyphs[i].Subrect.Height + margin;
 
                 glyphs.Add(glyph);
             }
@@ -121,12 +121,12 @@ namespace Xenko.Assets.SpriteFont.Compiler
             // Create the merged output bitmap.
             outputHeight = MakeValidTextureSize(outputHeight, false);
 
-            return CopyGlyphsToOutput(glyphs, outputWidth, outputHeight);
+            return CopyGlyphsToOutput(glyphs, outputWidth, outputHeight, margin);
         }
 
 
         // Once arranging is complete, copies each glyph to its chosen position in the single larger output bitmap.
-        static Bitmap CopyGlyphsToOutput(List<ArrangedGlyph> glyphs, int width, int height)
+        static Bitmap CopyGlyphsToOutput(List<ArrangedGlyph> glyphs, int width, int height, int margin = 2)
         {
             Bitmap output = new Bitmap(width, height, PixelFormat.Format32bppArgb);
 
@@ -134,7 +134,7 @@ namespace Xenko.Assets.SpriteFont.Compiler
             {
                 Glyph sourceGlyph = glyph.Source;
                 Rectangle sourceRegion = sourceGlyph.Subrect;
-                Rectangle destinationRegion = new Rectangle(glyph.X + 1, glyph.Y + 1, sourceRegion.Width, sourceRegion.Height);
+                Rectangle destinationRegion = new Rectangle(glyph.X + margin / 2, glyph.Y + margin / 2, sourceRegion.Width, sourceRegion.Height);
 
                 BitmapUtils.CopyRect(sourceGlyph.Bitmap, sourceRegion, output, destinationRegion);
 

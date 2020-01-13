@@ -58,9 +58,9 @@ namespace Xenko.Graphics.Font
                 allocatedSpriteFont.Dispose();
         }
 
-        public SpriteFont NewStatic(float size, IList<Glyph> glyphs, IList<Image> images, float baseOffset, float defaultLineSpacing, IList<Kerning> kernings = null, float extraSpacing = 0, float extraLineSpacing = 0, char defaultCharacter = ' ')
+        public SpriteFont NewStatic(float size, IList<Glyph> glyphs, IList<Image> images, float baseOffset, float defaultLineSpacing, IList<Kerning> kernings = null, float extraSpacing = 0, float extraLineSpacing = 0, char defaultCharacter = ' ', int margin = 10)
         {
-            var font = new OfflineRasterizedSpriteFont(size, glyphs, null, baseOffset, defaultLineSpacing, kernings, extraSpacing, extraLineSpacing, defaultCharacter) { FontSystem = this };
+            var font = new OfflineRasterizedSpriteFont(size, glyphs, null, baseOffset, defaultLineSpacing, kernings, extraSpacing, extraLineSpacing, defaultCharacter, margin) { FontSystem = this };
 
             // affects the textures from the images.
             foreach (var image in images)
@@ -80,9 +80,9 @@ namespace Xenko.Graphics.Font
             return font;
         }
 
-        public SpriteFont NewStatic(float size, IList<Glyph> glyphs, IList<Texture> textures, float baseOffset, float defaultLineSpacing, IList<Kerning> kernings = null, float extraSpacing = 0, float extraLineSpacing = 0, char defaultCharacter = ' ')
+        public SpriteFont NewStatic(float size, IList<Glyph> glyphs, IList<Texture> textures, float baseOffset, float defaultLineSpacing, IList<Kerning> kernings = null, float extraSpacing = 0, float extraLineSpacing = 0, char defaultCharacter = ' ', int margin = 0)
         {
-            return new OfflineRasterizedSpriteFont(size, glyphs, textures, baseOffset, defaultLineSpacing, kernings, extraSpacing, extraLineSpacing, defaultCharacter) { FontSystem = this };
+            return new OfflineRasterizedSpriteFont(size, glyphs, textures, baseOffset, defaultLineSpacing, kernings, extraSpacing, extraLineSpacing, defaultCharacter, margin) { FontSystem = this };
         }
 
         public SpriteFont NewScalable(float size, IList<Glyph> glyphs, IList<Texture> textures, float baseOffset, float defaultLineSpacing, IList<Kerning> kernings = null, float extraSpacing = 0, float extraLineSpacing = 0, char defaultCharacter = ' ')

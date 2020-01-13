@@ -115,7 +115,7 @@ namespace Xenko.Assets.SpriteFont.Compiler
             foreach (Glyph glyph in glyphs)
                 GlyphCropper.Crop(glyph);
 
-            Bitmap bitmap = GlyphPacker.ArrangeGlyphs(glyphs);
+            Bitmap bitmap = GlyphPacker.ArrangeGlyphs(glyphs, fontAsset.GlyphPackingMargin);
 
             // Automatically detect whether this is a monochromatic or color font?
             //if (fontAsset.Format == FontTextureFormat.Auto)
@@ -139,7 +139,7 @@ namespace Xenko.Assets.SpriteFont.Compiler
                 }
             }
 
-            return OfflineRasterizedSpriteFontWriter.CreateSpriteFontData(fontFactory, fontAsset, glyphs, lineSpacing, baseLine, bitmap, srgb);
+            return OfflineRasterizedSpriteFontWriter.CreateSpriteFontData(fontFactory, fontAsset, glyphs, lineSpacing, baseLine, bitmap, srgb, fontAsset.GlyphPackingMargin);
         }
 
         static Glyph[] ImportFont(SpriteFontAsset options, out float lineSpacing, out float baseLine)

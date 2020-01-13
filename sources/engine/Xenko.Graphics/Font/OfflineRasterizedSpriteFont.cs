@@ -22,7 +22,7 @@ namespace Xenko.Graphics.Font
         {
         }
 
-        internal OfflineRasterizedSpriteFont(float size, IList<Glyph> glyphs, IEnumerable<Texture> textures, float baseOffset, float defaultLineSpacing, IList<Kerning> kernings, float extraSpacing, float extraLineSpacing, char defaultCharacter)
+        internal OfflineRasterizedSpriteFont(float size, IList<Glyph> glyphs, IEnumerable<Texture> textures, float baseOffset, float defaultLineSpacing, IList<Kerning> kernings, float extraSpacing, float extraLineSpacing, char defaultCharacter, int margin = 0)
         {
             Size = size;
             StaticTextures = new List<Texture>();
@@ -38,6 +38,15 @@ namespace Xenko.Graphics.Font
             foreach (var glyph in glyphs)
             {
                 var character = (char)glyph.Character;
+                if (margin > 0)
+                {
+                    glyph.Subrect.Width += margin;
+                    glyph.Subrect.Height += margin;
+                    glyph.Subrect.X -= margin / 2;
+                    glyph.Subrect.Y -= margin / 2;
+                    glyph.Offset.Y -= margin / 2;
+                    glyph.Offset.X -= margin / 2;
+                }
                 CharacterToGlyph[character] = glyph;
             }
 

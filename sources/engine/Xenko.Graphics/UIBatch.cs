@@ -442,26 +442,10 @@ namespace Xenko.Graphics
             // transform the world matrix into the world view project matrix
             Matrix.MultiplyTo(ref worldMatrix, ref viewProjectionMatrix, out drawCommand.Matrix);
 
-            if (!drawCommand.IsFullscreen) {
-                // we are drawing in 3D, don't snap or scale
-                drawCommand.SnapText = false;
-                drawCommand.RealVirtualResolutionRatio.X = 1f;
-                drawCommand.RealVirtualResolutionRatio.Y = 1f;
-            }
-            else if (font.FontType == SpriteFontType.SDF)
-            {
-                drawCommand.SnapText = false;
-                float scaling = drawCommand.RequestedFontSize / font.Size;
-                drawCommand.RealVirtualResolutionRatio = 1 / new Vector2(scaling, scaling);
-            }
-            else if ((font.FontType == SpriteFontType.Static))
-            {
-                if ((drawCommand.RealVirtualResolutionRatio.X != 1 || drawCommand.RealVirtualResolutionRatio.Y != 1))
-                    drawCommand.SnapText = false;   // we don't want snapping of the resolution of the screen does not match virtual resolution. (character alignment problems)
+            drawCommand.SnapText = false;
+            float scaling = drawCommand.RequestedFontSize / font.Size;
+            drawCommand.RealVirtualResolutionRatio = 1 / new Vector2(scaling, scaling);
 
-                drawCommand.RealVirtualResolutionRatio = Vector2.One; // ensure that static font are not scaled internally
-            }
-            
             // snap draw start position to prevent characters to be drawn in between two pixels
             if (drawCommand.SnapText)
             {

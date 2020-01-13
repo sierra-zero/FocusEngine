@@ -87,13 +87,13 @@ namespace Xenko.Assets.SpriteFont.Compiler
     // Writes the output sprite font binary file.
     internal static class OfflineRasterizedSpriteFontWriter
     {
-        public static Graphics.SpriteFont CreateSpriteFontData(IFontFactory fontFactory, SpriteFontAsset options, Glyph[] glyphs, float lineSpacing, float baseLine, Bitmap bitmap, bool srgb)
+        public static Graphics.SpriteFont CreateSpriteFontData(IFontFactory fontFactory, SpriteFontAsset options, Glyph[] glyphs, float lineSpacing, float baseLine, Bitmap bitmap, bool srgb, int margin = 0)
         {
             var fontGlyphs = ConvertGlyphs(glyphs);
             var images = new[] { GetImage(options, bitmap, srgb) };
             var sizeInPixels = options.FontType.Size;
 
-            return fontFactory.NewStatic(sizeInPixels, fontGlyphs, images, baseLine, lineSpacing, null, options.Spacing, options.LineSpacing, options.DefaultCharacter);
+            return fontFactory.NewStatic(sizeInPixels, fontGlyphs, images, baseLine, lineSpacing, null, options.Spacing, options.LineSpacing, options.DefaultCharacter, margin);
         }
 
         static Graphics.Font.Glyph[] ConvertGlyphs(Glyph[] glyphs)
