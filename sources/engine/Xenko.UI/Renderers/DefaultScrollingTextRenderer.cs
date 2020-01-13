@@ -40,11 +40,14 @@ namespace Xenko.UI.Renderers
             var drawCommand = new SpriteFont.InternalUIDrawCommand
             {
                 Color = scrollingText.RenderOpacity * scrollingText.TextColor,
+                VertAlignment = scrollingText.TextVerticalAlignment,
+                LineSpacingAdjustment = scrollingText.LineSpacingAdjustment,
                 DepthBias = context.DepthBias + 1,
                 RealVirtualResolutionRatio = element.LayoutingContext.RealVirtualResolutionRatio,
                 RequestedFontSize = scrollingText.ActualTextSize,
                 Batch = Batch,
                 SnapText = context.ShouldSnapText && !scrollingText.DoNotSnapText,
+                IsFullscreen = context.IsFullscreen,
                 Matrix = textWorldMatrix,
                 Alignment = TextAlignment.Left,
                 TextBoxSize = new Vector2(scrollingText.ActualWidth, scrollingText.ActualHeight)

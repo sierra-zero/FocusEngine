@@ -118,6 +118,7 @@ namespace Xenko.UI.Renderers
             var drawCommand = new SpriteFont.InternalUIDrawCommand
             {
                 Color = editText.RenderOpacity * editText.TextColor,
+                IsFullscreen = context.IsFullscreen,
                 DepthBias = context.DepthBias + 2,
                 RealVirtualResolutionRatio = fontScale,
                 RequestedFontSize = editText.ActualTextSize,
