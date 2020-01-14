@@ -17,11 +17,11 @@ namespace Xenko.Engine
     /// <summary>
     /// Efficiently plays and manages sound effects for an entire project
     /// </summary>
-    [Display("Simple Audio Pool", Expand = ExpandRule.Once)]
-    [DataContract("SimpleAudioPool")]
+    [Display("Global Sound Manager", Expand = ExpandRule.Once)]
+    [DataContract("GlobalSoundManager")]
     [ComponentOrder(7500)]
     [ComponentCategory("Audio")]
-    public sealed class SimpleAudioPool : ActivableEntityComponent
+    public sealed class GlobalSoundManager : ActivableEntityComponent
     {
         private struct PositionalSound
         {
