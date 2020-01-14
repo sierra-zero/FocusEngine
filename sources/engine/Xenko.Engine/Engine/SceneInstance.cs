@@ -57,6 +57,11 @@ namespace Xenko.Engine
         }
 
         /// <summary>
+        /// Entities in this list will persist across root scene changes, IF the entity was attached in the previous scene.
+        /// </summary>
+        public HashSet<Entity> PersistentEntities = new HashSet<Entity>();
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="SceneInstance" /> class.
         /// </summary>
         /// <param name="services">The services.</param>
@@ -97,6 +102,11 @@ namespace Xenko.Engine
                 if (value != null)
                 {
                     Add(value);
+
+                    // return any persistent entities
+                    foreach (Entity e in PersistentEntities)
+                        e.Scene = value;
+
                     HandleRendererTypes();
                 }
 
