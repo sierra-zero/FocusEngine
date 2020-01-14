@@ -438,7 +438,10 @@ namespace Xenko.Audio
             }
             else
             {
-                throw new ArgumentException("SetRangePercent cannot work with streamed audio.");
+                soundSource.PlayRange =
+                    new PlayRange(
+                            new TimeSpan((long)Math.Round((double)sound.TotalLength.Ticks * startPercent)),
+                            new TimeSpan((long)Math.Round((double)sound.TotalLength.Ticks * endPercent)));
             }
 
             if (state == PlayState.Playing)
