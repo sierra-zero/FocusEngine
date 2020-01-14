@@ -19,7 +19,7 @@ My games require the engine to be developed at a faster pace than Xenko. I'm in 
 
 Most of Focus is similar to Xenko and there shouldn't be any loss of functionality over the original. Changes are focused on fixes, performance improvements and new features.
 
-* Virtual Reality: frame rate management, resolution detection, Vulkan support, and automatic UI interaction are some of the VR improvements you'll get "out of the box". Tracking hands is much easier, as you can simply select which hand to track right from GameStudio. Support for multiple forward renderers in VR, with post processing.
+* Virtual Reality: frame rate management, resolution detection, Vulkan support, and automatic UI interaction are some of the VR improvements you'll get "out of the box". Pretty much just need to enable OpenVR in your Graphics Compositor's Forward Renderer and you'll be good to go. Tracking hands is much easier, as you can simply select which hand to track right from GameStudio. Support for multiple forward renderers in VR, with post processing.
 * Vulkan: Focus primarily uses Vulkan, which has been significantly overhauled to provide more performance you'd expect from the newer API.
 * BepuPhysics2 and Physics: Focus has an additional physics library integrated, which is much faster, multithreaded and pure C#. It isn't integrated with GameStudio though, like Bullet physics is. Look at the Xenko.Physics.Bepu namespace on how to use it. If you decide to still use Bullet, this fork can handle Bullet running in another thread with interpolation.
 * API Ease: TransformComponents have nice shortcuts like WorldPosition and WorldRotation. There are also other very useful shortcuts, like Material.Clone to easily clone materials.
