@@ -59,6 +59,11 @@ namespace Xenko.Cinematics
         public bool Paused = false;
 
         /// <summary>
+        /// Does this animation loop?
+        /// </summary>
+        public bool Looping = false;
+
+        /// <summary>
         /// What time are we at in the animation?
         /// </summary>
         public float CurrentTime { get; private set; }
@@ -99,6 +104,7 @@ namespace Xenko.Cinematics
         public void Play(float time_delta)
         {
             if (Paused) return;
+            if (Looping && RemainingActions.Count == 0 && AllActions.Count > 0) Reset();
             for (int i = 0; i < RemainingActions.Count; i++)
             {
                 CinematicAction ca = RemainingActions[i];
