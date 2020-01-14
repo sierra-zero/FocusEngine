@@ -32,9 +32,6 @@ namespace Xenko.Engine
         }
 
         [DataMember]
-        public AudioListenerComponent Listener;
-
-        [DataMember]
         public float MaxSoundDistance = 48f;
 
         [DataMember]
@@ -160,11 +157,54 @@ namespace Xenko.Engine
             instances.Clear();
         }
 
+        private Game game
+        {
+            get
+            {
+                // don't have this sound... try loading it!
+                if (internalGame == null)
+                    internalGame = ServiceRegistry.instance?.GetService<IGame>() as Game;
+
+                return internalGame;
+            }
+        }
+
+        [DataMember]
+        public AudioListenerComponent Listener
+        {
+            get
+            {
+                if (_listener == null || _listener.Entity.Scene == null)
+                {
+                    Game g = game;
+
+                    if (g != null)
+                    {
+                        // find a valid listener!
+                        foreach (AudioListenerComponent alc in g.Audio.Listeners.Keys)
+                        {
+                            _listener = alc;
+                            break;
+                        }
+                    }
+                }
+                return _listener;
+            }
+            set
+            {
+                // don't set us to something null, which just breaks things
+                if (value == null) return;
+
+                _listener = value;
+            }
+        }
+
         private Dictionary<string, Sound> Sounds = new Dictionary<string, Sound>();
         private Dictionary<string, List<SoundInstance>> instances = new Dictionary<string, List<SoundInstance>>();
         private List<PositionalSound> currentAttached = new List<PositionalSound>();
         private System.Random rand;
         private Game internalGame;
+        private AudioListenerComponent _listener;
 
         private SoundInstance getFreeInstance(string url, bool spatialized)
         {
@@ -200,12 +240,8 @@ namespace Xenko.Engine
                 return si1;
             }
 
-            // don't have this sound... try loading it!
-            if (internalGame == null)
-                internalGame = ServiceRegistry.instance.GetService<IGame>() as Game;
-
             // this might throw an exception if you provided a bad url
-            Sound snd2 = internalGame.Content.Load<Sound>(url);
+            Sound snd2 = game.Content.Load<Sound>(url);
 
             if (!snd2.Spatialized && spatialized)
                 throw new InvalidOperationException("Trying to play " + url + " positionally, yet it is a non-spatialized sound!");
