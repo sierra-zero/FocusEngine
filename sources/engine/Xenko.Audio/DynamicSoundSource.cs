@@ -75,12 +75,6 @@ namespace Xenko.Audio
         protected volatile bool playingQueued;
 
         /// <summary>
-        /// If the source is actually playing sound
-        /// this takes into account multiple factors: Playing, Ended task, and Audio layer playing state
-        /// </summary>
-        private volatile bool isSourcePausedOrPlaying = false;
-
-        /// <summary>
         /// Initializes a new instance of the <see cref="DynamicSoundSource"/> class.
         /// Sub classes can implement their own streaming sources.
         /// </summary>
@@ -164,7 +158,7 @@ namespace Xenko.Audio
         /// <summary>
         /// Gets if this instance is in the playing state.
         /// </summary>
-        public bool IsPausedOrPlaying => playingQueued || state != PlayState.Stopped || isSourcePausedOrPlaying;
+        public bool IsPausedOrPlaying => playingQueued || state != PlayState.Stopped;
 
         /// <summary>
         /// Gets or sets the region of time to play from the audio clip.
@@ -207,6 +201,7 @@ namespace Xenko.Audio
         /// </summary>
         protected virtual void RestartInternal()
         {
+            AudioLayer.SourceFlushBuffers(soundInstance.Source);
             ReadyToPlay.TrySetResult(false);
             ReadyToPlay = new TaskCompletionSource<bool>();
             readyToPlay = false;
@@ -249,6 +244,7 @@ namespace Xenko.Audio
         {
             Ended.TrySetResult(true);
             state = PlayState.Stopped;
+            soundInstance.playState = PlayState.Stopped;
             if (ignoreQueuedBuffer)
                 AudioLayer.SourceStop(soundInstance.Source);
             RestartInternal();
@@ -270,6 +266,24 @@ namespace Xenko.Audio
             freeBuffers.Clear();
             isDisposed = true;
             isInitialized = false;
+        }
+
+        private void Rebuffer()
+        {
+            int numberOfBuffers = deviceBuffers.Count;
+
+            for (int i = 0; i < numberOfBuffers; i++)
+                AudioLayer.BufferDestroy(deviceBuffers[i]);
+
+            deviceBuffers.Clear();
+            freeBuffers.Clear();
+
+            for (var i = 0; i < numberOfBuffers; i++)
+            {
+                var buffer = AudioLayer.BufferCreate(nativeBufferSizeBytes);
+                deviceBuffers.Add(buffer);
+                freeBuffers.Enqueue(deviceBuffers[i]);
+            }
         }
 
         /// <summary>
@@ -327,11 +341,8 @@ namespace Xenko.Audio
 
         private static unsafe void Worker()
         {
-            var toRemove = new List<DynamicSoundSource>();
             while (true)
             {
-                toRemove.Clear();
-
                 while (!NewSources.IsEmpty)
                 {
                     if (!NewSources.TryTake(out var source))
@@ -344,11 +355,14 @@ namespace Xenko.Audio
                         Sources.Add(source);
                 }
 
-                foreach (var source in Sources)
+                for (int i=0; i<Sources.Count; i++)
                 {
+                    var source = Sources[i];
+
                     if (source.isDisposed)
                     {
-                        toRemove.Add(source);
+                        Sources.RemoveAt(i);
+                        i--;
                         continue;
                     }
 
@@ -379,7 +393,8 @@ namespace Xenko.Audio
                                 break;
                             case AsyncCommand.Dispose:
                                 source.DisposeInternal();
-                                toRemove.Add(source);
+                                Sources.RemoveAt(i);
+                                i--;
                                 break;
                             default:
                                 throw new ArgumentOutOfRangeException();
@@ -389,26 +404,37 @@ namespace Xenko.Audio
                     if (source.isDisposed)
                         continue;
 
-                    source.isSourcePausedOrPlaying = (source.IsPausedOrPlaying && !source.Ended.Task.IsCompleted) || AudioLayer.SourceIsPlaying(source.soundInstance.Source);
-
                     //Did we get a Seek request?
                     if (seekRequested)
                     {
                         source.SeekInternal();
                         continue;
                     }
-                    
-                    if (source.CanFill && source.isSourcePausedOrPlaying)
-                        source.ExtractAndFillData();
+
+                    // handle certain playing states
+                    if (source.state == PlayState.Playing)
+                    {
+                        if (source.Ended.Task.IsCompleted)
+                        {
+                            // sound ended, stop it
+                            source.StopInternal();
+                        }
+                        else if (source.CanFill)
+                        {
+                            source.ExtractAndFillData();
+                        }
+                        else if (AudioLayer.SourceIsPlaying(source.soundInstance.Source) == false)
+                        {
+                            // hmm, state and source do not match up.. lets try and get it playing!
+                            source.Rebuffer();
+                        }
+                    }
                 }
 
-                foreach (var source in toRemove)
-                    Sources.Remove(source);
-
                 var buffersShouldBeFill = false;
-                foreach (var source in Sources)
+                for (int i=0; i<Sources.Count; i++)
                 { 
-                    if (source.CanFill)
+                    if (Sources[i].CanFill)
                     {
                         buffersShouldBeFill = true;
                         break;

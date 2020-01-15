@@ -23,7 +23,7 @@ namespace Xenko.Audio
         protected float pitch;
         protected float volume;
         protected bool spatialized;
-        protected PlayState playState = PlayState.Stopped;
+        internal PlayState playState = PlayState.Stopped;
 
         internal AudioLayer.Source Source;
 
@@ -369,11 +369,6 @@ namespace Xenko.Audio
                 if (engine.State == AudioEngineState.Invalidated)
                     return PlayState.Stopped;
 
-                if (playState == PlayState.Playing && (!soundSource?.IsPausedOrPlaying ?? !AudioLayer.SourceIsPlaying(Source)))
-                {
-                    Stop();
-                }
-
                 return playState;
             }
         }
@@ -419,7 +414,7 @@ namespace Xenko.Audio
         /// </summary>
         /// <param name="startPercent">% of when to start, 0.5 is starting at the exact middle</param>
         /// <param name="endPercent">% of when to end. 1 is default (100%)</param>
-        public void SetRangePercent(double startPercent, double endPercent = 1f)
+        public void SetRangePercent(double startPercent, double endPercent = 1.0)
         {
             if (engine.State == AudioEngineState.Invalidated)
                 return;
@@ -441,7 +436,7 @@ namespace Xenko.Audio
                 soundSource.PlayRange =
                     new PlayRange(
                             new TimeSpan((long)Math.Round((double)sound.TotalLength.Ticks * startPercent)),
-                            new TimeSpan((long)Math.Round((double)sound.TotalLength.Ticks * endPercent)));
+                            endPercent >= 1.0 ? TimeSpan.Zero : new TimeSpan((long)Math.Round((double)sound.TotalLength.Ticks * endPercent)));
             }
 
             if (state == PlayState.Playing)
