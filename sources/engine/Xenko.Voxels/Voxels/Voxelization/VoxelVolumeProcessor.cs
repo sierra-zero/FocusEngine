@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using Xenko.Engine;
@@ -77,12 +77,12 @@ namespace Xenko.Engine.Processors
             //    return;
             renderVoxelVolumes.Clear();
             processedVoxelVolumes.Clear();
-            foreach (var pair in ComponentDatas)
+            for (int i=0; i<ComponentDataKeys.Count; i++)
             {
-                if (!pair.Key.Enabled)
-                    continue;
+                var volume = ComponentDataKeys[i];
 
-                var volume = pair.Key;
+                if (!volume.Enabled)
+                    continue;
 
                 DataVoxelVolume data;
                     renderVoxelVolumes.Add(volume, data = new DataVoxelVolume());
