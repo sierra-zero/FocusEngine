@@ -37,13 +37,16 @@ namespace Xenko.Engine
         [DataMember]
         public int MaxSameSoundOverlaps = 8;
 
+        [DataMember]
+        public float MasterVolume = 1f;
+
         public SoundInstance PlayCentralSound(string url, float pitch = 1f, float volume = 1f, float pan = 0.5f, bool looped = false)
         {
             SoundInstance s = getFreeInstance(url, false);
             if (s != null)
             {
                 s.Pitch = pitch;
-                s.Volume = volume;
+                s.Volume = volume * MasterVolume;
                 s.IsLooping = looped;
                 s.Pan = pan;
                 s.Play();
@@ -58,7 +61,7 @@ namespace Xenko.Engine
             SoundInstance s = getFreeInstance(url, true);
             if (s == null) return null;
             s.Pitch = pitch;
-            s.Volume = volume;
+            s.Volume = volume * MasterVolume;
             s.IsLooping = looped;
             s.Pan = pan;
             s.Apply3D(position, null, null, distanceScale);
@@ -74,7 +77,7 @@ namespace Xenko.Engine
             SoundInstance s = getFreeInstance(url, true);
             if (s == null) return null;
             s.Pitch = pitch;
-            s.Volume = volume;
+            s.Volume = volume * MasterVolume;
             s.IsLooping = looped;
             s.Pan = pan;
             s.Apply3D(pos, null, null, distanceScale);
