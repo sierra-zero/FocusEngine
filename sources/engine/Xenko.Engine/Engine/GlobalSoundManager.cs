@@ -45,7 +45,7 @@ namespace Xenko.Engine
             SoundInstance s = getFreeInstance(url, false);
             if (s != null)
             {
-                s.Pitch = pitch;
+                s.Pitch = pitch < 0f ? RandomPitch() : pitch;
                 s.Volume = volume * MasterVolume;
                 s.IsLooping = looped;
                 s.Pan = pan;
@@ -60,7 +60,7 @@ namespace Xenko.Engine
             if (MaxSoundDistance > 0f && sqrDist >= MaxSoundDistance * MaxSoundDistance) return null;
             SoundInstance s = getFreeInstance(url, true);
             if (s == null) return null;
-            s.Pitch = pitch;
+            s.Pitch = pitch < 0f ? RandomPitch() : pitch;
             s.Volume = volume * MasterVolume;
             s.IsLooping = looped;
             s.Pan = pan;
@@ -76,7 +76,7 @@ namespace Xenko.Engine
             if (MaxSoundDistance > 0f && sqrDist >= MaxSoundDistance * MaxSoundDistance) return null;
             SoundInstance s = getFreeInstance(url, true);
             if (s == null) return null;
-            s.Pitch = pitch;
+            s.Pitch = pitch < 0f ? RandomPitch() : pitch;
             s.Volume = volume * MasterVolume;
             s.IsLooping = looped;
             s.Pan = pan;
