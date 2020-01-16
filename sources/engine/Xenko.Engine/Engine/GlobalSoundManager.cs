@@ -172,12 +172,12 @@ namespace Xenko.Engine
             }
         }
 
-        [DataMember]
-        public AudioListenerComponent Listener
+        [DataMemberIgnore]
+        private AudioListenerComponent Listener
         {
             get
             {
-                if (_listener == null || _listener.Entity.Scene == null)
+                if (_listener == null || _listener.Entity.Scene == null || _listener.Enabled == false)
                 {
                     Game g = game;
 
@@ -186,10 +186,16 @@ namespace Xenko.Engine
                         // find a valid listener!
                         foreach (AudioListenerComponent alc in g.Audio.Listeners.Keys)
                         {
-                            _listener = alc;
-                            break;
+                            if (alc.Enabled)
+                            {
+                                _listener = alc;
+                                break;
+                            }
                         }
                     }
+
+                    if (_listener == null)
+                        throw new InvalidOperationException("Could not find an Audio Listener Component in scene!");
                 }
                 return _listener;
             }
@@ -200,6 +206,11 @@ namespace Xenko.Engine
 
                 _listener = value;
             }
+        }
+
+        public void OverrideListener(AudioListenerComponent listener)
+        {
+            Listener = listener;
         }
 
         private Dictionary<string, Sound> Sounds = new Dictionary<string, Sound>();
