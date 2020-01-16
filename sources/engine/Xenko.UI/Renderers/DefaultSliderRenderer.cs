@@ -29,14 +29,12 @@ namespace Xenko.UI.Renderers
 
             var axis = (int)slider.Orientation;
             var axisPrime = (axis + 1) % 2;
-            var color = slider.RenderOpacity * Color.White;
             var isGaugeReverted = axis == 1 ? !slider.IsDirectionReversed : slider.IsDirectionReversed; // we want the track going up from the bottom in vertical mode by default
             var sliderRatio = MathUtil.InverseLerp(slider.Minimum, slider.Maximum, slider.Value);
             var trackOffsets = new Vector2(slider.TrackStartingOffsets[axis], slider.TrackStartingOffsets[axisPrime]);
             var fullGaugeSize = slider.RenderSizeInternal[axis] - trackOffsets.X - trackOffsets.Y;
 
             var image = slider.TrackBackgroundImage?.GetSprite();
-            var trackIdealSize = image != null ? new Vector2?(image.SizeInPixels) : null;
             // draws the track background
             if (image?.Texture != null)
             {
@@ -44,7 +42,8 @@ namespace Xenko.UI.Renderers
                 var imageOrientation = (ImageOrientation)(axis ^ imageAxis);
                 var worldMatrix = GetAdjustedWorldMatrix(ref slider.WorldMatrixInternal, (axis & imageAxis) == 1);
 
-                Batch.DrawImage(image.Texture, ref worldMatrix, ref image.RegionInternal, ref slider.RenderSizeInternal, ref image.BordersInternal, ref color, context.DepthBias, imageOrientation);
+                Color tbt = slider.TrackBackgroundTint * slider.RenderOpacity;
+                Batch.DrawImage(image.Texture, ref worldMatrix, ref image.RegionInternal, ref slider.RenderSizeInternal, ref image.BordersInternal, ref tbt, context.DepthBias, imageOrientation);
                 context.DepthBias += 1;
             }
             
@@ -58,9 +57,7 @@ namespace Xenko.UI.Renderers
 
                 var size = new Vector3();
                 size[axis] = sliderRatio * fullGaugeSize;
-                size[axisPrime] = image.SizeInPixels.Y;
-                if (trackIdealSize.HasValue)
-                    size[axisPrime] *= slider.RenderSizeInternal[axisPrime] / trackIdealSize.Value.Y;
+                size[axisPrime] = slider.TrackForegroundHeightScale * slider.RenderSizeInternal[axisPrime];
 
                 var worldMatrix = GetAdjustedWorldMatrix(ref slider.WorldMatrixInternal, shouldRotate180Degrees);
                 var halfSizeLeft = (slider.RenderSizeInternal[axis] - size[axis]) / 2;
@@ -87,7 +84,8 @@ namespace Xenko.UI.Renderers
                 }
                 var region = new RectangleF(position.X, position.Y, newRegionSize.X, newRegionSize.Y);
 
-                Batch.DrawImage(image.Texture, ref worldMatrix, ref region, ref size, ref borders, ref color, context.DepthBias, imageOrientation);
+                Color tft = slider.TrackForegroundTint * slider.RenderOpacity;
+                Batch.DrawImage(image.Texture, ref worldMatrix, ref region, ref size, ref borders, ref tft, context.DepthBias, imageOrientation);
                 context.DepthBias += 1;
             }
 
@@ -100,15 +98,11 @@ namespace Xenko.UI.Renderers
                 var shouldRotate180Degrees = (axis & imageAxis) == 1;
 
                 var size = new Vector3();
-                size[axis] = image.SizeInPixels.X;
-                size[axisPrime] = image.SizeInPixels.Y;
-                if (trackIdealSize.HasValue)
-                    size[axisPrime] *= slider.RenderSizeInternal[axisPrime] / trackIdealSize.Value.Y;
+                size[axis] = slider.RenderSizeInternal[axis] * slider.TickWidthScale;
+                size[axisPrime] = slider.RenderSizeInternal[axisPrime] * slider.TickHeightScale;
 
                 var startOffset = new Vector2(GetAdjustedTranslation(slider.TickOffset, shouldRotate180Degrees));
                 startOffset[axis] = GetAdjustedTranslation(- fullGaugeSize / 2, shouldRotate180Degrees);
-                if (trackIdealSize.HasValue)
-                    startOffset[axisPrime] *= slider.RenderSizeInternal[axisPrime] / trackIdealSize.Value.Y;
                 
                 var stepOffset = GetAdjustedTranslation(fullGaugeSize / slider.TickFrequency, shouldRotate180Degrees);
 
@@ -116,10 +110,11 @@ namespace Xenko.UI.Renderers
                 worldMatrix.M41 += startOffset[axis] * worldMatrix[(axis << 2) + 0] + startOffset[axisPrime] * worldMatrix[(axisPrime << 2) + 0];
                 worldMatrix.M42 += startOffset[axis] * worldMatrix[(axis << 2) + 1] + startOffset[axisPrime] * worldMatrix[(axisPrime << 2) + 1];
                 worldMatrix.M43 += startOffset[axis] * worldMatrix[(axis << 2) + 2] + startOffset[axisPrime] * worldMatrix[(axisPrime << 2) + 2];
-                
+
+                Color tclr = slider.TickTint * slider.RenderOpacity;
                 for (var i = 0; i < slider.TickFrequency + 1; i++)
                 {
-                    Batch.DrawImage(image.Texture, ref worldMatrix, ref image.RegionInternal, ref size, ref image.BordersInternal, ref color, context.DepthBias, imageOrientation, SwizzleMode.None, true);
+                    Batch.DrawImage(image.Texture, ref worldMatrix, ref image.RegionInternal, ref size, ref image.BordersInternal, ref tclr, context.DepthBias, imageOrientation, SwizzleMode.None, true);
 
                     worldMatrix.M41 += stepOffset * worldMatrix[(axis << 2) + 0];
                     worldMatrix.M42 += stepOffset * worldMatrix[(axis << 2) + 1];
@@ -137,10 +132,8 @@ namespace Xenko.UI.Renderers
                 var shouldRotate180Degrees = (axis & imageAxis) == 1;
                 
                 var size = new Vector3();
-                size[axis] = image.SizeInPixels.X;
-                size[axisPrime] = image.SizeInPixels.Y;
-                if (trackIdealSize.HasValue)
-                    size[axisPrime] *= slider.RenderSizeInternal[axisPrime] / trackIdealSize.Value.Y;
+                size[axis] = slider.RenderSizeInternal[axis] * slider.ThumbWidthScale;
+                size[axisPrime] = slider.RenderSizeInternal[axisPrime] * slider.ThumbHeightScale;
 
                 var revertedRatio = isGaugeReverted ? 1 - sliderRatio : sliderRatio;
                 var offset = GetAdjustedTranslation((revertedRatio - 0.5f) * fullGaugeSize, shouldRotate180Degrees);
@@ -149,7 +142,8 @@ namespace Xenko.UI.Renderers
                 worldMatrix.M42 += offset * worldMatrix[(axis << 2) + 1];
                 worldMatrix.M43 += offset * worldMatrix[(axis << 2) + 2];
 
-                Batch.DrawImage(image.Texture, ref worldMatrix, ref image.RegionInternal, ref size, ref image.BordersInternal, ref color, context.DepthBias, imageOrientation);
+                Color tc = slider.ThumbTint * slider.RenderOpacity;
+                Batch.DrawImage(image.Texture, ref worldMatrix, ref image.RegionInternal, ref size, ref image.BordersInternal, ref tc, context.DepthBias, imageOrientation);
 
                 context.DepthBias += 1;
             }

@@ -131,6 +131,47 @@ namespace Xenko.UI.Controls
             }
         }
 
+        [DataMember]
+        [Display(category: AppearanceCategory)]
+        public Color TrackBackgroundTint { get; set; } = Color.White;
+
+        [DataMember]
+        [Display(category: AppearanceCategory)]
+        [DefaultValue(1.3f)]
+        public float TrackForegroundHeightScale { get; set; } = 1.3f;
+
+        [DataMember]
+        [Display(category: AppearanceCategory)]
+        public Color TrackForegroundTint { get; set; } = Color.White;
+
+        [DataMember]
+        [Display(category: AppearanceCategory)]
+        public Color TickTint { get; set; } = Color.White;
+
+        [DataMember]
+        [Display(category: AppearanceCategory)]
+        [DefaultValue(0.4f)]
+        public float TickHeightScale { get; set; } = 0.4f;
+
+        [DataMember]
+        [Display(category: AppearanceCategory)]
+        [DefaultValue(0.01f)]
+        public float TickWidthScale { get; set; } = 0.01f;
+
+        [DataMember]
+        [Display(category: AppearanceCategory)]
+        [DefaultValue(1.3f)]
+        public float ThumbHeightScale { get; set; } = 1.3f;
+
+        [DataMember]
+        [Display(category: AppearanceCategory)]
+        [DefaultValue(1.3f)]
+        public float ThumbWidthScale { get; set; } = 0.1f;
+
+        [DataMember]
+        [Display(category: AppearanceCategory)]
+        public Color ThumbTint { get; set; } = Color.White;
+
         /// <summary>
         /// Gets or sets the image to display as Track background.
         /// </summary>
