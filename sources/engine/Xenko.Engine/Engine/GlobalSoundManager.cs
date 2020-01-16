@@ -177,20 +177,20 @@ namespace Xenko.Engine
         {
             get
             {
-                if (_listener == null || _listener.Entity.Scene == null || _listener.Enabled == false)
-                {
-                    Game g = game;
+                Game g = game;
 
-                    if (g != null)
+                if (g == null)
+                    throw new InvalidOperationException("No Game object has been fully initialized yet!");
+
+                if (_listener == null || _listener.Enabled == false || g.Audio.Listeners.ContainsKey(_listener) == false)
+                {
+                    // find a valid listener!
+                    foreach (AudioListenerComponent alc in g.Audio.Listeners.Keys)
                     {
-                        // find a valid listener!
-                        foreach (AudioListenerComponent alc in g.Audio.Listeners.Keys)
+                        if (alc.Enabled)
                         {
-                            if (alc.Enabled)
-                            {
-                                _listener = alc;
-                                break;
-                            }
+                            _listener = alc;
+                            break;
                         }
                     }
 
