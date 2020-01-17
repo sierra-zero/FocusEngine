@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Xenko.Core;
 using Xenko.Engine;
+using Xenko.Input;
 using Xenko.UI.Controls;
 using Xenko.UI.Panels;
 
@@ -104,8 +106,14 @@ namespace Xenko.UI
             scroll = grid.Parent as ScrollViewer;
             if (scroll == null) throw new ArgumentException("Grid needs a ScrollViewer as Parent");
             scroll.ScrollMode = ScrollingMode.Vertical;
+            
             myGrid.Height = entryHeight;
             this.pulldownIndicator = pulldownIndicator;
+
+            listener = new ClickHandler();
+            listener.mouseOverCheck = this;
+
+            inputManager = ServiceRegistry.instance.GetService<InputManager>();
         }
 
         public override UIElement AddEntry(string displayName, object value = null, bool rebuildVisualListAfter = true)
@@ -127,6 +135,32 @@ namespace Xenko.UI
             if (pulldownIndicator != null) pulldownIndicator.Visibility = _currentlyExpanded ? Visibility.Hidden : Visibility.Visible;
             scroll.Height = _currentlyExpanded ? entryHeight * Math.Min(entryElements.Count, _optionsToShow + 0.5f) : entryHeight;
             myGrid.Height = _currentlyExpanded ? entryHeight * entryElements.Count : entryHeight;
+
+            if (_currentlyExpanded)
+            {
+                inputManager.AddListener(listener);
+            }
+            else
+            {
+                inputManager.RemoveListener(listener);
+            }
+        }
+
+        private InputManager inputManager;
+        private ClickHandler listener;
+
+        private class ClickHandler : IInputEventListener<PointerEvent>
+        {
+            public PulldownList mouseOverCheck;
+
+            public void ProcessEvent(PointerEvent inputEvent)
+            {
+                if (inputEvent.EventType == PointerEventType.Pressed &&
+                    mouseOverCheck.scroll.MouseOverState == MouseOverState.MouseOverNone)
+                {
+                    mouseOverCheck.CurrentlyExpanded = false;
+                }
+            }
         }
     }
 }
