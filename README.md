@@ -17,7 +17,7 @@ My games require the engine to be developed at a faster pace than Xenko. I'm in 
 
 ## What is different?
 
-Most of Focus is similar to Xenko and there shouldn't be any loss of functionality over the original. Changes are focused on fixes, performance improvements and new features.
+Most of Focus is similar to Xenko and there shouldn't be any loss of functionality over the original. Changes are focused on fixes, performance improvements and new features. However, I do not maintain different languages, Android support or the Launcher to "Focus" on things like:
 
 * Virtual Reality: frame rate management, resolution detection, Vulkan support, and automatic UI interaction are some of the VR improvements you'll get "out of the box". Pretty much just need to enable OpenVR in your Graphics Compositor's Forward Renderer and you'll be good to go. Tracking hands is much easier, as you can simply select which hand to track right from GameStudio. Support for multiple forward renderers in VR, with post processing. See https://github.com/phr00t/FOVTester2 for a super simple example of how easy a VR project is.
 * Vulkan: Focus primarily uses Vulkan, which has been significantly overhauled to provide more performance you'd expect from the newer API.
