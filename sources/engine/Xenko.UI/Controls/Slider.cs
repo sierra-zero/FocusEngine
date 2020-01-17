@@ -447,6 +447,20 @@ namespace Xenko.UI.Controls
         {
             base.OnTouchLeave(args);
 
+            // check and see if we were dragging off the edge
+            Vector2 leaveDir = Vector2.Normalize(args.ScreenTranslation);
+
+            if (leaveDir.X > 0.7f && Orientation == Orientation.Horizontal ||
+                leaveDir.Y > 0.7f && Orientation == Orientation.Vertical)
+            {
+                if (Value > Maximum * 0.85f) Value = Maximum;
+            }
+            else if (leaveDir.X < -0.7f && Orientation == Orientation.Horizontal ||
+                     leaveDir.Y < -0.7f && Orientation == Orientation.Vertical)
+            {
+                if (Value < Maximum * 0.15f) Value = Minimum;
+            }
+
             IsTouchedDown = false;
         }
 
