@@ -44,7 +44,7 @@ namespace Xenko.UI.Renderers
             }
 
             var scaleRatio = editText.ActualTextSize / font.Size;
-            if (font.FontType == SpriteFontType.SDF)
+            if (font.FontType != SpriteFontType.Dynamic)
             {
                 offsetTextStart *= scaleRatio;
                 selectionSize *= scaleRatio;
@@ -58,8 +58,7 @@ namespace Xenko.UI.Renderers
                 var textWidth = font.MeasureString(editText.TextToDisplay, ref fontSize).X;
                 if (font.FontType == SpriteFontType.Dynamic)
                     textWidth /= fontScale.X;
-                if (font.FontType == SpriteFontType.SDF)
-                    textWidth *= scaleRatio;
+                else textWidth *= scaleRatio;
 
                 offsetAlignment = editText.TextAlignment == TextAlignment.Center ? -textWidth / 2 : -textRegionSize.X / 2f + (textRegionSize.X - textWidth);
             }
@@ -148,7 +147,7 @@ namespace Xenko.UI.Renderers
             if (editText.IsCaretVisible)
             {
                 var lineSpacing = editText.Font.GetTotalLineSpacing(editText.ActualTextSize);
-                if (editText.Font.FontType == SpriteFontType.SDF)
+                if (editText.Font.FontType != SpriteFontType.Dynamic)
                     lineSpacing *= editText.ActualTextSize / font.Size;
 
                 var sizeCaret = editText.CaretWidth / fontScale.X;
