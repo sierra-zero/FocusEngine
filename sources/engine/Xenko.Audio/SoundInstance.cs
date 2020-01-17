@@ -369,6 +369,12 @@ namespace Xenko.Audio
                 if (engine.State == AudioEngineState.Invalidated)
                     return PlayState.Stopped;
 
+                if (soundSource == null && playState == PlayState.Playing && AudioLayer.SourceIsPlaying(Source) == false)
+                {
+                    // non-streamed sound stopped playing
+                    playState = PlayState.Stopped;
+                }
+
                 return playState;
             }
         }
