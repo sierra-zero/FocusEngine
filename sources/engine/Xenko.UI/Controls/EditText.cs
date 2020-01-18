@@ -784,8 +784,7 @@ namespace Xenko.UI.Controls
                 realSize.X /= sizeRatio.X;
                 realSize.Y /= sizeRatio.Y;
             }
-
-            if (Font.FontType == SpriteFontType.SDF)
+            else
             {
                 var scaleRatio = ActualTextSize / Font.Size;
                 realSize.X *= scaleRatio;
@@ -802,7 +801,7 @@ namespace Xenko.UI.Controls
             {
                 // take the maximum between the text size and the minimum visible line size as text desired size
                 var fontLineSpacing = Font.GetTotalLineSpacing(ActualTextSize);
-                if (Font.FontType == SpriteFontType.SDF)
+                if (Font.FontType != SpriteFontType.Dynamic)
                     fontLineSpacing *= ActualTextSize / Font.Size;
                 var currentTextSize = new Vector3(CalculateTextSize(), 0);
                 desiredSize = new Vector3(currentTextSize.X, Math.Min(Math.Max(currentTextSize.Y, fontLineSpacing * MinLines), fontLineSpacing * MaxLines), currentTextSize.Z);

@@ -58,24 +58,24 @@ namespace Xenko.UI.Controls
             if (TextAlignment != TextAlignment.Left)
             {
                 var textWidth = Font.MeasureString(TextToDisplay, ref fontSize).X;
-                if (Font.FontType == SpriteFontType.Dynamic)
-                    textWidth /= fontScale.X;
+                textWidth /= fontScale.X;
+                if (Font.FontType != SpriteFontType.Dynamic) textWidth *= fontSize.X / Font.Size;
 
                 alignmentOffset = TextAlignment == TextAlignment.Center ? -textWidth / 2 : -textRegionSize / 2f + (textRegionSize - textWidth);
             }
             var touchInText = position.X - alignmentOffset;
 
             // Find the first character starting after the click
-            var characterIndex = 1;
+            var characterIndex = 0;
             var previousCharacterOffset = 0f;
-            var currentCharacterOffset = Font.MeasureString(TextToDisplay, ref fontSize, characterIndex).X;
+            var currentCharacterOffset = 0f;
             while (currentCharacterOffset < touchInText && characterIndex < textToDisplay.Length)
             {
                 ++characterIndex;
                 previousCharacterOffset = currentCharacterOffset;
                 currentCharacterOffset = Font.MeasureString(TextToDisplay, ref fontSize, characterIndex).X;
-                if (Font.FontType == SpriteFontType.Dynamic)
-                    currentCharacterOffset /= fontScale.X;
+                currentCharacterOffset /= fontScale.X;
+                if (Font.FontType != SpriteFontType.Dynamic) currentCharacterOffset *= fontSize.X / Font.Size;
             }
 
             // determine the caret position.
