@@ -133,6 +133,8 @@ namespace Xenko.UI.Controls
         private SpriteFont font;
         private bool isReadOnly;
 
+        public Action<string> EnterAction;
+
         /// <summary>
         /// Gets a value that indicates whether the text box has focus and selected text.
         /// </summary>

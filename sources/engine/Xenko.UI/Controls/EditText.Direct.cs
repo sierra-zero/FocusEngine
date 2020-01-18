@@ -233,7 +233,13 @@ namespace Xenko.UI.Controls
             }
 
             // validate the text with "enter" or "escape"
-            if (key == Keys.Enter || key == Keys.Escape || key == Keys.NumPadEnter)
+            if (key == Keys.Enter || key == Keys.NumPadEnter)
+            {
+                IsSelectionActive = false;
+                if (EnterAction != null) EnterAction(text);
+                return;
+            }
+            else if (key == Keys.Escape)
             {
                 IsSelectionActive = false;
                 return;
