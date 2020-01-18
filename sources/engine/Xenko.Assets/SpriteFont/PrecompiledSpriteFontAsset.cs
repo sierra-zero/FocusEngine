@@ -48,13 +48,6 @@ namespace Xenko.Assets.SpriteFont
         public float Size = 16; // a random non-null value for font created by users
 
         /// <summary>
-        /// The reference to the original source asset.
-        /// </summary>
-        /// <userdoc>The sprite font asset that has been used to generate this precompiled font.</userdoc>
-        [DataMember(0)]
-        public AssetReference OriginalFont;
-
-        /// <summary>
         /// The file containing the font data.
         /// </summary>
         /// <userdoc>The image file containing the extracted font data.</userdoc>
