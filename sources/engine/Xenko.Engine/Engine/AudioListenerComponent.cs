@@ -25,5 +25,8 @@ namespace Xenko.Engine
     {
         [DataMemberIgnore]
         internal AudioListener Listener;
+
+        [DataMember]
+        public bool DoNotDispose = false;
     }
 }

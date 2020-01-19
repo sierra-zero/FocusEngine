@@ -268,24 +268,6 @@ namespace Xenko.Audio
             isInitialized = false;
         }
 
-        private void Rebuffer()
-        {
-            int numberOfBuffers = deviceBuffers.Count;
-
-            for (int i = 0; i < numberOfBuffers; i++)
-                AudioLayer.BufferDestroy(deviceBuffers[i]);
-
-            deviceBuffers.Clear();
-            freeBuffers.Clear();
-
-            for (var i = 0; i < numberOfBuffers; i++)
-            {
-                var buffer = AudioLayer.BufferCreate(nativeBufferSizeBytes);
-                deviceBuffers.Add(buffer);
-                freeBuffers.Enqueue(deviceBuffers[i]);
-            }
-        }
-
         /// <summary>
         /// If CanFillis true with this method you can fill the next free buffer
         /// </summary>
@@ -422,11 +404,6 @@ namespace Xenko.Audio
                         else if (source.CanFill)
                         {
                             source.ExtractAndFillData();
-                        }
-                        else if (AudioLayer.SourceIsPlaying(source.soundInstance.Source) == false)
-                        {
-                            // hmm, state and source do not match up.. lets try and get it playing!
-                            source.Rebuffer();
                         }
                     }
                 }

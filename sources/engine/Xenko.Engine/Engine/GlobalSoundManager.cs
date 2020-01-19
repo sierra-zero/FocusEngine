@@ -23,14 +23,6 @@ namespace Xenko.Engine
     [ComponentCategory("Audio")]
     public sealed class GlobalSoundManager : ActivableEntityComponent
     {
-        private struct PositionalSound
-        {
-            public SoundInstance soundInstance;
-            public Entity entity;
-            public Vector3 pos;
-            public float distance_scale;
-        }
-
         [DataMember]
         public float MaxSoundDistance = 48f;
 
@@ -196,7 +188,11 @@ namespace Xenko.Engine
 
                     if (_listener == null)
                         throw new InvalidOperationException("Could not find an Audio Listener Component in scene!");
+
+                    // make sure this listener is set to recycle itself
+                    _listener.DoNotDispose = true;
                 }
+
                 return _listener;
             }
             set
@@ -266,6 +262,14 @@ namespace Xenko.Engine
             instances[url] = lsi;
             Sounds[url] = snd2;
             return si;
+        }
+
+        private struct PositionalSound
+        {
+            public SoundInstance soundInstance;
+            public Entity entity;
+            public Vector3 pos;
+            public float distance_scale;
         }
     }
 }

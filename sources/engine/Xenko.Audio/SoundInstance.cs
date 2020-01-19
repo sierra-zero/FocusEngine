@@ -127,6 +127,8 @@ namespace Xenko.Audio
             get => pan;
             set
             {
+                if (pan == value) return;
+
                 pan = value;
 
                 if (engine.State == AudioEngineState.Invalidated)
@@ -145,6 +147,8 @@ namespace Xenko.Audio
             get => volume;
             set
             {
+                if (volume == value) return;
+
                 volume = value;
 
                 if (engine.State == AudioEngineState.Invalidated)
@@ -162,6 +166,8 @@ namespace Xenko.Audio
             get => pitch;
             set
             {
+                if (pitch == value) return;
+
                 pitch = value;
 
                 if (engine.State == AudioEngineState.Invalidated)
@@ -369,9 +375,11 @@ namespace Xenko.Audio
                 if (engine.State == AudioEngineState.Invalidated)
                     return PlayState.Stopped;
 
-                if (soundSource == null && playState == PlayState.Playing && AudioLayer.SourceIsPlaying(Source) == false)
+                if (soundSource == null && playState == PlayState.Playing && isLooping == false &&
+                    AudioLayer.SourceIsPlaying(Source) == false)
                 {
                     // non-streamed sound stopped playing
+                    AudioLayer.SourceStop(Source);
                     playState = PlayState.Stopped;
                 }
 

@@ -47,7 +47,14 @@ namespace Xenko.Audio
 
         protected override void OnEntityComponentAdding(Entity entity, AudioListenerComponent component, AudioListenerComponent data)
         {
-            component.Listener = new AudioListener(audioSystem.AudioEngine);
+            if (component.Listener == null)
+            {
+                component.Listener = new AudioListener(audioSystem.AudioEngine);
+            }
+            else
+            {
+                AudioLayer.ListenerEnable(component.Listener.Listener);
+            }
 
             audioSystem.Listeners.Add(component, component.Listener);
         }
@@ -56,7 +63,14 @@ namespace Xenko.Audio
         {
             audioSystem.Listeners.Remove(component);
 
-            component.Listener.Dispose();
+            if (component.DoNotDispose)
+            {
+                AudioLayer.ListenerDisable(component.Listener.Listener);
+            }
+            else
+            {
+                component.Listener.Dispose();
+            }
         }
 
         public override void Draw(RenderContext context)
