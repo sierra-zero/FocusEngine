@@ -23,10 +23,10 @@ namespace Xenko.Engine
     [ComponentCategory("Audio")]
     public sealed class AudioListenerComponent : ActivableEntityComponent
     {
+        public static AudioListener SharedListener { get; internal set; }
+        public static bool UseSharedListener;
+
         [DataMemberIgnore]
         internal AudioListener Listener;
-
-        [DataMember]
-        public bool DoNotDispose = false;
     }
 }

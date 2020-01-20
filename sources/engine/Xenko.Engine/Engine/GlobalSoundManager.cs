@@ -3,13 +3,9 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections.Specialized;
 using Xenko.Audio;
 using Xenko.Core;
-using Xenko.Core.Annotations;
-using Xenko.Core.Collections;
 using Xenko.Core.Mathematics;
-using Xenko.Engine.Design;
 using Xenko.Games;
 
 namespace Xenko.Engine
@@ -152,16 +148,12 @@ namespace Xenko.Engine
             instances.Clear();
         }
 
-        private Game game
+        public GlobalSoundManager()
         {
-            get
-            {
-                // don't have this sound... try loading it!
-                if (internalGame == null)
-                    internalGame = ServiceRegistry.instance?.GetService<IGame>() as Game;
-
-                return internalGame;
-            }
+            // global sound manager relies on listeners being shared, so everything can be
+            // safely reused
+            AudioListenerComponent.UseSharedListener = true;
+            internalGame = ServiceRegistry.instance?.GetService<IGame>() as Game;
         }
 
         [DataMemberIgnore]
@@ -169,15 +161,10 @@ namespace Xenko.Engine
         {
             get
             {
-                Game g = game;
-
-                if (g == null)
-                    throw new InvalidOperationException("No Game object has been fully initialized yet!");
-
-                if (_listener == null || _listener.Enabled == false || g.Audio.Listeners.ContainsKey(_listener) == false)
+                if (_listener == null || _listener.Enabled == false || internalGame.Audio.Listeners.ContainsKey(_listener) == false)
                 {
                     // find a valid listener!
-                    foreach (AudioListenerComponent alc in g.Audio.Listeners.Keys)
+                    foreach (AudioListenerComponent alc in internalGame.Audio.Listeners.Keys)
                     {
                         if (alc.Enabled)
                         {
@@ -188,9 +175,6 @@ namespace Xenko.Engine
 
                     if (_listener == null)
                         throw new InvalidOperationException("Could not find an Audio Listener Component in scene!");
-
-                    // make sure this listener is set to recycle itself
-                    _listener.DoNotDispose = true;
                 }
 
                 return _listener;
@@ -251,7 +235,7 @@ namespace Xenko.Engine
             }
 
             // this might throw an exception if you provided a bad url
-            Sound snd2 = game.Content.Load<Sound>(url);
+            Sound snd2 = internalGame.Content.Load<Sound>(url);
 
             if (!snd2.Spatialized && spatialized)
                 throw new InvalidOperationException("Trying to play " + url + " positionally, yet it is a non-spatialized sound!");

@@ -47,25 +47,33 @@ namespace Xenko.Audio
 
         protected override void OnEntityComponentAdding(Entity entity, AudioListenerComponent component, AudioListenerComponent data)
         {
-            if (component.Listener == null)
+            if (AudioListenerComponent.UseSharedListener)
             {
-                component.Listener = new AudioListener(audioSystem.AudioEngine);
+                if (AudioListenerComponent.SharedListener == null)
+                    AudioListenerComponent.SharedListener = new AudioListener(audioSystem.AudioEngine);
+                else
+                    AudioLayer.ListenerEnable(AudioListenerComponent.SharedListener.Listener);
+
+                component.Listener = AudioListenerComponent.SharedListener;
             }
             else
             {
-                AudioLayer.ListenerEnable(component.Listener.Listener);
+                component.Listener = new AudioListener(audioSystem.AudioEngine);
             }
 
-            audioSystem.Listeners.Add(component, component.Listener);
+            audioSystem.Listeners[component] = component.Listener;
         }
 
         protected override void OnEntityComponentRemoved(Entity entity, AudioListenerComponent component, AudioListenerComponent data)
         {
             audioSystem.Listeners.Remove(component);
 
-            if (component.DoNotDispose)
+            if (AudioListenerComponent.UseSharedListener)
             {
-                AudioLayer.ListenerDisable(component.Listener.Listener);
+                if (AudioListenerComponent.SharedListener == null)
+                    AudioListenerComponent.SharedListener = component.Listener;
+
+                AudioLayer.ListenerDisable(AudioListenerComponent.SharedListener.Listener);
             }
             else
             {

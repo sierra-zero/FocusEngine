@@ -231,8 +231,6 @@ namespace Xenko.Audio
             if (engine.State == AudioEngineState.Invalidated)
                 return;
 
-            if (!spatialized) return;
-
             AudioLayer.SourcePush3D(Source, ref Position, ref dir, ref up, ref vel, ref m);
         }
 
