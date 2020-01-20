@@ -201,7 +201,6 @@ namespace Xenko.Audio
         /// </summary>
         protected virtual void RestartInternal()
         {
-            AudioLayer.SourceFlushBuffers(soundInstance.Source);
             ReadyToPlay.TrySetResult(false);
             ReadyToPlay = new TaskCompletionSource<bool>();
             readyToPlay = false;
@@ -247,6 +246,7 @@ namespace Xenko.Audio
             soundInstance.playState = PlayState.Stopped;
             if (ignoreQueuedBuffer)
                 AudioLayer.SourceStop(soundInstance.Source);
+            else AudioLayer.SourceFlushBuffers(soundInstance.Source);
             RestartInternal();
         }
 
