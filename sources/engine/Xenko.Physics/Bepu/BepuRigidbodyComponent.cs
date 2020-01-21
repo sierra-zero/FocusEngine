@@ -16,6 +16,7 @@ using BepuPhysics.Collidables;
 using BepuPhysics.Constraints;
 using System.Runtime.CompilerServices;
 using Xenko.Core.Threading;
+using System.Threading;
 
 namespace Xenko.Physics.Bepu
 {
@@ -55,6 +56,24 @@ namespace Xenko.Physics.Bepu
         [DataMemberIgnore]
         public Action<BepuRigidbodyComponent, float> ActionPerSimulationTick;
 
+        internal bool wasAwake;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void SafeRun(Action dome)
+        {
+            if (PhysicsSystem.IsSimulationThread(Thread.CurrentThread))
+            {
+                dome();
+            }
+            else
+            {
+                BepuSimulation.instance.ActionsBeforeSimulationStep.Enqueue((time) =>
+                {
+                    dome();
+                });
+            }
+        }
+
         /// <summary>
         /// Gets a value indicating whether this instance is active (awake).
         /// </summary>
@@ -66,16 +85,14 @@ namespace Xenko.Physics.Bepu
         {
             get
             {
-                return AddedToScene && InternalBody.Awake;
+                return AddedToScene && (PhysicsSystem.IsSimulationThread(Thread.CurrentThread) ? InternalBody.Awake : wasAwake);
             }
             set
             {
                 if (IsActive == value) return;
 
-                BepuSimulation.instance.ActionsBeforeSimulationStep.Enqueue((time) =>
-                {
-                    InternalBody.Awake = value;
-                });
+                wasAwake = value;
+                SafeRun(delegate { InternalBody.Awake = value; });
             }
         }
 
@@ -98,7 +115,9 @@ namespace Xenko.Physics.Bepu
                 bodyDescription.Collidable.Continuity.MinimumSweepTimestep = value > 0 ? 1e-3f : 0f;
 
                 if (AddedToScene)
-                    InternalBody.SetCollidable(bodyDescription.Collidable);
+                {
+                    SafeRun(delegate { InternalBody.Collidable.Continuity = bodyDescription.Collidable.Continuity; });
+                }
             }
         }
 
@@ -148,6 +167,12 @@ namespace Xenko.Physics.Bepu
                 _collectCollisions = value;
             }
         }
+
+        /// <summary>
+        /// If we are storing collisions, which one is the strongest one? This uses normals and velocity to determine.
+        /// </summary>
+        [DataMemberIgnore]
+        public int StrongestCollisionIndex;
 
         [DataMemberIgnore]
         private bool _collectCollisions = false;
@@ -243,7 +268,9 @@ namespace Xenko.Physics.Bepu
                 bodyDescription.Activity.SleepThreshold = value;
 
                 if (AddedToScene)
-                    InternalBody.SetActivity(bodyDescription.Activity);
+                {
+                    SafeRun(delegate { InternalBody.Activity.SleepThreshold = value; });
+                }
             }
         }
 
@@ -323,7 +350,9 @@ namespace Xenko.Physics.Bepu
             }
 
             if (skipset == false && AddedToScene)
-                InternalBody.LocalInertia = bodyDescription.LocalInertia;
+            {
+                SafeRun(delegate { InternalBody.LocalInertia = bodyDescription.LocalInertia; });
+            }
         }
 
         [DataMember]
@@ -337,7 +366,9 @@ namespace Xenko.Physics.Bepu
                 bodyDescription.Collidable.SpeculativeMargin = value;
 
                 if (AddedToScene)
-                    InternalBody.SetCollidable(bodyDescription.Collidable);
+                {
+                    SafeRun(delegate { InternalBody.Collidable.SpeculativeMargin = value; });
+                }
             }
         }
 
@@ -355,8 +386,7 @@ namespace Xenko.Physics.Bepu
 
                     UpdateInertia(true);
 
-                    BepuSimulation.instance.ActionsBeforeSimulationStep.Enqueue((time) =>
-                    {
+                    SafeRun(delegate {
                         BepuSimulation bs = BepuSimulation.instance;
 
                         // don't worry about switching if we are to be removed
@@ -502,7 +532,7 @@ namespace Xenko.Physics.Bepu
         public void ApplyImpulse(Vector3 impulse)
         {
             if (AddedToScene)
-                InternalBody.ApplyLinearImpulse(BepuHelpers.ToBepu(impulse));
+                SafeRun(delegate { InternalBody.ApplyLinearImpulse(BepuHelpers.ToBepu(impulse)); });
         }
 
         /// <summary>
@@ -513,7 +543,7 @@ namespace Xenko.Physics.Bepu
         public void ApplyImpulse(Vector3 impulse, Vector3 localOffset)
         {
             if (AddedToScene)
-                InternalBody.ApplyImpulse(BepuHelpers.ToBepu(impulse), BepuHelpers.ToBepu(localOffset));
+                SafeRun(delegate { InternalBody.ApplyImpulse(BepuHelpers.ToBepu(impulse), BepuHelpers.ToBepu(localOffset)); });
         }
 
         /// <summary>
@@ -523,7 +553,7 @@ namespace Xenko.Physics.Bepu
         public void ApplyTorqueImpulse(Vector3 torque)
         {
             if (AddedToScene)
-                InternalBody.ApplyAngularImpulse(BepuHelpers.ToBepu(torque));
+                SafeRun(delegate { InternalBody.ApplyAngularImpulse(BepuHelpers.ToBepu(torque)); });
         }
 
         [DataMemberIgnore]
@@ -531,7 +561,7 @@ namespace Xenko.Physics.Bepu
         {
             get
             {
-                return BepuHelpers.ToXenko(AddedToScene ? InternalBody.Pose.Position : bodyDescription.Pose.Position);
+                return BepuHelpers.ToXenko(AddedToScene && PhysicsSystem.IsSimulationThread(Thread.CurrentThread) ? InternalBody.Pose.Position : bodyDescription.Pose.Position);
             }
             set
             {
@@ -542,7 +572,11 @@ namespace Xenko.Physics.Bepu
                 bodyDescription.Pose.Position.Z = value.Z;
 
                 if (AddedToScene)
-                    InternalBody.SetPosition(bodyDescription.Pose.Position);
+                    SafeRun(delegate { 
+                        InternalBody.Pose.Position.X = value.X;
+                        InternalBody.Pose.Position.Y = value.Y;
+                        InternalBody.Pose.Position.Z = value.Z;
+                    });
             }
         }
 
@@ -551,7 +585,7 @@ namespace Xenko.Physics.Bepu
         {
             get
             {
-                return BepuHelpers.ToXenko(AddedToScene ? InternalBody.Pose.Orientation : bodyDescription.Pose.Orientation);
+                return BepuHelpers.ToXenko(AddedToScene && PhysicsSystem.IsSimulationThread(Thread.CurrentThread) ? InternalBody.Pose.Orientation : bodyDescription.Pose.Orientation);
             }
             set
             {
@@ -563,7 +597,12 @@ namespace Xenko.Physics.Bepu
                 bodyDescription.Pose.Orientation.W = value.W;
 
                 if (AddedToScene)
-                    InternalBody.SetRotation(bodyDescription.Pose.Orientation);
+                    SafeRun(delegate {
+                        InternalBody.Pose.Orientation.X = value.X;
+                        InternalBody.Pose.Orientation.Y = value.Y;
+                        InternalBody.Pose.Orientation.Z = value.Z;
+                        InternalBody.Pose.Orientation.W = value.W;
+                    });
             }
         }
 
@@ -578,7 +617,7 @@ namespace Xenko.Physics.Bepu
         {
             get
             {
-                return BepuHelpers.ToXenko(AddedToScene ? InternalBody.Velocity.Angular : bodyDescription.Velocity.Angular);
+                return BepuHelpers.ToXenko(AddedToScene && PhysicsSystem.IsSimulationThread(Thread.CurrentThread) ? InternalBody.Velocity.Angular : bodyDescription.Velocity.Angular);
             }
             set
             {
@@ -589,7 +628,11 @@ namespace Xenko.Physics.Bepu
                 bodyDescription.Velocity.Angular.Z = value.Z;
 
                 if (AddedToScene)
-                    InternalBody.SetAngularVelocity(bodyDescription.Velocity.Angular);
+                    SafeRun(delegate {
+                        InternalBody.Velocity.Angular.X = value.X;
+                        InternalBody.Velocity.Angular.Y = value.Y;
+                        InternalBody.Velocity.Angular.Z = value.Z;
+                    });
             }
         }
 
@@ -604,7 +647,7 @@ namespace Xenko.Physics.Bepu
         {
             get
             {
-                return BepuHelpers.ToXenko(AddedToScene ? InternalBody.Velocity.Linear : bodyDescription.Velocity.Linear);
+                return BepuHelpers.ToXenko(AddedToScene && PhysicsSystem.IsSimulationThread(Thread.CurrentThread) ? InternalBody.Velocity.Linear : bodyDescription.Velocity.Linear);
             }
             set
             {
@@ -615,7 +658,11 @@ namespace Xenko.Physics.Bepu
                 bodyDescription.Velocity.Linear.Z = value.Z;
 
                 if (AddedToScene)
-                    InternalBody.SetLinearVelocity(bodyDescription.Velocity.Linear);
+                    SafeRun(delegate {
+                        InternalBody.Velocity.Linear.X = value.X;
+                        InternalBody.Velocity.Linear.Y = value.Y;
+                        InternalBody.Velocity.Linear.Z = value.Z;
+                    });
             }
         }
 
@@ -628,10 +675,28 @@ namespace Xenko.Physics.Bepu
         [DataMemberIgnore]
         public Vector3? LocalPhysicsOffset = null;
 
+        [DataMemberIgnore]
+        public Vector3 VelocityLinearChange { get; private set; }
+            
+        [DataMemberIgnore]
+        public Vector3 VelocityAngularChange { get; private set; }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal void UpdateCachedPoseAndVelocity()
+        {
+            ref BodyVelocity bv = ref InternalBody.Velocity;
+            VelocityLinearChange = BepuHelpers.ToXenko(bv.Linear - bodyDescription.Velocity.Linear);
+            VelocityAngularChange = BepuHelpers.ToXenko(bv.Angular - bodyDescription.Velocity.Angular);
+            bodyDescription.Velocity = bv;
+            bodyDescription.Pose = InternalBody.Pose;
+            wasAwake = InternalBody.Awake;
+        }
+
         /// <summary>
         /// Updades the graphics transformation from the given physics transformation
         /// </summary>
         /// <param name="physicsTransform"></param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void UpdateTransformationComponent()
         {
             var entity = Entity;

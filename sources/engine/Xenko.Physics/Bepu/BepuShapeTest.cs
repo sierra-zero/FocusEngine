@@ -83,20 +83,28 @@ namespace Xenko.Physics.Bepu
         /// <param name="queryPose">Pose of the query shape.</param>
         /// <param name="queryId">Id to use to refer to this query when the collision batcher finishes processing it.</param>
         /// <param name="batcher">Batcher to add the query's tests to.</param>
-        static private unsafe void AddQueryToBatch(int queryShapeType, void* queryShapeData, int queryShapeSize, in Vector3 queryBoundsMin,
+        static private unsafe void RunQuery(int queryShapeType, void* queryShapeData, int queryShapeSize, in Vector3 queryBoundsMin,
                                                   in Vector3 queryBoundsMax, Vector3 queryPos, BepuUtilities.Quaternion queryRot,
                                                   ref CollisionBatcher<BatcherCallbacks> batcher, CollisionFilterGroupFlags lookingFor)
         {
             var broadPhaseEnumerator = new BroadPhaseOverlapEnumerator { components = new List<BepuPhysicsComponent>(), lookingFor = (uint)lookingFor };
             BepuSimulation.instance.internalSimulation.BroadPhase.GetOverlaps(queryBoundsMin, queryBoundsMax, ref broadPhaseEnumerator);
+            BepuUtilities.Memory.Buffer<byte>[] shapeMemories = new BepuUtilities.Memory.Buffer<byte>[broadPhaseEnumerator.components.Count];
             for (int overlapIndex = 0; overlapIndex < broadPhaseEnumerator.components.Count; ++overlapIndex)
             {
                 BepuPhysicsComponent bpc = broadPhaseEnumerator.components[overlapIndex];
                 batcher.CacheShapeB(bpc.ColliderShape.TypeId, queryShapeType, queryShapeData, queryShapeSize, out var cachedQueryShapeData);
+                batcher.Pool.Take<byte>(bpc.ColliderShape.GetSize(), out shapeMemories[overlapIndex]);
+                bpc.ColliderShape.CopyData(shapeMemories[overlapIndex].Memory);
                 batcher.AddDirectly(bpc.ColliderShape.TypeId, queryShapeType,
-                                    bpc.ColliderShape.GetPointer(), cachedQueryShapeData,
+                                    shapeMemories[overlapIndex].Memory, cachedQueryShapeData,
                                     queryPos - BepuHelpers.ToBepu(bpc.Position), queryRot, BepuHelpers.ToBepu(bpc.Rotation), 0, new PairContinuation(0));
             }
+            // do it if we haven't already
+            batcher.Flush();
+            // free memory used
+            for (int i = 0; i < shapeMemories.Length; i++)
+                batcher.Pool.Return<byte>(ref shapeMemories[i]);
         }
 
         /// <summary>
@@ -119,8 +127,7 @@ namespace Xenko.Physics.Bepu
             boundingBoxMax += v;
             using(BepuSimulation.instance.simulationLocker.ReadLock())
             {
-                AddQueryToBatch(shape.TypeId, Unsafe.AsPointer(ref shape), shape.GetSize(), boundingBoxMin, boundingBoxMax, v, q, ref batcher, lookingFor);
-                batcher.Flush();
+                RunQuery(shape.TypeId, Unsafe.AsPointer(ref shape), shape.GetSize(), boundingBoxMin, boundingBoxMax, v, q, ref batcher, lookingFor);
             }
             return contacts;
         }

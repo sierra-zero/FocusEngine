@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using Xenko.Core;
 using Xenko.Engine;
@@ -25,6 +26,7 @@ namespace Xenko.Physics
         private bool runThread;
         private ManualResetEventSlim doUpdateEvent;
         private Thread physicsThread;
+        private static Thread simulationThread;
 
         public static int MaxSubSteps = 2;
         public static float MaximumSimulationTime = 0.025f;
@@ -49,6 +51,12 @@ namespace Xenko.Physics
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool IsSimulationThread(Thread t)
+        {
+            return t == simulationThread;
+        }
+
         public override void Initialize()
         {
             physicsConfiguration = Game?.Settings != null ? Game.Settings.Configurations.Get<PhysicsSettings>() : new PhysicsSettings();
@@ -62,7 +70,12 @@ namespace Xenko.Physics
                 physicsThread = new Thread(new ThreadStart(PhysicsProcessingThreadBody));
                 physicsThread.Name = "BulletPhysics Processing Thread";
                 physicsThread.IsBackground = true;
+                simulationThread = physicsThread;
                 physicsThread.Start();
+            }
+            else
+            {
+                simulationThread = Thread.CurrentThread;
             }
         }
 
@@ -188,18 +201,19 @@ namespace Xenko.Physics
                         }
 
                         // update all rigidbodies
-                        for (int j = 0; j < physicsScene.BepuSimulation.AllRigidbodies.Count; j++)
+                        Xenko.Core.Threading.Dispatcher.For(0, physicsScene.BepuSimulation.AllRigidbodies.Count, (j) =>
                         {
                             BepuRigidbodyComponent rb = physicsScene.BepuSimulation.AllRigidbodies[j];
 
                             rb.swapProcessingContactsList();
+                            rb.UpdateCachedPoseAndVelocity();
 
                             // per-rigidbody update
                             if (rb.ActionPerSimulationTick != null)
                                 rb.ActionPerSimulationTick(rb, time);
 
                             rb.UpdateTransformationComponent();
-                        }
+                        });
                     }
                 }
             }
