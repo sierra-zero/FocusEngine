@@ -39,11 +39,10 @@ namespace Xenko.Engine.Processors
         }
         public override void Update(GameTime time)
         {
-            RegenerateVoxelVolumes();
         }
         public override void Draw(RenderContext context)
         {
-
+            RegenerateVoxelVolumes();
         }
         
         public ProcessedVoxelVolume GetProcessedVolumeForComponent(VoxelVolumeComponent component)
@@ -73,8 +72,6 @@ namespace Xenko.Engine.Processors
         }
         private void RegenerateVoxelVolumes()
         {
-            //if (!isDirty)
-            //    return;
             renderVoxelVolumes.Clear();
             processedVoxelVolumes.Clear();
             for (int i=0; i<ComponentDataKeys.Count; i++)
@@ -88,7 +85,7 @@ namespace Xenko.Engine.Processors
                     renderVoxelVolumes.Add(volume, data = new DataVoxelVolume());
                 processedVoxelVolumes.Add(volume, new ProcessedVoxelVolume());
 
-                data.VolumeTranslation = volume.Entity.Transform.LocalMatrix.TranslationVector;
+                data.VolumeTranslation = volume.Entity.Transform.WorldMatrix.TranslationVector;
                 //data.VolumeSize = volume.Entity.Transform.Scale;
                 //TODO: Get non cube volumes working again
                 //Temporarily force to cube
