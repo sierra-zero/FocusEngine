@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Xenko.Core.Annotations;
@@ -12,7 +13,7 @@ namespace Xenko.Core.Threading
     /// <summary>
     /// Thread pool for scheduling actions.
     /// </summary>
-    internal class ThreadPool
+    public class ThreadPool
     {
         public static readonly ThreadPool Instance = new ThreadPool();
 
@@ -30,6 +31,7 @@ namespace Xenko.Core.Threading
                 new Task(cachedTaskLoop, null, TaskCreationOptions.LongRunning).Start();
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void QueueWorkItem([NotNull] [Pooled] Action workItem)
         {
             PooledDelegateHelper.AddReference(workItem);

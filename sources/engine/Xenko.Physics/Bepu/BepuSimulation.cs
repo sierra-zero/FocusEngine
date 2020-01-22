@@ -66,6 +66,7 @@ namespace Xenko.Physics.Bepu
         /// </summary>
         public static BufferPool safeBufferPool
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
                 if (threadStaticPool == null)
@@ -82,7 +83,7 @@ namespace Xenko.Physics.Bepu
         private static List<BufferPool> allBufferPools = new List<BufferPool>();
 
         internal int clearRequested;
-        private BepuSimpleThreadDispatcher threadDispatcher = new BepuSimpleThreadDispatcher(Environment.ProcessorCount);
+        private BepuSimpleThreadDispatcher threadDispatcher = new BepuSimpleThreadDispatcher();
 
 #if DEBUG
         private static readonly Logger Log = GlobalLogger.GetLogger(typeof(Simulation).FullName);
