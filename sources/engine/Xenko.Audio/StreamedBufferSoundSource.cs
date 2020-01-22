@@ -82,7 +82,7 @@ namespace Xenko.Audio
             this.startPosition = startPosition;
             this.length = length;
 
-            NewSources.Add(this);
+            NewSources.Enqueue(this);
         }
 
         protected override bool CanFill => Commands.IsEmpty && base.CanFill;

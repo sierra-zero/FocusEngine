@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Xenko.Core;
 using Xenko.Core.Diagnostics;
@@ -14,9 +15,9 @@ namespace Xenko.Audio
     {
         public static Logger Logger = GlobalLogger.GetLogger(nameof(DynamicSoundSource));
 
-        private static Task readFromDiskWorker;
+        private static Thread readFromDiskWorker;
 
-        protected static readonly ConcurrentBag<DynamicSoundSource> NewSources = new ConcurrentBag<DynamicSoundSource>();
+        protected static readonly ConcurrentQueue<DynamicSoundSource> NewSources = new ConcurrentQueue<DynamicSoundSource>();
         protected static readonly List<DynamicSoundSource> Sources = new List<DynamicSoundSource>();
 
         /// <summary>
@@ -95,7 +96,12 @@ namespace Xenko.Audio
             }
 
             if (readFromDiskWorker == null)
-                readFromDiskWorker = Task.Factory.StartNew(Worker, TaskCreationOptions.LongRunning);
+            {
+                readFromDiskWorker = new Thread(new ThreadStart(Worker));
+                readFromDiskWorker.Priority = ThreadPriority.Lowest;
+                readFromDiskWorker.IsBackground = true;
+                readFromDiskWorker.Start();
+            }
         }
 
         /// <summary>
@@ -327,7 +333,7 @@ namespace Xenko.Audio
             {
                 while (!NewSources.IsEmpty)
                 {
-                    if (!NewSources.TryTake(out var source))
+                    if (!NewSources.TryDequeue(out var source))
                         continue;
 
                     if (!source.isInitialized)
@@ -408,18 +414,8 @@ namespace Xenko.Audio
                     }
                 }
 
-                var buffersShouldBeFill = false;
-                for (int i=0; i<Sources.Count; i++)
-                { 
-                    if (Sources[i].CanFill)
-                    {
-                        buffersShouldBeFill = true;
-                        break;
-                    }
-                }
-
-                if (!buffersShouldBeFill) // avoid active looping when no work is needed
-                    Utilities.Sleep(10);
+                // sleep after going through the music
+                Thread.Sleep(10);
             }
         }
     }

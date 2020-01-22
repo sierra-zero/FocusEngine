@@ -64,7 +64,7 @@ namespace Xenko.Audio
             this.samples = numberOfSamples;
             playRange = new PlayRange(TimeSpan.Zero, TimeSpan.Zero);
 
-            NewSources.Add(this);
+            NewSources.Enqueue(this);
         }
 
         //==========================================================================================
@@ -93,7 +93,7 @@ namespace Xenko.Audio
             this.samples = numberOfSamples;
             playRange = new PlayRange(TimeSpan.Zero, TimeSpan.Zero);
 
-            NewSources.Add(this);
+            NewSources.Enqueue(this);
         }
 
         /// <summary>
