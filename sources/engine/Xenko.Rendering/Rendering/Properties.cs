@@ -5,6 +5,8 @@
 #pragma warning disable SA1649 // File name must match first type name
 #pragma warning disable SA1402 // File may only contain a single class
 
+using System.Runtime.CompilerServices;
+
 namespace Xenko.Rendering
 {
     public enum DataType
@@ -589,6 +591,12 @@ namespace Xenko.Rendering
         internal StaticObjectPropertyData(T[] data)
         {
             Data = data;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool IsValidIndex(StaticObjectNodeReference index)
+        {
+            return index.Index >= 0 && index.Index < Data.Length;
         }
 
         public ref T this[StaticObjectNodeReference index] => ref Data[index.Index];

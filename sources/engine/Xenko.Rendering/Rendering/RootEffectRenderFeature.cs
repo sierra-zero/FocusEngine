@@ -359,25 +359,23 @@ namespace Xenko.Rendering
             var renderEffectKey = RenderEffectKey;
             var renderEffects = RenderData.GetData(renderEffectKey);
 
-            // TODO dispatcher
-            foreach (var node in RenderNodes)
+            Xenko.Core.Threading.Dispatcher.ForEach<RenderNode>(RenderNodes, (renderNode) =>
             {
-                var renderNode = node;
                 var renderObject = renderNode.RenderObject;
 
                 // Get RenderEffect
                 var staticObjectNode = renderObject.StaticObjectNode;
                 var staticEffectObjectNode = staticObjectNode * EffectPermutationSlotCount + effectSlots[renderNode.RenderStage.Index].Index;
-                var renderEffect = renderEffects[staticEffectObjectNode];
+                RenderEffect renderEffect;
 
-                if (renderEffect != null)
+                if (renderEffects.IsValidIndex(staticEffectObjectNode) && (renderEffect = renderEffects[staticEffectObjectNode]) != null)
                 {
                     var renderStage = renderNode.RenderStage;
                     var renderStageShaderSource = renderStage.OutputValidator.ShaderSource;
                     if (renderStageShaderSource != null)
                         renderEffect.EffectValidator.ValidateParameter(XenkoEffectBaseKeys.RenderTargetExtensions, renderStageShaderSource);
                 }
-            }
+            });
         }
 
         /// <summary>
