@@ -79,9 +79,9 @@ namespace Xenko.Rendering
         public void Reset()
         {
             // Clear object data
-            foreach (var renderObject in RenderObjects)
+            for (int i=0; i<RenderObjects.Count; i++)
             {
-                renderObject.ObjectNode = ObjectNodeReference.Invalid;
+                RenderObjects[i].ObjectNode = ObjectNodeReference.Invalid;
             }
         }
 

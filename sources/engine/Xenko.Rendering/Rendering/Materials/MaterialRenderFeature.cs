@@ -278,7 +278,7 @@ namespace Xenko.Rendering.Materials
                 var renderMesh = (RenderMesh)renderNode.RenderObject;
 
                 // Ignore fallback effects
-                if (renderNode.RenderEffect.State != RenderEffectState.Normal)
+                if (renderNode.RenderEffect?.State != RenderEffectState.Normal)
                     return;
 
                 // Collect materials and create associated MaterialInfo (includes reflection) first time
@@ -325,7 +325,7 @@ namespace Xenko.Rendering.Materials
 
         public static unsafe bool UpdateMaterial(RenderSystem renderSystem, RenderDrawContext context, MaterialInfoBase materialInfo, int materialSlotIndex, RenderEffect renderEffect, ParameterCollection materialParameters)
         {
-            if (renderEffect.Reflection == null)
+            if (renderEffect?.Reflection == null)
                 return false;
 
             var resourceGroupDescription = renderEffect.Reflection.ResourceGroupDescriptions[materialSlotIndex];

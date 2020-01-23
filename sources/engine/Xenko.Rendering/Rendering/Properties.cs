@@ -593,12 +593,6 @@ namespace Xenko.Rendering
             Data = data;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool IsValidIndex(StaticObjectNodeReference index)
-        {
-            return index.Index >= 0 && index.Index < Data.Length;
-        }
-
         public ref T this[StaticObjectNodeReference index] => ref Data[index.Index];
     }
 

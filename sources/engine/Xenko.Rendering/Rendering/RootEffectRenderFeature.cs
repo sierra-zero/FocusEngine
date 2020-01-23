@@ -366,9 +366,9 @@ namespace Xenko.Rendering
                 // Get RenderEffect
                 var staticObjectNode = renderObject.StaticObjectNode;
                 var staticEffectObjectNode = staticObjectNode * EffectPermutationSlotCount + effectSlots[renderNode.RenderStage.Index].Index;
-                RenderEffect renderEffect;
+                RenderEffect renderEffect = renderEffects[staticEffectObjectNode];
 
-                if (renderEffects.IsValidIndex(staticEffectObjectNode) && (renderEffect = renderEffects[staticEffectObjectNode]) != null)
+                if (renderEffect != null)
                 {
                     var renderStage = renderNode.RenderStage;
                     var renderStageShaderSource = renderStage.OutputValidator.ShaderSource;

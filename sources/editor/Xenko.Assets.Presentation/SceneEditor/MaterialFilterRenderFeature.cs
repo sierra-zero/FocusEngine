@@ -32,8 +32,9 @@ namespace Xenko.Assets.Presentation.SceneEditor
             var renderEffects = RootRenderFeature.RenderData.GetData(renderEffectKey);
             int effectSlotCount = ((RootEffectRenderFeature)RootRenderFeature).EffectPermutationSlotCount;
 
-            foreach (var renderObject in RootRenderFeature.RenderObjects)
+            for (int j=0; j<RootRenderFeature.RenderObjects.Count; j++)
             {
+                var renderObject = RootRenderFeature.RenderObjects[j];
                 var staticObjectNode = renderObject.StaticObjectNode;
 
                 for (int i = 0; i < effectSlotCount; ++i)

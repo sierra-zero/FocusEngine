@@ -114,9 +114,11 @@ namespace Xenko.Particles.Rendering
                 material.Key.Setup(context.RenderContext);
             }
 
-            foreach (var renderObject in RenderObjects)
+            for (int k=0; k<RenderObjects.Count; k++)
             {
+                var renderObject = RenderObjects[k];
                 var staticObjectNode = renderObject.StaticObjectNode;
+
                 var renderParticleEmitter = (RenderParticleEmitter)renderObject;
 
                 var material = renderParticleEmitter.ParticleEmitter.Material;
@@ -213,7 +215,7 @@ namespace Xenko.Particles.Rendering
                 var renderParticleEmitter = (RenderParticleEmitter)renderNode.RenderObject;
 
                 // Ignore fallback effects
-                if (renderNode.RenderEffect.State != RenderEffectState.Normal)
+                if (renderNode.RenderEffect?.State != RenderEffectState.Normal)
                     continue;
 
                 // Collect materials and create associated MaterialInfo (includes reflection) first time
