@@ -241,12 +241,6 @@ namespace Xenko.Graphics
                 var bufferMemoryBarrier = new BufferMemoryBarrier(NativeBuffer, AccessFlags.TransferWrite, NativeAccessMask);
                 commandBuffer.PipelineBarrier(PipelineStageFlags.Transfer, PipelineStageFlags.AllCommands, DependencyFlags.None, 0, null, 1, &bufferMemoryBarrier, 0, null);
 
-                // Close and submit
-                using (GraphicsDevice.QueueLock.ReadLock())
-                {
-                    commandBuffer.End();
-                }
-
                 var submitInfo = new SubmitInfo
                 {
                     StructureType = StructureType.SubmitInfo,
@@ -257,8 +251,10 @@ namespace Xenko.Graphics
                 var fenceCreateInfo = new FenceCreateInfo { StructureType = StructureType.FenceCreateInfo };
                 var fence = GraphicsDevice.NativeDevice.CreateFence(ref fenceCreateInfo);                
 
+                // Close and submit
                 using (GraphicsDevice.QueueLock.WriteLock())
                 {
+                    commandBuffer.End();
                     GraphicsDevice.NativeCommandQueue.Submit(1, &submitInfo, fence);
                     GraphicsDevice.NativeDevice.WaitForFences(1, &fence, true, ulong.MaxValue);
                 }
