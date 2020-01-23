@@ -45,6 +45,8 @@ namespace Xenko.Physics.Bepu
             }
             set
             {
+                useComponentPose = true;
+
                 staticDescription.Pose.Position.X = value.X;
                 staticDescription.Pose.Position.Y = value.Y;
                 staticDescription.Pose.Position.Z = value.Z;
@@ -63,6 +65,8 @@ namespace Xenko.Physics.Bepu
             }
             set
             {
+                useComponentPose = true;
+
                 staticDescription.Pose.Orientation.X = value.X;
                 staticDescription.Pose.Orientation.Y = value.Y;
                 staticDescription.Pose.Orientation.Z = value.Z;

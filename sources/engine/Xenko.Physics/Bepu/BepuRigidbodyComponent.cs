@@ -567,6 +567,8 @@ namespace Xenko.Physics.Bepu
             {
                 if (bodyDescription.Pose.Position == BepuHelpers.ToBepu(value)) return;
 
+                useComponentPose = true;
+
                 bodyDescription.Pose.Position.X = value.X;
                 bodyDescription.Pose.Position.Y = value.Y;
                 bodyDescription.Pose.Position.Z = value.Z;
@@ -590,6 +592,8 @@ namespace Xenko.Physics.Bepu
             set
             {
                 if (bodyDescription.Pose.Orientation == BepuHelpers.ToBepu(value)) return;
+
+                useComponentPose = true;
 
                 bodyDescription.Pose.Orientation.X = value.X;
                 bodyDescription.Pose.Orientation.Y = value.Y;
