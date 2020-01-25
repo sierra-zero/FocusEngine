@@ -273,6 +273,7 @@
         <MenuItem Header="{xk:Localize Questions and answers, Context=Menu}" Command="{Binding OpenWebPageCommand}" CommandParameter="{x:Static gs:XenkoGameStudio.AnswersUrl}"/>
         <MenuItem Header="{xk:Localize Report an issue..., Context=Menu}" Command="{Binding OpenWebPageCommand}" CommandParameter="{x:Static gs:XenkoGameStudio.ReportIssueUrl}"/>
         <MenuItem Header="{xk:Localize Community forums, Context=Menu}" Command="{Binding OpenWebPageCommand}" CommandParameter="{x:Static gs:XenkoGameStudio.ForumsUrl}"/>
+        <MenuItem Header="{xk:Localize Restore Scenes/Prefabs, Context=Menu}" Command="{Binding RestoreFromBackup}"/>
         <Separator/>
         <MenuItem Header="{xk:Localize Show debug window, Context=Menu}" Command="{Binding OpenDebugWindowCommand, RelativeSource={RelativeSource AncestorType=Window}}" InputGestureText="{x:Static strings:KeyGestures.OpenDebugWindow}"/>
         <Separator/>

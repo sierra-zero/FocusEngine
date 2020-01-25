@@ -36,6 +36,7 @@ namespace Xenko.Core.Assets.Editor.ViewModel
             ClearMRUCommand = new AnonymousCommand(serviceProvider, () => ClearRecentFiles());
             OpenSettingsWindowCommand = new AnonymousCommand(serviceProvider, OpenSettingsWindow);
             OpenWebPageCommand = new AnonymousTaskCommand<string>(serviceProvider, OpenWebPage);
+            RestoreFromBackup = new AnonymousTaskCommand(serviceProvider, RestoreFromBackupFunction);
 #if DEBUG
             DebugCommand = new AnonymousCommand(serviceProvider, DebugFunction);
 #endif
@@ -93,6 +94,8 @@ namespace Xenko.Core.Assets.Editor.ViewModel
         public ICommandBase OpenSettingsWindowCommand { get; }
 
         public ICommandBase OpenWebPageCommand { get; }
+
+        public ICommandBase RestoreFromBackup { get; }
 
 #if DEBUG
         public ICommandBase DebugCommand { get; }
@@ -220,6 +223,35 @@ namespace Xenko.Core.Assets.Editor.ViewModel
         protected abstract void RestartAndCreateNewSession();
 
         protected abstract Task RestartAndOpenSession(UFile sessionPath);
+
+        internal string projectPath;
+
+        private async Task RestoreFromBackupFunction()
+        {
+            if (projectPath == null || projectPath.Length == 0) return;
+
+            int restoreCount = 0;
+            string[] files = Directory.GetFiles(projectPath, "*.xk*", SearchOption.AllDirectories);
+            for (int i = 0; i < files.Length; i++)
+            {
+                string filename = files[i];
+                // if we are a scene file or prefab, back us up
+                if (filename.EndsWith("scene") || filename.EndsWith("prefab"))
+                {
+                    string backupfile = filename + ".backup";
+
+                    if (File.Exists(backupfile))
+                    {
+                        File.Copy(filename, filename + ".old", true);
+                        File.Copy(filename + ".backup", filename, true);
+                        restoreCount++;
+                    }
+                }
+            }
+
+            var message = "Restored " + restoreCount + " scene and prefab files from last run. Any files overwritten have an '.old' backup. Try reloading the project now.";
+            await ServiceProvider.Get<IDialogService>().MessageBox(message, MessageBoxButton.OK, MessageBoxImage.Information);
+        }
 
         private async Task OpenWebPage(string url)
         {

@@ -343,6 +343,21 @@ namespace Xenko.Core.Assets.Editor.ViewModel
             return sessionViewModel;
         }
 
+        private static void BackupProjectFiles(string path)
+        {
+            EditorViewModel.Instance.projectPath = path;
+            string[] files = Directory.GetFiles(path, "*.xk*", SearchOption.AllDirectories);
+            for (int i=0; i<files.Length; i++)
+            {
+                string filename = files[i];
+                // if we are a scene file or prefab, back us up
+                if (filename.EndsWith("scene") || filename.EndsWith("prefab"))
+                {
+                    File.Copy(filename, filename + ".backup", true);
+                }
+            }
+        }
+
         public static async Task<SessionViewModel> OpenSession(string path, IViewModelServiceProvider serviceProvider, EditorViewModel editor, PackageSessionResult sessionResult)
         {
             if (path == null) throw new ArgumentNullException(nameof(path));
@@ -408,6 +423,9 @@ namespace Xenko.Core.Assets.Editor.ViewModel
                 sessionResult.OperationCancelled = cancellationSource.IsCancellationRequested;
                 return null;
             }
+
+            // project loaded OK, lets backup the prefabs and scene files
+            BackupProjectFiles(Path.GetDirectoryName(path));
 
             // Register the node container to the copy/paste service.
             sessionViewModel.ServiceProvider.Get<CopyPasteService>().PropertyGraphContainer = sessionViewModel.GraphContainer;
