@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Xenko.Audio;
 using Xenko.Core;
 using Xenko.Core.Mathematics;
@@ -78,6 +79,30 @@ namespace Xenko.Engine
                 distance_scale = distanceScale
             });
             return s;
+        }
+
+        public Task<SoundInstance> PlayCentralSoundTask(string url, float pitch = 1f, float volume = 1f, float pan = 0.5f, bool looped = false)
+        {
+            return Task.Factory.StartNew<SoundInstance>(() =>
+            {
+                return PlayCentralSound(url, pitch, volume, pan, looped);
+            });
+        }
+
+        public Task<SoundInstance> PlayPositionSoundTask(string url, Vector3 position, float pitch = 1f, float volume = 1f, float pan = 0.5f, float distanceScale = 1f, bool looped = false)
+        {
+            return Task.Factory.StartNew<SoundInstance>(() =>
+            {
+                return PlayPositionSound(url, position, pitch, volume, pan, distanceScale, looped);
+            });
+        }
+
+        public Task<SoundInstance> PlayAttachedSoundTask(string url, Entity parent, float pitch = 1f, float volume = 1f, float pan = 0.5f, float distanceScale = 1f, bool looped = false)
+        {
+            return Task.Factory.StartNew<SoundInstance>(() =>
+            {
+                return PlayAttachedSound(url, parent, pitch, volume, pan, distanceScale, looped);
+            });
         }
 
         public void UpdatePlayingSoundPositions()
