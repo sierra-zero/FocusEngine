@@ -250,14 +250,27 @@ namespace Xenko.Engine
                     string[] vals = File.ReadAllLines("DefaultResolution.txt");
                     width = int.Parse(vals[0].Trim());
                     height = int.Parse(vals[1].Trim());
-                    fullscreen = vals[2].Trim().ToLower() == "full";
+                    fullscreen = vals[2].Trim().ToLower().StartsWith("full");
                 } catch (Exception e) { }
             }
             try {
                 // cap values to native resolution
                 Graphics.SDL.Window.GetDisplayInformation(out int native_width, out int native_height, out int refresh_rate);
-                if (width > native_width) width = native_width;
-                if (height > native_height) height = native_height;
+                if (width >= native_width &&
+                    height >= native_height)
+                {
+                    // force fullscreen if using native or higher,
+                    // as crashes can happen on some hardware if using this big of a window
+                    width = native_width;
+                    height = native_height;
+                    fullscreen = true;
+                }
+                else
+                {
+                    // smaller than native, lets make sure we are still within each bound though
+                    if (width > native_width) width = native_width;
+                    if (height > native_height) height = native_height;
+                }
             } catch(Exception e) {
                 // something went wrong... just use a window
                 width = 1280;
