@@ -71,13 +71,15 @@ namespace Xenko.Engine
             s.Pan = pan;
             s.Apply3D(pos, null, null, distanceScale);
             s.Play();
-            currentAttached.Add(new PositionalSound()
-            {
+            var posSnd = new PositionalSound() {
                 pos = pos,
                 soundInstance = s,
                 entity = parent,
                 distance_scale = distanceScale
-            });
+            };
+            lock (currentAttached) {
+                currentAttached.Add(posSnd);
+            }
             return s;
         }
 
@@ -138,7 +140,10 @@ namespace Xenko.Engine
                     si[i].Stop();
                 }
             }
-            currentAttached.Clear();
+            lock (currentAttached)
+            {
+                currentAttached.Clear();
+            }
         }
 
         public void StopSound(string url)
