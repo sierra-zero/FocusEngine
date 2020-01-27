@@ -24,8 +24,6 @@ namespace Xenko.Physics.Bepu
     [Display("Bepu Rigidbody")]
     public sealed class BepuRigidbodyComponent : BepuPhysicsComponent
     {
-        internal const int CONTACT_LIST_LENGTH = 4;
-
         /// <summary>
         /// Description of the body to be created when added to the scene
         /// </summary>
@@ -152,16 +150,21 @@ namespace Xenko.Physics.Bepu
                 {
                     if (processingPhysicalContacts == null)
                     {
-                        processingPhysicalContacts = new List<BepuContact>[CONTACT_LIST_LENGTH];
-                        for (int i=0; i< CONTACT_LIST_LENGTH; i++) processingPhysicalContacts[i] = new List<BepuContact>();
-                        _currentContacts = new List<BepuContact>();
+                        processingPhysicalContacts = new List<BepuContact>();
                     }
                 }
-                else if (processingPhysicalContacts != null)
+                else
                 {
-                    _currentContacts.Clear();
-                    _currentContacts = null;
-                    processingPhysicalContacts = null;
+                    if (processingPhysicalContacts != null)
+                    {
+                        processingPhysicalContacts.Clear();
+                        processingPhysicalContacts = null;
+                    }
+                    if (currentContactList != null)
+                    {
+                        currentContactList.Clear();
+                        currentContactList = null;
+                    }
                 }
 
                 _collectCollisions = value;
@@ -177,59 +180,22 @@ namespace Xenko.Physics.Bepu
         [DataMemberIgnore]
         private bool _collectCollisions = false;
 
-        [DataMemberIgnore]
-        private List<BepuContact> _currentContacts;
-
         /// <summary>
         /// If we are using ProcessCollisionSlim, this list will maintain all current collisions
         /// </summary>
         [DataMemberIgnore]
-        public List<BepuContact> CurrentContacts
-        {
-            get
-            {
-                if (_currentContacts == null) return null;
-
-                _currentContacts.Clear();
-
-                List<BepuContact> getFrom = processingPhysicalContacts[(processingPhysicalContactsIndex+1)%CONTACT_LIST_LENGTH];
-
-                // make sure to only add legit contact points, and to not crash if threading blips happen
-                try
-                {
-                    for (int i = 0; i < getFrom.Count; i++)
-                    {
-                        BepuContact bc = getFrom[i];
-                        if (bc.A != null && bc.B != null) _currentContacts.Add(bc);
-                    }
-                }
-                catch (Exception e) { }
-
-                return _currentContacts;
-            }
-        }
+        public List<BepuContact> CurrentContacts => currentContactList;
 
         internal void swapProcessingContactsList()
         {
             if (processingPhysicalContacts == null || IsActive == false) return;
 
-            if (processingPhysicalContactsIndex == 0)
-            {
-                processingPhysicalContactsIndex = CONTACT_LIST_LENGTH - 1;
-            }
-            else
-            {
-                processingPhysicalContactsIndex--;
-            }
-
-            processingPhysicalContacts[processingPhysicalContactsIndex].Clear();
+            currentContactList = processingPhysicalContacts;
+            processingPhysicalContacts = new List<BepuContact>();
         }
 
         [DataMemberIgnore]
-        internal List<BepuContact>[] processingPhysicalContacts;
-
-        [DataMemberIgnore]
-        internal int processingPhysicalContactsIndex;
+        internal List<BepuContact> processingPhysicalContacts, currentContactList;
 
         private static readonly BodyInertia KinematicInertia = new BodyInertia()
         {

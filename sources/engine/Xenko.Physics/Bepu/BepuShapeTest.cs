@@ -25,7 +25,6 @@ namespace Xenko.Physics.Bepu
         public struct BatcherCallbacks : ICollisionCallbacks
         {
             public List<BepuContact> contactList;
-            public Xenko.Core.Mathematics.Vector3 position;
 
             //These callbacks provide filtering and reporting for pairs being processed by the collision batcher.
             //"Pair id" refers to the identifier given to the pair when it was added to the batcher.
@@ -50,7 +49,7 @@ namespace Xenko.Physics.Bepu
                     contactList.Add(new BepuContact()
                     {
                         Normal = BepuHelpers.ToXenko(manifold.SimpleGetNormal()),
-                        Position = BepuHelpers.ToXenko(manifold.SimpleGetOffset()) + position
+                        Offset = BepuHelpers.ToXenko(manifold.SimpleGetOffset())
                     });
                 }
             }
@@ -119,7 +118,7 @@ namespace Xenko.Physics.Bepu
         {
             List<BepuContact> contacts = new List<BepuContact>();
             var batcher = new CollisionBatcher<BatcherCallbacks>(BepuSimulation.safeBufferPool, BepuSimulation.instance.internalSimulation.Shapes,
-                                                                 BepuSimulation.instance.internalSimulation.NarrowPhase.CollisionTaskRegistry, 0f, new BatcherCallbacks() { contactList = contacts, position = position });
+                                                                 BepuSimulation.instance.internalSimulation.NarrowPhase.CollisionTaskRegistry, 0f, new BatcherCallbacks() { contactList = contacts });
             BepuUtilities.Quaternion q = BepuHelpers.ToBepu(rotation);
             Vector3 v = BepuHelpers.ToBepu(position);
             shape.ComputeBounds(q, out var boundingBoxMin, out var boundingBoxMax);

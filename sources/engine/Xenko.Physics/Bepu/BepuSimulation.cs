@@ -225,8 +225,8 @@ namespace Xenko.Physics.Bepu
 
                 BepuRigidbodyComponent ar = (A as BepuRigidbodyComponent);
                 BepuRigidbodyComponent br = (B as BepuRigidbodyComponent);
-                bool Acollect = ar == null ? false : ar.CollectCollisions && ar.CollectCollisionMaximumCount > ar.processingPhysicalContacts[ar.processingPhysicalContactsIndex].Count;
-                bool Bcollect = br == null ? false : br.CollectCollisions && br.CollectCollisionMaximumCount > br.processingPhysicalContacts[br.processingPhysicalContactsIndex].Count;
+                bool Acollect = ar == null ? false : ar.CollectCollisions && ar.CollectCollisionMaximumCount > ar.processingPhysicalContacts.Count;
+                bool Bcollect = br == null ? false : br.CollectCollisions && br.CollectCollisionMaximumCount > br.processingPhysicalContacts.Count;
                 // do we want to store this collision?
                 if (Acollect || Bcollect)
                 {
@@ -235,10 +235,10 @@ namespace Xenko.Physics.Bepu
                         A = A,
                         B = B,
                         Normal = BepuHelpers.ToXenko(manifold.SimpleGetNormal()),
-                        Position = B.Position - BepuHelpers.ToXenko(manifold.SimpleGetOffset())
+                        Offset = BepuHelpers.ToXenko(manifold.SimpleGetOffset())
                     };
-                    if (Acollect) ar.processingPhysicalContacts[ar.processingPhysicalContactsIndex].Add(bc);
-                    if (Bcollect) br.processingPhysicalContacts[br.processingPhysicalContactsIndex].Add(bc);
+                    if (Acollect) ar.processingPhysicalContacts.Add(bc);
+                    if (Bcollect) br.processingPhysicalContacts.Add(bc);
                 }
             }
 
@@ -481,10 +481,10 @@ namespace Xenko.Physics.Bepu
                     }
 
                     if (rigidBody.processingPhysicalContacts != null)
-                    {
-                        for (int i = 0; i < rigidBody.processingPhysicalContacts.Length; i++)
-                            rigidBody.processingPhysicalContacts[i].Clear();
-                    }
+                        rigidBody.processingPhysicalContacts.Clear();
+
+                    if (rigidBody.currentContactList != null)
+                        rigidBody.currentContactList.Clear();
                 }
             }
             ToBeRemoved.Clear();
