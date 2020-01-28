@@ -470,11 +470,11 @@ namespace Xenko.Physics.Bepu
                         AllRigidbodies.Remove(rigidBody);
                     }
 
-                    if (rigidBody.processingPhysicalContacts != null);
+                    if (rigidBody.processingPhysicalContacts != null)
                         while(rigidBody.processingPhysicalContacts.TryDequeue(out var _));
 
                     if (rigidBody.currentContactList != null)
-                        rigidBody.currentContactList.Clear(); ;
+                        rigidBody.currentContactList.Clear();
                 }
             }
             ToBeRemoved.Clear();
