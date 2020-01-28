@@ -421,11 +421,7 @@ namespace Xenko.Physics.Bepu
                 if (component is BepuStaticColliderComponent scc)
                 {
                     // static stuff needs positions set first
-                    if (!component.useComponentPose)
-                    {
-                        component.Position = component.Entity.Transform.WorldPosition();
-                        component.Rotation = component.Entity.Transform.WorldRotation();
-                    }
+                    scc.preparePose();
                     using (simulationLocker.WriteLock())
                     {
                         scc.staticDescription.Collidable = scc.ColliderShape.GenerateDescription(internalSimulation, scc.SpeculativeMargin);
@@ -442,15 +438,9 @@ namespace Xenko.Physics.Bepu
                         rigidBody.AddedHandle = internalSimulation.Bodies.Add(rigidBody.bodyDescription);
                         RigidMappings[rigidBody.AddedHandle] = rigidBody;
                     }
-                    // after rigids are added, then set position to entity transform if needed
-                    if (!component.useComponentPose)
-                    {
-                        component.Position = component.Entity.Transform.WorldPosition();
-                        component.Rotation = component.Entity.Transform.WorldRotation();
-                    }
+                    component.Position = component.Entity.Transform.WorldPosition();
+                    component.Rotation = component.Entity.Transform.WorldRotation();
                 }
-                // clear flag
-                component.useComponentPose = false;
             }
             ToBeAdded.Clear();
         }

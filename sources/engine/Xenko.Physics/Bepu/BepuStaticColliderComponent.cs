@@ -36,23 +36,22 @@ namespace Xenko.Physics.Bepu
             staticDescription.Pose.Orientation.W = 1f;
         }
 
+        [DataMember]
+        private Xenko.Core.Mathematics.Vector3? usePosition;
+
+        [DataMember]
+        private Xenko.Core.Mathematics.Quaternion? useRotation;
+
         [DataMemberIgnore]
         public override Xenko.Core.Mathematics.Vector3 Position
         {
             get
             {
-                return BepuHelpers.ToXenko(AddedToScene ? InternalStatic.Pose.Position : staticDescription.Pose.Position);
+                return usePosition ?? Entity.Transform.WorldPosition();
             }
             set
             {
-                useComponentPose = true;
-
-                staticDescription.Pose.Position.X = value.X;
-                staticDescription.Pose.Position.Y = value.Y;
-                staticDescription.Pose.Position.Z = value.Z;
-
-                if (AddedToScene)
-                    InternalStatic.Pose.Position = staticDescription.Pose.Position;
+                usePosition = value;
             }
         }
 
@@ -61,20 +60,18 @@ namespace Xenko.Physics.Bepu
         {
             get
             {
-                return BepuHelpers.ToXenko(AddedToScene ? InternalStatic.Pose.Orientation : staticDescription.Pose.Orientation);
+                return useRotation ?? Entity.Transform.WorldRotation();
             }
             set
             {
-                useComponentPose = true;
-
-                staticDescription.Pose.Orientation.X = value.X;
-                staticDescription.Pose.Orientation.Y = value.Y;
-                staticDescription.Pose.Orientation.Z = value.Z;
-                staticDescription.Pose.Orientation.W = value.W;
-
-                if (AddedToScene)
-                    InternalStatic.Pose.Orientation = staticDescription.Pose.Orientation;
+                useRotation = value;
             }
+        }
+
+        internal void preparePose()
+        {
+            staticDescription.Pose.Position = BepuHelpers.ToBepu(Position);
+            staticDescription.Pose.Orientation = BepuHelpers.ToBepu(Rotation);
         }
 
         [DataMember]

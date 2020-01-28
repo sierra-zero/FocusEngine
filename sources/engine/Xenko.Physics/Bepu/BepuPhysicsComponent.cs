@@ -145,8 +145,6 @@ namespace Xenko.Engine
             Matrix.Multiply(ref rotation, ref translationMatrix, out outMatrix);
         }
 
-        internal bool useComponentPose;
-
         [DataMemberIgnore]
         public virtual Vector3 Position { get; set; }
 
