@@ -415,7 +415,7 @@ namespace Xenko.Audio
                 }
 
                 // sleep after going through the music
-                Thread.Sleep(10);
+                Thread.Sleep(100);
             }
         }
     }
