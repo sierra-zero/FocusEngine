@@ -19,12 +19,12 @@ namespace Xenko.GameStudio
         public static string EditorName => Program.EngineName + " " + Program.GameStudioName + " " + EditorVersion;
 
         [NotNull]
-        public static string EditorVersion => XenkoVersion.NuGetVersion;
+        public static string EditorVersion => XenkoVersion.VersionToShowInEditor;
 
         [NotNull]
-        public static string EditorVersionWithMetadata => XenkoVersion.NuGetVersion + XenkoVersion.BuildMetadata;
+        public static string EditorVersionWithMetadata => EditorVersion;
 
-        public static string EditorVersionMajor => new System.Version(XenkoVersion.PublicVersion).ToString(2);
+        public static string EditorVersionMajor => new System.Version(EditorVersion).ToString(2);
 
         [NotNull]
         public static string AnswersUrl => "http://answers.xenko.com/";

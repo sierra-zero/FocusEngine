@@ -54,7 +54,7 @@ namespace Xenko.GameStudio
     public static class Program
     {
         public const string EngineName = "Focus";
-        public const string GameStudioName = "Game Studio";
+        public const string GameStudioName = "GameStudio";
 
         private static App app;
         private static IntPtr windowHandle;
