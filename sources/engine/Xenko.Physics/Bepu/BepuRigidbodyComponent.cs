@@ -17,6 +17,7 @@ using BepuPhysics.Constraints;
 using System.Runtime.CompilerServices;
 using Xenko.Core.Threading;
 using System.Threading;
+using System.Collections.Concurrent;
 
 namespace Xenko.Physics.Bepu
 {
@@ -149,22 +150,12 @@ namespace Xenko.Physics.Bepu
                 if (value)
                 {
                     if (processingPhysicalContacts == null)
-                    {
-                        processingPhysicalContacts = new List<BepuContact>();
-                    }
+                        processingPhysicalContacts = new ConcurrentQueue<BepuContact>();
                 }
                 else
                 {
-                    if (processingPhysicalContacts != null)
-                    {
-                        processingPhysicalContacts.Clear();
-                        processingPhysicalContacts = null;
-                    }
-                    if (currentContactList != null)
-                    {
-                        currentContactList.Clear();
-                        currentContactList = null;
-                    }
+                    processingPhysicalContacts = null;
+                    currentContactList = null;
                 }
 
                 _collectCollisions = value;
@@ -190,12 +181,19 @@ namespace Xenko.Physics.Bepu
         {
             if (processingPhysicalContacts == null || IsActive == false) return;
 
-            currentContactList = processingPhysicalContacts;
-            processingPhysicalContacts = new List<BepuContact>();
+            List<BepuContact> buildList = new List<BepuContact>(processingPhysicalContacts.Count);
+
+            while (processingPhysicalContacts.TryDequeue(out BepuContact res))
+                if (res.A != null && res.B != null) buildList.Add(res);
+
+            currentContactList = buildList;
         }
 
         [DataMemberIgnore]
-        internal List<BepuContact> processingPhysicalContacts, currentContactList;
+        internal ConcurrentQueue<BepuContact> processingPhysicalContacts;
+        
+        [DataMemberIgnore]
+        internal List<BepuContact> currentContactList;
 
         private static readonly BodyInertia KinematicInertia = new BodyInertia()
         {
