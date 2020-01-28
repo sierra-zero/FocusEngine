@@ -23,10 +23,13 @@ namespace Xenko
     internal class XenkoVersion
     {
         /// <summary>
-        /// The version used by editor for display purpose. 4th digit needs to be at least 1 if used (due to NuGet special cases).
+        /// The version used by nuget whatever the heck it needs. 4th digit needs to be at least 1 if used (due to stupid NuGet special cases).
         /// </summary>
         public const string PublicVersion = "9.9.1";
 
+        /// <summary>
+        /// This version will be shown in the editor and actually is the version. Can be changed without triggering weird NuGet behavior.
+        /// </summary>
         public const string VersionToShowInEditor = "3.5.1";
 
         /// <summary>
