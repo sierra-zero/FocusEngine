@@ -35,7 +35,7 @@ Most of Focus is similar to Xenko and there shouldn't be any loss of functionali
 * Easy setting game resolution: Game.SetDefaultSettings(width, height, fullscreen) and Game.OverrideDefaultSettings to set and save resolution of your game.
 * Easy generating procedural meshes: StagedMeshDraw takes a list of verticies and indicies, no "buffer binding" or "GraphicsDevice" needed. Also will actually upload the mesh when it tries to get rendered automatically, saving time and resources if the mesh doesn't actually ever get viewed.
 * Less likely to lose work: files are not actually deleted from GameStudio, just moved to the Recylce Bin. If you mess up a prefab or entity in a scene, or if you notice corruption in your project, select Help -> Restore Scene/Prefabs to return your scene and prefab files to the last time to opened your project.
-* Performance: lots of tweaks have been made throughout the engine to maximize performance. This includes reducing locks and enumeration reduction, for example.
+* Performance: lots of tweaks have been made throughout the engine to maximize performance. This includes reducing locks and enumeration reduction, for example. GameStudio editor itself runs much smoother and can handle multiple tabs much better.
 * Easy adding/removing entities from the scene: Just do myEntity.Scene = myScene (to add it) or myEntity.Scene = null (to remove it).
 * Includes dfkeenan's toolkit designed for this fork (from https://github.com/dfkeenan/XenkoToolkit). May need to add the Toolkit Nuget package to use.
 * Takes good things from many different Xenko forks, including the original Xenko branch when it gets updated. May not get everything, like some of the tutorials, sample, non-PC platforms or launcher updates, which I don't maintain.
