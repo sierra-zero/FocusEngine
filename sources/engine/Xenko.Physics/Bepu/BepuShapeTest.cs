@@ -83,7 +83,7 @@ namespace Xenko.Physics.Bepu
         /// <param name="queryId">Id to use to refer to this query when the collision batcher finishes processing it.</param>
         /// <param name="batcher">Batcher to add the query's tests to.</param>
         static private unsafe void RunQuery(int queryShapeType, void* queryShapeData, int queryShapeSize, in Vector3 queryBoundsMin,
-                                                  in Vector3 queryBoundsMax, Vector3 queryPos, BepuUtilities.Quaternion queryRot,
+                                                  in Vector3 queryBoundsMax, Vector3 queryPos, System.Numerics.Quaternion queryRot,
                                                   ref CollisionBatcher<BatcherCallbacks> batcher, CollisionFilterGroupFlags lookingFor)
         {
             var broadPhaseEnumerator = new BroadPhaseOverlapEnumerator { components = new List<BepuPhysicsComponent>(), lookingFor = (uint)lookingFor };
@@ -119,7 +119,7 @@ namespace Xenko.Physics.Bepu
             List<BepuContact> contacts = new List<BepuContact>();
             var batcher = new CollisionBatcher<BatcherCallbacks>(BepuSimulation.safeBufferPool, BepuSimulation.instance.internalSimulation.Shapes,
                                                                  BepuSimulation.instance.internalSimulation.NarrowPhase.CollisionTaskRegistry, 0f, new BatcherCallbacks() { contactList = contacts });
-            BepuUtilities.Quaternion q = BepuHelpers.ToBepu(rotation);
+            System.Numerics.Quaternion q = BepuHelpers.ToBepu(rotation);
             Vector3 v = BepuHelpers.ToBepu(position);
             shape.ComputeBounds(q, out var boundingBoxMin, out var boundingBoxMax);
             boundingBoxMin += v;

@@ -756,7 +756,7 @@ namespace Xenko.Physics.Bepu
         /// <param name="filterFlags">The collision group that this shape sweep can collide with</param>
         /// <returns></returns>
         /// <exception cref="System.Exception">This kind of shape cannot be used for a ShapeSweep.</exception>
-        public BepuHitResult ShapeSweep(IConvexShape shape, Vector3 position, Xenko.Core.Mathematics.Quaternion rotation, Vector3 endpoint, CollisionFilterGroupFlags hitGroups = DefaultFlags, bool skipAtZero = false)
+        public BepuHitResult ShapeSweep<TShape>(TShape shape, Vector3 position, Xenko.Core.Mathematics.Quaternion rotation, Vector3 endpoint, CollisionFilterGroupFlags hitGroups = DefaultFlags, bool skipAtZero = false) where TShape : unmanaged, IConvexShape
         {
             Vector3 diff = endpoint - position;
             float length = diff.Length();
@@ -777,7 +777,7 @@ namespace Xenko.Physics.Bepu
         /// <param name="filterFlags">The collision group that this shape sweep can collide with</param>
         /// <returns></returns>
         /// <exception cref="System.Exception">This kind of shape cannot be used for a ShapeSweep.</exception>
-        public BepuHitResult ShapeSweep(IConvexShape shape, Vector3 position, Xenko.Core.Mathematics.Quaternion rotation, Vector3 direction, float length, CollisionFilterGroupFlags hitGroups = DefaultFlags, bool skipAtZero = false)
+        public BepuHitResult ShapeSweep<TShape>(TShape shape, Vector3 position, Xenko.Core.Mathematics.Quaternion rotation, Vector3 direction, float length, CollisionFilterGroupFlags hitGroups = DefaultFlags, bool skipAtZero = false) where TShape : unmanaged, IConvexShape
         {
             SweepTestFirst sshh = new SweepTestFirst()
             {
@@ -811,7 +811,7 @@ namespace Xenko.Physics.Bepu
         /// <param name="filterGroup">The collision group of this shape sweep</param>
         /// <param name="filterFlags">The collision group that this shape sweep can collide with</param>
         /// <exception cref="System.Exception">This kind of shape cannot be used for a ShapeSweep.</exception>
-        public void ShapeSweepPenetrating(IConvexShape shape, Vector3 position, Xenko.Core.Mathematics.Quaternion rotation, Vector3 endpoint, List<BepuHitResult> output, CollisionFilterGroupFlags hitGroups = DefaultFlags)
+        public void ShapeSweepPenetrating<TShape>(TShape shape, Vector3 position, Xenko.Core.Mathematics.Quaternion rotation, Vector3 endpoint, List<BepuHitResult> output, CollisionFilterGroupFlags hitGroups = DefaultFlags) where TShape : unmanaged, IConvexShape
         {
             Vector3 diff = endpoint - position;
             float length = diff.Length();
@@ -832,7 +832,7 @@ namespace Xenko.Physics.Bepu
         /// <param name="filterGroup">The collision group of this shape sweep</param>
         /// <param name="filterFlags">The collision group that this shape sweep can collide with</param>
         /// <exception cref="System.Exception">This kind of shape cannot be used for a ShapeSweep.</exception>
-        public void ShapeSweepPenetrating(IConvexShape shape, Vector3 position, Xenko.Core.Mathematics.Quaternion rotation, Vector3 direction, float length, List<BepuHitResult> output, CollisionFilterGroupFlags hitGroups = DefaultFlags)
+        public void ShapeSweepPenetrating<TShape>(TShape shape, Vector3 position, Xenko.Core.Mathematics.Quaternion rotation, Vector3 direction, float length, List<BepuHitResult> output, CollisionFilterGroupFlags hitGroups = DefaultFlags) where TShape : unmanaged, IConvexShape
         {
             SweepTestAll sshh = new SweepTestAll()
             {
