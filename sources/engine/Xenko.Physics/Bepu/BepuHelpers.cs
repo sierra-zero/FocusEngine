@@ -330,7 +330,7 @@ namespace Xenko.Physics.Bepu
                         for (var k = 0; k < numIndices; k++)
                         {
                             // Offset indices
-                            indicies[k] = (int)dst[k];
+                            indicies.Add((int)dst[k]);
                         }
                     }
                     else
@@ -342,7 +342,7 @@ namespace Xenko.Physics.Bepu
                         for (var k = 0; k < numIndices; k++)
                         {
                             // Offset indices
-                            indicies[k] = dst[k];
+                            indicies.Add(dst[k]);
                         }
                     }
                 }

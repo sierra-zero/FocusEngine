@@ -553,7 +553,10 @@ namespace Xenko.Physics.Bepu
             }
             set
             {
-                if (bodyDescription.Pose.Orientation == BepuHelpers.ToBepu(value)) return;
+                if (bodyDescription.Pose.Orientation.X == value.X &&
+                    bodyDescription.Pose.Orientation.Y == value.Y &&
+                    bodyDescription.Pose.Orientation.Z == value.Z &&
+                    bodyDescription.Pose.Orientation.W == value.W) return;
 
                 bodyDescription.Pose.Orientation.X = value.X;
                 bodyDescription.Pose.Orientation.Y = value.Y;
