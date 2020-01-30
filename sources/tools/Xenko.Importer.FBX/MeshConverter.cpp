@@ -425,6 +425,12 @@ public:
 				materialIndex = materialIndices->GetAt(i);
 			}
 
+			// if we get a bad material index, make a new slot for it
+			if (materialIndex < 0) {
+				materialIndex = buildMeshes->Count + 1;
+				materialIndices->SetAt(i, materialIndex);
+			}
+
 			// Equivalent to std::vector::resize()
 			while (materialIndex >= buildMeshes->Count)
 			{
@@ -1742,6 +1748,12 @@ private:
 				else if (materialMappingMode == FbxGeometryElement::eAllSame)
 				{
 					materialIndex = materialIndices->GetAt(0);
+				}
+
+				// if we get a bad material index, make a new slot for it
+				if (materialIndex < 0) {
+					materialIndex = buildMeshes->Count + 1;
+					materialIndices->SetAt(i, materialIndex);
 				}
 
 				// Equivalent to std::vector::resize()
