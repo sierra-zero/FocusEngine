@@ -416,6 +416,36 @@ public:
 
 		auto buildMeshes = gcnew List<BuildMesh^>();
 
+		// count material indicies
+		int maxMaterialIndex = 0;
+		bool hasBadIndex = false;
+		for (int i = 0; i < polygonCount; i++) {
+			int materialIndex = 0;
+			if (materialMappingMode == FbxGeometryElement::eByPolygon)
+			{
+				materialIndex = materialIndices->GetAt(i);
+			}
+			else if (materialMappingMode == FbxGeometryElement::eAllSame)
+			{
+				materialIndex = materialIndices->GetAt(0);
+			}
+
+			if (materialIndex > maxMaterialIndex)
+				maxMaterialIndex = materialIndex;
+
+			if (materialIndex < 0)
+				hasBadIndex = true;
+		}
+
+		if (hasBadIndex) maxMaterialIndex++;
+
+		// Equivalent to std::vector::resize()
+		for (int i = 0; i <= maxMaterialIndex; i++)
+		{
+			buildMeshes->Add(nullptr);
+			buildMeshes[i] = gcnew BuildMesh();
+		}
+
 		// Count polygon per materials
 		for (int i = 0; i < polygonCount; i++)
 		{
@@ -424,21 +454,15 @@ public:
 			{
 				materialIndex = materialIndices->GetAt(i);
 			}
+			else if (materialMappingMode == FbxGeometryElement::eAllSame)
+			{
+				materialIndex = materialIndices->GetAt(0);
+			}
 
-			// if we get a bad material index, make a new slot for it
 			if (materialIndex < 0) {
-				materialIndex = buildMeshes->Count + 1;
+				materialIndex = maxMaterialIndex;
 				materialIndices->SetAt(i, materialIndex);
 			}
-
-			// Equivalent to std::vector::resize()
-			while (materialIndex >= buildMeshes->Count)
-			{
-				buildMeshes->Add(nullptr);
-			}
-
-			if (buildMeshes[materialIndex] == nullptr)
-				buildMeshes[materialIndex] = gcnew BuildMesh();
 
 			int polygonSize = pMesh->GetPolygonSize(i) - 2;
 			if (polygonSize > 0)
@@ -1737,6 +1761,36 @@ private:
 
 			auto buildMeshes = gcnew List<BuildMesh^>();
 
+			// count material indicies
+			int maxMaterialIndex = 0;
+			bool hasBadIndex = false;
+			for (int i = 0; i < polygonCount; i++) {
+				int materialIndex = 0;
+				if (materialMappingMode == FbxGeometryElement::eByPolygon)
+				{
+					materialIndex = materialIndices->GetAt(i);
+				}
+				else if (materialMappingMode == FbxGeometryElement::eAllSame)
+				{
+					materialIndex = materialIndices->GetAt(0);
+				}
+
+				if (materialIndex > maxMaterialIndex)
+					maxMaterialIndex = materialIndex;
+
+				if (materialIndex < 0)
+					hasBadIndex = true;
+			}
+
+			if (hasBadIndex) maxMaterialIndex++;
+
+			// Equivalent to std::vector::resize()
+			for (int i = 0; i <= maxMaterialIndex; i++)
+			{
+				buildMeshes->Add(nullptr);
+				buildMeshes[i] = gcnew BuildMesh();
+			}
+
 			// Count polygon per materials
 			for (int i = 0; i < polygonCount; i++)
 			{
@@ -1750,20 +1804,10 @@ private:
 					materialIndex = materialIndices->GetAt(0);
 				}
 
-				// if we get a bad material index, make a new slot for it
 				if (materialIndex < 0) {
-					materialIndex = buildMeshes->Count + 1;
+					materialIndex = maxMaterialIndex;
 					materialIndices->SetAt(i, materialIndex);
 				}
-
-				// Equivalent to std::vector::resize()
-				while (materialIndex >= buildMeshes->Count)
-				{
-					buildMeshes->Add(nullptr);
-				}
-
-				if (buildMeshes[materialIndex] == nullptr)
-					buildMeshes[materialIndex] = gcnew BuildMesh();
 
 				int polygonSize = pMesh->GetPolygonSize(i) - 2;
 				if (polygonSize > 0)
