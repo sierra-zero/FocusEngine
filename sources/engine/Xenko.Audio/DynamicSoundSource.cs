@@ -98,7 +98,7 @@ namespace Xenko.Audio
             if (readFromDiskWorker == null)
             {
                 readFromDiskWorker = new Thread(new ThreadStart(Worker));
-                readFromDiskWorker.Priority = ThreadPriority.Lowest;
+                readFromDiskWorker.Priority = ThreadPriority.BelowNormal;
                 readFromDiskWorker.IsBackground = true;
                 readFromDiskWorker.Start();
             }
