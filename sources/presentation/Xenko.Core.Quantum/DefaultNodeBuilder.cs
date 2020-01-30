@@ -137,7 +137,7 @@ namespace Xenko.Core.Quantum
         public override void VisitDictionary(object dictionary, DictionaryDescriptor descriptor)
         {
             if (!IsPrimitiveType(descriptor.KeyType))
-                throw new InvalidOperationException("The type of dictionary key must be a primary type.");
+                return; // unsupported dictionary, skip this (don't crash loading the project though, geez!)
 
             // Don't visit items unless they are primitive or enumerable (collections within collections)
             if (IsCollection(descriptor.ValueType))
