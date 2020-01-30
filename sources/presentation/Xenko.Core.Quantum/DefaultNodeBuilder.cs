@@ -124,7 +124,7 @@ namespace Xenko.Core.Quantum
         public override void VisitCollection(IEnumerable collection, CollectionDescriptor descriptor)
         {
             if (!descriptor.HasIndexerAccessors)
-                throw new NotSupportedException("Collections that do not have indexer accessors are not supported in Quantum.");
+                return; // HashSet or some other set, skip this (don't crash loading the project though, geez!)
 
             // Don't visit items unless they are primitive or enumerable (collections within collections)
             if (IsCollection(descriptor.ElementType))
