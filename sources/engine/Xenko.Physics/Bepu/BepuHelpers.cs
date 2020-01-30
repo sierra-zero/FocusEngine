@@ -489,36 +489,15 @@ namespace Xenko.Physics.Bepu
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Xenko.Core.Mathematics.Quaternion ToXenko(System.Numerics.Quaternion q)
+        public static unsafe Xenko.Core.Mathematics.Quaternion ToXenko(System.Numerics.Quaternion q)
         {
-            return new Quaternion(q.X, q.Y, q.Z, q.W);
+            return *((Xenko.Core.Mathematics.Quaternion*)(void*)&q);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static System.Numerics.Quaternion ToBepu(Xenko.Core.Mathematics.Quaternion q)
+        public static unsafe System.Numerics.Quaternion ToBepu(Xenko.Core.Mathematics.Quaternion q)
         {
-            return new System.Numerics.Quaternion(q.X, q.Y, q.Z, q.W);
+            return *((System.Numerics.Quaternion*)(void*)&q);
         }
-
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void ToXenko(ref System.Numerics.Quaternion qin, ref Xenko.Core.Mathematics.Quaternion qout)
-        {
-            qout.X = qin.X;
-            qout.Y = qin.Y;
-            qout.Z = qin.Z;
-            qout.W = qin.W;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void ToBepu(ref Xenko.Core.Mathematics.Quaternion qin, ref Xenko.Core.Mathematics.Quaternion qout)
-        {
-            qout.X = qin.X;
-            qout.Y = qin.Y;
-            qout.Z = qin.Z;
-            qout.W = qin.W;
-        }
-
-
     }
 }
