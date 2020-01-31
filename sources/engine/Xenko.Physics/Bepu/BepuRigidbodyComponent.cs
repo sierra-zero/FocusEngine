@@ -184,7 +184,13 @@ namespace Xenko.Physics.Bepu
             List<BepuContact> buildList = new List<BepuContact>(processingPhysicalContacts.Count);
 
             while (processingPhysicalContacts.TryDequeue(out BepuContact res))
-                if (res.A != null && res.B != null) buildList.Add(res);
+            {
+                if (res.A != null && res.B != null)
+                {
+                    if (res.A != this) res.Swap();
+                    buildList.Add(res);
+                }
+            }
 
             currentContactList = buildList;
         }
