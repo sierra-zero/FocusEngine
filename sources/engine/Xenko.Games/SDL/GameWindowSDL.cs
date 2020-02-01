@@ -86,11 +86,17 @@ namespace Xenko.Games
                 gameForm.AppActivated += OnActivated;
                 gameForm.AppDeactivated += OnDeactivated;
                 gameForm.UserResized += OnClientSizeChanged;
+                gameForm.CloseActions += GameForm_CloseActions;
             }
             else
             {
                 window.ResizeEndActions += WindowOnResizeEndActions;
             }
+        }
+
+        private void GameForm_CloseActions()
+        {
+            OnClosing(this, new EventArgs());
         }
 
         internal override void Run()
