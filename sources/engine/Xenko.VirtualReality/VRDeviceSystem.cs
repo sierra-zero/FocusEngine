@@ -28,6 +28,11 @@ namespace Xenko.VirtualReality
         }
 
         /// <summary>
+        /// Swap hands at a low level? Easy way to have right hand act like the left hand and vice versa.
+        /// </summary>
+        public bool GetControllerSwapped;
+
+        /// <summary>
         /// Which VR button to activate UI? Defaults to trigger.
         /// </summary>
         public static TouchControllerButton UIActivationButton = TouchControllerButton.Trigger;
@@ -39,12 +44,14 @@ namespace Xenko.VirtualReality
         /// <returns>TouchController object, otherwise null</returns>
         public TouchController GetController(TouchControllerHand hand)
         {
+            if (Device == null) return null;
+
             switch(hand)
             {
                 case TouchControllerHand.Left:
-                    return Device?.LeftHand;
+                    return GetControllerSwapped ? Device.RightHand : Device.LeftHand;
                 case TouchControllerHand.Right:
-                    return Device?.RightHand;
+                    return GetControllerSwapped ? Device.LeftHand : Device.RightHand;
                 default:
                     return null;
             }
