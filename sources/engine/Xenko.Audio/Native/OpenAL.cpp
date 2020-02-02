@@ -76,43 +76,6 @@ extern "C" {
 
 		void* OpenALLibrary = NULL;
 
-		class ContextState
-		{
-		public:
-			ContextState(ALCcontext* context)
-			{
-				sOpenAlLock.Lock();
-
-				mOldContext = GetCurrentContext();
-				if (context != mOldContext)
-				{
-					MakeContextCurrent(context);
-					swap = true;
-				}
-				else
-				{
-					swap = false;
-				}
-			}
-
-			~ContextState()
-			{
-				if (swap)
-				{
-					MakeContextCurrent(mOldContext);
-				}
-				
-				sOpenAlLock.Unlock();
-			}
-
-		private:
-			bool swap;
-			ALCcontext* mOldContext;
-			static SpinLock sOpenAlLock;
-		};
-
-		SpinLock ContextState::sOpenAlLock;
-
 		DLL_EXPORT_API npBool xnAudioInit()
 		{
 			if (OpenALLibrary) return true;
@@ -124,13 +87,11 @@ extern "C" {
 			//PC - Windows
 			if(sizeof(intptr_t) == 4)
 			{
-				if (!OpenALLibrary) OpenALLibrary = LoadDynamicLibrary("x86\\OpenAL");
-				if (!OpenALLibrary) OpenALLibrary = LoadDynamicLibrary("x86/OpenAL");
+				if (!OpenALLibrary) OpenALLibrary = LoadDynamicLibrary("OpenAL32");
 			}
 			else
 			{
-				if (!OpenALLibrary) OpenALLibrary = LoadDynamicLibrary("x64\\OpenAL");
-				if (!OpenALLibrary) OpenALLibrary = LoadDynamicLibrary("x64/OpenAL");
+				if (!OpenALLibrary) OpenALLibrary = LoadDynamicLibrary("OpenAL64");
 			}
 			
 			//iOS
@@ -275,8 +236,6 @@ extern "C" {
 
 			for (auto listener : device->listeners)
 			{
-				ContextState lock(listener->context);
-
 				for(auto source : listener->sources)
 				{
 					if (source->streamed)
@@ -352,7 +311,6 @@ extern "C" {
 			device->deviceLock.Lock();
 			for(auto listener : device->listeners)
 			{
-				ContextState lock(listener->context);
 				ListenerF(AL_GAIN, volume);
 			}
 			device->deviceLock.Unlock();
@@ -382,8 +340,6 @@ extern "C" {
 			res->mono = mono;
 			res->streamed = streamed;
 
-			ContextState lock(listener->context);
-
 			GenSources(1, &res->source);
 			AL_ERROR;
 			SourceF(res->source, AL_REFERENCE_DISTANCE, 1.0f);
@@ -407,8 +363,6 @@ extern "C" {
 
 		DLL_EXPORT_API void xnAudioSourceDestroy(xnAudioSource* source)
 		{
-			ContextState lock(source->listener->context);
-
 			DeleteSources(1, &source->source);
 			AL_ERROR;
 
@@ -419,8 +373,6 @@ extern "C" {
 
 		DLL_EXPORT_API double xnAudioSourceGetPosition(xnAudioSource* source)
 		{
-			ContextState lock(source->listener->context);
-
 			ALfloat offset;
 			GetSourceF(source->source, AL_SEC_OFFSET, &offset);
 
@@ -440,15 +392,11 @@ extern "C" {
 			alpan[1] = sqrt(1.0f - clampedPan*clampedPan);
 			alpan[2] = 0.0f;
 
-			ContextState lock(source->listener->context);
-
 			SourceFV(source->source, AL_POSITION, alpan);
 		}
 
 		DLL_EXPORT_API void xnAudioSourceSetLooping(xnAudioSource* source, npBool looping)
 		{
-			ContextState lock(source->listener->context);
-
 			SourceI(source->source, AL_LOOPING, looping ? AL_TRUE : AL_FALSE);
 		}
 
@@ -458,8 +406,6 @@ extern "C" {
 			{
 				return;
 			}
-
-			ContextState lock(source->listener->context);
 
 			ALint playing;
 			GetSourceI(source->source, AL_SOURCE_STATE, &playing);
@@ -502,30 +448,22 @@ extern "C" {
 
 		DLL_EXPORT_API void xnAudioSourceSetGain(xnAudioSource* source, float gain)
 		{
-			ContextState lock(source->listener->context);
-
 			SourceF(source->source, AL_GAIN, gain);
 		}
 
 		DLL_EXPORT_API void xnAudioSourceSetPitch(xnAudioSource* source, float pitch)
 		{
-			ContextState lock(source->listener->context);
-
 			SourceF(source->source, AL_PITCH, pitch);
 		}
 
 		DLL_EXPORT_API void xnAudioSourceSetBuffer(xnAudioSource* source, xnAudioBuffer* buffer)
 		{
-			ContextState lock(source->listener->context);
-
 			source->singleBuffer = buffer;
 			SourceI(source->source, AL_BUFFER, buffer->buffer);
 		}
 
 		DLL_EXPORT_API void xnAudioSourceQueueBuffer(xnAudioSource* source, xnAudioBuffer* buffer, short* pcm, int bufferSize, BufferType type)
 		{
-			ContextState lock(source->listener->context);
-
 			buffer->type = type;
 			buffer->size = bufferSize;
 			BufferData(buffer->buffer, source->mono ? AL_FORMAT_MONO16 : AL_FORMAT_STEREO16, pcm, bufferSize, source->sampleRate);
@@ -535,8 +473,6 @@ extern "C" {
 
 		DLL_EXPORT_API xnAudioBuffer* xnAudioSourceGetFreeBuffer(xnAudioSource* source)
 		{
-			ContextState lock(source->listener->context);
-
 			if(source->freeBuffers.size() > 0)
 			{
 				auto buffer = source->freeBuffers.back();
@@ -549,22 +485,16 @@ extern "C" {
 
 		DLL_EXPORT_API void xnAudioSourcePlay(xnAudioSource* source)
 		{
-			ContextState lock(source->listener->context);
-
 			SourcePlay(source->source);
 		}
 
 		DLL_EXPORT_API void xnAudioSourcePause(xnAudioSource* source)
 		{
-			ContextState lock(source->listener->context);
-
 			SourcePause(source->source);
 		}
 
 		DLL_EXPORT_API void xnAudioSourceFlushBuffers(xnAudioSource* source)
 		{
-			ContextState lock(source->listener->context);
-
 			if (source->streamed)
 			{
 				//flush all buffers
@@ -590,8 +520,6 @@ extern "C" {
 
 		DLL_EXPORT_API void xnAudioSourceStop(xnAudioSource* source)
 		{
-			ContextState lock(source->listener->context);
-
 			SourceStop(source->source);
 			xnAudioSourceFlushBuffers(source);
 
@@ -602,8 +530,6 @@ extern "C" {
 
 		DLL_EXPORT_API void xnAudioListenerPush3D(xnAudioListener* listener, float* pos, float* forward, float* up, float* vel, Matrix* worldTransform)
 		{
-			ContextState lock(listener->context);
-
 			if (forward && up)
 			{
 				float ori[6];
@@ -637,8 +563,6 @@ extern "C" {
 
 		DLL_EXPORT_API void xnAudioSourcePush3D(xnAudioSource* source, float* pos, float* forward, float* up, float* vel, Matrix* worldTransform)
 		{
-			ContextState lock(source->listener->context);
-
 			if (forward && up)
 			{
 				float ori[6];
@@ -672,8 +596,6 @@ extern "C" {
 
 		DLL_EXPORT_API npBool xnAudioSourceIsPlaying(xnAudioSource* source)
 		{
-			ContextState lock(source->listener->context);
-
 			ALint value;
 			GetSourceI(source->source, AL_SOURCE_STATE, &value);
 			return value == AL_PLAYING || value == AL_PAUSED;
