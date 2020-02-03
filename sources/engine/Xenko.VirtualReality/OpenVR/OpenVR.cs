@@ -137,14 +137,13 @@ namespace Xenko.VirtualReality
 
             public Vector2 GetAxis(ButtonId buttonId = ButtonId.ButtonSteamVrTouchpad)
             {               
-                var axisId = (uint)buttonId - (uint)EVRButtonId.k_EButton_Axis0;
-                switch (axisId)
+                switch (buttonId)
                 {
-                    case 0: return new Vector2(State.rAxis0.x, State.rAxis0.y);
-                    case 1: return new Vector2(State.rAxis1.x, State.rAxis1.y);
-                    case 2: return new Vector2(State.rAxis2.x, State.rAxis2.y);
-                    case 3: return new Vector2(State.rAxis3.x, State.rAxis3.y);
-                    case 4: return new Vector2(State.rAxis4.x, State.rAxis4.y);
+                    case ButtonId.ButtonAxis0: return new Vector2(State.rAxis0.x, State.rAxis0.y); // also touchpad
+                    case ButtonId.ButtonAxis1: return new Vector2(State.rAxis1.x, State.rAxis1.y); // also trigger
+                    case ButtonId.ButtonAxis2: return new Vector2(State.rAxis2.x, State.rAxis2.y);
+                    case ButtonId.ButtonAxis3: return new Vector2(State.rAxis3.x, State.rAxis3.y); // index joystick
+                    case ButtonId.ButtonAxis4: return new Vector2(State.rAxis4.x, State.rAxis4.y);
                 }
                 return Vector2.Zero;
             }
