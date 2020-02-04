@@ -485,7 +485,7 @@ namespace Xenko.Physics.Bepu
             public CollisionFilterGroupFlags findGroups;
             public float furthestHitSoFar, startLength;
             public BepuHitResult HitCollidable;
-            public bool skipAtZero;
+            public BepuPhysicsComponent skipComponent;
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public bool AllowTest(CollidableReference collidable)
@@ -502,10 +502,11 @@ namespace Xenko.Physics.Bepu
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public void OnRayHit(in RayData ray, ref float maximumT, float t, in System.Numerics.Vector3 normal, CollidableReference collidable, int childIndex)
             {
-                if (skipAtZero && t <= float.Epsilon) return;
-
                 if (t < furthestHitSoFar)
                 {
+                    var component = getFromReference(collidable);
+                    if (component == skipComponent) return;
+
                     //Cache the earliest impact.
                     furthestHitSoFar = t;
                     HitCollidable.HitFraction = t / startLength;
@@ -515,7 +516,7 @@ namespace Xenko.Physics.Bepu
                     HitCollidable.Point.X = ray.Origin.X + ray.Direction.X * t;
                     HitCollidable.Point.Y = ray.Origin.Y + ray.Direction.Y * t;
                     HitCollidable.Point.Z = ray.Origin.Z + ray.Direction.Z * t;
-                    HitCollidable.Collider = getFromReference(collidable);
+                    HitCollidable.Collider = component;
                     HitCollidable.Succeeded = true;
                 }
 
@@ -568,7 +569,7 @@ namespace Xenko.Physics.Bepu
         /// <param name="filterGroup">The collision group of this raycast</param>
         /// <param name="hitGroups">The collision group that this raycast can collide with</param>
         /// <returns>The list with hit results.</returns>
-        public BepuHitResult Raycast(Vector3 from, Vector3 to, CollisionFilterGroupFlags hitGroups = DefaultFlags, bool skipAtZero = false)
+        public BepuHitResult Raycast(Vector3 from, Vector3 to, CollisionFilterGroupFlags hitGroups = DefaultFlags, BepuPhysicsComponent skipComponent = null)
         {
             Vector3 diff = to - from;
             float length = diff.Length();
@@ -576,7 +577,7 @@ namespace Xenko.Physics.Bepu
             diff.X *= inv;
             diff.Y *= inv;
             diff.Z *= inv;
-            return Raycast(from, diff, length, hitGroups, skipAtZero);
+            return Raycast(from, diff, length, hitGroups, skipComponent);
         }
 
         /// <summary>
@@ -587,14 +588,14 @@ namespace Xenko.Physics.Bepu
         /// <param name="filterGroup">The collision group of this raycast</param>
         /// <param name="hitGroups">The collision group that this raycast can collide with</param>
         /// <returns>The list with hit results.</returns>
-        public BepuHitResult Raycast(Vector3 from, Vector3 direction, float length, CollisionFilterGroupFlags hitGroups = DefaultFlags, bool skipAtZero = false)
+        public BepuHitResult Raycast(Vector3 from, Vector3 direction, float length, CollisionFilterGroupFlags hitGroups = DefaultFlags, BepuPhysicsComponent skipComponent = null)
         {
             RayHitClosestHandler rhch = new RayHitClosestHandler()
             {
                 findGroups = hitGroups,
                 startLength = length,
                 furthestHitSoFar = float.MaxValue,
-                skipAtZero = skipAtZero
+                skipComponent = skipComponent
             };
             using(simulationLocker.ReadLock())
             {
@@ -651,7 +652,7 @@ namespace Xenko.Physics.Bepu
             public CollisionFilterGroupFlags hitGroups;
             public BepuHitResult result;
             public float furthestHitSoFar, startLength;
-            public bool skipAtZero;
+            public BepuPhysicsComponent skipComponent;
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public bool AllowTest(CollidableReference collidable)
@@ -668,13 +669,14 @@ namespace Xenko.Physics.Bepu
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public void OnHit(ref float maximumT, float t, in System.Numerics.Vector3 hitLocation, in System.Numerics.Vector3 hitNormal, CollidableReference collidable)
             {
-                if (skipAtZero && t <= float.Epsilon) return;
-
                 if (t < furthestHitSoFar)
                 {
+                    var component = getFromReference(collidable);
+                    if (component == skipComponent) return;
+
                     furthestHitSoFar = t;
                     result.Succeeded = true;
-                    result.Collider = getFromReference(collidable);
+                    result.Collider = component;
                     result.Normal.X = hitNormal.X;
                     result.Normal.Y = hitNormal.Y;
                     result.Normal.Z = hitNormal.Z;
@@ -693,10 +695,11 @@ namespace Xenko.Physics.Bepu
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public void OnHitAtZeroT(ref float maximumT, CollidableReference collidable)
             {
-                if (skipAtZero) return;
+                var component = getFromReference(collidable);
+                if (component == skipComponent) return;
 
                 result.Succeeded = true;
-                result.Collider = getFromReference(collidable);
+                result.Collider = component;
                 maximumT = 0;
                 furthestHitSoFar = 0;
             }
@@ -756,7 +759,7 @@ namespace Xenko.Physics.Bepu
         /// <param name="filterFlags">The collision group that this shape sweep can collide with</param>
         /// <returns></returns>
         /// <exception cref="System.Exception">This kind of shape cannot be used for a ShapeSweep.</exception>
-        public BepuHitResult ShapeSweep<TShape>(TShape shape, Vector3 position, Xenko.Core.Mathematics.Quaternion rotation, Vector3 endpoint, CollisionFilterGroupFlags hitGroups = DefaultFlags, bool skipAtZero = false) where TShape : unmanaged, IConvexShape
+        public BepuHitResult ShapeSweep<TShape>(TShape shape, Vector3 position, Xenko.Core.Mathematics.Quaternion rotation, Vector3 endpoint, CollisionFilterGroupFlags hitGroups = DefaultFlags, BepuPhysicsComponent skipComponent = null) where TShape : unmanaged, IConvexShape
         {
             Vector3 diff = endpoint - position;
             float length = diff.Length();
@@ -764,7 +767,7 @@ namespace Xenko.Physics.Bepu
             diff.X *= inv;
             diff.Y *= inv;
             diff.Z *= inv;
-            return ShapeSweep(shape, position, rotation, diff, length, hitGroups, skipAtZero);
+            return ShapeSweep(shape, position, rotation, diff, length, hitGroups, skipComponent);
         }
 
         /// <summary>
@@ -777,14 +780,14 @@ namespace Xenko.Physics.Bepu
         /// <param name="filterFlags">The collision group that this shape sweep can collide with</param>
         /// <returns></returns>
         /// <exception cref="System.Exception">This kind of shape cannot be used for a ShapeSweep.</exception>
-        public BepuHitResult ShapeSweep<TShape>(TShape shape, Vector3 position, Xenko.Core.Mathematics.Quaternion rotation, Vector3 direction, float length, CollisionFilterGroupFlags hitGroups = DefaultFlags, bool skipAtZero = false) where TShape : unmanaged, IConvexShape
+        public BepuHitResult ShapeSweep<TShape>(TShape shape, Vector3 position, Xenko.Core.Mathematics.Quaternion rotation, Vector3 direction, float length, CollisionFilterGroupFlags hitGroups = DefaultFlags, BepuPhysicsComponent skipComponent = null) where TShape : unmanaged, IConvexShape
         {
             SweepTestFirst sshh = new SweepTestFirst()
             {
                 hitGroups = hitGroups,
                 startLength = length,
                 furthestHitSoFar = float.MaxValue,
-                skipAtZero = skipAtZero
+                skipComponent = skipComponent
             };
             RigidPose rp = new RigidPose();
             rp.Position.X = position.X;
