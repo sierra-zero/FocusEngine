@@ -1,9 +1,8 @@
-<Project>
+﻿<Project>
   <PropertyGroup>
     <XenkoAssemblySign>true</XenkoAssemblySign>
     <XenkoRuntime>true</XenkoRuntime>
     <XenkoGraphicsApiDependent>true</XenkoGraphicsApiDependent>
-    <XenkoNativeOutputName>libxenkovr</XenkoNativeOutputName>
   </PropertyGroup>
   <Import Project="..\..\targets\Xenko.PreSettings.targets" />
   <Import Project="Sdk.props" Sdk="MSBuild.Sdk.Extras" Version="2.0.54" />
@@ -16,21 +15,6 @@
     <XenkoBuildTags>*</XenkoBuildTags>
     <XenkoCodeAnalysis>true</XenkoCodeAnalysis>
   </PropertyGroup>
-  <Choose>
-    <When Condition=" '$(XenkoPlatform)' == 'Android'">
-      <ItemGroup>
-        <Reference Include="Mono.Android" />
-        <Reference Include="GoogleVRJava">
-          <HintPath>..\..\..\deps\GoogleVR\lib\Android\GoogleVRJava.dll</HintPath>
-        </Reference>
-      </ItemGroup>
-    </When>
-    <When Condition=" '$(XenkoPlatform)' == 'iOS'">
-      <ItemGroup>
-        <Reference Include="Xamarin.iOS" />
-      </ItemGroup>
-    </When>
-  </Choose>
   <Choose>
     <When Condition=" '$(XenkoGraphicsApi)' == 'Direct3D11' Or '$(XenkoGraphicsApi)' == 'Vulkan' ">
       <ItemGroup>
@@ -77,21 +61,6 @@
       <Name>Xenko.Input</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup>
-    <XenkoContent Condition="'$(XenkoPlatform)' == 'Linux'" Include="Xenko.VirtualReality.dll.config" />
-    <None Include="Xenko.Native.Libs.targets">
-      <SubType>Designer</SubType>
-    </None>
-  </ItemGroup>
   <Import Project="$(XenkoPostSettingsTargets)" />
   <Import Project="Sdk.targets" Sdk="MSBuild.Sdk.Extras" Version="2.0.54" />
-
-  <PropertyGroup>
-    <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);IncludeExtraAssemblies</TargetsForTfmSpecificBuildOutput>
-  </PropertyGroup>
-  <Target Name="IncludeExtraAssemblies">
-    <ItemGroup>
-      <BuildOutputInPackage Include="$(OutputPath)GoogleVRJava.dll" Condition=" '$(XenkoPlatform)' == 'Android' " />
-    </ItemGroup>
-  </Target>
 </Project>

@@ -134,9 +134,9 @@ namespace Xenko.VirtualReality
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public override Vector2 GetAxis(OpenVR.Controller.ButtonId button)
+        public override Vector2 GetAxis(int index)
         {
-            return controller?.GetAxis(button) ?? Vector2.Zero;
+            return controller?.GetAxis((OpenVR.Controller.ButtonId)(index + (int)OpenVR.Controller.ButtonId.ButtonAxis0)) ?? Vector2.Zero;
         }
 
         public override Vector3 Position => currentPos;

@@ -82,15 +82,12 @@ namespace Xenko.VirtualReality
         /// <returns></returns>
         public abstract bool IsTouched(TouchControllerButton button);
 
-#if XENKO_GRAPHICS_API_VULKAN || XENKO_GRAPHICS_API_DIRECT3D11
-
         /// <summary>
         /// Get a general axis result of the controller
         /// </summary>
         /// <param name="button"></param>
         /// <returns></returns>
-        public abstract Vector2 GetAxis(OpenVR.Controller.ButtonId button);
-#endif
+        public abstract Vector2 GetAxis(int index);
 
         /// <summary>
         /// Returns true if in this frame the button was released
