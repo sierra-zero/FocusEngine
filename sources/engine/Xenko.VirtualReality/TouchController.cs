@@ -38,6 +38,8 @@ namespace Xenko.VirtualReality
 
         public abstract Vector2 ThumbstickAxis { get; }
 
+        public abstract Vector2 CombinedThumbAxis { get; }
+
         /// <summary>
         /// Vibrate the controller
         /// </summary>
@@ -79,6 +81,16 @@ namespace Xenko.VirtualReality
         /// <param name="button"></param>
         /// <returns></returns>
         public abstract bool IsTouched(TouchControllerButton button);
+
+#if XENKO_GRAPHICS_API_VULKAN || XENKO_GRAPHICS_API_DIRECT3D11
+
+        /// <summary>
+        /// Get a general axis result of the controller
+        /// </summary>
+        /// <param name="button"></param>
+        /// <returns></returns>
+        public abstract Vector2 GetAxis(OpenVR.Controller.ButtonId button);
+#endif
 
         /// <summary>
         /// Returns true if in this frame the button was released

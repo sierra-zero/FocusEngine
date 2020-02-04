@@ -3,6 +3,7 @@
 #if XENKO_GRAPHICS_API_VULKAN || XENKO_GRAPHICS_API_DIRECT3D11
 
 using System;
+using System.Runtime.CompilerServices;
 using Xenko.Core.Mathematics;
 using Xenko.Games;
 
@@ -62,7 +63,7 @@ namespace Xenko.VirtualReality
 
         public override float Trigger => controller?.GetAxis(OpenVR.Controller.ButtonId.ButtonSteamVrTrigger).X ?? 0.0f;
 
-        public override float Grip => controller?.GetPress(OpenVR.Controller.ButtonId.ButtonGrip) ?? false ? 1.0f : 0.0f;
+        public override float Grip => controller?.GetAxis(OpenVR.Controller.ButtonId.ButtonGrip).X ?? 0.0f;
 
         public override bool IndexPointing => !controller?.GetTouch(OpenVR.Controller.ButtonId.ButtonSteamVrTrigger) ?? false; //not so accurate
 
@@ -74,7 +75,9 @@ namespace Xenko.VirtualReality
 
         public override Vector2 ThumbAxis => controller?.GetAxis() ?? Vector2.Zero;
 
-        public override Vector2 ThumbstickAxis => controller?.GetAxis() ?? Vector2.Zero;
+        public override Vector2 ThumbstickAxis => controller?.GetAxis(OpenVR.Controller.ButtonId.ButtonAxis3) ?? Vector2.Zero;
+
+        public override Vector2 CombinedThumbAxis => ThumbAxis + ThumbstickAxis;
 
         private OpenVR.Controller.ButtonId ToOpenVrButton(TouchControllerButton button)
         {
@@ -128,6 +131,12 @@ namespace Xenko.VirtualReality
             if (amount <= 0f) return false;
             Valve.VR.OpenVR.System.TriggerHapticPulse(controller.ControllerIndex, 0, (ushort)(1000f * amount));
             return true;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public override Vector2 GetAxis(OpenVR.Controller.ButtonId button)
+        {
+            return controller?.GetAxis(button) ?? Vector2.Zero;
         }
 
         public override Vector3 Position => currentPos;
