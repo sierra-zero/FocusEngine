@@ -119,11 +119,11 @@ namespace ##Namespace##
                     }
 
                     // update the refreshing speed
-                    if (Input.IsKeyPressed(Keys.Subtract) || Input.IsKeyPressed(Keys.OemMinus))
+                    if (Input.IsKeyPressed(Keys.Subtract) || Input.IsKeyPressed(Keys.Minus))
                     {
                         RefreshTime = Math.Min(RefreshTime * 2, 10000);
                     }
-                    else if (Input.IsKeyPressed(Keys.Add) || Input.IsKeyPressed(Keys.OemPlus))
+                    else if (Input.IsKeyPressed(Keys.Add) || Input.IsKeyPressed(Keys.Plus))
                     {
                         RefreshTime = Math.Max(RefreshTime / 2, 100);
                     }
