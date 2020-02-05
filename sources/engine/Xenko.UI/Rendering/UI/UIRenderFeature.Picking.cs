@@ -236,11 +236,6 @@ namespace Xenko.Rendering.UI
         }
 
         /// <summary>
-        /// If a VR controller is pointing at a UIElement, this will be set with it. null otherwise.
-        /// </summary>
-        public static UIElement UIElementVivePointed { get; private set; } 
-
-        /// <summary>
         /// If a pointer is pointed at an UIElement, it will be set here
         /// </summary>
         public UIElement UIElementUnderMouseCursor { get; private set; }
@@ -261,18 +256,20 @@ namespace Xenko.Rendering.UI
             {
                 for (int i=0; i<2; i++)
                 {
-                    TransformComponent useHand = i == 0 ? (TransformComponent.OverrideRightHandUIPointer ?? TransformComponent.LastRightHandTracked) :
-                                                          (TransformComponent.OverrideLeftHandUIPointer ?? TransformComponent.LastLeftHandTracked);
+                    TransformComponent useHand = (VirtualReality.VRDeviceSystem.GetSystem.GetControllerSwapped ? (i ^ 1): i) == 0 ?
+                                                    (TransformComponent.OverrideRightHandUIPointer ?? TransformComponent.LastRightHandTracked) :
+                                                    (TransformComponent.OverrideLeftHandUIPointer ?? TransformComponent.LastLeftHandTracked);
 
                     if (useHand != null)
                     {
                         Ray uiRay = new Ray(useHand.WorldPosition(), useHand.Forward(true));
 
-                        UIElementVivePointed = UIElementUnderMouseCursor = GetElementAtWorldPosition(rootElement, ref uiRay, ref worldViewProj, ref intersectionPoint);
+                        UIElementUnderMouseCursor = GetElementAtWorldPosition(rootElement, ref uiRay, ref worldViewProj, ref intersectionPoint);
 
                         if (UIElementUnderMouseCursor != null)
                         {
                             // wait, are we selecting this element?
+                            // GetController already checks GetControllerSwapped
                             VirtualReality.TouchController tc = VirtualReality.VRDeviceSystem.GetSystem.GetController(i == 0 ? VirtualReality.TouchControllerHand.Right : VirtualReality.TouchControllerHand.Left);
 
                             if (tc != null)
@@ -284,6 +281,10 @@ namespace Xenko.Rendering.UI
                                 else if (tc.IsPressReleased(VirtualReality.VRDeviceSystem.UIActivationButton))
                                 {
                                     MakeTouchEvent(UIElementUnderMouseCursor, lastMouseOverElement, PointerEventType.Released, Vector2.Zero, Vector2.Zero, intersectionPoint, intersectionPoint - state.LastIntersectionPoint, time);
+                                }
+                                else if (tc.IsPressed(VirtualReality.VRDeviceSystem.UIActivationButton))
+                                {
+                                    MakeTouchEvent(UIElementUnderMouseCursor, lastMouseOverElement, PointerEventType.Moved, Vector2.Zero, Vector2.Zero, intersectionPoint, intersectionPoint - state.LastIntersectionPoint, time);
                                 }
                             }
 
