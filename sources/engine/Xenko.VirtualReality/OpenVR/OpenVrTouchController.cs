@@ -63,7 +63,7 @@ namespace Xenko.VirtualReality
 
         public override float Trigger => controller?.GetAxis(OpenVR.Controller.ButtonId.ButtonSteamVrTrigger).X ?? 0.0f;
 
-        public override float Grip => controller?.GetAxis(OpenVR.Controller.ButtonId.ButtonGrip).X ?? 0.0f;
+        public override float Grip => controller?.GetPress(OpenVR.Controller.ButtonId.ButtonGrip) ?? false ? 1f : 0f;
 
         public override bool IndexPointing => !controller?.GetTouch(OpenVR.Controller.ButtonId.ButtonSteamVrTrigger) ?? false; //not so accurate
 
