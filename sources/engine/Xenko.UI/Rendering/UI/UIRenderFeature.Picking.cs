@@ -276,17 +276,19 @@ namespace Xenko.Rendering.UI
                             {
                                 if (tc.IsPressedDown(VirtualReality.VRDeviceSystem.UIActivationButton))
                                 {
-                                    MakeTouchEvent(UIElementUnderMouseCursor, lastMouseOverElement, PointerEventType.Pressed, Vector2.Zero, Vector2.Zero, intersectionPoint, intersectionPoint - state.LastIntersectionPoint, time);
+                                    MakeTouchEvent(UIElementUnderMouseCursor, lastMouseOverElement, PointerEventType.Pressed, Vector2.Zero, Vector2.Zero, intersectionPoint, Vector3.Zero, time);
                                 }
                                 else if (tc.IsPressReleased(VirtualReality.VRDeviceSystem.UIActivationButton))
                                 {
-                                    MakeTouchEvent(UIElementUnderMouseCursor, lastMouseOverElement, PointerEventType.Released, Vector2.Zero, Vector2.Zero, intersectionPoint, intersectionPoint - state.LastIntersectionPoint, time);
+                                    MakeTouchEvent(UIElementUnderMouseCursor, lastMouseOverElement, PointerEventType.Released, Vector2.Zero, Vector2.Zero, intersectionPoint, Vector3.Zero, time);
                                 }
                                 else if (tc.IsPressed(VirtualReality.VRDeviceSystem.UIActivationButton))
                                 {
-                                    MakeTouchEvent(UIElementUnderMouseCursor, lastMouseOverElement, PointerEventType.Moved, Vector2.Zero, Vector2.Zero, intersectionPoint, intersectionPoint - state.LastIntersectionPoint, time);
+                                    MakeTouchEvent(UIElementUnderMouseCursor, lastMouseOverElement, PointerEventType.Moved, Vector2.Zero, Vector2.Zero, intersectionPoint, (state.LastIntersectionPoint - intersectionPoint) / state.WorldMatrix3D.ScaleVector, time);
                                 }
                             }
+
+                            state.LastIntersectionPoint = intersectionPoint;
 
                             break;
                         }
@@ -458,16 +460,16 @@ namespace Xenko.Rendering.UI
                 if (element.ClipToBounds && !intersect)
                     return;
 
-                // Calculate the depth of the element with the depth bias so that hit test corresponds to visuals.
-                Vector4 projectedIntersection;
-                var intersection4 = new Vector4(intersection, 1);
-                Vector4.Transform(ref intersection4, ref worldViewProj, out projectedIntersection);
-                var depth = projectedIntersection.Z/projectedIntersection.W;
-
-                // update the closest element hit
                 if (canBeHit && intersect)
                 {
-                    if (depth < smallestDepth || (depth == smallestDepth && element.DepthBias > highestDepthBias))
+                    // Calculate the depth of the element with the depth bias so that hit test corresponds to visuals.
+                    Vector4 projectedIntersection;
+                    var intersection4 = new Vector4(intersection, 1);
+                    Vector4.Transform(ref intersection4, ref worldViewProj, out projectedIntersection);
+                    var depth = projectedIntersection.Z / projectedIntersection.W;
+
+                    // update the closest element hit
+                    if (depth < smallestDepth || (element.DepthBias > highestDepthBias && Math.Abs(depth - smallestDepth) < 0.00001f))
                     {
                         smallestDepth = depth;
                         highestDepthBias = element.DepthBias;

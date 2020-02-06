@@ -1153,7 +1153,7 @@ namespace Xenko.UI
         /// <summary>
         /// Variation on Ray vs Rectangle
         /// </summary>
-        internal bool RayIntersectsRectangle(ref Ray ray, ref Vector3 topLeftCorner, ref Vector3 topRightCorner, ref Vector3 bottomLeftCorner)
+        internal bool RayIntersectsRectangle(ref Ray ray, ref Vector3 topLeftCorner, ref Vector3 topRightCorner, ref Vector3 bottomLeftCorner, out Vector3 intersectionPoint)
         {
             // from https://stackoverflow.com/questions/21114796/3d-ray-quad-intersection-test-in-java
 
@@ -1167,15 +1167,19 @@ namespace Xenko.UI
 
             Vector3.Dot(ref n, ref dR, out float ndotdR);
 
-            if (ndotdR < 1e-6f) return false;
+            if (ndotdR < 1e-6f)
+            {
+                intersectionPoint = Vector3.Zero;
+                return false;
+            }
 
             Vector3 posDiff = ray.Position - topLeftCorner;
 
             float t = Vector3.Dot(-n, posDiff) / ndotdR;
-            Vector3 M = ray.Position + dR * t;
+            intersectionPoint = ray.Position + dR * t;
 
             // 3.
-            Vector3 dMS1 = M - topLeftCorner;
+            Vector3 dMS1 = intersectionPoint - topLeftCorner;
             Vector3.Dot(ref dMS1, ref dS21, out float u);
             Vector3.Dot(ref dMS1, ref dS31, out float v);
 
@@ -1199,7 +1203,6 @@ namespace Xenko.UI
                 Matrix worldMatrix = WorldMatrixPickingInternal;
                 worldMatrix.M42 = -worldMatrix.M42; // for some reason Y translation needs to be flipped
                 worldMatrix *= WorldMatrix3D.Value;
-                intersectionPoint = worldMatrix.TranslationVector;
                 Vector3 topLeft = Vector3.Transform(new Vector3(-RenderSizeInternal.X * 0.5f,
                                                                  RenderSizeInternal.Y * 0.5f,
                                                                  0f), worldMatrix).XYZ();
@@ -1209,7 +1212,7 @@ namespace Xenko.UI
                 Vector3 bottomLeft = Vector3.Transform(new Vector3(-RenderSizeInternal.X * 0.5f,
                                                                    -RenderSizeInternal.Y * 0.5f,
                                                                  0f), worldMatrix).XYZ();
-                intersects = RayIntersectsRectangle(ref ray, ref topLeft, ref topRight, ref bottomLeft);
+                intersects = RayIntersectsRectangle(ref ray, ref topLeft, ref topRight, ref bottomLeft, out intersectionPoint);
             }
             else
             {

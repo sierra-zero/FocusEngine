@@ -322,6 +322,7 @@ namespace Xenko.UI
         protected void AddToList(UIElement uie)
         {
             uie.Margin = new Thickness(0f, uie.Height * myGrid.Children.Count, 0f, 0f);
+            uie.SetPanelZIndex(myGrid.GetPanelZIndex() + 1);
             myGrid.Children.Add(uie);
         }
 
