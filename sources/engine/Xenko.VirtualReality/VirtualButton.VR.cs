@@ -124,6 +124,8 @@ namespace Xenko.VirtualReality
         {
         }
 
+        public bool IsRightHand => ((Index & (1 << 16)) != 0) == !VRDeviceSystem.GetSystem.GetControllerSwapped;
+
         public override float GetValue()
         {
             TouchController tc = VRDeviceSystem.GetSystem?.GetController((Index & (1 << 16)) != 0 ? TouchControllerHand.Right : TouchControllerHand.Left);
