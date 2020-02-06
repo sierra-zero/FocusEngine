@@ -494,9 +494,10 @@ namespace Xenko.Rendering
                         if (staticCompilerParameters == null)
                             staticCompilerParameters = new CompilerParameters();
 
-                        foreach (var effectValue in renderEffect.EffectValidator.EffectValues)
+                        for (int k=0; k<renderEffect.EffectValidator.EffectValues.Count; k++)
                         {
-                            staticCompilerParameters.SetObject(effectValue.Key, effectValue.Value);
+                            var effectValue = renderEffect.EffectValidator.EffectValues[k];
+                            if (effectValue.Key != null) staticCompilerParameters.SetObject(effectValue.Key, effectValue.Value);
                         }
 
                         TaskOrResult<Effect> asyncEffect;

@@ -3,6 +3,7 @@
 #pragma warning disable SA1402 // File may only contain a single type
 using System;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using Xenko.Core;
 using Xenko.Core.Serialization;
 using Xenko.Core.Storage;
@@ -64,14 +65,14 @@ namespace Xenko.Rendering
         /// <returns>
         ///   <c>true</c> if the specified <see cref="object"/> is equal to this instance; otherwise, <c>false</c>.
         /// </returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override bool Equals(object obj)
         {
             //return ReferenceEquals(this, obj);
             if (ReferenceEquals(null, obj)) return false;
             if (ReferenceEquals(this, obj)) return true;
-            var against = obj as ParameterKey;
-            if (against == null) return false;
-            return (Equals(against.Name, Name));
+            if (obj is ParameterKey pk) return Equals(pk.Name, Name);
+            return false;
         }
 
         /// <summary>
@@ -93,6 +94,7 @@ namespace Xenko.Rendering
         /// <returns>
         /// The result of the operator.
         /// </returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator ==(ParameterKey left, ParameterKey right)
         {
             return Equals(left, right);
@@ -106,6 +108,7 @@ namespace Xenko.Rendering
         /// <returns>
         /// The result of the operator.
         /// </returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator !=(ParameterKey left, ParameterKey right)
         {
             return !Equals(left, right);
