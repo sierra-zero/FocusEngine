@@ -1,5 +1,6 @@
 // Copyright (c) Xenko contributors (https://xenko.com) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
+using Xenko.Core.Mathematics;
 using Xenko.Input;
 
 namespace Xenko.VirtualReality
@@ -9,115 +10,61 @@ namespace Xenko.VirtualReality
     /// </summary>
     public class VRButtons : VirtualButton
     {
-        /// <summary>
-        /// Right VR trigger.
-        /// </summary>
         public static readonly VirtualButton RightTrigger = new VRButtons("RightTrigger", (int)TouchControllerButton.Trigger | (1 << 16));
 
-        /// <summary>
-        /// Right VR X.
-        /// </summary>
-        public static readonly VirtualButton RightX = new VRButtons("RightX", (int)TouchControllerButton.X | (1 << 16));
+        public static readonly VirtualButton RightXA = new VRButtons("RightXA", (int)TouchControllerButton.X | (1 << 16));
 
-        /// <summary>
-        /// Right VR Y.
-        /// </summary>
-        public static readonly VirtualButton RightY = new VRButtons("RightY", (int)TouchControllerButton.Y | (1 << 16));
+        public static readonly VirtualButton RightBYMenu = new VRButtons("RightBYMenu", (int)TouchControllerButton.Menu | (1 << 16));
 
-        /// <summary>
-        /// Right VR A.
-        /// </summary>
-        public static readonly VirtualButton RightA = new VRButtons("RightA", (int)TouchControllerButton.A | (1 << 16));
-
-        /// <summary>
-        /// Right VR B.
-        /// </summary>
-        public static readonly VirtualButton RightB = new VRButtons("RightB", (int)TouchControllerButton.B | (1 << 16));
-
-        /// <summary>
-        /// Right VR Grip.
-        /// </summary>
         public static readonly VirtualButton RightGrip = new VRButtons("RightGrip", (int)TouchControllerButton.Grip | (1 << 16));
 
-        /// <summary>
-        /// Right VR Thumbstick Y axis
-        /// </summary>
-        public static readonly VirtualButton RightThumbstickY = new VRButtons("RightThumbstickY", (int)TouchControllerButton.Thumbstick | (1 << 16) | (1 << 17), true);
+        public static readonly VirtualButton RightThumbstickUp = new VRButtons("RightThumbstickUp", (int)TouchControllerButton.Thumbstick | (1 << 16) | (0 << 17), true);
 
-        /// <summary>
-        /// Right VR Thumbstick X axis
-        /// </summary>
-        public static readonly VirtualButton RightThumbstickX = new VRButtons("RightThumbstickX", (int)TouchControllerButton.Thumbstick | (1 << 16), true);
+        public static readonly VirtualButton RightThumbstickDown = new VRButtons("RightThumbstickDown", (int)TouchControllerButton.Thumbstick | (1 << 16) | (1 << 17), true);
 
-        /// <summary>
-        /// Right VR Touchpad Y axis.
-        /// </summary>
-        public static readonly VirtualButton RightTouchpadY = new VRButtons("RightTouchpadY", (int)TouchControllerButton.Touchpad | (1 << 16) | (1 << 17), true);
+        public static readonly VirtualButton RightThumbstickLeft = new VRButtons("RightThumbstickLeft", (int)TouchControllerButton.Thumbstick | (1 << 16) | (2 << 17), true);
 
-        /// <summary>
-        /// Right VR Touchpad X axis.
-        /// </summary>
-        public static readonly VirtualButton RightTouchpadX = new VRButtons("RightTouchpadX", (int)TouchControllerButton.Touchpad | (1 << 16), true);
+        public static readonly VirtualButton RightThumbstickRight = new VRButtons("RightThumbstickRight", (int)TouchControllerButton.Thumbstick | (1 << 16) | (3 << 17), true);
 
-        /// <summary>
-        /// Right VR Menu.
-        /// </summary>
-        public static readonly VirtualButton RightMenu = new VRButtons("RightMenu", (int)TouchControllerButton.Menu | (1 << 16));
+        public static readonly VirtualButton RightThumbstickCenter = new VRButtons("RightThumbstickCenter", (int)TouchControllerButton.Thumbstick | (1 << 16) | (4 << 17), true);
 
-        /// <summary>
-        /// Left VR trigger.
-        /// </summary>
+        public static readonly VirtualButton RightTouchpadUp = new VRButtons("RightTouchpadUp", (int)TouchControllerButton.Touchpad | (1 << 16) | (0 << 17), true);
+
+        public static readonly VirtualButton RightTouchpadDown = new VRButtons("RightTouchpadDown", (int)TouchControllerButton.Touchpad | (1 << 16) | (1 << 17), true);
+
+        public static readonly VirtualButton RightTouchpadLeft = new VRButtons("RightTouchpadLeft", (int)TouchControllerButton.Touchpad | (1 << 16) | (2 << 17), true);
+
+        public static readonly VirtualButton RightTouchpadRight = new VRButtons("RightTouchpadRight", (int)TouchControllerButton.Touchpad | (1 << 16) | (3 << 17), true);
+
+        public static readonly VirtualButton RightTouchpadCenter = new VRButtons("RightTouchpadCenter", (int)TouchControllerButton.Touchpad | (1 << 16) | (4 << 17), true);
+
         public static readonly VirtualButton LeftTrigger = new VRButtons("LeftTrigger", (int)TouchControllerButton.Trigger);
 
-        /// <summary>
-        /// Left VR X.
-        /// </summary>
-        public static readonly VirtualButton LeftX = new VRButtons("LeftX", (int)TouchControllerButton.X);
+        public static readonly VirtualButton LeftXA = new VRButtons("LeftXA", (int)TouchControllerButton.X);
 
-        /// <summary>
-        /// Left VR Y.
-        /// </summary>
-        public static readonly VirtualButton LeftY = new VRButtons("LeftY", (int)TouchControllerButton.Y);
+        public static readonly VirtualButton LeftBYMenu = new VRButtons("LeftBYMenu", (int)TouchControllerButton.Menu);
 
-        /// <summary>
-        /// Left VR A.
-        /// </summary>
-        public static readonly VirtualButton LeftA = new VRButtons("LeftA", (int)TouchControllerButton.A);
-
-        /// <summary>
-        /// Left VR B.
-        /// </summary>
-        public static readonly VirtualButton LeftB = new VRButtons("LeftB", (int)TouchControllerButton.B);
-
-        /// <summary>
-        /// Left VR Grip.
-        /// </summary>
         public static readonly VirtualButton LeftGrip = new VRButtons("LeftGrip", (int)TouchControllerButton.Grip);
 
-        /// <summary>
-        /// Left VR Thumbstick Y axis
-        /// </summary>
-        public static readonly VirtualButton LeftThumbstickY = new VRButtons("LeftThumbstickY", (int)TouchControllerButton.Thumbstick | (1 << 17), true);
+        public static readonly VirtualButton LeftThumbstickUp = new VRButtons("LeftThumbstickUp", (int)TouchControllerButton.Thumbstick | (0 << 17), true);
 
-        /// <summary>
-        /// Left VR Thumbstick X axis
-        /// </summary>
-        public static readonly VirtualButton LeftThumbstickX = new VRButtons("LeftThumbstickX", (int)TouchControllerButton.Thumbstick, true);
+        public static readonly VirtualButton LeftThumbstickDown = new VRButtons("LeftThumbstickDown", (int)TouchControllerButton.Thumbstick | (1 << 17), true);
 
-        /// <summary>
-        /// Left VR Touchpad Y axis.
-        /// </summary>
-        public static readonly VirtualButton LeftTouchpadY = new VRButtons("LeftTouchpadY", (int)TouchControllerButton.Touchpad | (1 << 17), true);
+        public static readonly VirtualButton LeftThumbstickLeft = new VRButtons("LeftThumbstickLeft", (int)TouchControllerButton.Thumbstick | (2 << 17), true);
 
-        /// <summary>
-        /// Left VR Touchpad X axis.
-        /// </summary>
-        public static readonly VirtualButton LeftTouchpadX = new VRButtons("LeftTouchpadX", (int)TouchControllerButton.Touchpad, true);
+        public static readonly VirtualButton LeftThumbstickRight = new VRButtons("LeftThumbstickRight", (int)TouchControllerButton.Thumbstick | (3 << 17), true);
 
-        /// <summary>
-        /// Left VR Menu.
-        /// </summary>
-        public static readonly VirtualButton LeftMenu = new VRButtons("LeftMenu", (int)TouchControllerButton.Menu);
+        public static readonly VirtualButton LeftThumbstickCenter = new VRButtons("LeftThumbstickCenter", (int)TouchControllerButton.Thumbstick | (4 << 17), true);
+
+        public static readonly VirtualButton LeftTouchpadUp = new VRButtons("LeftTouchpadUp", (int)TouchControllerButton.Touchpad | (0 << 17), true);
+
+        public static readonly VirtualButton LeftTouchpadDown = new VRButtons("LeftTouchpadDown", (int)TouchControllerButton.Touchpad | (1 << 17), true);
+
+        public static readonly VirtualButton LeftTouchpadLeft = new VRButtons("LeftTouchpadLeft", (int)TouchControllerButton.Touchpad | (2 << 17), true);
+
+        public static readonly VirtualButton LeftTouchpadRight = new VRButtons("LeftTouchpadRight", (int)TouchControllerButton.Touchpad | (3 << 17), true);
+
+        public static readonly VirtualButton LeftTouchpadCenter = new VRButtons("LeftTouchpadCenter", (int)TouchControllerButton.Touchpad | (4 << 17), true);
 
         protected VRButtons(string name, int id, bool isPositiveAndNegative = false)
             : base(name, VirtualButtonType.VR, id, isPositiveAndNegative)
@@ -150,21 +97,102 @@ namespace Xenko.VirtualReality
         {
             TouchController tc = VRDeviceSystem.GetSystem?.GetController((Index & (1 << 16)) != 0 ? TouchControllerHand.Right : TouchControllerHand.Left);
             if (tc == null) return false;
-            return tc.IsPressed((TouchControllerButton)(Index & 0xFF));
+            TouchControllerButton strippedButton = (TouchControllerButton)(Index & 0xFF);
+            if (tc.IsPressed(strippedButton) == false) return false;
+            Vector2 axis;
+            switch (strippedButton)
+            {
+                default:
+                    return true;
+                case TouchControllerButton.Thumbstick:
+                    axis = tc.ThumbstickAxis;
+                    break;
+                case TouchControllerButton.Touchpad:
+                    axis = tc.ThumbAxis;
+                    break;
+            }
+            switch (Index >> 17)
+            {
+                case 0: // up
+                    return axis.Y > 0.5f;
+                case 1: // down
+                    return axis.Y < -0.5f;
+                case 2: // left
+                    return axis.X < -0.5f;
+                case 3: // right
+                    return axis.X > 0.5f;
+                case 4: // center
+                    return axis.X > -0.5f && axis.X < 0.5f && axis.Y < 0.5f && axis.Y > -0.5f;
+            }
+            return false;
         }
 
         public override bool IsPressed()
         {
             TouchController tc = VRDeviceSystem.GetSystem?.GetController((Index & (1 << 16)) != 0 ? TouchControllerHand.Right : TouchControllerHand.Left);
             if (tc == null) return false;
-            return tc.IsPressedDown((TouchControllerButton)(Index & 0xFF));
+            TouchControllerButton strippedButton = (TouchControllerButton)(Index & 0xFF);
+            if (tc.IsPressedDown(strippedButton) == false) return false;
+            Vector2 axis;
+            switch (strippedButton)
+            {
+                default:
+                    return true;
+                case TouchControllerButton.Thumbstick:
+                    axis = tc.ThumbstickAxis;
+                    break;
+                case TouchControllerButton.Touchpad:
+                    axis = tc.ThumbAxis;
+                    break;
+            }
+            switch (Index >> 17)
+            {
+                case 0: // up
+                    return axis.Y > 0.5f;
+                case 1: // down
+                    return axis.Y < -0.5f;
+                case 2: // left
+                    return axis.X < -0.5f;
+                case 3: // right
+                    return axis.X > 0.5f;
+                case 4: // center
+                    return axis.X > -0.5f && axis.X < 0.5f && axis.Y < 0.5f && axis.Y > -0.5f;
+            }
+            return false;
         }
 
         public override bool IsReleased()
         {
             TouchController tc = VRDeviceSystem.GetSystem?.GetController((Index & (1 << 16)) != 0 ? TouchControllerHand.Right : TouchControllerHand.Left);
             if (tc == null) return false;
-            return tc.IsPressReleased((TouchControllerButton)(Index & 0xFF));
+            TouchControllerButton strippedButton = (TouchControllerButton)(Index & 0xFF);
+            if (tc.IsPressReleased(strippedButton) == false) return false;
+            Vector2 axis;
+            switch (strippedButton)
+            {
+                default:
+                    return true;
+                case TouchControllerButton.Thumbstick:
+                    axis = tc.ThumbstickAxis;
+                    break;
+                case TouchControllerButton.Touchpad:
+                    axis = tc.ThumbAxis;
+                    break;
+            }
+            switch (Index >> 17)
+            {
+                case 0: // up
+                    return axis.Y > 0.5f;
+                case 1: // down
+                    return axis.Y < -0.5f;
+                case 2: // left
+                    return axis.X < -0.5f;
+                case 3: // right
+                    return axis.X > 0.5f;
+                case 4: // center
+                    return axis.X > -0.5f && axis.X < 0.5f && axis.Y < 0.5f && axis.Y > -0.5f;
+            }
+            return false;
         }
     }
 }
