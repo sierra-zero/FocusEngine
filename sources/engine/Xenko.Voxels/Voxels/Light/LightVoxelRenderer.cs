@@ -161,12 +161,12 @@ namespace Xenko.Rendering.Voxels.VoxelGI
                     {
                         traceAttribute.GetSamplingShader()
                     };
-                    renderEffect.EffectValidator.ValidateParameter(attributeSamplersKey, collection);
+                    renderEffect.EffectValidator.ValidateParameterThreaded(attributeSamplersKey, collection);
 
                     if (((LightVoxel)Light.Type).DiffuseMarcher != null)
-                        renderEffect.EffectValidator.ValidateParameter(diffuseMarcherKey, ((LightVoxel)Light.Type).DiffuseMarcher.GetMarchingShader(0));
+                        renderEffect.EffectValidator.ValidateParameterThreaded(diffuseMarcherKey, ((LightVoxel)Light.Type).DiffuseMarcher.GetMarchingShader(0));
                     if (((LightVoxel)Light.Type).SpecularMarcher != null)
-                        renderEffect.EffectValidator.ValidateParameter(specularMarcherKey, ((LightVoxel)Light.Type).SpecularMarcher.GetMarchingShader(0));
+                        renderEffect.EffectValidator.ValidateParameterThreaded(specularMarcherKey, ((LightVoxel)Light.Type).SpecularMarcher.GetMarchingShader(0));
                 }
             }
 

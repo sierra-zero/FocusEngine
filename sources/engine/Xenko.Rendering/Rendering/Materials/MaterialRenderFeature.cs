@@ -236,29 +236,29 @@ namespace Xenko.Rendering.Materials
 
                     // VS
                     if (materialInfo.VertexStageSurfaceShaders != null)
-                        renderEffect.EffectValidator.ValidateParameter(MaterialKeys.VertexStageSurfaceShaders, materialInfo.VertexStageSurfaceShaders);
+                        renderEffect.EffectValidator.ValidateParameterThreaded(MaterialKeys.VertexStageSurfaceShaders, materialInfo.VertexStageSurfaceShaders);
                     if (materialInfo.VertexStageStreamInitializer != null)
-                        renderEffect.EffectValidator.ValidateParameter(MaterialKeys.VertexStageStreamInitializer, materialInfo.VertexStageStreamInitializer);
+                        renderEffect.EffectValidator.ValidateParameterThreaded(MaterialKeys.VertexStageStreamInitializer, materialInfo.VertexStageStreamInitializer);
 
                     // DS
                     if (materialInfo.DomainStageSurfaceShaders != null)
-                        renderEffect.EffectValidator.ValidateParameter(MaterialKeys.DomainStageSurfaceShaders, materialInfo.DomainStageSurfaceShaders);
+                        renderEffect.EffectValidator.ValidateParameterThreaded(MaterialKeys.DomainStageSurfaceShaders, materialInfo.DomainStageSurfaceShaders);
                     if (materialInfo.DomainStageStreamInitializer != null)
-                        renderEffect.EffectValidator.ValidateParameter(MaterialKeys.DomainStageStreamInitializer, materialInfo.DomainStageStreamInitializer);
+                        renderEffect.EffectValidator.ValidateParameterThreaded(MaterialKeys.DomainStageStreamInitializer, materialInfo.DomainStageStreamInitializer);
 
                     // Tessellation
                     if (materialInfo.TessellationShader != null)
-                        renderEffect.EffectValidator.ValidateParameter(MaterialKeys.TessellationShader, materialInfo.TessellationShader);
+                        renderEffect.EffectValidator.ValidateParameterThreaded(MaterialKeys.TessellationShader, materialInfo.TessellationShader);
 
                     // PS
                     if (materialInfo.PixelStageSurfaceShaders != null)
-                        renderEffect.EffectValidator.ValidateParameter(MaterialKeys.PixelStageSurfaceShaders, materialInfo.PixelStageSurfaceShaders);
+                        renderEffect.EffectValidator.ValidateParameterThreaded(MaterialKeys.PixelStageSurfaceShaders, materialInfo.PixelStageSurfaceShaders);
                     if (materialInfo.PixelStageStreamInitializer != null)
-                        renderEffect.EffectValidator.ValidateParameter(MaterialKeys.PixelStageStreamInitializer, materialInfo.PixelStageStreamInitializer);
+                        renderEffect.EffectValidator.ValidateParameterThreaded(MaterialKeys.PixelStageStreamInitializer, materialInfo.PixelStageStreamInitializer);
                     if (materialInfo.HasNormalMap)
-                        renderEffect.EffectValidator.ValidateParameter(MaterialKeys.HasNormalMap, materialInfo.HasNormalMap);
+                        renderEffect.EffectValidator.ValidateParameterThreaded(MaterialKeys.HasNormalMap, materialInfo.HasNormalMap);
                     if (materialInfo.UsePixelShaderWithDepthPass)
-                        renderEffect.EffectValidator.ValidateParameter(MaterialKeys.UsePixelShaderWithDepthPass, materialInfo.UsePixelShaderWithDepthPass);
+                        renderEffect.EffectValidator.ValidateParameterThreaded(MaterialKeys.UsePixelShaderWithDepthPass, materialInfo.UsePixelShaderWithDepthPass);
                 }
             });
 

@@ -373,7 +373,7 @@ namespace Xenko.Rendering
                     var renderStage = renderNode.RenderStage;
                     var renderStageShaderSource = renderStage.OutputValidator.ShaderSource;
                     if (renderStageShaderSource != null)
-                        renderEffect.EffectValidator.ValidateParameter(XenkoEffectBaseKeys.RenderTargetExtensions, renderStageShaderSource);
+                        renderEffect.EffectValidator.ValidateParameterThreaded(XenkoEffectBaseKeys.RenderTargetExtensions, renderStageShaderSource);
                 }
             });
         }

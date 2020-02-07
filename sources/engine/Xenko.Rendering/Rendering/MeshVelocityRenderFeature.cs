@@ -75,7 +75,7 @@ namespace Xenko.Rendering
 
                     if (renderEffect != null)
                     {
-                        renderEffect.EffectValidator.ValidateParameter(XenkoEffectBaseKeys.ComputeVelocityShader, new ShaderClassSource("MeshVelocity"));
+                        renderEffect.EffectValidator.ValidateParameterThreaded(XenkoEffectBaseKeys.ComputeVelocityShader, new ShaderClassSource("MeshVelocity"));
                     }
                 }
             });

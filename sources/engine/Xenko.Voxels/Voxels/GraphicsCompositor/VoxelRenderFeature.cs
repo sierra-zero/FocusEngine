@@ -82,9 +82,9 @@ namespace Xenko.Rendering.Voxels
                             // Skip effects not used during this frame
                             if (renderEffect != null)
                             {
-                                renderEffect.EffectValidator.ValidateParameter(VoxelizeToFragmentsKeys.Storage, pass.source);
-                                renderEffect.EffectValidator.ValidateParameter(VoxelizeToFragmentsKeys.RequireGeometryShader, pass.storer.RequireGeometryShader() || pass.method.RequireGeometryShader());
-                                renderEffect.EffectValidator.ValidateParameter(VoxelizeToFragmentsKeys.GeometryShaderMaxVertexCount, pass.storer.GeometryShaderOutputCount() * pass.method.GeometryShaderOutputCount());
+                                renderEffect.EffectValidator.ValidateParameterThreaded(VoxelizeToFragmentsKeys.Storage, pass.source);
+                                renderEffect.EffectValidator.ValidateParameterThreaded(VoxelizeToFragmentsKeys.RequireGeometryShader, pass.storer.RequireGeometryShader() || pass.method.RequireGeometryShader());
+                                renderEffect.EffectValidator.ValidateParameterThreaded(VoxelizeToFragmentsKeys.GeometryShaderMaxVertexCount, pass.storer.GeometryShaderOutputCount() * pass.method.GeometryShaderOutputCount());
                             }
                         }
                     });

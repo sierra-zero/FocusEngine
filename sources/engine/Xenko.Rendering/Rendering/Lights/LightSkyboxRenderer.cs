@@ -122,8 +122,8 @@ namespace Xenko.Rendering.Lights
                 var lightDiffuseColorShader = diffuseParameters.Get(SkyboxKeys.Shader) ?? EmptyComputeEnvironmentColorSource;
                 var lightSpecularColorShader = specularParameters.Get(SkyboxKeys.Shader) ?? EmptyComputeEnvironmentColorSource;
 
-                renderEffect.EffectValidator.ValidateParameter(lightDiffuseColorKey, lightDiffuseColorShader);
-                renderEffect.EffectValidator.ValidateParameter(lightSpecularColorKey, lightSpecularColorShader);
+                renderEffect.EffectValidator.ValidateParameterThreaded(lightDiffuseColorKey, lightDiffuseColorShader);
+                renderEffect.EffectValidator.ValidateParameterThreaded(lightSpecularColorKey, lightSpecularColorShader);
             }
 
             public override void ApplyViewParameters(RenderDrawContext context, int viewIndex, ParameterCollection parameters)

@@ -81,12 +81,12 @@ namespace Xenko.Rendering
 
                     if (renderMesh.Mesh.Skinning != null)
                     {
-                        renderEffect.EffectValidator.ValidateParameter(MaterialKeys.HasSkinningPosition, skinningInfo.HasSkinningPosition);
-                        renderEffect.EffectValidator.ValidateParameter(MaterialKeys.HasSkinningNormal, skinningInfo.HasSkinningNormal);
-                        renderEffect.EffectValidator.ValidateParameter(MaterialKeys.HasSkinningTangent, skinningInfo.HasSkinningTangent);
+                        renderEffect.EffectValidator.ValidateParameterThreaded(MaterialKeys.HasSkinningPosition, skinningInfo.HasSkinningPosition);
+                        renderEffect.EffectValidator.ValidateParameterThreaded(MaterialKeys.HasSkinningNormal, skinningInfo.HasSkinningNormal);
+                        renderEffect.EffectValidator.ValidateParameterThreaded(MaterialKeys.HasSkinningTangent, skinningInfo.HasSkinningTangent);
 
                         var skinningBones = Math.Max(MaxBones, renderMesh.Mesh.Skinning.Bones.Length);
-                        renderEffect.EffectValidator.ValidateParameter(MaterialKeys.SkinningMaxBones, skinningBones);
+                        renderEffect.EffectValidator.ValidateParameterThreaded(MaterialKeys.SkinningMaxBones, skinningBones);
                     }
                 }
             });

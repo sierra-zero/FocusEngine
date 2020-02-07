@@ -31,7 +31,8 @@ namespace Xenko.Rendering
         public void Initialize()
         {
             EffectValues = new FastListStruct<EffectParameterEntry>(4);
-            
+            addLocker = new object();
+
             // Add a dummy value so that an effect without parameter fails validation first time
             EffectValues.Add(new EffectParameterEntry());
         }
@@ -42,6 +43,8 @@ namespace Xenko.Rendering
             effectChanged = false;
             ShouldSkip = false;
         }
+
+        private object addLocker;
 
         [RemoveInitLocals]
         public void ValidateParameter<T>(PermutationParameterKey<T> key, T value)
@@ -68,7 +71,37 @@ namespace Xenko.Rendering
                 effectChanged = true;
             }
         }
-        
+
+        [RemoveInitLocals]
+        public void ValidateParameterThreaded<T>(PermutationParameterKey<T> key, T value)
+        {
+            // Check if value was existing and/or same
+            var index = effectValuesValidated++;
+            if (index < EffectValues.Count)
+            {
+                var currentEffectValue = EffectValues.Items[index];
+                if (currentEffectValue.Key == key && EqualityComparer<T>.Default.Equals((T)currentEffectValue.Value, value))
+                {
+                    // Everything same, let's keep going
+                    return;
+                }
+
+                // Something was different, let's replace item and clear end of list
+                EffectValues[index] = new EffectParameterEntry(key, value);
+                EffectValues.Count = effectValuesValidated;
+                effectChanged = true;
+            }
+            else
+            {
+                var epe = new EffectParameterEntry(key, value);
+                lock (addLocker)
+                {
+                    EffectValues.Add(epe);
+                }
+                effectChanged = true;
+            }
+        }
+
         public bool EndEffectValidation()
         {
             if (effectValuesValidated < EffectValues.Count)

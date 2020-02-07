@@ -302,8 +302,8 @@ namespace Xenko.Rendering.Lights
                     if (renderEffect == null || !renderEffect.IsUsedDuringThisFrame(RenderSystem))
                         continue;
 
-                    renderEffect.EffectValidator.ValidateParameter(LightingKeys.DirectLightGroups, directLightShaders);
-                    renderEffect.EffectValidator.ValidateParameter(LightingKeys.EnvironmentLights, environmentLightShaders);
+                    renderEffect.EffectValidator.ValidateParameterThreaded(LightingKeys.DirectLightGroups, directLightShaders);
+                    renderEffect.EffectValidator.ValidateParameterThreaded(LightingKeys.EnvironmentLights, environmentLightShaders);
 
                     // Some light groups have additional effect permutation
                     foreach (var lightGroup in shaderPermutation.PermutationLightGroups)
