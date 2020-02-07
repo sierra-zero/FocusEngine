@@ -300,9 +300,9 @@ namespace Xenko.Audio
 
         internal void ResetStateToDefault()
         {
-            Pan = 0;
-            Pitch = 1;
-            Volume = 1;
+            Pan = 0f;
+            Pitch = 1f;
+            Volume = 1f;
             IsLooping = false;
             Stop();
         }

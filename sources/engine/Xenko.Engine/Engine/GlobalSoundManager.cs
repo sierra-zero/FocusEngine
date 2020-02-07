@@ -29,7 +29,7 @@ namespace Xenko.Engine
         [DataMember]
         public float MasterVolume = 1f;
 
-        public SoundInstance PlayCentralSound(string url, float pitch = 1f, float volume = 1f, float pan = 0.5f, bool looped = false)
+        public SoundInstance PlayCentralSound(string url, float pitch = 1f, float volume = 1f, float pan = 0f, bool looped = false)
         {
             SoundInstance s = getFreeInstance(url, false);
             if (s != null)
@@ -43,7 +43,7 @@ namespace Xenko.Engine
             return s;
         }
 
-        public SoundInstance PlayPositionSound(string url, Vector3 position, float pitch = 1f, float volume = 1f, float pan = 0.5f, float distanceScale = 1f, bool looped = false)
+        public SoundInstance PlayPositionSound(string url, Vector3 position, float pitch = 1f, float volume = 1f, float distanceScale = 1f, bool looped = false)
         {
             float sqrDist = (position - Listener.Listener.Position).LengthSquared();
             if (MaxSoundDistance > 0f && sqrDist >= MaxSoundDistance * MaxSoundDistance) return null;
@@ -52,13 +52,13 @@ namespace Xenko.Engine
             s.Pitch = pitch < 0f ? RandomPitch() : pitch;
             s.Volume = volume * MasterVolume;
             s.IsLooping = looped;
-            s.Pan = pan;
+            s.Pan = 0f;
             s.Apply3D(position, null, null, distanceScale);
             s.Play();
             return s;
         }
 
-        public SoundInstance PlayAttachedSound(string url, Entity parent, float pitch = 1f, float volume = 1f, float pan = 0.5f, float distanceScale = 1f, bool looped = false)
+        public SoundInstance PlayAttachedSound(string url, Entity parent, float pitch = 1f, float volume = 1f, float distanceScale = 1f, bool looped = false)
         {
             Vector3 pos = parent.Transform.WorldPosition();
             float sqrDist = (pos - Listener.Listener.Position).LengthSquared();
@@ -68,7 +68,7 @@ namespace Xenko.Engine
             s.Pitch = pitch < 0f ? RandomPitch() : pitch;
             s.Volume = volume * MasterVolume;
             s.IsLooping = looped;
-            s.Pan = pan;
+            s.Pan = 0f;
             s.Apply3D(pos, null, null, distanceScale);
             s.Play();
             var posSnd = new PositionalSound() {
@@ -83,7 +83,7 @@ namespace Xenko.Engine
             return s;
         }
 
-        public Task<SoundInstance> PlayCentralSoundTask(string url, float pitch = 1f, float volume = 1f, float pan = 0.5f, bool looped = false)
+        public Task<SoundInstance> PlayCentralSoundTask(string url, float pitch = 1f, float volume = 1f, float pan = 0f, bool looped = false)
         {
             return Task.Factory.StartNew<SoundInstance>(() =>
             {
@@ -91,19 +91,19 @@ namespace Xenko.Engine
             });
         }
 
-        public Task<SoundInstance> PlayPositionSoundTask(string url, Vector3 position, float pitch = 1f, float volume = 1f, float pan = 0.5f, float distanceScale = 1f, bool looped = false)
+        public Task<SoundInstance> PlayPositionSoundTask(string url, Vector3 position, float pitch = 1f, float volume = 1f, float distanceScale = 1f, bool looped = false)
         {
             return Task.Factory.StartNew<SoundInstance>(() =>
             {
-                return PlayPositionSound(url, position, pitch, volume, pan, distanceScale, looped);
+                return PlayPositionSound(url, position, pitch, volume, distanceScale, looped);
             });
         }
 
-        public Task<SoundInstance> PlayAttachedSoundTask(string url, Entity parent, float pitch = 1f, float volume = 1f, float pan = 0.5f, float distanceScale = 1f, bool looped = false)
+        public Task<SoundInstance> PlayAttachedSoundTask(string url, Entity parent, float pitch = 1f, float volume = 1f, float distanceScale = 1f, bool looped = false)
         {
             return Task.Factory.StartNew<SoundInstance>(() =>
             {
-                return PlayAttachedSound(url, parent, pitch, volume, pan, distanceScale, looped);
+                return PlayAttachedSound(url, parent, pitch, volume, distanceScale, looped);
             });
         }
 
