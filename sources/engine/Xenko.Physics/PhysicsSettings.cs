@@ -26,9 +26,9 @@ namespace Xenko.Physics
         public float FixedTimeStep = 1.0f / 60.0f;
 
         /// <summary>
-        /// Default maximum time to simulate per frame.
+        /// If set to true, forcefully disable any Bullet physics processing.
         /// </summary>
         [DataMember]
-        public float MaxSimulationTime = 0.025f;
+        public bool OnlyUseBepu = false;
     }
 }

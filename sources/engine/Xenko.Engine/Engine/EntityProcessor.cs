@@ -41,6 +41,8 @@ namespace Xenko.Engine
         /// </summary>
         public ProfilingState DrawProfilingState;
 
+        public string MainTypeName => mainTypeInfo.Name;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="EntityProcessor"/> class.
         /// </summary>

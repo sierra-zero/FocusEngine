@@ -61,7 +61,8 @@ namespace Xenko.Physics
         {
             physicsConfiguration = Game?.Settings != null ? Game.Settings.Configurations.Get<PhysicsSettings>() : new PhysicsSettings();
 
-            MaximumSimulationTime = physicsConfiguration.MaxSimulationTime;
+            MaximumSimulationTime = physicsConfiguration.FixedTimeStep;
+            EntityManager.preventPhysicsProcessor = physicsConfiguration.OnlyUseBepu;
 
             if (isMultithreaded)
             {

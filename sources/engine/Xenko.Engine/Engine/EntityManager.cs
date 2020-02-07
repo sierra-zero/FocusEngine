@@ -24,6 +24,7 @@ namespace Xenko.Engine
     public abstract class EntityManager : ComponentBase, IReadOnlySet<Entity>
     {
         // TODO: Make this class threadsafe (current locks aren't sufficients)
+        static internal bool preventPhysicsProcessor;
 
         public ExecutionMode ExecutionMode { get; protected set; } = ExecutionMode.Runtime;
 
@@ -625,6 +626,9 @@ namespace Xenko.Engine
                 if (processor == null) throw new ArgumentNullException(nameof(processor));
                 if (!Contains(processor))
                 {
+                    if (preventPhysicsProcessor && processor.MainTypeName == "PhysicsComponent")
+                        return; // don't use Bullet physics, bepu only!
+
                     base.AddItem(processor);
                     manager.OnProcessorAdded(processor);
                 }
