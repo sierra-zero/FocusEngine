@@ -83,10 +83,12 @@ namespace Xenko.VirtualReality
         {
             switch (button)
             {
+                case TouchControllerButton.Thumbstick:
+                    return OpenVR.Controller.ButtonId.ButtonAxis3;
                 case TouchControllerButton.A:
                 case TouchControllerButton.X:
                     return OpenVR.Controller.ButtonId.ButtonA;
-                case TouchControllerButton.Thumbstick:
+                case TouchControllerButton.Touchpad:
                     return OpenVR.Controller.ButtonId.ButtonSteamVrTouchpad;              
                 case TouchControllerButton.Trigger:
                     return OpenVR.Controller.ButtonId.ButtonSteamVrTrigger;
