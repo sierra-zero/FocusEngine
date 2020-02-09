@@ -2,6 +2,7 @@
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 #if XENKO_GRAPHICS_API_VULKAN
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -21,6 +22,8 @@ namespace Xenko.Graphics
     {
         private Swapchain swapChain = Swapchain.Null;
         private Surface surface;
+
+        private ConcurrentQueue<uint> toPresent = new ConcurrentQueue<uint>();
 
         private Texture backbuffer;
         private SwapChainImageInfo[] swapchainImages;
@@ -67,7 +70,6 @@ namespace Xenko.Graphics
         private ManualResetEventSlim presentWaiter = new ManualResetEventSlim(false);
         private Thread presenterThread;
         private bool runPresenter;
-        private volatile uint presentingIndex;
 
         private unsafe void PresenterThread() {
             Swapchain swapChainCopy = swapChain;
@@ -82,14 +84,15 @@ namespace Xenko.Graphics
             while (runPresenter) {
                 // wait until we have a frame to present
                 presentWaiter.Wait();
-                currentBufferIndexCopy = presentingIndex;
-    
+
                 // are we still OK to present?
                 if (runPresenter == false) return;
 
-                using (GraphicsDevice.QueueLock.WriteLock())
-                {
-                    GraphicsDevice.NativeCommandQueue.Present(ref presentInfo);        
+                while (toPresent.TryDequeue(out currentBufferIndexCopy)) {
+                    using (GraphicsDevice.QueueLock.WriteLock())
+                    {
+                        GraphicsDevice.NativeCommandQueue.Present(ref presentInfo);        
+                    }                
                 }
 
                 presentWaiter.Reset();
@@ -99,7 +102,7 @@ namespace Xenko.Graphics
         public override unsafe void Present()
         {
             // collect and let presenter thread know to present
-            presentingIndex = currentBufferIndex;
+            toPresent.Enqueue(currentBufferIndex);
             presentWaiter.Set();
 
             // Get next image
@@ -109,7 +112,8 @@ namespace Xenko.Graphics
                 // re-create and do a "lite" re-present
                 // unfortunately this will likely crash, since recreating swapchains isn't stable
                 CreateSwapChain();
-                presentingIndex = currentBufferIndex;
+                while (toPresent.IsEmpty == false) toPresent.TryDequeue(out _);
+                toPresent.Enqueue(currentBufferIndex);
                 presentWaiter.Set();
                 return;
             }
