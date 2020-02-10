@@ -682,10 +682,13 @@ namespace Xenko.Games
                             bool focusMinimized = focused == false && TreatNotFocusedLikeMinimized;
                             bool visible = minimized == false && gamePlatform.MainWindow.Visible && (gamePlatform.MainWindow.IsFullscreen == false || focused);
                             EndDraw(visible);
-                            if (visible == false || minimized || focusMinimized)
-                                MinimizedMinimumUpdateRate.Throttle(out _);
-                            else
-                                WindowMinimumUpdateRate.Throttle(out _);
+                            if (gamePlatform.IsBlockingRun)
+                            {
+	                            if (visible == false || minimized || focusMinimized)
+	                                MinimizedMinimumUpdateRate.Throttle(out _);
+	                            else
+	                                WindowMinimumUpdateRate.Throttle(out _);
+	                        }
                         }
                     }
 
