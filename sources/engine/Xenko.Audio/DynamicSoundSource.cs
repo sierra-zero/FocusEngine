@@ -250,9 +250,7 @@ namespace Xenko.Audio
             Ended.TrySetResult(true);
             state = PlayState.Stopped;
             soundInstance.playState = PlayState.Stopped;
-            if (ignoreQueuedBuffer)
-                AudioLayer.SourceStop(soundInstance.Source);
-            else AudioLayer.SourceFlushBuffers(soundInstance.Source);
+            if (ignoreQueuedBuffer) AudioLayer.SourceStop(soundInstance.Source);
             RestartInternal();
         }
 

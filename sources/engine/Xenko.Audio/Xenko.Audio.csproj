@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project>
   <PropertyGroup>
     <XenkoAssemblySign>true</XenkoAssemblySign>
@@ -47,9 +47,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Native\OpenSLES.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Native\XAudio2.cpp" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(XenkoPostSettingsTargets)" />
