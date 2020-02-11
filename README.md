@@ -17,7 +17,7 @@ My games require the engine to be developed at a faster pace than Xenko. I'm in 
 
 ## What is different?
 
-Most of Focus is similar to Xenko and there shouldn't be any loss of functionality over the original. Changes are focused on fixes, performance improvements and new features. However, I do not maintain different languages, Android support or the Launcher to "Focus" on things like:
+Most of Focus is similar to Xenko and there shouldn't be any loss of functionality over the original. Changes are focused on fixes, performance improvements and new features. However, I do not maintain different languages, Android support or the Launcher. The following is a rough list of "major" changes, but might not accurately reflect the current state of differences (since both githubs are moving targets which are hopefully improving):
 
 * Virtual Reality: frame rate management, resolution detection, Vulkan support, and automatic UI interaction are some of the VR improvements you'll get "out of the box". Pretty much just need to enable OpenVR in your Graphics Compositor's Forward Renderer and you'll be good to go. Tracking hands is much easier, as you can simply select which hand to track right from GameStudio. Support for multiple forward renderers in VR, with post processing. See https://github.com/phr00t/FOVTester2 for a super simple example of how easy a VR project is.
 * Vulkan: Focus primarily uses Vulkan, which has been significantly overhauled to provide more performance you'd expect from the newer API. Vulkan works on MacOSX using MoltenVK and Linux. DirectX is deprecated and unsupported on this fork.
@@ -43,13 +43,17 @@ Most of Focus is similar to Xenko and there shouldn't be any loss of functionali
 * Simple binary distribution: No launcher needed. Just download and run the latest release (after making sure you have all of the Visual Studio build prerequisites, see https://github.com/phr00t/FocusEngine/releases.
 * Probably lots of other stuff: haven't kept that great of track of improvements, I usually fix things as needed and keep moving forward!
 
+## What is worse in this fork?
+
+Android and mobile support, different languages, Universal Windows Platform support. I also work very little with DirectX, which is maintained just for the editor. Some changes I make to improve Vulkan might cause a (hopefully minor) bug in the DirectX API, which will be of low priority to fix. Vulkan isn't as fully featured as DirectX yet, so GPU instancing doesn't work on Vulkan (although you may find the ModelBatcher works in many cases).
+
+Creating templates with this fork is semi broken (you'll get an error, but it still gets created). Just browse for it next time you open Focus. There is an issue for it on the issues tab.
+
 ## License
 
 Focus is covered by [MIT](LICENSE.md), unless stated otherwise (i.e. for some files that are copied from other projects).
 
 You can find the list of third party projects [here](THIRD%20PARTY.md).
-
-Contributors need to sign the following [Contribution License Agreement](docs/ContributorLicenseAgreement.md).
 
 ## Documentation
 
@@ -61,7 +65,7 @@ Find explanations and information about Xenko:
 ## Community
 
 Ask for help or report issues:
-* [Chat with the community on Discord](https://discord.gg/f6aerfE) [![Join the chat at https://discord.gg/f6aerfE](https://img.shields.io/discord/500285081265635328.svg?style=flat&logo=discord&label=discord)](https://discord.gg/f6aerfE)
+* [Chat with the community on Discord](https://discord.gg/k563cUH)
 * [Discuss topics on our forums](http://forums.xenko.com/)
 * [Report engine issues](https://github.com/phr00t/xenko/issues)
 * [Donate to support the project](https://www.patreon.com/phr00tssoftware)
