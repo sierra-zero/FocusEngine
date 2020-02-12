@@ -2,10 +2,14 @@
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
+using System.Threading;
 using Xenko.Core;
 using Xenko.Core.Collections;
 using Xenko.Core.Mathematics;
+using Xenko.Core.Threading;
 using Xenko.Engine;
 using Xenko.Graphics;
 using Xenko.Rendering.Shadows;
@@ -159,8 +163,7 @@ namespace Xenko.Rendering.Lights
             // Artifically increase range of first slice to not waste too much slices in very short area
             public float SpecialNearPlane = 2.0f;
 
-            private FastListStruct<LightClusterLinkedNode> lightNodes = new FastListStruct<LightClusterLinkedNode>(8);
-            private FastListStruct<Int2> clusterInfos = new FastListStruct<Int2>(8);
+            private List<ConcurrentQueue<LightClusterLinkedNode>> lightNodes = new List<ConcurrentQueue<LightClusterLinkedNode>>();
             private RenderViewInfo[] renderViewInfos;
             private Int2 maxClusterCount;
             //private Plane[] zPlanes;
@@ -280,15 +283,6 @@ namespace Xenko.Rendering.Lights
                 //    zPlanes[z].Normalize();
                 //}
 
-                // Initialize cluster with no light (-1)
-                for (int i = 0; i < maxClusterCount.X * maxClusterCount.Y * ClusterSlices; ++i)
-                {
-                    lightNodes.Add(new LightClusterLinkedNode(InternalLightType.Point, -1, -1));
-                }
-
-                // List of clusters moved by this light
-                var movedClusters = new Dictionary<LightClusterLinkedNode, int>();
-
                 // Try to use SpecialNearPlane to not waste too much slices in very small depth
                 // Make sure we don't go to more than 10% of max depth
                 var nearPlane = Math.Max(Math.Min(SpecialNearPlane, renderView.FarClipPlane * 0.1f), renderView.NearClipPlane);
@@ -301,64 +295,15 @@ namespace Xenko.Rendering.Lights
                 float clusterDepthScale = renderViewInfo.ClusterDepthScale = (float)(Math.Pow(2.0f, ClusterSlices) - 2.0f) / (renderView.FarClipPlane - nearPlane);
                 float clusterDepthBias = renderViewInfo.ClusterDepthBias = 2.0f - clusterDepthScale * nearPlane;
 
-                //---------------- SPOT LIGHTS -------------------
-                var lightRange = clusteredGroupRenderer.spotGroup.LightRanges[viewIndex];
-                for (int i = lightRange.Start; i < lightRange.End; ++i)
-                {
-                    var light = clusteredGroupRenderer.spotGroup.Lights[i].Light;
-                    var spotLight = (LightSpot)light.Type;
-
-                    // Create spot light data
-                    var spotLightData = new SpotLightData
-                    {
-                        PositionWS = light.Position,
-                        DirectionWS = light.Direction,
-                        AngleOffsetAndInvSquareRadius = new Vector3(spotLight.LightAngleScale, spotLight.LightAngleOffset, spotLight.InvSquareRange),
-                        Color = light.Color,
-                    };
-
-                    // Fill list of spot lights
-                    renderViewInfo.SpotLights.Add(spotLightData);
-
-                    movedClusters.Clear();
-
-                    var radius = UseLinearLighting ? spotLightData.AngleOffsetAndInvSquareRadius.Z : (float)Math.Sqrt(1.0f / spotLightData.AngleOffsetAndInvSquareRadius.Z);
-
-                    Vector3 positionVS;
-                    Vector3.TransformCoordinate(ref spotLightData.PositionWS, ref renderView.View, out positionVS);
-
-                    // TODO: culling (first do it on PointLight, then backport it to SpotLight and improve for SpotLight case)
-                    // Find x/y ranges
-                    Vector2 clipMin, clipMax;
-                    ComputeClipRegion(positionVS, radius, ref renderView.Projection, out clipMin, out clipMax);
-
-                    var tileStartX = MathUtil.Clamp((int)((clipMin.X * 0.5f + 0.5f) * viewSize.X / ClusterSize), 0, clusterCountX);
-                    var tileEndX = MathUtil.Clamp((int)((clipMax.X * 0.5f + 0.5f) * viewSize.X / ClusterSize) + 1, 0, clusterCountX);
-                    var tileStartY = MathUtil.Clamp((int)((-clipMax.Y * 0.5f + 0.5f) * viewSize.Y / ClusterSize), 0, clusterCountY);
-                    var tileEndY = MathUtil.Clamp((int)((-clipMin.Y * 0.5f + 0.5f) * viewSize.Y / ClusterSize) + 1, 0, clusterCountY);
-
-                    // Find z range (project using Projection matrix)
-                    var startZ = -positionVS.Z - radius;
-                    var endZ = -positionVS.Z + radius;
-
-                    var tileStartZ = MathUtil.Clamp((int)Math.Log(startZ * clusterDepthScale + clusterDepthBias, 2.0f), 0, ClusterSlices);
-                    var tileEndZ = MathUtil.Clamp((int)Math.Log(endZ * clusterDepthScale + clusterDepthBias, 2.0f) + 1, 0, ClusterSlices);
-
-                    for (int z = tileStartZ; z < tileEndZ; ++z)
-                    {
-                        for (int y = tileStartY; y < tileEndY; ++y)
-                        {
-                            for (int x = tileStartX; x < tileEndX; ++x)
-                            {
-                                AddLightToCluster(movedClusters, InternalLightType.Spot, i - lightRange.Start, x + (y + z * clusterCountY) * clusterCountX);
-                            }
-                        }
-                    }
-                }
+                // make sure we have enough lists
+                while (lightNodes.Count < totalClusterCount)
+                    lightNodes.Add(new ConcurrentQueue<LightClusterLinkedNode>());
 
                 //---------------- POINT LIGHTS -------------------
-                lightRange = lightRanges[viewIndex];
-                for (int i = lightRange.Start; i < lightRange.End; ++i)
+                var lightRange = lightRanges[viewIndex];
+
+                // make point light data
+                for (int i=lightRange.Start; i<lightRange.End; i++)
                 {
                     var light = lights[i].Light;
                     var pointLight = (LightPoint)light.Type;
@@ -371,10 +316,14 @@ namespace Xenko.Rendering.Lights
                         Color = light.Color,
                     };
 
-                    // Fill list of point lights
                     renderViewInfo.PointLights.Add(pointLightData);
+                }
 
-                    movedClusters.Clear();
+                Xenko.Core.Threading.Dispatcher.For(lightRange.Start, lightRange.End, (i) =>
+                {
+                    var light = lights[i].Light;
+                    var pointLight = (LightPoint)light.Type;
+                    var pointLightData = renderViewInfos[viewIndex].PointLights[i];
 
                     var radius = LightClusteredPointSpotGroupRenderer.UseLinearLighting ? pointLightData.InvSquareRadius : (float)Math.Sqrt(1.0f / pointLightData.InvSquareRadius);
 
@@ -416,29 +365,78 @@ namespace Xenko.Rendering.Lights
                         {
                             for (int x = tileStartX; x < tileEndX; ++x)
                             {
-                                AddLightToCluster(movedClusters, InternalLightType.Point, i - lightRange.Start, x + (y + z * clusterCountY) * clusterCountX);
+                                lightNodes[x + (y + z * clusterCountY) * clusterCountX].Enqueue(new LightClusterLinkedNode(InternalLightType.Point, i - lightRange.Start));
                             }
                         }
                     }
+                });
+
+                //---------------- SPOT LIGHTS -------------------
+                lightRange = clusteredGroupRenderer.spotGroup.LightRanges[viewIndex];
+
+                // make spotlight data
+                for (int i=lightRange.Start; i<lightRange.End; i++)
+                {
+                    var light = clusteredGroupRenderer.spotGroup.Lights[i].Light;
+                    var spotLight = (LightSpot)light.Type;
+
+                    // Create spot light data
+                    var spotLightData = new SpotLightData
+                    {
+                        PositionWS = light.Position,
+                        DirectionWS = light.Direction,
+                        AngleOffsetAndInvSquareRadius = new Vector3(spotLight.LightAngleScale, spotLight.LightAngleOffset, spotLight.InvSquareRange),
+                        Color = light.Color,
+                    };
+
+                    renderViewInfo.SpotLights.Add(spotLightData);
                 }
 
-                // Finish clusters by making their last element unique and building clusterInfos
-                movedClusters.Clear();
+                Xenko.Core.Threading.Dispatcher.For(lightRange.Start, lightRange.End, (i) =>
+                {
+                    var light = clusteredGroupRenderer.spotGroup.Lights[i].Light;
+                    var spotLight = (LightSpot)light.Type;
+                    var spotLightData = renderViewInfos[viewIndex].SpotLights[i];
+
+                    var radius = UseLinearLighting ? spotLightData.AngleOffsetAndInvSquareRadius.Z : (float)Math.Sqrt(1.0f / spotLightData.AngleOffsetAndInvSquareRadius.Z);
+
+                    Vector3 positionVS;
+                    Vector3.TransformCoordinate(ref spotLightData.PositionWS, ref renderView.View, out positionVS);
+
+                    // TODO: culling (first do it on PointLight, then backport it to SpotLight and improve for SpotLight case)
+                    // Find x/y ranges
+                    Vector2 clipMin, clipMax;
+                    ComputeClipRegion(positionVS, radius, ref renderView.Projection, out clipMin, out clipMax);
+
+                    var tileStartX = MathUtil.Clamp((int)((clipMin.X * 0.5f + 0.5f) * viewSize.X / ClusterSize), 0, clusterCountX);
+                    var tileEndX = MathUtil.Clamp((int)((clipMax.X * 0.5f + 0.5f) * viewSize.X / ClusterSize) + 1, 0, clusterCountX);
+                    var tileStartY = MathUtil.Clamp((int)((-clipMax.Y * 0.5f + 0.5f) * viewSize.Y / ClusterSize), 0, clusterCountY);
+                    var tileEndY = MathUtil.Clamp((int)((-clipMin.Y * 0.5f + 0.5f) * viewSize.Y / ClusterSize) + 1, 0, clusterCountY);
+
+                    // Find z range (project using Projection matrix)
+                    var startZ = -positionVS.Z - radius;
+                    var endZ = -positionVS.Z + radius;
+
+                    var tileStartZ = MathUtil.Clamp((int)Math.Log(startZ * clusterDepthScale + clusterDepthBias, 2.0f), 0, ClusterSlices);
+                    var tileEndZ = MathUtil.Clamp((int)Math.Log(endZ * clusterDepthScale + clusterDepthBias, 2.0f) + 1, 0, ClusterSlices);
+
+                    for (int z = tileStartZ; z < tileEndZ; ++z)
+                    {
+                        for (int y = tileStartY; y < tileEndY; ++y)
+                        {
+                            for (int x = tileStartX; x < tileEndX; ++x)
+                            {
+                                lightNodes[x + (y + z * clusterCountY) * clusterCountX].Enqueue(new LightClusterLinkedNode(InternalLightType.Spot, i - lightRange.Start));
+                            }
+                        }
+                    }
+                });
+
+                var grouping = new Dictionary<IndexPattern, int>();
                 for (int i = 0; i < totalClusterCount; ++i)
                 {
-                    FinishCluster(movedClusters, ref renderViewInfo.LightIndices, i);
+                    renderViewInfo.LightClusters[i] = FinishCluster(grouping, ref renderViewInfo.LightIndices, i);
                 }
-
-                // Prepare light clusters
-                for (int i = 0; i < totalClusterCount; ++i)
-                {
-                    var clusterId = lightNodes[i].NextNode;
-                    renderViewInfo.LightClusters[i] = clusterId != -1 ? clusterInfos[clusterId] : new Int2(0, 0);
-                }
-
-                // Clear data
-                lightNodes.Clear();
-                clusterInfos.Clear();
             }
 
             public unsafe void ComputeViewsParameter(RenderDrawContext drawContext)
@@ -570,74 +568,76 @@ namespace Xenko.Rendering.Lights
 #endif
             }
 
-            private void FinishCluster(Dictionary<LightClusterLinkedNode, int> movedClusters, ref FastListStruct<int> lightIndices, int clusterIndex)
+            private struct IndexPattern : IEquatable<IndexPattern>
             {
-                var clusterId = -1;
-                if (lightNodes.Items[clusterIndex].LightIndex != -1)
+                public List<int> pattern;
+
+                public bool Equals(IndexPattern other)
                 {
-                    var movedCluster = lightNodes.Items[clusterIndex];
-
-                    // Try to check if same linked-list doesn't already exist
-                    if (!movedClusters.TryGetValue(movedCluster, out clusterId))
-                    {
-                        // First time, let's add it
-                        clusterId = movedClusters.Count;
-                        movedClusters.Add(movedCluster, clusterId);
-
-                        int lightIndex = lightNodes.Count;
-                        lightNodes.Add(movedCluster);
-
-                        // Build light indices
-                        int pointLightCounter = 0;
-                        int spotLightCounter = 0;
-
-                        while (lightIndex != -1)
-                        {
-                            movedCluster = lightNodes[lightIndex];
-                            lightIndices.Add(movedCluster.LightIndex);
-                            switch (movedCluster.LightType)
-                            {
-                                case InternalLightType.Point:
-                                    pointLightCounter++;
-                                    break;
-                                case InternalLightType.Spot:
-                                    spotLightCounter++;
-                                    break;
-                            }
-                            lightIndex = movedCluster.NextNode;
-                        }
-
-                        // Add new light cluster range
-                        // Stored in the format:
-                        //   x          = start_index
-                        //   y & 0xFFFF = point_light_count
-                        //   y >> 16    =  spot_light_count
-                        clusterInfos.Add(new Int2(lightIndices.Count - pointLightCounter - spotLightCounter, pointLightCounter | (spotLightCounter << 16)));
-                    }
+                    if (other.pattern.Count != pattern.Count) return false;
+                    for (int i = 0; i < pattern.Count; i++)
+                        if (pattern[i] != other.pattern[i]) return false;
+                    return true;
                 }
 
-                // Last pass: store cluster id (instead of next node)
-                lightNodes.Items[clusterIndex] = new LightClusterLinkedNode(InternalLightType.Point, -1, clusterId);
+                public override bool Equals(object obj)
+                {
+                    return obj is IndexPattern ip && Equals(ip);
+                }
+
+                public override int GetHashCode()
+                {
+                    unchecked
+                    {
+                        int res = pattern.Count * 857;
+                        for (int i = 0; i < pattern.Count; i++)
+                            res ^= pattern[i] * 257 * (i + 1);
+                        return res;
+                    }
+                }
             }
 
-            private void AddLightToCluster(Dictionary<LightClusterLinkedNode, int> movedClusters, InternalLightType lightType, int lightIndex, int clusterIndex)
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private Int2 FinishCluster(Dictionary<IndexPattern, int> grouping, ref FastListStruct<int> lightIndices, int clusterIndex)
             {
-                var nextNode = -1;
-                var movedCluster = lightNodes.Items[clusterIndex];
-                if (movedCluster.LightIndex != -1)
+                if (lightNodes[clusterIndex].IsEmpty) return Int2.Zero;
+
+                // Build light indices
+                int pointLightCounter = 0;
+                int spotLightCounter = 0;
+
+                IndexPattern ip = new IndexPattern();
+                ip.pattern = new List<int>();
+
+                while (lightNodes[clusterIndex].TryDequeue(out var cluster))
                 {
-                    // Try to check if same linked-list doesn't already exist
-                    if (!movedClusters.TryGetValue(movedCluster, out nextNode))
+                    ip.pattern.Add(cluster.LightIndex);
+
+                    switch (cluster.LightType)
                     {
-                        // First time, let's add it
-                        nextNode = lightNodes.Count;
-                        movedClusters.Add(movedCluster, nextNode);
-                        lightNodes.Add(movedCluster);
+                        case InternalLightType.Point:
+                            pointLightCounter++;
+                            break;
+                        case InternalLightType.Spot:
+                            spotLightCounter++;
+                            break;
                     }
                 }
 
-                // Replace new linked-list head
-                lightNodes.Items[clusterIndex] = new LightClusterLinkedNode(lightType, lightIndex, nextNode);
+                if (grouping.TryGetValue(ip, out int startingIndex) == false)
+                {
+                    for (int i=0; i<ip.pattern.Count;i++)
+                        lightIndices.Add(ip.pattern[i]);
+
+                    grouping[ip] = startingIndex = lightIndices.Count - pointLightCounter - spotLightCounter;
+                }
+
+                // Add new light cluster range
+                // Stored in the format:
+                //   x          = start_index
+                //   y & 0xFFFF = point_light_count
+                //   y >> 16    =  spot_light_count
+                return new Int2(startingIndex, pointLightCounter | (spotLightCounter << 16));
             }
 
             private static void UpdateClipRegionRoot(
@@ -708,20 +708,18 @@ namespace Xenko.Rendering.Lights
             // Single linked list of lights (stored in an array)
             private struct LightClusterLinkedNode : IEquatable<LightClusterLinkedNode>
             {
-                public readonly InternalLightType LightType;
-                public readonly int LightIndex;
-                public readonly int NextNode;
+                public InternalLightType LightType;
+                public int LightIndex;
 
-                public LightClusterLinkedNode(InternalLightType lightType, int lightIndex, int nextNode)
+                public LightClusterLinkedNode(InternalLightType lightType, int lightIndex)
                 {
                     LightType = lightType;
                     LightIndex = lightIndex;
-                    NextNode = nextNode;
                 }
 
                 public bool Equals(LightClusterLinkedNode other)
                 {
-                    return LightType == other.LightType && LightIndex == other.LightIndex && NextNode == other.NextNode;
+                    return LightType == other.LightType && LightIndex == other.LightIndex;
                 }
 
                 public override bool Equals(object obj)
@@ -733,7 +731,7 @@ namespace Xenko.Rendering.Lights
                 {
                     unchecked
                     {
-                        return (int)LightType ^ (LightIndex * 397) ^ (NextNode * 827);
+                        return (int)LightType ^ (LightIndex * 397);
                     }
                 }
             }
