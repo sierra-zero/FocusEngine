@@ -350,6 +350,8 @@ namespace Xenko.Rendering.Lights
                     var tileStartZ = MathUtil.Clamp((int)Math.Log(startZ * clusterDepthScale + clusterDepthBias, 2.0f), 0, ClusterSlices);
                     var tileEndZ = MathUtil.Clamp((int)Math.Log(endZ * clusterDepthScale + clusterDepthBias, 2.0f) + 1, 0, ClusterSlices);
 
+                    var myNode = new LightClusterLinkedNode(InternalLightType.Point, i - lightRange.Start);
+
                     for (int z = tileStartZ; z < tileEndZ; ++z)
                     {
                         // TODO: Additional culling on x/y (to remove corner clusters)
@@ -365,7 +367,7 @@ namespace Xenko.Rendering.Lights
                         {
                             for (int x = tileStartX; x < tileEndX; ++x)
                             {
-                                lightNodes[x + (y + z * clusterCountY) * clusterCountX].Enqueue(new LightClusterLinkedNode(InternalLightType.Point, i - lightRange.Start));
+                                lightNodes[x + (y + z * clusterCountY) * clusterCountX].Enqueue(myNode);
                             }
                         }
                     }
@@ -420,13 +422,15 @@ namespace Xenko.Rendering.Lights
                     var tileStartZ = MathUtil.Clamp((int)Math.Log(startZ * clusterDepthScale + clusterDepthBias, 2.0f), 0, ClusterSlices);
                     var tileEndZ = MathUtil.Clamp((int)Math.Log(endZ * clusterDepthScale + clusterDepthBias, 2.0f) + 1, 0, ClusterSlices);
 
+                    var myNode = new LightClusterLinkedNode(InternalLightType.Spot, i - lightRange.Start);
+
                     for (int z = tileStartZ; z < tileEndZ; ++z)
                     {
                         for (int y = tileStartY; y < tileEndY; ++y)
                         {
                             for (int x = tileStartX; x < tileEndX; ++x)
                             {
-                                lightNodes[x + (y + z * clusterCountY) * clusterCountX].Enqueue(new LightClusterLinkedNode(InternalLightType.Spot, i - lightRange.Start));
+                                lightNodes[x + (y + z * clusterCountY) * clusterCountX].Enqueue(myNode);
                             }
                         }
                     }
