@@ -109,7 +109,7 @@ namespace Xenko.Core.Collections
         public T[] ToArray()
         {
             var destinationArray = new T[Count];
-            Array.Copy(Items, 0, destinationArray, 0, Count);
+            Array.Copy(Items, 0, destinationArray, 0, Items.Length);
             return destinationArray;            
         }
 
@@ -122,7 +122,7 @@ namespace Xenko.Core.Collections
                     newSize = newCapacity;
 
                 var destinationArray = new T[newSize];
-                Array.Copy(Items, 0, destinationArray, 0, Count);
+                Array.Copy(Items, 0, destinationArray, 0, Items.Length);
                 Items = destinationArray;
             }
         }
