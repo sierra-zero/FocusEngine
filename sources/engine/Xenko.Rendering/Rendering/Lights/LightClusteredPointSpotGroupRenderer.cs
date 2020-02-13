@@ -323,7 +323,8 @@ namespace Xenko.Rendering.Lights
                 {
                     var light = lights[i].Light;
                     var pointLight = (LightPoint)light.Type;
-                    var pointLightData = renderViewInfos[viewIndex].PointLights[i];
+                    int lightIndex = i - lightRange.Start;
+                    var pointLightData = renderViewInfos[viewIndex].PointLights[lightIndex];
 
                     var radius = LightClusteredPointSpotGroupRenderer.UseLinearLighting ? pointLightData.InvSquareRadius : (float)Math.Sqrt(1.0f / pointLightData.InvSquareRadius);
 
@@ -350,7 +351,7 @@ namespace Xenko.Rendering.Lights
                     var tileStartZ = MathUtil.Clamp((int)Math.Log(startZ * clusterDepthScale + clusterDepthBias, 2.0f), 0, ClusterSlices);
                     var tileEndZ = MathUtil.Clamp((int)Math.Log(endZ * clusterDepthScale + clusterDepthBias, 2.0f) + 1, 0, ClusterSlices);
 
-                    var myNode = new LightClusterLinkedNode(InternalLightType.Point, i - lightRange.Start);
+                    var myNode = new LightClusterLinkedNode(InternalLightType.Point, lightIndex);
 
                     for (int z = tileStartZ; z < tileEndZ; ++z)
                     {
@@ -398,7 +399,8 @@ namespace Xenko.Rendering.Lights
                 {
                     var light = clusteredGroupRenderer.spotGroup.Lights[i].Light;
                     var spotLight = (LightSpot)light.Type;
-                    var spotLightData = renderViewInfos[viewIndex].SpotLights[i];
+                    int lightIndex = i - lightRange.Start;
+                    var spotLightData = renderViewInfos[viewIndex].SpotLights[lightIndex];
 
                     var radius = UseLinearLighting ? spotLightData.AngleOffsetAndInvSquareRadius.Z : (float)Math.Sqrt(1.0f / spotLightData.AngleOffsetAndInvSquareRadius.Z);
 
@@ -422,7 +424,7 @@ namespace Xenko.Rendering.Lights
                     var tileStartZ = MathUtil.Clamp((int)Math.Log(startZ * clusterDepthScale + clusterDepthBias, 2.0f), 0, ClusterSlices);
                     var tileEndZ = MathUtil.Clamp((int)Math.Log(endZ * clusterDepthScale + clusterDepthBias, 2.0f) + 1, 0, ClusterSlices);
 
-                    var myNode = new LightClusterLinkedNode(InternalLightType.Spot, i - lightRange.Start);
+                    var myNode = new LightClusterLinkedNode(InternalLightType.Spot, lightIndex);
 
                     for (int z = tileStartZ; z < tileEndZ; ++z)
                     {
