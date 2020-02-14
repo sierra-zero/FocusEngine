@@ -72,7 +72,7 @@ namespace Xenko.Physics.Bepu
                 if (threadStaticPool == null)
                 {
                     threadStaticPool = new BufferPool();
-                    allBufferPools.Add(threadStaticPool);
+                    allBufferPools.Enqueue(threadStaticPool);
                 }
                 return threadStaticPool;
             }
@@ -80,7 +80,7 @@ namespace Xenko.Physics.Bepu
 
         private PoseIntegratorCallbacks poseCallbacks;
 
-        private static List<BufferPool> allBufferPools = new List<BufferPool>();
+        private static ConcurrentQueue<BufferPool> allBufferPools = new ConcurrentQueue<BufferPool>();
 
         internal int clearRequested;
         private BepuSimpleThreadDispatcher threadDispatcher = new BepuSimpleThreadDispatcher();
@@ -116,8 +116,8 @@ namespace Xenko.Physics.Bepu
 
                     if (clearBuffers)
                     {
-                        for (int i = 0; i < allBufferPools.Count; i++)
-                            allBufferPools[i].Clear();
+                        while(allBufferPools.TryDequeue(out var pool))
+                            pool.Clear();
                     }
 
                     for (int i = 0; i < AllRigidbodies.Count; i++)
