@@ -2,6 +2,7 @@
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using Xenko.Core;
 using Xenko.Core.Diagnostics;
@@ -24,15 +25,7 @@ namespace Xenko.Rendering.UI
 
         private RendererManager rendererManager;
 
-        private readonly UIRenderingContext renderingContext = new UIRenderingContext();
-
-        private UIBatch batch;
-
-        private readonly object drawLock = new object();
-
-        private readonly LayoutingContext layoutingContext = new LayoutingContext();
-
-        private readonly List<UIElementState> uiElementStates = new List<UIElementState>();
+        private static ConcurrentQueue<UIBatch> batches = new ConcurrentQueue<UIBatch>();
 
         public override Type SupportedRenderObjectType => typeof(RenderUIElement);
 
@@ -55,24 +48,17 @@ namespace Xenko.Rendering.UI
             }
 
             rendererManager = new RendererManager(new DefaultRenderersFactory(RenderSystem.Services));
-
-            batch = uiSystem.Batch;
         }
 
-        partial void PickingPrepare();
+        partial void PickingPrepare(List<PointerEvent> compactedPointerEvents);
 
-        partial void PickingUpdate(RenderUIElement renderUIElement, Viewport viewport, ref Matrix worldViewProj, GameTime drawTime);
-
-        partial void PickingClear();
+        partial void PickingUpdate(RenderUIElement renderUIElement, Viewport viewport, ref Matrix worldViewProj, GameTime drawTime, List<PointerEvent> compactedPointerEvents);
 
         public override void Draw(RenderDrawContext context, RenderView renderView, RenderViewStage renderViewStage, int startIndex, int endIndex)
         {
-            lock (drawLock)
+            using (context.PushRenderTargetsAndRestore())
             {
-                using (context.PushRenderTargetsAndRestore())
-                {
-                    DrawInternal(context, renderView, renderViewStage, startIndex, endIndex);
-                }
+                DrawInternal(context, renderView, renderViewStage, startIndex, endIndex);
             }
         }
 
@@ -80,13 +66,19 @@ namespace Xenko.Rendering.UI
         {
             base.Draw(context, renderView, renderViewStage, startIndex, endIndex);
 
+            if (batches.TryDequeue(out UIBatch batch) == false)
+                batch = new UIBatch(context.GraphicsDevice, new UIRenderingContext(), new LayoutingContext());
+
+            var renderingContext = batch.renderingContext as UIRenderingContext;
+            var layoutingContext = batch.layoutingContext as LayoutingContext;
+
             var uiProcessor = SceneInstance.GetCurrent(context.RenderContext).GetProcessor<UIRenderProcessor>();
             if (uiProcessor == null)
                 return;
 
 
             // build the list of the UI elements to render
-            uiElementStates.Clear();
+            List<UIElementState> uiElementStates = new List<UIElementState>();
             for (var index = startIndex; index < endIndex; index++)
             {
                 var renderNodeReference = renderViewStage.SortedRenderNodes[index].RenderNode;
@@ -105,24 +97,14 @@ namespace Xenko.Rendering.UI
             renderingContext.RenderTarget = context.CommandList.RenderTargets[0]; // TODO: avoid hardcoded index 0
 
             // Prepare content required for Picking and MouseOver events
-            PickingPrepare();
-
-            // allocate temporary graphics resources if needed
-            Texture scopedDepthBuffer = null;
-            foreach (var uiElement in uiElementStates)
-            {
-                if (uiElement.RenderObject.IsFullScreen)
-                {
-                    var renderTarget = renderingContext.RenderTarget;
-                    var description = TextureDescription.New2D(renderTarget.Width, renderTarget.Height, PixelFormat.D24_UNorm_S8_UInt, TextureFlags.DepthStencil);
-                    scopedDepthBuffer = context.RenderContext.Allocator.GetTemporaryTexture(description);
-                    break;
-                }
-            }
+            List<PointerEvent> events = new List<PointerEvent>();
+            PickingPrepare(events);
 
             // update view parameters and perform UI picking
-            foreach (var uiElementState in uiElementStates)
+            for (int j = 0; j < uiElementStates.Count; j++)
             {
+                var uiElementState = uiElementStates[j];
+
                 var renderObject = uiElementState.RenderObject;
                 var rootElement = renderObject.Page?.RootElement;
                 if (rootElement == null)
@@ -155,17 +137,18 @@ namespace Xenko.Rendering.UI
                 // Check if the current UI component is being picked based on the current ViewParameters (used to draw this element)
                 using (Profiler.Begin(UIProfilerKeys.TouchEventsUpdate))
                 {
-                    PickingUpdate(uiElementState.RenderObject, context.CommandList.Viewport, ref uiElementState.WorldViewProjectionMatrix, drawTime);
+                    PickingUpdate(uiElementState.RenderObject, context.CommandList.Viewport, ref uiElementState.WorldViewProjectionMatrix, drawTime, events);
                 }
             }
 
             // render the UI elements of all the entities
-            foreach (var uiElementState in uiElementStates)
+            for(int j=0; j<uiElementStates.Count; j++)
             {
+                var uiElementState = uiElementStates[j];
+
                 var renderObject = uiElementState.RenderObject;
                 var rootElement = renderObject.Page?.RootElement;
-                if (rootElement == null)
-                    continue;
+                if (rootElement == null) return;
 
                 var updatableRootElement = (IUIElementUpdate)rootElement;
                 var virtualResolution = renderObject.Resolution;
@@ -173,7 +156,7 @@ namespace Xenko.Rendering.UI
                 // update the rendering context values specific to this element
                 renderingContext.Resolution = virtualResolution;
                 renderingContext.ViewProjectionMatrix = uiElementState.WorldViewProjectionMatrix;
-                renderingContext.DepthStencilBuffer = renderObject.IsFullScreen ? scopedDepthBuffer : context.CommandList.DepthStencilBuffer;
+                renderingContext.DepthStencilBuffer = context.CommandList.DepthStencilBuffer;
                 renderingContext.ShouldSnapText = renderObject.SnapText;
                 renderingContext.IsFullscreen = renderObject.IsFullScreen;
                 renderingContext.WorldMatrix3D = renderObject.WorldMatrix3D;
@@ -227,29 +210,28 @@ namespace Xenko.Rendering.UI
                 batch.Begin(context.GraphicsContext, ref uiElementState.WorldViewProjectionMatrix, BlendStates.AlphaBlend, uiSystem.KeepStencilValueState, renderingContext.StencilTestReferenceValue);
 
                 // Render the UI elements in the final render target
-                RecursiveDrawWithClipping(context, rootElement, ref uiElementState.WorldViewProjectionMatrix);
+                RecursiveDrawWithClipping(context, rootElement, ref uiElementState.WorldViewProjectionMatrix, batch);
 
                 // end the image draw session
                 batch.End();
             }
 
-            PickingClear();
+            batches.Enqueue(batch);
+
+            events.Clear();
 
             // revert the depth stencil buffer to the default value
             context.CommandList.SetRenderTargets(context.CommandList.DepthStencilBuffer, context.CommandList.RenderTargetCount, context.CommandList.RenderTargets);
-
-            // Release scroped texture
-            if (scopedDepthBuffer != null)
-            {
-                context.RenderContext.Allocator.ReleaseReference(scopedDepthBuffer);
-            }
         }
 
-        private void RecursiveDrawWithClipping(RenderDrawContext context, UIElement element, ref Matrix worldViewProj)
+        private void RecursiveDrawWithClipping(RenderDrawContext context, UIElement element, ref Matrix worldViewProj, UIBatch batch)
         {
             // if the element is not visible, we also remove all its children
             if (!element.IsVisible)
                 return;
+
+            var renderingContext = batch.renderingContext as UIRenderingContext;
+            var layoutingContext = batch.layoutingContext as LayoutingContext;
 
             var renderer = rendererManager.GetRenderer(element);
             renderingContext.DepthBias = element.DepthBias;
@@ -262,7 +244,7 @@ namespace Xenko.Rendering.UI
 
                 // render the clipping region
                 batch.Begin(context.GraphicsContext, ref worldViewProj, BlendStates.ColorDisabled, uiSystem.IncreaseStencilValueState, renderingContext.StencilTestReferenceValue);
-                renderer.RenderClipping(element, renderingContext);
+                renderer.RenderClipping(element, renderingContext, batch);
                 batch.End();
 
                 // update context and restart the batch
@@ -271,11 +253,11 @@ namespace Xenko.Rendering.UI
             }
 
             // render the design of the element
-            renderer.RenderColor(element, renderingContext);
+            renderer.RenderColor(element, renderingContext, batch);
 
             // render the children
             foreach (var child in element.VisualChildrenCollection)
-                RecursiveDrawWithClipping(context, child, ref worldViewProj);
+                RecursiveDrawWithClipping(context, child, ref worldViewProj, batch);
 
             // clear the element clipping region from the stencil buffer
             if (element.ClipToBounds)
@@ -287,7 +269,7 @@ namespace Xenko.Rendering.UI
 
                 // render the clipping region
                 batch.Begin(context.GraphicsContext, ref worldViewProj, BlendStates.ColorDisabled, uiSystem.DecreaseStencilValueState, renderingContext.StencilTestReferenceValue);
-                renderer.RenderClipping(element, renderingContext);
+                renderer.RenderClipping(element, renderingContext, batch);
                 batch.End();
 
                 // update context and restart the batch

@@ -19,9 +19,9 @@ namespace Xenko.UI.Renderers
         {
         }
 
-        public override void RenderColor(UIElement element, UIRenderingContext context)
+        public override void RenderColor(UIElement element, UIRenderingContext context, UIBatch Batch)
         {
-            base.RenderColor(element, context);
+            base.RenderColor(element, context, Batch);
 
             var slider = (Slider)element;
             if (slider.Orientation == Orientation.InDepth)

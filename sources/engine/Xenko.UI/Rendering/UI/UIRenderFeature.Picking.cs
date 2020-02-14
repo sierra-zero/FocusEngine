@@ -17,9 +17,7 @@ namespace Xenko.Rendering.UI
         // object to avoid allocation at each element leave event
         private readonly HashSet<UIElement> newlySelectedElementParents = new HashSet<UIElement>();
 
-        private readonly List<PointerEvent> compactedPointerEvents = new List<PointerEvent>();
-
-        partial void PickingUpdate(RenderUIElement renderUIElement, Viewport viewport, ref Matrix worldViewProj, GameTime drawTime)
+        partial void PickingUpdate(RenderUIElement renderUIElement, Viewport viewport, ref Matrix worldViewProj, GameTime drawTime, List<PointerEvent> events)
         {
             if (renderUIElement.Page?.RootElement == null)
                 return;
@@ -29,24 +27,13 @@ namespace Xenko.Rendering.UI
 
             if (UpdateMouseOver(ref viewport, ref inverseZViewProj, renderUIElement, drawTime))
             {
-                UpdateTouchEvents(ref viewport, ref inverseZViewProj, renderUIElement, drawTime);
+                UpdateTouchEvents(ref viewport, ref inverseZViewProj, renderUIElement, drawTime, events);
             }
         }
 
-        partial void PickingClear()
-        {
-            // clear the list of compacted pointer events of time frame
-            ClearPointerEvents();
-        }
-
-        partial void PickingPrepare()
+        partial void PickingPrepare(List<PointerEvent> compactedPointerEvents)
         {
             // compact all the pointer events that happened since last frame to avoid performing useless hit tests.
-            CompactPointerEvents();
-        }
-
-        private void CompactPointerEvents()
-        {
             if (input == null) // no input for thumbnails
                 return;
 
@@ -72,11 +59,8 @@ namespace Xenko.Rendering.UI
                     compactedPointerEvents.Add(compactedMoveEvent);
                 }
             }
-        }
 
-        private void ClearPointerEvents()
-        {
-            compactedPointerEvents.Clear();
+            return;
         }
 
         /// <summary>
@@ -196,15 +180,17 @@ namespace Xenko.Rendering.UI
             }
         }
 
-        private void UpdateTouchEvents(ref Viewport viewport, ref Matrix worldViewProj, RenderUIElement state, GameTime gameTime)
+        private void UpdateTouchEvents(ref Viewport viewport, ref Matrix worldViewProj, RenderUIElement state, GameTime gameTime, List<PointerEvent> compactedPointerEvents)
         {
             var rootElement = state.Page.RootElement;
             var intersectionPoint = Vector3.Zero;
             var lastTouchPosition = new Vector2(float.NegativeInfinity);
 
             // analyze pointer event input and trigger UI touch events depending on hit Tests
-            foreach (var pointerEvent in compactedPointerEvents)
+            for (int i=0; i<compactedPointerEvents.Count; i++)
             {
+                var pointerEvent = compactedPointerEvents[i];
+
                 // performance optimization: skip all the events that started outside of the UI
                 var lastTouchedElement = state.LastTouchedElement;
                 if (lastTouchedElement == null && pointerEvent.EventType != PointerEventType.Pressed)
@@ -238,7 +224,8 @@ namespace Xenko.Rendering.UI
         /// <summary>
         /// If a pointer is pointed at an UIElement, it will be set here
         /// </summary>
-        public UIElement UIElementUnderMouseCursor { get; private set; }
+        [ThreadStatic]
+        private static UIElement UIElementUnderMouseCursor;
 
         private bool UpdateMouseOver(ref Viewport viewport, ref Matrix worldViewProj, RenderUIElement state, GameTime time)
         {
@@ -359,7 +346,7 @@ namespace Xenko.Rendering.UI
 
             // find the common element into the previously and newly selected element hierarchy
             var commonElement = element2;
-            while (commonElement != null && !newlySelectedElementParents.Contains(commonElement))
+            while (commonElement != null && !(newlySelectedElementParents.Count > 0 && newlySelectedElementParents.Contains(commonElement)))
                 commonElement = commonElement.VisualParent;
 
             return commonElement;

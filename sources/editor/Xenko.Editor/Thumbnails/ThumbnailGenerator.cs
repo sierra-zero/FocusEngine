@@ -153,7 +153,7 @@ namespace Xenko.Editor.Thumbnails
             // create utility members
             nullGameTime = new GameTime();
             SpriteBatch = new SpriteBatch(GraphicsDevice);
-            UIBatch = new UIBatch(GraphicsDevice);
+            UIBatch = new UIBatch(GraphicsDevice, null, null);
 
             // create the pipeline
             SetUpPipeline();

@@ -3,6 +3,7 @@
 
 using Xenko.Core;
 using Xenko.Core.Mathematics;
+using Xenko.Graphics;
 using Xenko.UI.Controls;
 
 namespace Xenko.UI.Renderers
@@ -17,9 +18,9 @@ namespace Xenko.UI.Renderers
         {
         }
 
-        public override void RenderColor(UIElement element, UIRenderingContext context)
+        public override void RenderColor(UIElement element, UIRenderingContext context, UIBatch Batch)
         {
-            base.RenderColor(element, context);
+            base.RenderColor(element, context, Batch);
 
             var decorator = (ContentDecorator)element;
             var sprite = decorator.BackgroundImage?.GetSprite();

@@ -20,7 +20,7 @@ namespace Xenko.UI.Renderers
         {
         }
 
-        private void RenderSelection(EditText editText, UIRenderingContext context, int start, int length, Color color, out float offsetTextStart, out float offsetAlignment, out float selectionSize)
+        private void RenderSelection(EditText editText, UIRenderingContext context, int start, int length, Color color, out float offsetTextStart, out float offsetAlignment, out float selectionSize, UIBatch Batch)
         {
             // calculate the size of the text region by removing padding
             var textRegionSize = new Vector2(editText.ActualWidth - editText.Padding.Left - editText.Padding.Right,
@@ -69,9 +69,9 @@ namespace Xenko.UI.Renderers
             Batch.DrawRectangle(ref selectionWorldMatrix, ref selectionScaleVector, ref color, context.DepthBias + 1);
         }
 
-        public override void RenderColor(UIElement element, UIRenderingContext context)
+        public override void RenderColor(UIElement element, UIRenderingContext context, UIBatch Batch)
         {
-            base.RenderColor(element, context);
+            base.RenderColor(element, context, Batch);
 
             var editText = (EditText)element;
 
@@ -104,13 +104,13 @@ namespace Xenko.UI.Renderers
             if (editText.Composition.Length > 0)
             {
                 var imeSelectionColor = editText.RenderOpacity * editText.IMESelectionColor;
-                RenderSelection(editText, context, editText.SelectionStart, editText.Composition.Length, imeSelectionColor, out offsetTextStart, out offsetAlignment, out selectionSize);
+                RenderSelection(editText, context, editText.SelectionStart, editText.Composition.Length, imeSelectionColor, out offsetTextStart, out offsetAlignment, out selectionSize, Batch);
             }
             // Draw the regular selection
             else if (editText.IsSelectionActive)
             {
                 var selectionColor = editText.RenderOpacity * editText.SelectionColor;
-                RenderSelection(editText, context, editText.SelectionStart, editText.SelectionLength, selectionColor, out offsetTextStart, out offsetAlignment, out selectionSize);
+                RenderSelection(editText, context, editText.SelectionStart, editText.SelectionLength, selectionColor, out offsetTextStart, out offsetAlignment, out selectionSize, Batch);
             }
 
             // create the text draw command

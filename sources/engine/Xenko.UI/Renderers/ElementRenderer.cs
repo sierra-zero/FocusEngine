@@ -1,6 +1,7 @@
 // Copyright (c) Xenko contributors (https://xenko.com) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
+using System;
 using Xenko.Core;
 using Xenko.Core.Mathematics;
 using Xenko.Core.Serialization.Contents;
@@ -29,11 +30,6 @@ namespace Xenko.UI.Renderers
         /// A reference to the game graphic device.
         /// </summary>
         public GraphicsDevice GraphicsDevice => GraphicsDeviceService?.GraphicsDevice;
-
-        /// <summary>
-        /// Gets a reference to the UI image drawer.
-        /// </summary>
-        public UIBatch Batch => UI.Batch;
 
         /// <summary>
         /// A depth stencil state that keep the stencil value in any cases.
@@ -76,7 +72,7 @@ namespace Xenko.UI.Renderers
         /// <param name="context">The rendering context containing information how to draw the element.</param>
         /// <remarks>The render target, the depth stencil buffer and the depth stencil state are already correctly set when entering this function. 
         /// If the user wants to perform some intermediate rendering, it is his responsibility to bind them back correctly before the final rendering.</remarks>
-        public virtual void RenderColor(UIElement element, UIRenderingContext context)
+        public virtual void RenderColor(UIElement element, UIRenderingContext context, UIBatch Batch)
         {
             var backgroundColor = element.RenderOpacity * element.BackgroundColor;
 
@@ -101,7 +97,7 @@ namespace Xenko.UI.Renderers
         /// <param name="context">The rendering context containing information how to draw the element.</param>
         /// <remarks>The render target, the depth stencil buffer and the depth stencil state are already correctly set when entering this function. 
         /// If the user wants to perform some intermediate rendering, it is his responsibility to bind them back correctly before the final rendering.</remarks>
-        public virtual void RenderClipping(UIElement element, UIRenderingContext context)
+        public virtual void RenderClipping(UIElement element, UIRenderingContext context, UIBatch Batch)
         {
             // Default implementation: render an back-face cube
             Batch.DrawBackground(ref element.WorldMatrixInternal, ref element.RenderSizeInternal, ref blackColor, context.DepthBias);

@@ -22,7 +22,7 @@ namespace Xenko.UI.Renderers
             noStencilNoDepth = new DepthStencilStateDescription(false, false);
         }
 
-        public override void RenderColor(UIElement element, UIRenderingContext context)
+        public override void RenderColor(UIElement element, UIRenderingContext context, UIBatch Batch)
         {
             var modalElement = (ModalElement)element;
 
@@ -39,7 +39,7 @@ namespace Xenko.UI.Renderers
 
             context.DepthBias += 1;
 
-            base.RenderColor(element, context);
+            base.RenderColor(element, context, Batch);
         }
 
         protected override void Destroy()

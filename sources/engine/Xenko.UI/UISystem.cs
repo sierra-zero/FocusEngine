@@ -16,8 +16,6 @@ namespace Xenko.UI
     /// </summary>
     public class UISystem : GameSystemBase
     {
-        internal UIBatch Batch { get; private set; }
-
         internal DepthStencilStateDescription KeepStencilValueState { get; private set; }
 
         internal DepthStencilStateDescription IncreaseStencilValueState { get; private set; }
@@ -64,9 +62,6 @@ namespace Xenko.UI
         protected override void LoadContent()
         {
             base.LoadContent();
-
-            // create effect and geometric primitives
-            Batch = new UIBatch(GraphicsDevice);
 
             // create depth stencil states
             var depthStencilDescription = new DepthStencilStateDescription(true, false)

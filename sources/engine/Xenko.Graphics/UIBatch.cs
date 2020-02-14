@@ -37,6 +37,8 @@ namespace Xenko.Graphics
 
         private Vector4 vector4LeftTop = new Vector4(-0.5f, -0.5f, -0.5f, 1);
 
+        public object renderingContext, layoutingContext;
+
         private readonly Vector4[] shiftVectorX = new Vector4[4];
         private readonly Vector4[] shiftVectorY = new Vector4[4];
 
@@ -141,13 +143,16 @@ namespace Xenko.Graphics
         /// Initializes a new instance of the <see cref="UIBatch"/> class.
         /// </summary>
         /// <param name="device">A valid instance of <see cref="GraphicsDevice"/>.</param>
-        public UIBatch(GraphicsDevice device)
+        public UIBatch(GraphicsDevice device, object context, object layout)
             : base(device, UIEffect.Bytecode, UIEffect.BytecodeSRgb,
             ResourceBufferInfo.CreateDynamicIndexBufferInfo("UIBatch.VertexIndexBuffers", MaxIndicesCount, MaxVerticesCount), 
             VertexPositionColorTextureSwizzle.Layout)
         {
             // Create a 1x1 pixel white texture
             whiteTexture = graphicsDevice.GetSharedWhiteTexture();
+
+            renderingContext = context;
+            layoutingContext = layout;
 
             //  Load custom font rendering effects here
 
