@@ -47,7 +47,6 @@ namespace Xenko.UI.Renderers
                 RequestedFontSize = scrollingText.ActualTextSize,
                 Batch = Batch,
                 SnapText = context.ShouldSnapText && !scrollingText.DoNotSnapText,
-                IsFullscreen = context.IsFullscreen,
                 Matrix = textWorldMatrix,
                 Alignment = TextAlignment.Left,
                 TextBoxSize = new Vector2(scrollingText.ActualWidth, scrollingText.ActualHeight)

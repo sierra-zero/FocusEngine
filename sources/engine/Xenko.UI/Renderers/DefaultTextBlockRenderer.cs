@@ -39,7 +39,6 @@ namespace Xenko.UI.Renderers
                 VertAlignment = textBlock.TextVerticalAlignment,
                 LineSpacingAdjustment = textBlock.LineSpacingAdjustment,
                 TextBoxSize = new Vector2(textBlock.ActualWidth, textBlock.ActualHeight),
-                IsFullscreen = context.IsFullscreen
             };
 
             if (textBlock.Font.FontType == SpriteFontType.SDF)

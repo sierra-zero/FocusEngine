@@ -911,7 +911,7 @@ namespace Xenko.Graphics
 
             public int DepthBias;
 
-            public bool SnapText, IsFullscreen;
+            public bool SnapText;
         }
     }
 }

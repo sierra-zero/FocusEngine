@@ -29,13 +29,6 @@ namespace Xenko.Rendering.UI
 
         public override Type SupportedRenderObjectType => typeof(RenderUIElement);
 
-        /// <summary>
-        /// Represents the UI-element thats currently under the mouse cursor.
-        /// Only elements with CanBeHitByUser == true are taken into account.
-        /// Last processed element_state / ?UIComponent? with a valid element will be used.
-        /// </summary>
-        public UIElement UIElementUnderMouseCursor { get; private set; }
-
         protected override void InitializeCore()
         {
             base.InitializeCore();
@@ -107,10 +100,6 @@ namespace Xenko.Rendering.UI
             List<PointerEvent> events = new List<PointerEvent>();
             PickingPrepare(events);
 
-            // see UIElementUnderMouseCursor property
-            UIElement elementUnderMouseCursor = null;
-            
-
             // update view parameters and perform UI picking
             for (int j = 0; j < uiElementStates.Count; j++)
             {
@@ -120,8 +109,6 @@ namespace Xenko.Rendering.UI
                 var rootElement = renderObject.Page?.RootElement;
                 if (rootElement == null)
                     continue;
-
-                UIElement loopedElementUnderMouseCursor = null;
                 
                 // calculate the size of the virtual resolution depending on target size (UI canvas)
                 var virtualResolution = renderObject.Resolution;
@@ -154,7 +141,6 @@ namespace Xenko.Rendering.UI
                     PickingUpdate(uiElementState.RenderObject, context.CommandList.Viewport, ref uiElementState.WorldViewProjectionMatrix, drawTime, events);
                 }
             }
-            UIElementUnderMouseCursor = elementUnderMouseCursor;
 
             // render the UI elements of all the entities
             for(int j=0; j<uiElementStates.Count; j++)
