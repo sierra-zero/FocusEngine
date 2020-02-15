@@ -570,6 +570,8 @@ namespace Xenko.Graphics
                 Vector4 currentRowPosition;
                 Vector4.Add(ref drawInfo->LeftTopCornerWorld, ref shiftVectorY[r], out currentRowPosition);
 
+                float uvYr = uvY[r]; // grab it out here
+
                 for (var c = 0; c < 4; c++)
                 {
                     Vector4 currentPosition;
@@ -584,7 +586,7 @@ namespace Xenko.Graphics
                     vertex->ColorAdd = drawInfo->ColorAdd;
 
                     vertex->TextureCoordinate.X = uvX[c];
-                    vertex->TextureCoordinate.Y = uvY[r];
+                    vertex->TextureCoordinate.Y = uvYr;
 
                     vertex->Swizzle = (int)drawInfo->Swizzle;
 
@@ -618,13 +620,15 @@ namespace Xenko.Graphics
             // set the two first line of vertices
             for (var r = 0; r < 2; r++)
             {
+                float tcYr = textureCoordY[r]; // grab it out here
+
                 for (var c = 0; c < 2; c++)
                 {
                     vertex->ColorScale = drawInfo->ColorScale;
                     vertex->ColorAdd = drawInfo->ColorAdd;
                     vertex->Swizzle = (int)drawInfo->Swizzle;
                     vertex->TextureCoordinate.X = textureCoordX[c];
-                    vertex->TextureCoordinate.Y = textureCoordY[r];
+                    vertex->TextureCoordinate.Y = tcYr;
 
                     vertex->Position.X = currentPosition.X;
                     vertex->Position.Y = currentPosition.Y;

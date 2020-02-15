@@ -48,6 +48,8 @@ namespace Xenko.Rendering.UI
             }
 
             rendererManager = new RendererManager(new DefaultRenderersFactory(RenderSystem.Services));
+
+
         }
 
         partial void PickingPrepare(List<PointerEvent> compactedPointerEvents);
@@ -56,26 +58,34 @@ namespace Xenko.Rendering.UI
 
         public override void Draw(RenderDrawContext context, RenderView renderView, RenderViewStage renderViewStage, int startIndex, int endIndex)
         {
-            using (context.PushRenderTargetsAndRestore())
+            if (GraphicsDevice.Platform == GraphicsPlatform.Vulkan)
             {
-                DrawInternal(context, renderView, renderViewStage, startIndex, endIndex);
+                using (context.PushRenderTargetsAndRestore())
+                {
+                    DrawInternal(context, renderView, renderViewStage, startIndex, endIndex);
+                }
+            }
+            else
+            {
+                lock (locker)
+                {
+                    using (context.PushRenderTargetsAndRestore())
+                    {
+                        DrawInternal(context, renderView, renderViewStage, startIndex, endIndex);
+                    }
+                }
             }
         }
+
+        private object locker = new object();
 
         private void DrawInternal(RenderDrawContext context, RenderView renderView, RenderViewStage renderViewStage, int startIndex, int endIndex)
         {
             base.Draw(context, renderView, renderViewStage, startIndex, endIndex);
 
-            if (batches.TryDequeue(out UIBatch batch) == false)
-                batch = new UIBatch(context.GraphicsDevice, new UIRenderingContext(), new LayoutingContext());
-
-            var renderingContext = batch.renderingContext as UIRenderingContext;
-            var layoutingContext = batch.layoutingContext as LayoutingContext;
-
             var uiProcessor = SceneInstance.GetCurrent(context.RenderContext).GetProcessor<UIRenderProcessor>();
             if (uiProcessor == null)
                 return;
-
 
             // build the list of the UI elements to render
             List<UIElementState> uiElementStates = new List<UIElementState>();
@@ -91,11 +101,6 @@ namespace Xenko.Rendering.UI
             // evaluate the current draw time (game instance is null for thumbnails)
             var drawTime = game != null ? game.DrawTime : new GameTime();
 
-            // update the rendering context
-            renderingContext.GraphicsContext = context.GraphicsContext;
-            renderingContext.Time = drawTime;
-            renderingContext.RenderTarget = context.CommandList.RenderTargets[0]; // TODO: avoid hardcoded index 0
-
             // Prepare content required for Picking and MouseOver events
             List<PointerEvent> events = new List<PointerEvent>();
             PickingPrepare(events);
@@ -109,14 +114,14 @@ namespace Xenko.Rendering.UI
                 var rootElement = renderObject.Page?.RootElement;
                 if (rootElement == null)
                     continue;
-                
+
                 // calculate the size of the virtual resolution depending on target size (UI canvas)
                 var virtualResolution = renderObject.Resolution;
 
                 if (renderObject.IsFullScreen)
                 {
                     //var targetSize = viewportSize;
-                    var targetSize = new Vector2(renderingContext.RenderTarget.Width, renderingContext.RenderTarget.Height);
+                    var targetSize = new Vector2(context.CommandList.RenderTargets[0].Width, context.CommandList.RenderTargets[0].Height);
 
                     // update the virtual resolution of the renderer
                     if (renderObject.ResolutionStretch == ResolutionStretch.FixedWidthAdaptableHeight)
@@ -143,86 +148,129 @@ namespace Xenko.Rendering.UI
             }
 
             // render the UI elements of all the entities
-            for(int j=0; j<uiElementStates.Count; j++)
+            if (GraphicsDevice.Platform == GraphicsPlatform.Vulkan)
             {
-                var uiElementState = uiElementStates[j];
-
-                var renderObject = uiElementState.RenderObject;
-                var rootElement = renderObject.Page?.RootElement;
-                if (rootElement == null) return;
-
-                var updatableRootElement = (IUIElementUpdate)rootElement;
-                var virtualResolution = renderObject.Resolution;
-
-                // update the rendering context values specific to this element
-                renderingContext.Resolution = virtualResolution;
-                renderingContext.ViewProjectionMatrix = uiElementState.WorldViewProjectionMatrix;
-                renderingContext.DepthStencilBuffer = context.CommandList.DepthStencilBuffer;
-                renderingContext.ShouldSnapText = renderObject.SnapText;
-                renderingContext.IsFullscreen = renderObject.IsFullScreen;
-                renderingContext.WorldMatrix3D = renderObject.WorldMatrix3D;
-
-                // calculate an estimate of the UI real size by projecting the element virtual resolution on the screen
-                var virtualOrigin = uiElementState.WorldViewProjectionMatrix.Row4;
-                var virtualWidth = new Vector4(virtualResolution.X / 2, 0, 0, 1);
-                var virtualHeight = new Vector4(0, virtualResolution.Y / 2, 0, 1);
-                var transformedVirtualWidth = Vector4.Zero;
-                var transformedVirtualHeight = Vector4.Zero;
-                for (var i = 0; i < 4; i++)
+                Xenko.Core.Threading.Dispatcher.For(0, uiElementStates.Count, (j) =>
                 {
-                    transformedVirtualWidth[i] = virtualWidth[0] * uiElementState.WorldViewProjectionMatrix[0 + i] + uiElementState.WorldViewProjectionMatrix[12 + i];
-                    transformedVirtualHeight[i] = virtualHeight[1] * uiElementState.WorldViewProjectionMatrix[4 + i] + uiElementState.WorldViewProjectionMatrix[12 + i];
-                }
-
-                var viewportSize = context.CommandList.Viewport.Size;
-                var projectedOrigin = virtualOrigin.XY() / virtualOrigin.W;
-                var projectedVirtualWidth = viewportSize * (transformedVirtualWidth.XY() / transformedVirtualWidth.W - projectedOrigin);
-                var projectedVirtualHeight = viewportSize * (transformedVirtualHeight.XY() / transformedVirtualHeight.W - projectedOrigin);
-
-                // Set default services
-                rootElement.UIElementServices = new UIElementServices { Services = RenderSystem.Services };
-
-                // set default resource dictionary
-
-                // update layouting context.
-                layoutingContext.VirtualResolution = virtualResolution;
-                layoutingContext.RealResolution = viewportSize;
-                layoutingContext.RealVirtualResolutionRatio = new Vector2(projectedVirtualWidth.Length() / virtualResolution.X, projectedVirtualHeight.Length() / virtualResolution.Y);
-                rootElement.LayoutingContext = layoutingContext;
-
-                // perform the time-based updates of the UI element
-                updatableRootElement.Update(drawTime);
-
-                // update the UI element disposition
-                rootElement.Measure(virtualResolution);
-                rootElement.Arrange(virtualResolution, false);
-
-                // update the UI element hierarchical properties
-                var rootMatrix = Matrix.Translation(-virtualResolution / 2); // UI world is translated by a half resolution compared to its quad, which is centered around the origin
-                updatableRootElement.UpdateWorldMatrix(ref rootMatrix, rootMatrix != uiElementState.RenderObject.LastRootMatrix);
-                updatableRootElement.UpdateElementState(0);
-                uiElementState.RenderObject.LastRootMatrix = rootMatrix;
-
-                // set the depth buffer, although we are probably not writing to it
-                context.CommandList.SetRenderTarget(renderingContext.DepthStencilBuffer, renderingContext.RenderTarget);
-
-                // start the image draw session
-                renderingContext.StencilTestReferenceValue = 0;
-                batch.Begin(context.GraphicsContext, ref uiElementState.WorldViewProjectionMatrix, BlendStates.AlphaBlend, uiSystem.KeepStencilValueState, renderingContext.StencilTestReferenceValue);
-
-                // Render the UI elements in the final render target
-                RecursiveDrawWithClipping(context, rootElement, ref uiElementState.WorldViewProjectionMatrix, batch);
-
-                // end the image draw session
-                batch.End();
+                    drawUIElement(context, renderView, uiElementStates, j, drawTime);
+                });
             }
-
-            batches.Enqueue(batch);
+            else
+            {
+                for (int j=0; j<uiElementStates.Count; j++)
+                {
+                    drawUIElement(context, renderView, uiElementStates, j, drawTime);
+                }
+            }
 
             events.Clear();
 
             // revert the depth stencil buffer to the default value
             context.CommandList.SetRenderTargets(context.CommandList.DepthStencilBuffer, context.CommandList.RenderTargetCount, context.CommandList.RenderTargets);
+        }
+
+        private UIBatch directXBatch;
+
+        private void drawUIElement(RenderDrawContext context, RenderView renderView, List<UIElementState> uiElementStates, int j, GameTime drawTime)
+        {
+            var uiElementState = uiElementStates[j];
+
+            var renderObject = uiElementState.RenderObject;
+            var rootElement = renderObject.Page?.RootElement;
+            if (rootElement == null) return;
+
+            var updatableRootElement = (IUIElementUpdate)rootElement;
+            var virtualResolution = renderObject.Resolution;
+
+            UIBatch batch;
+            if (GraphicsDevice.Platform == GraphicsPlatform.Vulkan)
+            {
+                if (batches.TryDequeue(out batch) == false)
+                    batch = new UIBatch(context.GraphicsDevice, new UIRenderingContext(), new LayoutingContext());
+            } 
+            else
+            {
+                if (directXBatch == null) directXBatch = new UIBatch(context.GraphicsDevice, new UIRenderingContext(), new LayoutingContext());
+                batch = directXBatch;
+            }
+
+            var renderingContext = batch.renderingContext as UIRenderingContext;
+            var layoutingContext = batch.layoutingContext as LayoutingContext;
+
+            // update the rendering context values specific to this element
+            renderingContext.Resolution = virtualResolution;
+            renderingContext.ViewProjectionMatrix = uiElementState.WorldViewProjectionMatrix;
+            renderingContext.DepthStencilBuffer = context.CommandList.DepthStencilBuffer;
+            renderingContext.ShouldSnapText = renderObject.SnapText;
+            renderingContext.IsFullscreen = renderObject.IsFullScreen;
+            renderingContext.WorldMatrix3D = renderObject.WorldMatrix3D;
+
+            // update the rendering context
+            renderingContext.GraphicsContext = context.GraphicsContext;
+            renderingContext.Time = drawTime;
+            renderingContext.RenderTarget = context.CommandList.RenderTargets[0]; // TODO: avoid hardcoded index 0
+
+            // calculate an estimate of the UI real size by projecting the element virtual resolution on the screen
+            var virtualOrigin = uiElementState.WorldViewProjectionMatrix.Row4;
+            var virtualWidth = new Vector4(virtualResolution.X / 2, 0, 0, 1);
+            var virtualHeight = new Vector4(0, virtualResolution.Y / 2, 0, 1);
+            var transformedVirtualWidth = Vector4.Zero;
+            var transformedVirtualHeight = Vector4.Zero;
+            for (var i = 0; i < 4; i++)
+            {
+                transformedVirtualWidth[i] = virtualWidth[0] * uiElementState.WorldViewProjectionMatrix[0 + i] + uiElementState.WorldViewProjectionMatrix[12 + i];
+                transformedVirtualHeight[i] = virtualHeight[1] * uiElementState.WorldViewProjectionMatrix[4 + i] + uiElementState.WorldViewProjectionMatrix[12 + i];
+            }
+
+            var viewportSize = context.CommandList.Viewport.Size;
+            var projectedOrigin = virtualOrigin.XY() / virtualOrigin.W;
+            var projectedVirtualWidth = viewportSize * (transformedVirtualWidth.XY() / transformedVirtualWidth.W - projectedOrigin);
+            var projectedVirtualHeight = viewportSize * (transformedVirtualHeight.XY() / transformedVirtualHeight.W - projectedOrigin);
+
+            // Set default services
+            rootElement.UIElementServices = new UIElementServices { Services = RenderSystem.Services };
+
+            // set default resource dictionary
+
+            // update layouting context.
+            layoutingContext.VirtualResolution = virtualResolution;
+            layoutingContext.RealResolution = viewportSize;
+            layoutingContext.RealVirtualResolutionRatio = new Vector2(projectedVirtualWidth.Length() / virtualResolution.X, projectedVirtualHeight.Length() / virtualResolution.Y);
+            rootElement.LayoutingContext = layoutingContext;
+
+            // perform the time-based updates of the UI element
+            updatableRootElement.Update(drawTime);
+
+            // update the UI element disposition
+            rootElement.Measure(virtualResolution);
+            rootElement.Arrange(virtualResolution, false);
+
+            // update the UI element hierarchical properties
+            var rootMatrix = Matrix.Translation(-virtualResolution / 2); // UI world is translated by a half resolution compared to its quad, which is centered around the origin
+            updatableRootElement.UpdateWorldMatrix(ref rootMatrix, rootMatrix != uiElementState.RenderObject.LastRootMatrix);
+            updatableRootElement.UpdateElementState(0);
+            uiElementState.RenderObject.LastRootMatrix = rootMatrix;
+
+            // set the depth buffer, although we are probably not writing to it
+            context.CommandList.SetRenderTarget(renderingContext.DepthStencilBuffer, renderingContext.RenderTarget);
+
+            // start the image draw session
+            renderingContext.StencilTestReferenceValue = 0;
+            batch.Begin(context.GraphicsContext, ref uiElementState.WorldViewProjectionMatrix, BlendStates.AlphaBlend, uiSystem.KeepStencilValueState, renderingContext.StencilTestReferenceValue);
+
+            // Render the UI elements in the final render target
+            RecursiveDrawWithClipping(context, rootElement, ref uiElementState.WorldViewProjectionMatrix, batch);
+
+            if (GraphicsDevice.Platform == GraphicsPlatform.Vulkan)
+            {
+                lock (locker)
+                {
+                    batch.End();
+                }
+            }
+            else batch.End();
+
+            batches.Enqueue(batch);
         }
 
         private void RecursiveDrawWithClipping(RenderDrawContext context, UIElement element, ref Matrix worldViewProj, UIBatch batch)

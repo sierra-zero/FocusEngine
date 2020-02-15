@@ -15,7 +15,8 @@ namespace Xenko.Rendering.UI
     public partial class UIRenderFeature 
     {
         // object to avoid allocation at each element leave event
-        private readonly HashSet<UIElement> newlySelectedElementParents = new HashSet<UIElement>();
+        [ThreadStatic]
+        private static HashSet<UIElement> newlySelectedElementParents = new HashSet<UIElement>();
 
         partial void PickingUpdate(RenderUIElement renderUIElement, Viewport viewport, ref Matrix worldViewProj, GameTime drawTime, List<PointerEvent> events)
         {
@@ -336,7 +337,11 @@ namespace Xenko.Rendering.UI
         private UIElement FindCommonParent(UIElement element1, UIElement element2)
         {
             // build the list of the parents of the newly selected element
-            newlySelectedElementParents.Clear();
+            if (newlySelectedElementParents == null)
+                newlySelectedElementParents = new HashSet<UIElement>();
+            else 
+                newlySelectedElementParents.Clear();
+            
             var newElementParent = element1;
             while (newElementParent != null)
             {
@@ -346,7 +351,7 @@ namespace Xenko.Rendering.UI
 
             // find the common element into the previously and newly selected element hierarchy
             var commonElement = element2;
-            while (commonElement != null && !(newlySelectedElementParents.Count > 0 && newlySelectedElementParents.Contains(commonElement)))
+            while (commonElement != null && !newlySelectedElementParents.Contains(commonElement))
                 commonElement = commonElement.VisualParent;
 
             return commonElement;
