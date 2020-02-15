@@ -746,8 +746,7 @@ namespace Xenko.Updater
 
             public override bool Equals(object obj)
             {
-                if (ReferenceEquals(null, obj)) return false;
-                return obj is UpdateKey && Equals((UpdateKey)obj);
+                return obj is UpdateKey key && Equals(key);
             }
 
             public override int GetHashCode()

@@ -316,8 +316,7 @@ namespace Xenko.Extensions
 
             public override bool Equals(object obj)
             {
-                if (ReferenceEquals(null, obj)) return false;
-                return obj is EdgeKeyAEN && Equals((EdgeKeyAEN)obj);
+                return obj is EdgeKeyAEN key && Equals(key);
             }
 
             public override int GetHashCode()
