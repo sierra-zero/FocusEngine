@@ -723,7 +723,7 @@ namespace Xenko.Updater
         /// <summary>
         /// Internally used as key to register members.
         /// </summary>
-        private struct UpdateKey
+        private struct UpdateKey : IEquatable<UpdateKey>
         {
             public readonly Type Owner;
             public readonly string Name;
@@ -737,6 +737,27 @@ namespace Xenko.Updater
             public override string ToString()
             {
                 return $"{Owner.Name}.{Name}";
+            }
+
+            public bool Equals(UpdateKey other)
+            {
+                return Owner == other.Owner && Name == other.Name;
+            }
+
+            public override bool Equals(object obj)
+            {
+                if (ReferenceEquals(null, obj)) return false;
+                return obj is UpdateKey && Equals((UpdateKey)obj);
+            }
+
+            public override int GetHashCode()
+            {
+                unchecked
+                {
+                    int hashCode = Owner.GetHashCode();
+                    hashCode = (hashCode * 397) ^ Name.GetHashCode();
+                    return hashCode;
+                }
             }
         }
 
