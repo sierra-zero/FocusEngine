@@ -12,8 +12,14 @@ namespace Xenko.Rendering
     {
         public Model Model;
         public RenderMesh[] Meshes;
+        /// <summary>
+        /// The number of <see cref="Mesh"/>es when <see cref="Meshes"/> was generated.
+        /// </summary>
+        /// <remarks>
+        /// A single mesh may be split into multiple RenderMeshes due to multiple material passes.
+        /// </remarks>
+        public int UniqueMeshCount;
         public MaterialInfo[] Materials;
-
 
         public struct MaterialInfo
         {
