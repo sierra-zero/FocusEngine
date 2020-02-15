@@ -209,7 +209,6 @@ namespace Xenko.Rendering.Lights
                     {
                         renderViewInfos[i].PointLights.Clear();
                         renderViewInfos[i].SpotLights.Clear();
-                        renderViewInfos[i].LightIndices.Clear();
                     }
                 }
             }
@@ -229,7 +228,6 @@ namespace Xenko.Rendering.Lights
                         // first time
                         renderViewInfos[i].PointLights = new FastListStruct<PointLightData>(8);
                         renderViewInfos[i].SpotLights = new FastListStruct<SpotLightData>(8);
-                        renderViewInfos[i].LightIndices = new FastListStruct<int>(8);
                     }
 
                     renderViewInfos[i].RenderView = views[i];
@@ -449,8 +447,9 @@ namespace Xenko.Rendering.Lights
 
                 // setup for a fast indicies calculation (makes for a bigger indicies list, but it is super fast generating it)
                 int clustersPerThread = 1 + (totalClusterCount / Xenko.Core.Threading.Dispatcher.MaxDegreeOfParallelism);
-                renderViewInfo.LightIndices.Count = totalClusterCount * totalLights;
-                renderViewInfo.LightIndices.EnsureCapacity(renderViewInfo.LightIndices.Count);
+                renderViewInfo.LightIndicesCount = totalClusterCount * totalLights;
+                if (renderViewInfo.LightIndices == null || renderViewInfo.LightIndices.Length < renderViewInfo.LightIndicesCount)
+                    renderViewInfo.LightIndices = new byte[renderViewInfo.LightIndicesCount];
 
                 Xenko.Core.Threading.Dispatcher.For(0, Xenko.Core.Threading.Dispatcher.MaxDegreeOfParallelism, (thread) =>
                 {
@@ -475,7 +474,7 @@ namespace Xenko.Rendering.Lights
                         {
                             var cluster = lightNodes[clusterIndex][i];
 
-                            rvinfo.LightIndices[indexStart + i] = cluster.LightIndex;
+                            rvinfo.LightIndices[indexStart + i] = (byte)cluster.LightIndex;
 
                             switch (cluster.LightType)
                             {
@@ -518,16 +517,16 @@ namespace Xenko.Rendering.Lights
                     var renderViewInfo = renderViewInfos[viewIndex];
 
                     // Update sizes
-                    maxLightIndicesCount = Math.Max(maxLightIndicesCount, renderViewInfo.LightIndices.Count);
+                    maxLightIndicesCount = Math.Max(maxLightIndicesCount, renderViewInfo.LightIndicesCount);
                     maxPointLightsCount = Math.Max(maxPointLightsCount, renderViewInfo.PointLights.Count);
                     maxSpotLightsCount = Math.Max(maxSpotLightsCount, renderViewInfo.SpotLights.Count);
                 }
 
                 // (Re)allocate buffers if necessary
-                if (maxLightIndicesCount > 0 && (clusteredGroupRenderer.lightIndicesBuffer == null || clusteredGroupRenderer.lightIndicesBuffer.SizeInBytes < maxLightIndicesCount * sizeof(int)))
+                if (maxLightIndicesCount > 0 && (clusteredGroupRenderer.lightIndicesBuffer == null || clusteredGroupRenderer.lightIndicesBuffer.SizeInBytes < maxLightIndicesCount * sizeof(byte)))
                 {
                     clusteredGroupRenderer.lightIndicesBuffer?.Dispose();
-                    clusteredGroupRenderer.lightIndicesBuffer = Buffer.New(drawContext.GraphicsDevice, MathUtil.NextPowerOfTwo(maxLightIndicesCount * sizeof(int)), 0, BufferFlags.ShaderResource, PixelFormat.R32_UInt);
+                    clusteredGroupRenderer.lightIndicesBuffer = Buffer.New(drawContext.GraphicsDevice, MathUtil.NextPowerOfTwo(maxLightIndicesCount * sizeof(byte)), 0, BufferFlags.ShaderResource, PixelFormat.R32_UInt);
                 }
                 if (maxPointLightsCount > 0 && (clusteredGroupRenderer.pointLightsBuffer == null || clusteredGroupRenderer.pointLightsBuffer.SizeInBytes < maxPointLightsCount * sizeof(PointLightData)))
                 {
@@ -615,10 +614,10 @@ namespace Xenko.Rendering.Lights
                 }
 #endif
                 // LightIndices: Ensure size and update
-                if (renderViewInfo.LightIndices.Count > 0)
+                if (renderViewInfo.LightIndicesCount > 0)
                 {
-                    fixed (int* lightIndicesPtr = renderViewInfo.LightIndices.Items)
-                        context.CommandList.UpdateSubresource(clusteredGroupRenderer.lightIndicesBuffer, 0, new DataBox((IntPtr)lightIndicesPtr, 0, 0), new ResourceRegion(0, 0, 0, renderViewInfo.LightIndices.Count * sizeof(int), 1, 1));
+                    fixed (byte* lightIndicesPtr = renderViewInfo.LightIndices)
+                        context.CommandList.UpdateSubresource(clusteredGroupRenderer.lightIndicesBuffer, 0, new DataBox((IntPtr)lightIndicesPtr, 0, 0), new ResourceRegion(0, 0, 0, renderViewInfo.LightIndicesCount * sizeof(byte), 1, 1));
                 }
 #if XENKO_PLATFORM_MACOS
                 // See previous macOS comment.
@@ -764,7 +763,8 @@ namespace Xenko.Rendering.Lights
 
                 public FastListStruct<PointLightData> PointLights;
                 public FastListStruct<SpotLightData> SpotLights;
-                public FastListStruct<int> LightIndices;
+                public byte[] LightIndices;
+                public int LightIndicesCount;
                 public Int2[] LightClusters;
                 public Int2 ClusterCount;
             }

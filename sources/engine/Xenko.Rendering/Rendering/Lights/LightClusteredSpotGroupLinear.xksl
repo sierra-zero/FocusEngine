@@ -19,7 +19,7 @@ namespace Xenko.Rendering.Lights
         {
             // What we had so far was just a loop index
             // Note: we have lightIndex as a parameter but we ignore it since we want to preserve it between point and spot lights
-            int realLightIndex = LightIndices.Load(streams.lightIndex);
+            int realLightIndex = (LightIndices.Load(streams.lightIndex >> 2) >> ((streams.lightIndex & 3) << 3)) & 0xFF; // grab the right byte
             streams.lightIndex++;
 
             // Build SpotLightData
