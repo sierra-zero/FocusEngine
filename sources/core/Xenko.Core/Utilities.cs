@@ -748,21 +748,12 @@ namespace Xenko.Core
             if (left.Count != right.Count)
                 return false;
 
-            var count = 0;
-            var leftIt = left.GetEnumerator();
-            var rightIt = right.GetEnumerator();
             var comparer = EqualityComparer<T>.Default;
-            while (leftIt.MoveNext() && rightIt.MoveNext())
+            for (int i = 0; i < left.Count; i ++)
             {
-                if (!comparer.Equals(leftIt.Current, rightIt.Current))
+                if (!comparer.Equals(left[i], right[i]))
                     return false;
-                count++;
             }
-
-            // Just double check to make sure that the iterator actually returns
-            // the exact number of elements
-            if (count != left.Count)
-                return false;
 
             return true;
         }
