@@ -345,7 +345,7 @@ namespace Xenko.Core.Assets.Editor.ViewModel
 
         private static void BackupProjectFiles()
         {
-            var path = Path.GetDirectoryName(EditorViewModel.Instance.projectPath);
+            var path = EditorViewModel.Instance.projectPath;
             string[] files = Directory.GetFiles(path, "*.xk*", SearchOption.AllDirectories);
             for (int i=0; i<files.Length; i++)
             {
@@ -445,7 +445,7 @@ namespace Xenko.Core.Assets.Editor.ViewModel
             }
 
             // grab path for backup/restore
-            EditorViewModel.Instance.projectPath = path;
+            EditorViewModel.Instance.projectPath = Path.GetDirectoryName(path);
 
             // Register the node container to the copy/paste service.
             sessionViewModel.ServiceProvider.Get<CopyPasteService>().PropertyGraphContainer = sessionViewModel.GraphContainer;
