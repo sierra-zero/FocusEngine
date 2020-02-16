@@ -409,6 +409,10 @@ namespace Xenko.Audio
                         {
                             source.ExtractAndFillData();
                         }
+                        else if (AudioLayer.SourceIsPlaying(source.soundInstance.Source) == false)
+                        {
+                            AudioLayer.SourcePlay(source.soundInstance.Source);
+                        }
                     }
                 }
 
