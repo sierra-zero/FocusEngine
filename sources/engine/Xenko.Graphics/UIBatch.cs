@@ -634,34 +634,54 @@ namespace Xenko.Graphics
             // set the two first line of vertices
             for (var r = 0; r < 2; r++)
             {
-                for (var c = 0; c < 2; c++)
+                // unroll this loop
+                // c = 0
+                vertex->ColorScale = colorScale;
+                vertex->ColorAdd = colorAdd;
+                vertex->Swizzle = (int)drawInfo->Swizzle;
+                vertex->TextureCoordinate.X = tcx0;
+                vertex->TextureCoordinate.Y = r == 0 ? tcy0 : tcy1;
+
+                vertex->Position.X = currentPosition.X;
+                vertex->Position.Y = currentPosition.Y;
+                vertex->Position.Z = currentPosition.Z - currentPosition.W * drawInfo->DepthBias * DepthBiasShiftOneUnit;
+                vertex->Position.W = currentPosition.W;
+
+                if (drawInfo->SnapImage)
                 {
-                    vertex->ColorScale = colorScale;
-                    vertex->ColorAdd = colorAdd;
-                    vertex->Swizzle = (int)drawInfo->Swizzle;
-                    vertex->TextureCoordinate.X = c == 0 ? tcx0 : tcx1;
-                    vertex->TextureCoordinate.Y = r == 0 ? tcy0 : tcy1;
-
-                    vertex->Position.X = currentPosition.X;
-                    vertex->Position.Y = currentPosition.Y;
-                    vertex->Position.Z = currentPosition.Z - currentPosition.W * drawInfo->DepthBias * DepthBiasShiftOneUnit;
-                    vertex->Position.W = currentPosition.W;
-
-                    if (drawInfo->SnapImage)
-                    {
-                        var backBufferHalfWidth = GraphicsContext.CommandList.RenderTarget.ViewWidth / 2;
-                        var backBufferHalfHeight = GraphicsContext.CommandList.RenderTarget.ViewHeight / 2;
-                        vertex->Position.X = (float)(Math.Round(vertex->Position.X * backBufferHalfWidth) / backBufferHalfWidth);
-                        vertex->Position.Y = (float)(Math.Round(vertex->Position.Y * backBufferHalfHeight) / backBufferHalfHeight);
-                    }
-
-                    vertex++;
-
-                    if (c == 0)
-                        Vector4.Add(ref currentPosition, ref drawInfo->UnitXWorld, out currentPosition);
-                    else
-                        Vector4.Subtract(ref currentPosition, ref drawInfo->UnitXWorld, out currentPosition);
+                    var backBufferHalfWidth = GraphicsContext.CommandList.RenderTarget.ViewWidth / 2;
+                    var backBufferHalfHeight = GraphicsContext.CommandList.RenderTarget.ViewHeight / 2;
+                    vertex->Position.X = (float)(Math.Round(vertex->Position.X * backBufferHalfWidth) / backBufferHalfWidth);
+                    vertex->Position.Y = (float)(Math.Round(vertex->Position.Y * backBufferHalfHeight) / backBufferHalfHeight);
                 }
+
+                vertex++;
+
+                Vector4.Add(ref currentPosition, ref drawInfo->UnitXWorld, out currentPosition);
+
+                // c = 1
+                vertex->ColorScale = colorScale;
+                vertex->ColorAdd = colorAdd;
+                vertex->Swizzle = (int)drawInfo->Swizzle;
+                vertex->TextureCoordinate.X = tcx1;
+                vertex->TextureCoordinate.Y = r == 0 ? tcy0 : tcy1;
+
+                vertex->Position.X = currentPosition.X;
+                vertex->Position.Y = currentPosition.Y;
+                vertex->Position.Z = currentPosition.Z - currentPosition.W * drawInfo->DepthBias * DepthBiasShiftOneUnit;
+                vertex->Position.W = currentPosition.W;
+
+                if (drawInfo->SnapImage)
+                {
+                    var backBufferHalfWidth = GraphicsContext.CommandList.RenderTarget.ViewWidth / 2;
+                    var backBufferHalfHeight = GraphicsContext.CommandList.RenderTarget.ViewHeight / 2;
+                    vertex->Position.X = (float)(Math.Round(vertex->Position.X * backBufferHalfWidth) / backBufferHalfWidth);
+                    vertex->Position.Y = (float)(Math.Round(vertex->Position.Y * backBufferHalfHeight) / backBufferHalfHeight);
+                }
+
+                vertex++;
+
+                Vector4.Subtract(ref currentPosition, ref drawInfo->UnitXWorld, out currentPosition);
 
                 Vector4.Add(ref currentPosition, ref drawInfo->UnitYWorld, out currentPosition);
             }
