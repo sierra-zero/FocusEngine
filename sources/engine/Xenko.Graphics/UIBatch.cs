@@ -502,7 +502,11 @@ namespace Xenko.Graphics
         private static unsafe void CalculateCubeVertices(UIImageDrawInfo* drawInfo, VertexPositionColorTextureSwizzle* vertex)
         {
             var currentPosition = drawInfo->LeftTopCornerWorld;
-            
+
+            // convert colors here instead of in the loop
+            Color4 colorScale = drawInfo->ColorScale.ToColor4();
+            Color4 colorAdd = drawInfo->ColorAdd.ToColor4();
+
             // set the two first line of vertices
             for (var l = 0; l < 2; ++l)
             {
@@ -510,8 +514,8 @@ namespace Xenko.Graphics
                 {
                     for (var c = 0; c < 2; c++)
                     {
-                        vertex->ColorScale = drawInfo->ColorScale;
-                        vertex->ColorAdd = drawInfo->ColorAdd;
+                        vertex->ColorScale = colorScale;
+                        vertex->ColorAdd = colorAdd;
 
                         vertex->Swizzle = (int)drawInfo->Swizzle;
                         vertex->TextureCoordinate.X = 0; // cubes are used only for color
@@ -565,6 +569,10 @@ namespace Xenko.Graphics
             Vector4.Multiply(ref drawInfo->UnitYWorld, drawInfo->VertexShift.W, out shiftVectorY[2]);
             shiftVectorY[3] = drawInfo->UnitYWorld;
 
+            // convert colors here instead of in the loop
+            Color4 colorScale = drawInfo->ColorScale.ToColor4();
+            Color4 colorAdd = drawInfo->ColorAdd.ToColor4();
+
             for (var r = 0; r < 4; r++)
             {
                 Vector4 currentRowPosition;
@@ -582,10 +590,10 @@ namespace Xenko.Graphics
                     vertex->Position.Z = currentPosition.Z - currentPosition.W * drawInfo->DepthBias * DepthBiasShiftOneUnit;
                     vertex->Position.W = currentPosition.W;
 
-                    vertex->ColorScale = drawInfo->ColorScale;
-                    vertex->ColorAdd = drawInfo->ColorAdd;
+                    vertex->ColorScale = colorScale;
+                    vertex->ColorAdd = colorAdd;
 
-                    vertex->TextureCoordinate.X = uvX[c];
+                    vertex->TextureCoordinate.X = c == 0 ? uvX.X : uvX.Y;
                     vertex->TextureCoordinate.Y = uvYr;
 
                     vertex->Swizzle = (int)drawInfo->Swizzle;
@@ -614,21 +622,25 @@ namespace Xenko.Graphics
                 currentPosition.Y *= currentPosition.W;
             }
 
-            var textureCoordX = new Vector2(drawInfo->Source.Left, drawInfo->Source.Right);
-            var textureCoordY = new Vector2(drawInfo->Source.Top, drawInfo->Source.Bottom);
+            float tcx0 = drawInfo->Source.Left;
+            float tcx1 = drawInfo->Source.Right;
+            float tcy0 = drawInfo->Source.Top;
+            float tcy1 = drawInfo->Source.Bottom;
+
+            // convert colors here instead of in the loop
+            Color4 colorScale = drawInfo->ColorScale.ToColor4();
+            Color4 colorAdd = drawInfo->ColorAdd.ToColor4();
 
             // set the two first line of vertices
             for (var r = 0; r < 2; r++)
             {
-                float tcYr = textureCoordY[r]; // grab it out here
-
                 for (var c = 0; c < 2; c++)
                 {
-                    vertex->ColorScale = drawInfo->ColorScale;
-                    vertex->ColorAdd = drawInfo->ColorAdd;
+                    vertex->ColorScale = colorScale;
+                    vertex->ColorAdd = colorAdd;
                     vertex->Swizzle = (int)drawInfo->Swizzle;
-                    vertex->TextureCoordinate.X = textureCoordX[c];
-                    vertex->TextureCoordinate.Y = tcYr;
+                    vertex->TextureCoordinate.X = c == 0 ? tcx0 : tcx1;
+                    vertex->TextureCoordinate.Y = r == 0 ? tcy0 : tcy1;
 
                     vertex->Position.X = currentPosition.X;
                     vertex->Position.Y = currentPosition.Y;

@@ -405,8 +405,6 @@ namespace Xenko.Graphics
             DrawBatchPerTextureAndPass(sprites, offset, count);
         }
 
-        private object batchLocker = new object();
-
         private void DrawBatchPerTextureAndPass(ElementInfo[] sprites, int offset, int count)
         {
             while (count > 0)
@@ -489,7 +487,6 @@ namespace Xenko.Graphics
                 //    resourceContext.VertexBuffer.SetData(GraphicsDevice, new DataPointer(x64TempBuffer.DataPointer, batchSize * VerticesPerSprite * Utilities.SizeOf<VertexPositionColorTexture>()), offsetInBytes, noOverwrite);
                 //}
                 //else
-                lock (batchLocker)
                 {
                     var mappedIndices = new MappedResource();
                     var mappedVertices = GraphicsContext.CommandList.MapSubresource(ResourceContext.VertexBuffer, 0, MapMode.WriteNoOverwrite, false, offsetVertexInBytes, vertexCount * vertexStructSize);
