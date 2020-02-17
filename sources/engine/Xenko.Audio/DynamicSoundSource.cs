@@ -411,6 +411,7 @@ namespace Xenko.Audio
                         }
                         else if (AudioLayer.SourceIsPlaying(source.soundInstance.Source) == false)
                         {
+                            AudioLayer.SourceFlushBuffers(source.soundInstance.Source);
                             AudioLayer.SourcePlay(source.soundInstance.Source);
                         }
                     }
