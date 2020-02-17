@@ -38,6 +38,7 @@ namespace Xenko.Engine
                 s.Volume = volume * MasterVolume;
                 s.IsLooping = looped;
                 s.Pan = pan;
+                if (s.IsSpatialized) s.Apply3D(Listener.Listener.Position);
                 s.Play();
             }
             return s;
