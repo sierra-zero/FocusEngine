@@ -222,6 +222,9 @@ namespace Xenko.Rendering.Shadows
                 {
                     for (int i = 0; i < currentLights.Count; ++i)
                     {
+                        var lightEntry = currentLights[i];
+                        var light = lightEntry.Light;
+
                         var singleLightData = (LightSpotShadowMapShaderData)lightEntry.ShadowMapTexture.ShaderData;
                         worldToShadowCascadeUV[lightIndex] = singleLightData.WorldToShadowCascadeUV;
                         Matrix.Invert(ref singleLightData.WorldToShadowCascadeUV, out inverseWorldToShadowCascadeUV[lightIndex]);
@@ -232,7 +235,6 @@ namespace Xenko.Rendering.Shadows
 
                         if (light.BoundingBox.Intersects(ref boundingBox2))
                         {
-                            var singleLightData = (LightSpotShadowMapShaderData)lightEntry.ShadowMapTexture.ShaderData;
                             worldToShadowCascadeUV[lightIndex] = singleLightData.WorldToShadowCascadeUV;
                             inverseWorldToShadowCascadeUV[lightIndex] = Matrix.Invert(singleLightData.WorldToShadowCascadeUV);
 
