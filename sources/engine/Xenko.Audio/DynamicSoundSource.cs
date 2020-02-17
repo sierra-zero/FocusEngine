@@ -414,7 +414,7 @@ namespace Xenko.Audio
                             // get music playing again
                             AudioLayer.SourceStop(source.soundInstance.Source);
                             AudioLayer.SourceFlushBuffers(source.soundInstance.Source);
-                            source.PrepareInternal();
+                            source.RestartInternal();
                             if (source.CanFill) source.ExtractAndFillData();
                             AudioLayer.SourcePlay(source.soundInstance.Source);
                         }
