@@ -169,7 +169,7 @@ namespace Xenko.Rendering.Lights
             // Artifically increase range of first slice to not waste too much slices in very short area
             public float SpecialNearPlane = 2.0f;
 
-            private List<ConcurrentCollector<LightClusterLinkedNode>> lightNodes = new List<ConcurrentCollector<LightClusterLinkedNode>>();
+            private ConcurrentQueue<LightClusterLinkedNode>[] lightNodes;
             private RenderViewInfo[] renderViewInfos;
             private Int2 maxClusterCount;
             //private Plane[] zPlanes;
@@ -300,8 +300,13 @@ namespace Xenko.Rendering.Lights
                 float clusterDepthBias = renderViewInfo.ClusterDepthBias = 2.0f - clusterDepthScale * nearPlane;
 
                 // make sure we have enough lists
-                while (lightNodes.Count < totalClusterCount)
-                    lightNodes.Add(new ConcurrentCollector<LightClusterLinkedNode>());
+                if (lightNodes == null || lightNodes.Length < totalClusterCount)
+                {
+                    lightNodes = new ConcurrentQueue<LightClusterLinkedNode>[totalClusterCount];
+                    for (int i = 0; i < totalClusterCount; i++)
+                        lightNodes[i] = new ConcurrentQueue<LightClusterLinkedNode>();
+                }
+
                 int totalLights = 0;
 
                 //---------------- POINT LIGHTS -------------------
@@ -374,7 +379,7 @@ namespace Xenko.Rendering.Lights
                         {
                             for (int x = tileStartX; x < tileEndX; ++x)
                             {
-                                lightNodes[x + (y + z * clusterCountY) * clusterCountX].Add(myNode);
+                                lightNodes[x + (y + z * clusterCountY) * clusterCountX].Enqueue(myNode);
                             }
                         }
                     }
@@ -439,7 +444,7 @@ namespace Xenko.Rendering.Lights
                         {
                             for (int x = tileStartX; x < tileEndX; ++x)
                             {
-                                lightNodes[x + (y + z * clusterCountY) * clusterCountX].Add(myNode);
+                                lightNodes[x + (y + z * clusterCountY) * clusterCountX].Enqueue(myNode);
                             }
                         }
                     }
@@ -456,25 +461,24 @@ namespace Xenko.Rendering.Lights
                     for (int clusterIndex = thread * clustersPerThread; clusterIndex < (thread + 1) * clustersPerThread && clusterIndex < totalClusterCount; clusterIndex++)
                     {
                         ref var rvinfo = ref renderViewInfos[viewIndex];
+                        ref var lnds = ref lightNodes[clusterIndex];
 
-                        if (lightNodes[clusterIndex].Count == 0)
+                        if (lnds.Count == 0)
                         {
                             rvinfo.LightClusters[clusterIndex] = Int2.Zero;
                             continue;
                         }
 
-                        lightNodes[clusterIndex].Close();
-
                         // Build light indices
                         int pointLightCounter = 0;
                         int spotLightCounter = 0;
                         int indexStart = clusterIndex * totalLights;
+                        int i = 0;
 
-                        for (int i = 0; i < lightNodes[clusterIndex].Count; i++)
+                        while(lnds.TryDequeue(out var cluster))
                         {
-                            var cluster = lightNodes[clusterIndex][i];
-
                             rvinfo.LightIndices[indexStart + i] = (byte)cluster.LightIndex;
+                            i++;
 
                             switch (cluster.LightType)
                             {
@@ -486,8 +490,6 @@ namespace Xenko.Rendering.Lights
                                     break;
                             }
                         }
-
-                        lightNodes[clusterIndex].Clear(true);
 
                         // Add new light cluster range
                         // Stored in the format:
