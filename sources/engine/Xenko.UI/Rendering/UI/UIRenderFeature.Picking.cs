@@ -244,7 +244,8 @@ namespace Xenko.Rendering.UI
             {
                 for (int i=0; i<2; i++)
                 {
-                    TransformComponent useHand = (VirtualReality.VRDeviceSystem.GetSystem.GetControllerSwapped ? (i ^ 1): i) == 0 ?
+                    int swappedIndex = VirtualReality.VRDeviceSystem.GetSystem.GetControllerSwapped ? (i ^ 1) : i;
+                    TransformComponent useHand = swappedIndex == 0 ?
                                                     (TransformComponent.OverrideRightHandUIPointer ?? TransformComponent.LastRightHandTracked) :
                                                     (TransformComponent.OverrideLeftHandUIPointer ?? TransformComponent.LastLeftHandTracked);
 
@@ -257,8 +258,7 @@ namespace Xenko.Rendering.UI
                         if (UIElementUnderMouseCursor != null)
                         {
                             // wait, are we selecting this element?
-                            // GetController already checks GetControllerSwapped
-                            VirtualReality.TouchController tc = VirtualReality.VRDeviceSystem.GetSystem.GetController(i == 0 ? VirtualReality.TouchControllerHand.Right : VirtualReality.TouchControllerHand.Left);
+                            VirtualReality.TouchController tc = VirtualReality.VRDeviceSystem.GetSystem.GetController(swappedIndex == 0 ? VirtualReality.TouchControllerHand.Right : VirtualReality.TouchControllerHand.Left);
 
                             if (tc != null)
                             {
