@@ -446,7 +446,7 @@ namespace Xenko.Physics.Bepu
                         rigidBody.AddedHandle = internalSimulation.Bodies.Add(rigidBody.bodyDescription);
                         RigidMappings[rigidBody.AddedHandle] = rigidBody;
                     }
-                    component.Position = component.Entity.Transform.WorldPosition();
+                    component.Position = component.Entity.Transform.WorldPosition() - (rigidBody.LocalPhysicsOffset ?? Vector3.Zero);
                     component.Rotation = component.Entity.Transform.WorldRotation();
                 }
             }
