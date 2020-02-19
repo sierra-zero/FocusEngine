@@ -798,7 +798,12 @@ namespace Xenko.Graphics
 
             public int LineCount {
                 get {
-                    if (linecount == -1 && textString != null) linecount = textString.Split('\n').Length;
+                    if (linecount == -1 && textString != null)
+                    {
+                        linecount = textString.Length > 0 ? 1 : 0;
+                        for (int i = 0; i < textString.Length; i++)
+                            if (textString[i] == '\n') linecount++;
+                    }
                     return linecount;
                 }
             }

@@ -206,7 +206,7 @@ namespace Xenko.Physics
                         {
                             BepuRigidbodyComponent rb = physicsScene.BepuSimulation.AllRigidbodies[j];
 
-                            rb.swapProcessingContactsList();
+                            rb.resetProcessingContactsList();
                             rb.UpdateCachedPoseAndVelocity();
 
                             // per-rigidbody update

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Xenko contributors (https://xenko.com) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) Xenko contributors (https://xenko.com) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 #if XENKO_PLATFORM_WINDOWS_DESKTOP || XENKO_PLATFORM_UNIX
@@ -20,7 +20,11 @@ namespace Xenko.UI.Controls
             if (Font == null)
                 return 1;
 
-            return text.Split('\n').Length;
+            int cnt = text.Length > 0 ? 1 : 0;
+            for (int i = 0; i < text.Length; i++)
+                if (text[i] == '\n') cnt++;
+
+            return cnt;
         }
 
         private void OnMaxLinesChangedImpl()

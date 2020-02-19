@@ -5,6 +5,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using Xenko.Core.Annotations;
 
@@ -85,11 +86,9 @@ namespace Xenko.Core.Threading
 
         public T[] Items
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
-                if (head != tail)
-                    throw new InvalidOperationException();
-
                 return head.Items;
             }
         }
@@ -117,6 +116,7 @@ namespace Xenko.Core.Threading
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int Add(T item)
         {
             var index = Interlocked.Increment(ref count) - 1;
@@ -208,6 +208,12 @@ namespace Xenko.Core.Threading
             count = 0;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void UnsafeClear()
+        {
+            count = 0;
+        }
+
         IEnumerator IEnumerable.GetEnumerator()
         {
             return GetEnumerator();
@@ -227,10 +233,12 @@ namespace Xenko.Core.Threading
 
         public T this[int index]
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
                 return Items[index];
             }
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             set
             {
                 Items[index] = value;

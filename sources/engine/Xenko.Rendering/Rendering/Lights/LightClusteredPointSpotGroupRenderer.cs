@@ -153,12 +153,6 @@ namespace Xenko.Rendering.Lights
             shaderEntry.DirectLightGroups.Add(spotGroup);
         }
 
-        private enum InternalLightType
-        {
-            Point,
-            Spot,
-        }
-
         internal class PointLightShaderGroupData : LightShaderGroupDynamic
         {
             private readonly LightClusteredPointSpotGroupRenderer clusteredGroupRenderer;
@@ -169,7 +163,7 @@ namespace Xenko.Rendering.Lights
             // Artifically increase range of first slice to not waste too much slices in very short area
             public float SpecialNearPlane = 2.0f;
 
-            private ConcurrentQueue<LightClusterLinkedNode>[] lightNodes;
+            private ConcurrentCollector<int>[] lightNodes;
             private RenderViewInfo[] renderViewInfos;
             private Int2 maxClusterCount;
             //private Plane[] zPlanes;
@@ -302,9 +296,9 @@ namespace Xenko.Rendering.Lights
                 // make sure we have enough lists
                 if (lightNodes == null || lightNodes.Length < totalClusterCount)
                 {
-                    lightNodes = new ConcurrentQueue<LightClusterLinkedNode>[totalClusterCount];
+                    lightNodes = new ConcurrentCollector<int>[totalClusterCount];
                     for (int i = 0; i < totalClusterCount; i++)
-                        lightNodes[i] = new ConcurrentQueue<LightClusterLinkedNode>();
+                        lightNodes[i] = new ConcurrentCollector<int>(128);
                 }
 
                 int totalLights = 0;
@@ -362,7 +356,7 @@ namespace Xenko.Rendering.Lights
                     var tileStartZ = MathUtil.Clamp((int)Math.Log(startZ * clusterDepthScale + clusterDepthBias, 2.0f), 0, ClusterSlices);
                     var tileEndZ = MathUtil.Clamp((int)Math.Log(endZ * clusterDepthScale + clusterDepthBias, 2.0f) + 1, 0, ClusterSlices);
 
-                    var myNode = new LightClusterLinkedNode(InternalLightType.Point, lightIndex);
+                    int myNode = lightIndex << 1;
 
                     for (int z = tileStartZ; z < tileEndZ; ++z)
                     {
@@ -379,7 +373,7 @@ namespace Xenko.Rendering.Lights
                         {
                             for (int x = tileStartX; x < tileEndX; ++x)
                             {
-                                lightNodes[x + (y + z * clusterCountY) * clusterCountX].Enqueue(myNode);
+                                lightNodes[x + (y + z * clusterCountY) * clusterCountX].Add(myNode);
                             }
                         }
                     }
@@ -436,7 +430,7 @@ namespace Xenko.Rendering.Lights
                     var tileStartZ = MathUtil.Clamp((int)Math.Log(startZ * clusterDepthScale + clusterDepthBias, 2.0f), 0, ClusterSlices);
                     var tileEndZ = MathUtil.Clamp((int)Math.Log(endZ * clusterDepthScale + clusterDepthBias, 2.0f) + 1, 0, ClusterSlices);
 
-                    var myNode = new LightClusterLinkedNode(InternalLightType.Spot, lightIndex);
+                    var myNode = 1 | (lightIndex << 1);
 
                     for (int z = tileStartZ; z < tileEndZ; ++z)
                     {
@@ -444,7 +438,7 @@ namespace Xenko.Rendering.Lights
                         {
                             for (int x = tileStartX; x < tileEndX; ++x)
                             {
-                                lightNodes[x + (y + z * clusterCountY) * clusterCountX].Enqueue(myNode);
+                                lightNodes[x + (y + z * clusterCountY) * clusterCountX].Add(myNode);
                             }
                         }
                     }
@@ -469,27 +463,31 @@ namespace Xenko.Rendering.Lights
                             continue;
                         }
 
+                        lnds.Close();
+
                         // Build light indices
                         int pointLightCounter = 0;
                         int spotLightCounter = 0;
                         int indexStart = clusterIndex * totalLights;
-                        int i = 0;
 
-                        while(lnds.TryDequeue(out var cluster))
+                        for (int i=0; i<lnds.Count; i++)
                         {
-                            rvinfo.LightIndices[indexStart + i] = (byte)cluster.LightIndex;
-                            i++;
+                            int cluster = lnds[i];
 
-                            switch (cluster.LightType)
+                            rvinfo.LightIndices[indexStart + i] = (byte)(cluster >> 1);
+
+                            switch (cluster & 1)
                             {
-                                case InternalLightType.Point:
+                                case 0:
                                     pointLightCounter++;
                                     break;
-                                case InternalLightType.Spot:
+                                case 1:
                                     spotLightCounter++;
                                     break;
                             }
                         }
+
+                        lnds.UnsafeClear();
 
                         // Add new light cluster range
                         // Stored in the format:
@@ -723,37 +721,6 @@ namespace Xenko.Rendering.Lights
 
                 UpdateClipRegion(lightPosView.X, -lightPosView.Z, lightRadius, projection.M11, projection.M31, ref clipMin.X, ref clipMax.X);
                 UpdateClipRegion(lightPosView.Y, -lightPosView.Z, lightRadius, projection.M22, projection.M32, ref clipMin.Y, ref clipMax.Y);
-            }
-
-            // Single linked list of lights (stored in an array)
-            private struct LightClusterLinkedNode : IEquatable<LightClusterLinkedNode>
-            {
-                public InternalLightType LightType;
-                public int LightIndex;
-
-                public LightClusterLinkedNode(InternalLightType lightType, int lightIndex)
-                {
-                    LightType = lightType;
-                    LightIndex = lightIndex;
-                }
-
-                public bool Equals(LightClusterLinkedNode other)
-                {
-                    return LightType == other.LightType && LightIndex == other.LightIndex;
-                }
-
-                public override bool Equals(object obj)
-                {
-                    return obj != null && obj is LightClusterLinkedNode && Equals((LightClusterLinkedNode)obj);
-                }
-
-                public override int GetHashCode()
-                {
-                    unchecked
-                    {
-                        return (int)LightType ^ (LightIndex * 397);
-                    }
-                }
             }
 
             private struct RenderViewInfo

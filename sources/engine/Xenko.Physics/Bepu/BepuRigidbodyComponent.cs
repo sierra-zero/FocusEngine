@@ -124,7 +124,23 @@ namespace Xenko.Physics.Bepu
         /// If we are collecting collisions, how many to store before we stop storing them? Defaults to 32. Prevents crazy counts when objects are heavily overlapping.
         /// </summary>
         [DataMember]
-        public int CollectCollisionMaximumCount = 32;
+        public int CollectCollisionMaximumCount
+        {
+            get
+            {
+                return CurrentPhysicalContacts == null ? 0 : CurrentPhysicalContacts.Length;
+            }
+            set
+            {
+                if (value <= 0)
+                {
+                    CurrentPhysicalContacts = null;
+                    return;
+                }
+
+                CurrentPhysicalContacts = new BepuContact[value];
+            }
+        }
         
         /// <summary>
         /// Gets or sets if this element will store collisions in CurrentPhysicalContacts. Uses less CPU than ProcessCollisions
@@ -149,57 +165,37 @@ namespace Xenko.Physics.Bepu
 
                 if (value)
                 {
-                    if (processingPhysicalContacts == null)
-                        processingPhysicalContacts = new ConcurrentQueue<BepuContact>();
+                    if (CurrentPhysicalContacts == null)
+                        CurrentPhysicalContacts = new BepuContact[32];
                 }
                 else
                 {
-                    processingPhysicalContacts = null;
-                    currentContactList = null;
+                    CurrentPhysicalContacts = null;
                 }
 
                 _collectCollisions = value;
             }
         }
 
-        /// <summary>
-        /// If we are storing collisions, which one is the strongest one? This uses normals and velocity to determine.
-        /// </summary>
-        [DataMemberIgnore]
-        public int StrongestCollisionIndex;
-
         [DataMemberIgnore]
         private bool _collectCollisions = false;
 
-        /// <summary>
-        /// If we are using ProcessCollisionSlim, this list will maintain all current collisions
-        /// </summary>
-        [DataMemberIgnore]
-        public List<BepuContact> CurrentContacts => currentContactList;
-
-        internal void swapProcessingContactsList()
+        internal void resetProcessingContactsList()
         {
-            if (processingPhysicalContacts == null || IsActive == false) return;
+            if (CurrentPhysicalContacts == null || IsActive == false) return;
 
-            List<BepuContact> buildList = new List<BepuContact>(processingPhysicalContacts.Count);
-
-            while (processingPhysicalContacts.TryDequeue(out BepuContact res))
-            {
-                if (res.A != null && res.B != null)
-                {
-                    if (res.A != this) res.Swap();
-                    buildList.Add(res);
-                }
-            }
-
-            currentContactList = buildList;
+            CurrentPhysicalContactsCount = Math.Min(CurrentPhysicalContacts.Length, processingPhysicalContactCount);
+            processingPhysicalContactCount = 0;
         }
 
         [DataMemberIgnore]
-        internal ConcurrentQueue<BepuContact> processingPhysicalContacts;
-        
+        public BepuContact[] CurrentPhysicalContacts;
+
         [DataMemberIgnore]
-        internal List<BepuContact> currentContactList;
+        public int CurrentPhysicalContactsCount;
+
+        [DataMemberIgnore]
+        internal int processingPhysicalContactCount;
 
         private static readonly BodyInertia KinematicInertia = new BodyInertia()
         {

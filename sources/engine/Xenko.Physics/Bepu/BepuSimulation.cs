@@ -225,20 +225,28 @@ namespace Xenko.Physics.Bepu
 
                 BepuRigidbodyComponent ar = (A as BepuRigidbodyComponent);
                 BepuRigidbodyComponent br = (B as BepuRigidbodyComponent);
-                bool Acollect = ar == null ? false : ar.CollectCollisions && ar.CollectCollisionMaximumCount > ar.processingPhysicalContacts.Count;
-                bool Bcollect = br == null ? false : br.CollectCollisions && br.CollectCollisionMaximumCount > br.processingPhysicalContacts.Count;
                 // do we want to store this collision?
-                if (Acollect || Bcollect)
+                if ((ar?.CollectCollisions ?? false))
                 {
-                    BepuContact bc = new BepuContact()
+                    int index = Interlocked.Increment(ref ar.processingPhysicalContactCount) - 1;
+                    if (index < ar.CurrentPhysicalContacts.Length)
                     {
-                        A = A,
-                        B = B,
-                        Normal = BepuHelpers.ToXenko(manifold.SimpleGetNormal()),
-                        Offset = BepuHelpers.ToXenko(manifold.SimpleGetOffset())
-                    };
-                    if (Acollect) ar.processingPhysicalContacts.Enqueue(bc);
-                    if (Bcollect) br.processingPhysicalContacts.Enqueue(bc);
+                        ar.CurrentPhysicalContacts[index].A = A;
+                        ar.CurrentPhysicalContacts[index].B = B;
+                        ar.CurrentPhysicalContacts[index].Normal = BepuHelpers.ToXenko(manifold.SimpleGetNormal());
+                        ar.CurrentPhysicalContacts[index].Offset = BepuHelpers.ToXenko(manifold.SimpleGetOffset());
+                    }
+                }
+                if ((br?.CollectCollisions ?? false))
+                {
+                    int index = Interlocked.Increment(ref br.processingPhysicalContactCount) - 1;
+                    if (index < br.CurrentPhysicalContacts.Length)
+                    {
+                        br.CurrentPhysicalContacts[index].A = B;
+                        br.CurrentPhysicalContacts[index].B = A;
+                        br.CurrentPhysicalContacts[index].Normal = -BepuHelpers.ToXenko(manifold.SimpleGetNormal());
+                        br.CurrentPhysicalContacts[index].Offset = B.Position - (A.Position + BepuHelpers.ToXenko(manifold.SimpleGetOffset()));
+                    }
                 }
             }
 
@@ -470,11 +478,8 @@ namespace Xenko.Physics.Bepu
                         AllRigidbodies.Remove(rigidBody);
                     }
 
-                    if (rigidBody.processingPhysicalContacts != null)
-                        while(rigidBody.processingPhysicalContacts.TryDequeue(out var _));
-
-                    if (rigidBody.currentContactList != null)
-                        rigidBody.currentContactList.Clear();
+                    rigidBody.processingPhysicalContactCount = 0;
+                    rigidBody.CurrentPhysicalContactsCount = 0;
                 }
             }
             ToBeRemoved.Clear();
