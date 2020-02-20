@@ -343,9 +343,9 @@ namespace Xenko.Core.Assets.Editor.ViewModel
             return sessionViewModel;
         }
 
-        private static void BackupProjectFiles(string path)
+        private static void BackupProjectFiles()
         {
-            EditorViewModel.Instance.projectPath = path;
+            var path = Path.GetDirectoryName(EditorViewModel.Instance.projectPath);
             string[] files = Directory.GetFiles(path, "*.xk*", SearchOption.AllDirectories);
             for (int i=0; i<files.Length; i++)
             {
@@ -353,7 +353,27 @@ namespace Xenko.Core.Assets.Editor.ViewModel
                 // if we are a scene file or prefab, back us up
                 if (filename.EndsWith("scene") || filename.EndsWith("prefab"))
                 {
-                    File.Copy(filename, filename + ".backup", true);
+                    // make sure we are in a good position to overwrite backup
+                    string backupFile = filename + ".backup";
+                    if (File.Exists(backupFile) == false)
+                    {
+                        File.Copy(filename, backupFile, true);
+                    }
+                    else
+                    {
+                        // compare file info to see if we should overwrite backup
+                        FileInfo backupInfo = new FileInfo(backupFile);
+                        FileInfo currentInfo = new FileInfo(filename);
+
+                        long timeDiff = currentInfo.LastWriteTimeUtc.Ticks - backupInfo.LastWriteTimeUtc.Ticks;
+
+                        if (backupInfo.Length <= currentInfo.Length || timeDiff > TimeSpan.TicksPerDay * 3)
+                        {
+                            // either the backup is old (more than 3 days)
+                            // or the backup is smaller
+                            File.Copy(filename, backupFile, true);
+                        } 
+                    }
                 }
             }
         }
@@ -424,8 +444,8 @@ namespace Xenko.Core.Assets.Editor.ViewModel
                 return null;
             }
 
-            // project loaded OK, lets backup the prefabs and scene files
-            BackupProjectFiles(Path.GetDirectoryName(path));
+            // grab path for backup/restore
+            EditorViewModel.Instance.projectPath = path;
 
             // Register the node container to the copy/paste service.
             sessionViewModel.ServiceProvider.Get<CopyPasteService>().PropertyGraphContainer = sessionViewModel.GraphContainer;
@@ -1019,6 +1039,9 @@ namespace Xenko.Core.Assets.Editor.ViewModel
                 var result = await Dialogs.MessageBox(Tr._p("Message", "The project has unsaved changes. Closing now would lose these changes."), buttons, MessageBoxImage.Question);
                 if (result == 2) return false;
             }
+
+            // assume we were OK with our project, lets backup everything
+            BackupProjectFiles();
 
             return true;
         }
