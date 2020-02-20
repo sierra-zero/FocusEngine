@@ -48,6 +48,10 @@ namespace Xenko.Core.IO
                 throw new IOException("Couldn't lock file.");
             }
 #else
+            // some OSes can't lock a file that can't be written too
+            // (looking at you, Linux)
+            if (fileStream.CanWrite == false) return;
+
             bool tryAgain;
             do
             {
@@ -89,6 +93,10 @@ namespace Xenko.Core.IO
                 throw new IOException("Couldn't unlock file.");
             }
 #else
+            // some OSes can't (un)lock a file that can't be written too
+            // (looking at you, Linux)
+            if (fileStream.CanWrite == false) return;
+
             fileStream.Unlock(offset, count);
 #endif
         }
