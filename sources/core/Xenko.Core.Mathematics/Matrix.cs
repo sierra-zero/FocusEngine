@@ -1043,6 +1043,8 @@ namespace Xenko.Core.Mathematics
 
         /// <summary>
         /// Determines the product of two matrices.
+        /// Variables passed as <paramref name="left"/> or <paramref name="right"/> must not be used as the out parameter
+        /// <paramref name="result"/>, because <paramref name="result"/> is calculated in-place.
         /// </summary>
         /// <param name="left">The first matrix to multiply.</param>
         /// <param name="right">The second matrix to multiply.</param>
@@ -1069,6 +1071,8 @@ namespace Xenko.Core.Mathematics
 
         /// <summary>
         /// Determines the product of two matrices.
+        /// Variables passed as <paramref name="left"/> or <paramref name="right"/> must not be used as the out parameter
+        /// <paramref name="result"/>, because <paramref name="result"/> is calculated in-place.
         /// </summary>
         /// <param name="left">The first matrix to multiply.</param>
         /// <param name="right">The second matrix to multiply.</param>
@@ -1095,6 +1099,8 @@ namespace Xenko.Core.Mathematics
 
         /// <summary>
         /// Determines the product of two matrices.
+        /// Variables passed as <paramref name="left"/> or <paramref name="right"/> must not be used as the out parameter
+        /// <paramref name="result"/>, because <paramref name="result"/> is calculated in-place.
         /// </summary>
         /// <param name="left">The first matrix to multiply.</param>
         /// <param name="right">The second matrix to multiply.</param>
