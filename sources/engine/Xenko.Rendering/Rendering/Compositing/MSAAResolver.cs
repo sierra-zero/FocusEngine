@@ -162,9 +162,7 @@ namespace Xenko.Rendering.Compositing
             var svPosUnpack = new Vector4(0.5f * inputSize.Width, -0.5f * inputSize.Height, 0.5f * inputSize.Width, 0.5f * inputSize.Height);
             var textureSizeLess1 = new Vector2(inputSize.Width - 1.0f, inputSize.Height - 1.0f);
 
-            if (GraphicsDevice.Platform == GraphicsPlatform.OpenGL ||
-                GraphicsDevice.Platform == GraphicsPlatform.OpenGLES ||
-                FilterType == FilterTypes.Default)
+            if (FilterType == FilterTypes.Default)
             {
                 // We currently only support the default hardware MSAA resolve on OpenGL and OpenGL ES.
                 drawContext.CommandList.CopyMultisample(input, 0, output, 0);

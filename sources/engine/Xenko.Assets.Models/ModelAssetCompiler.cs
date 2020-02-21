@@ -41,7 +41,7 @@ namespace Xenko.Assets.Models
             var renderingSettings = gameSettingsAsset.GetOrCreate<RenderingSettings>();
             var allow32BitIndex = renderingSettings.DefaultGraphicsProfile >= GraphicsProfile.Level_9_2;
             var maxInputSlots = renderingSettings.DefaultGraphicsProfile >= GraphicsProfile.Level_10_1 ? 32 : 16;
-            var allowUnsignedBlendIndices = context.GetGraphicsPlatform(assetItem.Package) != GraphicsPlatform.OpenGLES;
+            var allowUnsignedBlendIndices = true; //context.GetGraphicsPlatform(assetItem.Package) != GraphicsPlatform.OpenGLES;
             var extension = asset.Source.GetFileExtension();
 
             // Find skeleton asset, if any

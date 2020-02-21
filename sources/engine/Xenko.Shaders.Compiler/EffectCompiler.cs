@@ -108,18 +108,6 @@ namespace Xenko.Shaders.Compiler
                     shaderMixinSource.AddMacro("XENKO_GRAPHICS_API_DIRECT3D", 1);
                     shaderMixinSource.AddMacro("XENKO_GRAPHICS_API_DIRECT3D11", 1);
                     break;
-                case GraphicsPlatform.Direct3D12:
-                    shaderMixinSource.AddMacro("XENKO_GRAPHICS_API_DIRECT3D", 1);
-                    shaderMixinSource.AddMacro("XENKO_GRAPHICS_API_DIRECT3D12", 1);
-                    break;
-                case GraphicsPlatform.OpenGL:
-                    shaderMixinSource.AddMacro("XENKO_GRAPHICS_API_OPENGL", 1);
-                    shaderMixinSource.AddMacro("XENKO_GRAPHICS_API_OPENGLCORE", 1);
-                    break;
-                case GraphicsPlatform.OpenGLES:
-                    shaderMixinSource.AddMacro("XENKO_GRAPHICS_API_OPENGL", 1);
-                    shaderMixinSource.AddMacro("XENKO_GRAPHICS_API_OPENGLES", 1);
-                    break;
                 case GraphicsPlatform.Vulkan:
                     shaderMixinSource.AddMacro("XENKO_GRAPHICS_API_VULKAN", 1);
                     break;
@@ -199,12 +187,9 @@ namespace Xenko.Shaders.Compiler
             {
 #if XENKO_PLATFORM_WINDOWS
                 case GraphicsPlatform.Direct3D11:
-                case GraphicsPlatform.Direct3D12:
                     compiler = new Direct3D.ShaderCompiler();
                     break;
 #endif
-                case GraphicsPlatform.OpenGL:
-                case GraphicsPlatform.OpenGLES:
                 case GraphicsPlatform.Vulkan:
                     // get the number of render target outputs
                     var rtOutputs = 0;
@@ -244,11 +229,6 @@ namespace Xenko.Shaders.Compiler
 #if XENKO_PLATFORM_WINDOWS_DESKTOP
             var stageStringBuilder = new StringBuilder();
 #endif
-            // if the shader (non-compute) does not have a pixel shader, we should add it for OpenGL and OpenGL ES.
-            if ((effectParameters.Platform == GraphicsPlatform.OpenGL || effectParameters.Platform == GraphicsPlatform.OpenGLES) && !parsingResult.EntryPoints.ContainsKey(ShaderStage.Pixel) && !parsingResult.EntryPoints.ContainsKey(ShaderStage.Compute))
-            {
-                parsingResult.EntryPoints.Add(ShaderStage.Pixel, null);
-            }
 
             foreach (var stageBinding in parsingResult.EntryPoints)
             {

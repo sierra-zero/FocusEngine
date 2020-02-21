@@ -132,9 +132,7 @@ namespace Xenko.Rendering.Compositing
                 actualMultisampleCount = (MultisampleCount)Math.Min((int)actualMultisampleCount, (int)GraphicsDevice.Features[DepthBufferFormat].MultisampleCountMax);
 
                 // Note: we cannot support MSAA on DX10 now
-                if (GraphicsDevice.Features.HasMultisampleDepthAsSRV == false && // TODO: Try enabling MSAA on DX9!
-                    GraphicsDevice.Platform != GraphicsPlatform.OpenGL &&
-                    GraphicsDevice.Platform != GraphicsPlatform.OpenGLES)
+                if (GraphicsDevice.Features.HasMultisampleDepthAsSRV == false)
                 {
                     // OpenGL has MSAA support on every version.
                     // OpenGL ES has MSAA support starting from version 3.0.

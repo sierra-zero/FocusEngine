@@ -21,21 +21,6 @@ namespace Xenko.Graphics
         Direct3D11,
 
         /// <summary>
-        /// HLSL Direct3D Shader.
-        /// </summary>
-        Direct3D12,
-
-        /// <summary>
-        /// GLSL OpenGL Shader.
-        /// </summary>
-        OpenGL,
-
-        /// <summary>
-        /// GLSL OpenGL ES Shader.
-        /// </summary>
-        OpenGLES,
-
-        /// <summary>
         /// GLSL/SPIR-V Shader.
         /// </summary>
         Vulkan,

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Xenko contributors (https://xenko.com) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) Xenko contributors (https://xenko.com) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.IO;
@@ -67,14 +67,7 @@ namespace {1}
             switch (graphicsPlatform)
             {
                 case GraphicsPlatform.Direct3D11:
-                case GraphicsPlatform.Direct3D12:
                     xenkoDefine = "XENKO_GRAPHICS_API_DIRECT3D";
-                    break;
-                case GraphicsPlatform.OpenGL:
-                    xenkoDefine = "XENKO_GRAPHICS_API_OPENGLCORE";
-                    break;
-                case GraphicsPlatform.OpenGLES:
-                    xenkoDefine = "XENKO_GRAPHICS_API_OPENGLES";
                     break;
                 case GraphicsPlatform.Vulkan:
                     xenkoDefine = "XENKO_GRAPHICS_API_VULKAN";

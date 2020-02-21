@@ -8,7 +8,7 @@
   "runtimes": {
 <# foreach (var platform in new[] { "win", "win7", "win10", "linux" })
    {
-     foreach (var graphicsPlatform in platform.StartsWith("win") ? new[] { "d3d11", "d3d12", "opengl", "opengles", "vulkan" } : new[] { "opengl", "vulkan" })
+     foreach (var graphicsPlatform in platform.StartsWith("win") ? new[] { "d3d11", "vulkan" } : new[] { "vulkan" })
      {
        var platformForGraphicsPlatformVariant = platform.StartsWith("win") ? "win" : platform;
        foreach (var cpuVariant in platform.StartsWith("win") ? new[] { string.Empty, "-x86", "-x64" } : new[] { string.Empty, "-x64" })

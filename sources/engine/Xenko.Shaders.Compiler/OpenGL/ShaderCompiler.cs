@@ -58,14 +58,6 @@ namespace Xenko.Shaders.Compiler.OpenGL
 
             switch (effectParameters.Platform)
             {
-                case GraphicsPlatform.OpenGL:
-                    shaderPlatform = GlslShaderPlatform.OpenGL;
-                    shaderVersion = 410;
-                    break;
-                case GraphicsPlatform.OpenGLES:
-                    shaderPlatform = GlslShaderPlatform.OpenGLES;
-                    shaderVersion = effectParameters.Profile >= GraphicsProfile.Level_10_0 ? 300 : 100;
-                    break;
                 case GraphicsPlatform.Vulkan:
                     shaderPlatform = GlslShaderPlatform.Vulkan;
                     shaderVersion = 450;
@@ -79,40 +71,7 @@ namespace Xenko.Shaders.Compiler.OpenGL
             if (shader == null)
                 return shaderBytecodeResult;
 
-            if (effectParameters.Platform == GraphicsPlatform.OpenGLES)      // TODO: Add check to run on android only. The current version breaks OpenGL ES on windows.
-            { 
-                //TODO: Remove this ugly hack!
-                if (shaderSource.Contains($"Texture2D XenkoInternal_TextureExt0") && shader.Contains("uniform sampler2D"))
-                {
-                    if (shaderPlatform != GlslShaderPlatform.OpenGLES || shaderVersion != 300)
-                        throw new Exception("Invalid GLES platform or version: require OpenGLES 300");
-
-                    shader = shader.Replace("uniform sampler2D", "uniform samplerExternalOES");
-                    shader = shader.Replace("#version 300 es", "#version 300 es\n#extension GL_OES_EGL_image_external_essl3 : require");
-                }
-            }
-
-            if (effectParameters.Platform == GraphicsPlatform.OpenGLES)
-            {
-                // store both ES 2 and ES 3 on OpenGL ES platforms
-                var shaderBytecodes = new ShaderLevelBytecode();
-                if (effectParameters.Profile >= GraphicsProfile.Level_10_0)
-                {
-                    shaderBytecodes.DataES3 = shader;
-                    shaderBytecodes.DataES2 = null;
-                }
-                else
-                {
-                    shaderBytecodes.DataES2 = shader;
-                    shaderBytecodes.DataES3 = Compile(shaderSource, entryPoint, stage, GlslShaderPlatform.OpenGLES, 300, shaderBytecodeResult, reflection, inputAttributeNames, resourceBindings, sourceFilename);
-                }
-                using (var stream = new MemoryStream())
-                {
-                    BinarySerialization.Write(stream, shaderBytecodes);
-                    rawData = stream.GetBuffer();
-                }
-            }
-            else if (effectParameters.Platform == GraphicsPlatform.Vulkan)
+            if (effectParameters.Platform == GraphicsPlatform.Vulkan)
             {
                 string inputFileExtension;
                 switch (stage)

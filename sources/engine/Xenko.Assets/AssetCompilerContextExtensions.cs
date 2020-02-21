@@ -40,13 +40,6 @@ namespace Xenko.Assets
             {
                 if (runtimeIdentifier.Contains("-d3d11"))
                     return GraphicsPlatform.Direct3D11;
-                else if (runtimeIdentifier.Contains("-d3d12"))
-                    return GraphicsPlatform.Direct3D12;
-                // Note: testing opengles before opengl since one string contains another
-                else if (runtimeIdentifier.Contains("-opengles"))
-                    return GraphicsPlatform.OpenGLES;
-                else if (runtimeIdentifier.Contains("-opengl"))
-                    return GraphicsPlatform.OpenGL;
                 else if (runtimeIdentifier.Contains("-vulkan"))
                     return GraphicsPlatform.Vulkan;
             }
@@ -60,13 +53,9 @@ namespace Xenko.Assets
             switch (platformType)
             {
                 case PlatformType.Windows:
-                case PlatformType.UWP:
                     return GraphicsPlatform.Direct3D11;
-                case PlatformType.Android:
-                case PlatformType.iOS:
-                    return GraphicsPlatform.OpenGLES;
                 case PlatformType.Linux:
-                    return GraphicsPlatform.OpenGL;
+                    return GraphicsPlatform.Vulkan;
                 case PlatformType.macOS:
                     return GraphicsPlatform.Vulkan;
                 default:

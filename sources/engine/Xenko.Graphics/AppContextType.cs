@@ -44,11 +44,6 @@ namespace Xenko.Games
         DesktopWpf,
 
         /// <summary>
-        /// Game running on desktop in an OpenTK form.
-        /// </summary>
-        DesktopOpenTK,
-
-        /// <summary>
         /// Game running on Android in an AndroidXenkoGameView.
         /// </summary>
         Android,

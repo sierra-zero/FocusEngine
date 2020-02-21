@@ -54,9 +54,6 @@ namespace Xenko.Games
                 case AppContextType.Desktop:
                     res = NewGameContextDesktop();
                     break;
-                case AppContextType.DesktopOpenTK:
-                    res = NewGameContextOpenTK();
-                    break;
                 case AppContextType.DesktopSDL:
                     res = NewGameContextSDL();
                     break;
