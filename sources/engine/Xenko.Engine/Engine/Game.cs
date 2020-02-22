@@ -210,9 +210,10 @@ namespace Xenko.Engine
             GetDefaultSettings(out int current_width, out int current_height, out bool current_fullscreen);
             if (width == current_width && height == current_height && current_fullscreen == fullscreen) return false;
             try {
-                System.IO.File.WriteAllText("DefaultResolution.txt", width.ToString() + "\n" +
-                                                                     height.ToString() + "\n" +
-                                                                     (fullscreen ? "full" : "window"));
+                System.IO.File.WriteAllText(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location) + "/DefaultResolution.txt",
+                                            width.ToString() + "\n" +
+                                            height.ToString() + "\n" +
+                                            (fullscreen ? "fullscreen" : "window"));
                 return true;
             } catch(Exception e) {
                 return false;
@@ -236,6 +237,7 @@ namespace Xenko.Engine
         /// Gets default settings that will be used on game startup, if AutoLoadDefaultSettings is true. Caps resolution to native display resolution.
         /// </summary>
         public void GetDefaultSettings(out int width, out int height, out bool fullscreen) {
+            string defaultFile = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location) + "/DefaultResolution.txt";
             // default settings are maximum native resolution
             width = int.MaxValue;
             height = int.MaxValue;
@@ -245,9 +247,9 @@ namespace Xenko.Engine
                 width = settingsOverrideW;
                 height = settingsOverrideH;
                 fullscreen = settingsOverrideFS;
-            } else if (File.Exists("DefaultResolution.txt")) {
+            } else if (File.Exists(defaultFile)) {
                 try {
-                    string[] vals = File.ReadAllLines("DefaultResolution.txt");
+                    string[] vals = File.ReadAllLines(defaultFile);
                     width = int.Parse(vals[0].Trim());
                     height = int.Parse(vals[1].Trim());
                     fullscreen = vals[2].Trim().ToLower().StartsWith("full");
