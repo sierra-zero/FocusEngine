@@ -303,8 +303,7 @@ namespace Xenko.Engine
                 var scene = Entity?.Scene;
                 if (scene != null)
                 {
-                    var inverseSceneTransform = scene.WorldMatrix;
-                    inverseSceneTransform.Invert();
+                    Matrix.Invert(ref scene.WorldMatrix, out var inverseSceneTransform);
                     Matrix.Multiply(ref WorldMatrix, ref inverseSceneTransform, out LocalMatrix);
                 }
                 else
@@ -315,8 +314,7 @@ namespace Xenko.Engine
             else
             {
                 //We are not root so we need to derive the local matrix as well
-                var inverseParent = Parent.WorldMatrix;
-                inverseParent.Invert();
+                Matrix.Invert(ref Parent.WorldMatrix, out var inverseParent);
                 Matrix.Multiply(ref WorldMatrix, ref inverseParent, out LocalMatrix);
             }
         }
@@ -419,8 +417,6 @@ namespace Xenko.Engine
             }
             else
             {
-                WorldMatrix = LocalMatrix;
-
                 var scene = Entity?.Scene;
                 if (scene != null)
                 {
@@ -429,8 +425,11 @@ namespace Xenko.Engine
                         scene.UpdateWorldMatrix();
                     }
 
-                    var curWorldMatrix = WorldMatrix;   // Must make a copy to use as the ref parameter, otherwise matrix will not be calculated correctly
-                    Matrix.Multiply(ref curWorldMatrix, ref scene.WorldMatrix, out WorldMatrix);
+                    Matrix.Multiply(ref LocalMatrix, ref scene.WorldMatrix, out WorldMatrix);
+                }
+                else
+                {
+                    WorldMatrix = LocalMatrix;
                 }
             }
 
