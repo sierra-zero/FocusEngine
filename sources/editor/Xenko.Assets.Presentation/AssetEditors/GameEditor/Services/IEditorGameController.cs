@@ -46,6 +46,16 @@ namespace Xenko.Assets.Presentation.AssetEditors.GameEditor.Services
         Task<bool> CreateScene();
 
         /// <summary>
+        /// Stops the game from updating and rendering.
+        /// </summary>
+        void PauseGame();
+
+        /// <summary>
+        /// Resumes the game updating and rendering.
+        /// </summary>
+        void ResumeGame();
+
+        /// <summary>
         /// Finds the game-side instance corresponding to the part with the given id, if it exists.
         /// </summary>
         /// <param name="partId">The id of the part to look for.</param>

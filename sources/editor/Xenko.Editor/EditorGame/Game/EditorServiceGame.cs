@@ -49,6 +49,14 @@ namespace Xenko.Editor.EditorGame.Game
         public IGameSettingsAccessor PackageSettings { get; set; }
 
         /// <summary>
+        /// True if the game is paused.
+        /// </summary>
+        /// <remarks>
+        /// Used when game is not visible in the editor.
+        /// </remarks>
+        public bool IsSuspended { get; set; }
+
+        /// <summary>
         /// True if game is faulted (not running).
         /// </summary>
         /// <remarks>
@@ -114,7 +122,7 @@ namespace Xenko.Editor.EditorGame.Game
         protected override void Update(GameTime gameTime)
         {
             // Keep going only if last exception has been "resolved"
-            if (Faulted)
+            if (Faulted || IsSuspended)
                 return;
 
             try
@@ -137,7 +145,7 @@ namespace Xenko.Editor.EditorGame.Game
         protected override void Draw(GameTime gameTime)
         {
             // Keep going only if last exception has been "resolved"
-            if (Faulted)
+            if (Faulted || IsSuspended)
                 return;
 
             try
