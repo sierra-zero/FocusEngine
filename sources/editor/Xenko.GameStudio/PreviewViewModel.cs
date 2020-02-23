@@ -7,7 +7,6 @@ using System.Linq;
 using Xenko.Core.Assets.Editor.Services;
 using Xenko.Core.Assets.Editor.ViewModel;
 using Xenko.Core.Extensions;
-using Xenko.Core.Presentation.Commands;
 using Xenko.Core.Presentation.ViewModel;
 
 namespace Xenko.GameStudio
@@ -18,18 +17,14 @@ namespace Xenko.GameStudio
 
         private IAssetPreviewService previewService;
         private object previewObject;
-
+        
         public PreviewViewModel(SessionViewModel session)
             : base(session.SafeArgument(nameof(session)).ServiceProvider)
         {
             this.session = session;
             session.ActiveAssetView.SelectedAssets.CollectionChanged += SelectedAssetsCollectionChanged;
             session.ActiveAssetsChanged += ActiveAssetsChanged;
-
-            RenderPreviewCommand = new AnonymousCommand<bool>(session.ServiceProvider, SetIsRendering);
         }
-
-        public CommandBase RenderPreviewCommand { get; }
 
         public object PreviewObject { get { return previewObject; } private set { SetValue(ref previewObject, value); } }
 
@@ -101,14 +96,6 @@ namespace Xenko.GameStudio
             {
                 previewService.SetAssetToPreview(null);
             }
-        }
-
-        private void SetIsRendering(bool canRender)
-        {
-            if (canRender)
-                PreviewService.ResumeRenderPreview();
-            else
-                PreviewService.SuspendRenderPreview();
         }
     }
 }

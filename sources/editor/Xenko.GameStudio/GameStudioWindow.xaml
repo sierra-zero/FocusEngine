@@ -877,7 +877,7 @@
               <xcad:LayoutAnchorablePaneGroup DockHeight="1*">
                 <xcad:LayoutAnchorablePane>
                   <!-- ASSET PREVIEW -->
-                  <xcad:LayoutAnchorable x:Name="AssetPreviewPane" AutoHideMinWidth="400" ContentId="AssetPreview" Title="{Binding Source={xk:Localize Asset preview, Context=View}}"
+                  <xcad:LayoutAnchorable AutoHideMinWidth="400" ContentId="AssetPreview" Title="{Binding Source={xk:Localize Asset preview, Context=View}}"
                                          gs:AvalonDockHelper.IsVisible="{Binding Panels.AssetPreviewPanelVisible, Mode=TwoWay,
                                          Source={x:Static gs:GameStudioViewModel.GameStudio}, FallbackValue={xk:True}}">
                     <DockPanel LastChildFill="True">

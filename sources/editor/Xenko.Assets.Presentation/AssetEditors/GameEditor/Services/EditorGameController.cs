@@ -231,16 +231,6 @@ namespace Xenko.Assets.Presentation.AssetEditors.GameEditor.Services
             return true;
         }
 
-        public void PauseGame()
-        {
-            Game.IsSuspended = true;
-        }
-
-        public void ResumeGame()
-        {
-            Game.IsSuspended = false;
-        }
-
         public Vector3 GetMousePositionInScene(bool lastRightClick)
         {
             EnsureNotDestroyed();

@@ -564,21 +564,6 @@ namespace Xenko.GameStudio
                 {
                     element.Loaded -= EditorPaneContentLoaded;
                 }
-                var assetViewModel = element?.DataContext as AssetViewModel;
-                if (assetViewModel?.Editor != null)
-                {
-                    if (assetViewModel.Editor is Assets.Presentation.AssetEditors.GameEditor.ViewModels.GameEditorViewModel gameEditor)
-                    {
-                        if (editorPane.IsActive)
-                        {
-                            gameEditor.ResumeGame();
-                        }
-                        else
-                        {
-                            gameEditor.PauseGame();
-                        }
-                    }
-                }
             }
         }
 

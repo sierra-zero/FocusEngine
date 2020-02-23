@@ -67,19 +67,6 @@ namespace Xenko.GameStudio
             Application.Current.Activated += (s, e) => editor.ServiceProvider.Get<IEditorDialogService>().ShowDelayedNotifications();
             Loaded += GameStudioLoaded;
 
-            if (editor is GameStudioViewModel gsViewModel)
-            {
-                AssetPreviewPane.IsSelectedChanged += (sender, e) =>
-                {
-                    // This is the event when the Asset Preview tab is clicked on, or when another tab is clicked
-                    // when in the same tab group.
-                    // We handle the event here instead of making an OnEventCommandBehavior because WPF has some quirk where
-                    // binding to the LayoutAnchorable's IsSelected for the CommandParameter ends up passing the previous value
-                    // instead of the current value.
-                    gsViewModel.Preview?.RenderPreviewCommand?.Execute(AssetPreviewPane.IsSelected);
-                };
-            }
-
             OpenMetricsProjectSession(editor);
         }
 

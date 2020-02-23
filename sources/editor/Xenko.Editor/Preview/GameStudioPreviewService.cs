@@ -195,7 +195,7 @@ namespace Xenko.Editor.Preview
         }
 
         public AssetCompilerResult Compile(AssetItem asset)
-        {
+        { 
             return previewCompiler.Prepare(previewCompileContext, asset);
         }
 
@@ -318,16 +318,6 @@ namespace Xenko.Editor.Preview
         public void RegisterAssetPreviewFactories(IReadOnlyDictionary<Type, AssetPreviewFactory> factories)
         {
             factories.ForEach(x => assetPreviewFactories.Add(x.Key, x.Value));
-        }
-
-        public void ResumeRenderPreview()
-        {
-            PreviewGame.IsSuspended = false;
-        }
-
-        public void SuspendRenderPreview()
-        {
-            PreviewGame.IsSuspended = true;
         }
     }
 }
