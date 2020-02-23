@@ -26,6 +26,7 @@ namespace Xenko.Audio
         /// Reference to the <see cref="AudioSystem"/> of the game instance.
         /// </summary>
         private AudioSystem audioSystem;
+        private TransformComponent primaryTransform;
 
         /// <summary>
         /// Create a new instance of AudioListenerProcessor.
@@ -42,63 +43,31 @@ namespace Xenko.Audio
 
         protected internal override void OnSystemRemove()
         {
-            audioSystem.Listeners.Clear();
         }
 
         protected override void OnEntityComponentAdding(Entity entity, AudioListenerComponent component, AudioListenerComponent data)
         {
-            if (AudioListenerComponent.UseSharedListener)
-            {
-                if (AudioListenerComponent.SharedListener == null)
-                    AudioListenerComponent.SharedListener = new AudioListener(audioSystem.AudioEngine);
-                else
-                    AudioLayer.ListenerEnable(AudioListenerComponent.SharedListener.Listener);
-
-                component.Listener = AudioListenerComponent.SharedListener;
-            }
-            else
-            {
-                component.Listener = new AudioListener(audioSystem.AudioEngine);
-            }
-
-            audioSystem.Listeners[component] = component.Listener;
+            primaryTransform = entity.Transform;
         }
 
         protected override void OnEntityComponentRemoved(Entity entity, AudioListenerComponent component, AudioListenerComponent data)
         {
-            audioSystem.Listeners.Remove(component);
-
-            if (AudioListenerComponent.UseSharedListener)
-            {
-                if (AudioListenerComponent.SharedListener == null)
-                    AudioListenerComponent.SharedListener = component.Listener;
-
-                AudioLayer.ListenerDisable(AudioListenerComponent.SharedListener.Listener);
-            }
-            else
-            {
-                component.Listener.Dispose();
-            }
+            primaryTransform = null;
         }
 
         public override void Draw(RenderContext context)
         {
-            for (int i=0; i<ComponentDataValues.Count; i++)
-            {
-                var listenerData = ComponentDataValues[i];
-                if (!listenerData.Enabled) // skip all updates if the listener is not used.
-                    continue;
+            if (primaryTransform == null) return;
 
-                var listener = listenerData.Listener;
-                listener.WorldTransform = listenerData.Entity.Transform.WorldMatrix;
-                var newPosition = listener.WorldTransform.TranslationVector;
-                listener.Velocity = newPosition - listener.Position; // estimate velocity from last and new position
-                listener.Position = newPosition;
-                listener.Forward = Vector3.Normalize((Vector3)listener.WorldTransform.Row3);
-                listener.Up = Vector3.Normalize((Vector3)listener.WorldTransform.Row2);
+            var listener = AudioEngine.DefaultListener;
+            listener.WorldTransform = primaryTransform.WorldMatrix;
+            var newPosition = listener.WorldTransform.TranslationVector;
+            listener.Velocity = newPosition - listener.Position; // estimate velocity from last and new position
+            listener.Position = newPosition;
+            listener.Forward = Vector3.Normalize((Vector3)listener.WorldTransform.Row3);
+            listener.Up = Vector3.Normalize((Vector3)listener.WorldTransform.Row2);
 
-                listener.Update();
-            }
+            listener.Update();
         }
     }
 }

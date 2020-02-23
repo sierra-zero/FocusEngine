@@ -188,32 +188,6 @@ namespace Xenko.Audio
         }
 
         /// <summary>
-        /// Applies 3D positioning to the sound.
-        /// More precisely adjust the channel volumes and pitch of the sound,
-        /// such that the sound source seems to come from the <paramref name="emitter"/> to the listener/>.
-        /// </summary>
-        /// <param name="emitter">The emitter that correspond to this sound</param>
-        /// <remarks>
-        /// <see cref="Apply3D"/> can be used only on mono-sounds.
-        /// <para>
-        /// The final resulting pitch depends on the listener and emitter relative velocity.
-        /// The final resulting channel volumes depend on the listener and emitter relative positions and the value of <see cref="IPlayableSound.Volume"/>.
-        /// </para>
-        /// </remarks>
-        public void Apply3D(AudioEmitter emitter)
-        {
-            if (engine.State == AudioEngineState.Invalidated)
-                return;
-
-            if (!spatialized) return;
-
-            if (emitter == null)
-                throw new ArgumentNullException(nameof(emitter));
-
-            emitter.Apply3D(Source);
-        }
-
-        /// <summary>
         /// Quick and easy way to apply 3D parameters without an AudioEmitter
         /// </summary>
         public void Apply3D(Vector3 Position, Vector3? velocity = null, Quaternion? direction = null, float distanceScale = 1f)

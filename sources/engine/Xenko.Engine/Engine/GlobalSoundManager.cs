@@ -38,7 +38,7 @@ namespace Xenko.Engine
                 s.Volume = volume * MasterVolume;
                 s.IsLooping = looped;
                 s.Pan = pan;
-                if (s.IsSpatialized) s.Apply3D(Listener.Listener.Position);
+                if (s.IsSpatialized) s.Apply3D(AudioEngine.DefaultListener.Position);
                 s.Play();
             }
             return s;
@@ -46,7 +46,7 @@ namespace Xenko.Engine
 
         public SoundInstance PlayPositionSound(string url, Vector3 position, float pitch = 1f, float volume = 1f, float distanceScale = 1f, bool looped = false)
         {
-            float sqrDist = (position - Listener.Listener.Position).LengthSquared();
+            float sqrDist = (position - AudioEngine.DefaultListener.Position).LengthSquared();
             if (MaxSoundDistance > 0f && sqrDist >= MaxSoundDistance * MaxSoundDistance) return null;
             SoundInstance s = getFreeInstance(url, true);
             if (s == null) return null;
@@ -62,7 +62,7 @@ namespace Xenko.Engine
         public SoundInstance PlayAttachedSound(string url, Entity parent, float pitch = 1f, float volume = 1f, float distanceScale = 1f, bool looped = false)
         {
             Vector3 pos = parent.Transform.WorldPosition();
-            float sqrDist = (pos - Listener.Listener.Position).LengthSquared();
+            float sqrDist = (pos - AudioEngine.DefaultListener.Position).LengthSquared();
             if (MaxSoundDistance > 0f && sqrDist >= MaxSoundDistance * MaxSoundDistance) return null;
             SoundInstance s = getFreeInstance(url, true);
             if (s == null) return null;
@@ -183,45 +183,7 @@ namespace Xenko.Engine
         {
             // global sound manager relies on listeners being shared, so everything can be
             // safely reused
-            AudioListenerComponent.UseSharedListener = true;
             internalGame = ServiceRegistry.instance?.GetService<IGame>() as Game;
-        }
-
-        [DataMemberIgnore]
-        private AudioListenerComponent Listener
-        {
-            get
-            {
-                if (_listener == null || _listener.Enabled == false || internalGame.Audio.Listeners.ContainsKey(_listener) == false)
-                {
-                    // find a valid listener!
-                    foreach (AudioListenerComponent alc in internalGame.Audio.Listeners.Keys)
-                    {
-                        if (alc.Enabled)
-                        {
-                            _listener = alc;
-                            break;
-                        }
-                    }
-
-                    if (_listener == null)
-                        throw new InvalidOperationException("Could not find an Audio Listener Component in scene!");
-                }
-
-                return _listener;
-            }
-            set
-            {
-                // don't set us to something null, which just breaks things
-                if (value == null) return;
-
-                _listener = value;
-            }
-        }
-
-        public void OverrideListener(AudioListenerComponent listener)
-        {
-            Listener = listener;
         }
 
         private Dictionary<string, Sound> Sounds = new Dictionary<string, Sound>();
@@ -229,7 +191,6 @@ namespace Xenko.Engine
         private List<PositionalSound> currentAttached = new List<PositionalSound>();
         private System.Random rand;
         private Game internalGame;
-        private AudioListenerComponent _listener;
 
         private SoundInstance getFreeInstance(string url, bool spatialized)
         {
@@ -249,7 +210,7 @@ namespace Xenko.Engine
                 // don't have a free one to play, add a new one to the list
                 if (Sounds.TryGetValue(url, out var snd0))
                 {
-                    SoundInstance si0 = snd0.CreateInstance(Listener?.Listener, true, false, 0f, HrtfEnvironment.Small);
+                    SoundInstance si0 = snd0.CreateInstance(AudioEngine.DefaultListener, true, false, 0f, HrtfEnvironment.Small);
                     ins.Add(si0);
                     return si0;
                 }
@@ -258,7 +219,7 @@ namespace Xenko.Engine
             // don't have a list for this, make one
             if (Sounds.TryGetValue(url, out var snd1))
             {
-                SoundInstance si1 = snd1.CreateInstance(Listener?.Listener, true, false, 0f, HrtfEnvironment.Small);
+                SoundInstance si1 = snd1.CreateInstance(AudioEngine.DefaultListener, true, false, 0f, HrtfEnvironment.Small);
                 List<SoundInstance> lsi1 = new List<SoundInstance>();
                 lsi1.Add(si1);
                 instances[url] = lsi1;
@@ -271,7 +232,7 @@ namespace Xenko.Engine
             if (!snd2.Spatialized && spatialized)
                 throw new InvalidOperationException("Trying to play " + url + " positionally, yet it is a non-spatialized sound!");
 
-            SoundInstance si = snd2.CreateInstance(Listener?.Listener, true, false, 0f, HrtfEnvironment.Small);
+            SoundInstance si = snd2.CreateInstance(AudioEngine.DefaultListener, true, false, 0f, HrtfEnvironment.Small);
             List<SoundInstance> lsi = new List<SoundInstance>();
             lsi.Add(si);
             instances[url] = lsi;

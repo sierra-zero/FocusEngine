@@ -18,7 +18,7 @@ namespace Xenko.Audio
     /// A call to Dispose automatically stops and disposes all the <see cref="SoundBase"/>, <see cref="SoundInstance"/>
     public class AudioEngine : ComponentBase
     {
-        public AudioListener DefaultListener;
+        public static AudioListener DefaultListener;
 
         private readonly AudioDevice audioDevice;
 

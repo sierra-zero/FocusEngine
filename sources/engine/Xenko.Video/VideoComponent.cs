@@ -75,12 +75,6 @@ namespace Xenko.Video
         /// </userdoc>
         [DataMember(50)]
         public bool PlayAudio { get; set; } = true;
-
-        /// <summary>
-        /// The list of audioEmitteur components.
-        /// </summary>
-        [DataMember(60)]
-        public FastCollection<AudioEmitterComponent> AudioEmitters { get; } = new FastCollection<AudioEmitterComponent>();
         
         internal void AttachInstance([NotNull] VideoInstance instance)
         {

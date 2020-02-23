@@ -206,8 +206,7 @@ namespace Xenko.Video
 
             AllocateVideoTexture(videoWidth, videoHeight);
 
-            if (videoComponent.PlayAudio != true || videoComponent.AudioEmitters.Any(e => e != null))
-                mediaEngine.Muted = true;
+            mediaEngine.Muted = true;
         }
 
         /// <summary>

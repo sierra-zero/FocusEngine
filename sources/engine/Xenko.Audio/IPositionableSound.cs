@@ -1,6 +1,7 @@
 // Copyright (c) Xenko contributors (https://xenko.com) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
+using Xenko.Core.Mathematics;
 
 namespace Xenko.Audio
 {
@@ -46,6 +47,6 @@ namespace Xenko.Audio
         /// The final resulting channel volumes depend on the listener and emitter relative positions and the value of <see cref="IPlayableSound.Volume"/>. 
         /// </para>
         /// </remarks>
-        void Apply3D(AudioEmitter emitter);
+        void Apply3D(Vector3 Position, Vector3? velocity = null, Quaternion? direction = null, float distanceScale = 1f);
     }
 }

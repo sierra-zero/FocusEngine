@@ -48,8 +48,6 @@
     <Compile Include="Engine\GameClassForTests.cs" />
     <Compile Include="Engine\LaunchProgram.cs" />
     <Compile Include="Engine\TestAssetLoading.cs" />
-    <Compile Include="Engine\TestAudioEmitterComponent.cs" />
-    <Compile Include="Engine\TestAudioEmitterProcessor.cs" />
     <Compile Include="Engine\TestAudioListenerProcessor.cs" />
     <Compile Include="Engine\TestAudioSystem.cs" />
     <Compile Include="Engine\TestController.cs" />
@@ -58,7 +56,6 @@
     <Compile Include="LaunchProgram.cs" />
     <Compile Include="PauseResumeTests.cs" />
     <Compile Include="SoundGenerator.cs" />
-    <Compile Include="TestAudioEmitter.cs" />
     <Compile Include="TestAudioEngine.cs" />
     <Compile Include="TestAudioListener.cs" />
     <Compile Include="TestDynamicSoundEffectInstance.cs" />

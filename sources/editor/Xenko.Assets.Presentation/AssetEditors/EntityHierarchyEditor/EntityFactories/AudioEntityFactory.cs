@@ -7,23 +7,6 @@ using Xenko.Engine;
 
 namespace Xenko.Assets.Presentation.AssetEditors.EntityHierarchyEditor.EntityFactories
 {
-    [Display(10, "Audio emitter", "Audio")]
-    public class AudioEmitterFactory : EntityFactory
-    {
-        [ModuleInitializer]
-        internal static void RegisterCategory()
-        {
-                EntityFactoryCategory.RegisterCategory(50, "Audio");
-        }
-
-        public override Task<Entity> CreateEntity(EntityHierarchyItemViewModel parent)
-        {
-            var name = ComputeNewName(parent, "AudioEmitter");
-            var component = new AudioEmitterComponent();
-            return CreateEntityWithComponent(name, component);
-        }
-    }
-
     [Display(20, "Audio listener", "Audio")]
     public class AudioListenerFactory : EntityFactory
     {
