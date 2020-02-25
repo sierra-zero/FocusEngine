@@ -229,7 +229,7 @@ namespace Xenko.Graphics
             {
                 DepthBias = depthBias,
                 ColorScale = color,
-                ColorAdd = new Color(0, 0, 0, 0),
+                ColorAdd = Color.Zero,
                 Primitive = PrimitiveType.Rectangle,
             };
 
@@ -291,7 +291,7 @@ namespace Xenko.Graphics
             {
                 DepthBias = depthBias,
                 ColorScale = color,
-                ColorAdd = new Color(0, 0, 0, 0),
+                ColorAdd = Color.Zero,
                 Primitive = isReverse ? PrimitiveType.ReverseCube : PrimitiveType.Cube,
             };
 
@@ -352,7 +352,7 @@ namespace Xenko.Graphics
                 },
                 DepthBias = depthBias,
                 ColorScale = color,
-                ColorAdd = new Color(0, 0, 0, 0),
+                ColorAdd = Color.Zero,
                 Swizzle = swizzle,
                 SnapImage = snapImage,
                 Primitive = borderSize == Vector4.Zero ? PrimitiveType.Rectangle : PrimitiveType.BorderRectangle,
@@ -418,7 +418,7 @@ namespace Xenko.Graphics
                 },
                 DepthBias = depthBias,
                 ColorScale = color,
-                ColorAdd = new Color(0, 0, 0, 0),
+                ColorAdd = Color.Zero,
                 Swizzle = swizzle,
                 Primitive = PrimitiveType.Rectangle,
                 VertexShift = Vector4.Zero,
