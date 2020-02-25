@@ -6,10 +6,10 @@ using Xenko.Core;
 namespace Xenko.Physics
 {
     [DataContract]
-    [Display("Fit in range")]
-    public class HeightfieldHeightScaleCalculator : IHeightfieldHeightScaleCalculator
+    [Display("Fit to height range")]
+    public class HeightScaleCalculator : IHeightScaleCalculator
     {
-        public float Calculate(IHeightfieldHeightDescription heightDescription)
+        public float Calculate(IHeightStickParameters heightDescription)
         {
             var heightRange = heightDescription.HeightRange;
 
