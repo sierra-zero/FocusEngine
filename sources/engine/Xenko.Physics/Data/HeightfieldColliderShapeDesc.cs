@@ -23,8 +23,8 @@ namespace Xenko.Physics
         public bool FlipQuadEdges = false;
 
         [DataMember(80)]
-        [Display("Center height 0")]
-        public bool CenterHeightZero = true;
+        [Display("Center the height 0")]
+        public bool ShouldCenterHeightZero = true;
 
         [DataMember(100)]
         public Vector3 LocalOffset;
@@ -50,7 +50,7 @@ namespace Xenko.Physics
 
             return initialHeightsComparison &&
                 other.FlipQuadEdges == FlipQuadEdges &&
-                other.CenterHeightZero == CenterHeightZero;
+                other.ShouldCenterHeightZero == ShouldCenterHeightZero;
         }
 
         public static bool IsValidHeightStickSize(Int2 size)
@@ -68,18 +68,15 @@ namespace Xenko.Physics
             }
         }
 
-        private static UnmanagedArray<T> CreateHeights<T>(int length, T[] initialHeights) where T : struct
+        private static UnmanagedArray<T> CreateHeights<T>(IHeightStickArraySource heightStickArraySource) where T : struct
         {
-            var unmanagedArray = new UnmanagedArray<T>(length);
+            if (heightStickArraySource == null) throw new ArgumentNullException(nameof(heightStickArraySource));
 
-            if (initialHeights != null)
-            {
-                unmanagedArray.Write(initialHeights, 0, 0, Math.Min(unmanagedArray.Length, initialHeights.Length));
-            }
-            else
-            {
-                FillHeights(unmanagedArray, default);
-            }
+            var arrayLength = heightStickArraySource.HeightStickSize.X * heightStickArraySource.HeightStickSize.Y;
+
+            var unmanagedArray = new UnmanagedArray<T>(arrayLength);
+
+            heightStickArraySource.CopyTo(unmanagedArray, 0);
 
             return unmanagedArray;
         }
@@ -89,39 +86,36 @@ namespace Xenko.Physics
             if (InitialHeights == null ||
                 !IsValidHeightStickSize(InitialHeights.HeightStickSize) ||
                 InitialHeights.HeightRange.Y < InitialHeights.HeightRange.X ||
-                Math.Abs(InitialHeights.HeightRange.Y - InitialHeights.HeightRange.X) < float.Epsilon ||
-                Math.Abs(InitialHeights.HeightScale) < float.Epsilon)
+                Math.Abs(InitialHeights.HeightRange.Y - InitialHeights.HeightRange.X) < float.Epsilon)
             {
                 return null;
             }
-
-            var arrayLength = InitialHeights.HeightStickSize.X * InitialHeights.HeightStickSize.Y;
 
             object unmanagedArray;
 
             switch (InitialHeights.HeightType)
             {
                 case HeightfieldTypes.Float:
-                    {
-                        unmanagedArray = CreateHeights(arrayLength, InitialHeights.Floats);
-                        break;
-                    }
+                {
+                    unmanagedArray = CreateHeights<float>(InitialHeights);
+                    break;
+                }
                 case HeightfieldTypes.Short:
-                    {
-                        unmanagedArray = CreateHeights(arrayLength, InitialHeights.Shorts);
-                        break;
-                    }
+                {
+                    unmanagedArray = CreateHeights<short>(InitialHeights);
+                    break;
+                }
                 case HeightfieldTypes.Byte:
-                    {
-                        unmanagedArray = CreateHeights(arrayLength, InitialHeights.Bytes);
-                        break;
-                    }
+                {
+                    unmanagedArray = CreateHeights<byte>(InitialHeights);
+                    break;
+                }
 
                 default:
                     return null;
             }
 
-            var offsetToCenterHeightZero = CenterHeightZero ? InitialHeights.HeightRange.X + ((InitialHeights.HeightRange.Y - InitialHeights.HeightRange.X) * 0.5f) : 0f;
+            var offsetToCenterHeightZero = ShouldCenterHeightZero ? InitialHeights.HeightRange.X + ((InitialHeights.HeightRange.Y - InitialHeights.HeightRange.X) * 0.5f) : 0f;
 
             var shape = new HeightfieldColliderShape
                         (
