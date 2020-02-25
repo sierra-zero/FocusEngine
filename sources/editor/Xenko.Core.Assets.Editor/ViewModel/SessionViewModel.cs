@@ -531,7 +531,7 @@ namespace Xenko.Core.Assets.Editor.ViewModel
 
         private void AutoSelectCurrentProject()
         {
-            var currentProject = LocalPackages.OfType<ProjectViewModel>().FirstOrDefault(x => x.Type == ProjectType.Executable && x.Platform == PlatformType.Windows) ?? LocalPackages.FirstOrDefault();
+            var currentProject = LocalPackages.OfType<ProjectViewModel>().FirstOrDefault(x => x.Platform == PlatformType.Shared) ?? LocalPackages.FirstOrDefault();
             if (currentProject != null)
             {
                 SetCurrentProject(currentProject);

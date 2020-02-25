@@ -396,10 +396,6 @@
                   ToolTip="{xk:ToolTip {xk:Localize Build the project, Context=ToolTip}, {x:Static strings:KeyGestures.BuildProject}}" xk:ToolTipHelper.Status="{Binding Status}" ToolTipService.ShowOnDisabled="True">
             <Image Source="{StaticResource ImageBuildProject}"/>
           </Button>
-          <Button Command="{Binding Debugging.StartProjectCommand}"
-                  ToolTip="{xk:ToolTip {xk:Localize Build the project and start the game, Context=ToolTip}, {x:Static strings:KeyGestures.StartProject}}" xk:ToolTipHelper.Status="{Binding Status}" ToolTipService.ShowOnDisabled="True">
-            <Image Source="{StaticResource ImageStartProject}"/>
-          </Button>
           <!-- Live Scripting -->
           <!-- FIXME live scripting is disabled (XK-4309) -->
           <Button Command="{Binding Debugging.LivePlayProjectCommand}"
