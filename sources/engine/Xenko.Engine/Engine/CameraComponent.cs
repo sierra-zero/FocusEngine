@@ -74,6 +74,10 @@ namespace Xenko.Engine
         [NotNull]
         public CameraProjectionMode Projection { get; set; }
 
+        [DataMember]
+        [DefaultValue(false)]
+        public bool AllowFOVOverride { get; set; } = false;
+
         /// <summary>
         /// Gets or sets the vertical field of view in degrees.
         /// </summary>
@@ -85,7 +89,21 @@ namespace Xenko.Engine
         [DefaultValue(DefaultVerticalFieldOfView)]
         [Display("Field of view")]
         [DataMemberRange(1.0, 179.0, 1.0, 10.0, 0)]
-        public float VerticalFieldOfView { get; set; }
+        public float VerticalFieldOfView {
+            get
+            {
+                if (AllowFOVOverride && SceneSystem.OverrideFOV > 0)
+                    return SceneSystem.OverrideFOV;
+
+                return internalFOV;
+            }
+            set
+            {
+                internalFOV = value;
+            }
+        }
+
+        private float internalFOV;
 
         /// <summary>
         /// Gets or sets the height of the orthographic projection.

@@ -98,6 +98,8 @@ namespace Xenko.Engine
 
         public GraphicsCompositor GraphicsCompositor { get; set; }
 
+        // custom fov settings
+        public static float OverrideFOV = -1;
 
         private Task<Scene> sceneTask;
         private Task<GraphicsCompositor> compositorTask;
