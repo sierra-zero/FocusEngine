@@ -313,7 +313,6 @@ namespace Xenko.GameStudio
                         AvalonDockHelper.GetDocumentPane(dockingLayoutManager.DockingManager).Children.Add(editorPane);
                     }
                     editorPane.IsActiveChanged += EditorPaneIsActiveChanged;
-                    editorPane.IsSelectedChanged += EditorPaneIsSelectedChanged;
                     editorPane.Closing += EditorPaneClosing;
                     editorPane.Closed += EditorPaneClosed;
                     editorPane.Content = view;
@@ -496,7 +495,6 @@ namespace Xenko.GameStudio
         private void RemoveEditorPane([NotNull] LayoutAnchorable editorPane)
         {
             editorPane.IsActiveChanged -= EditorPaneIsActiveChanged;
-            editorPane.IsSelectedChanged -= EditorPaneIsSelectedChanged;
             editorPane.Closing -= EditorPaneClosing;
             editorPane.Closed -= EditorPaneClosed;
 
@@ -565,29 +563,6 @@ namespace Xenko.GameStudio
                 else
                 {
                     element.Loaded -= EditorPaneContentLoaded;
-                }
-            }
-        }
-
-        private static void EditorPaneIsSelectedChanged(object sender, EventArgs e)
-        {
-            var editorPane = (LayoutAnchorable)sender;
-            var element = editorPane.Content as FrameworkElement;
-
-            if (element != null)
-            {
-                var assetViewModel = element?.DataContext as AssetViewModel;
-                if (assetViewModel?.Editor is Assets.Presentation.AssetEditors.GameEditor.ViewModels.GameEditorViewModel gameEditor)
-                {
-                    // A tab/sub-window is visible via IsSelected, not IsVisible
-                    if (editorPane.IsSelected)
-                    {
-                        gameEditor.ShowGame();
-                    }
-                    else
-                    {
-                        gameEditor.HideGame();
-                    }
                 }
             }
         }

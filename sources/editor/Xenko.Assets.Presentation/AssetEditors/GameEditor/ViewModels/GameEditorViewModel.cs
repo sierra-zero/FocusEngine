@@ -29,7 +29,7 @@ namespace Xenko.Assets.Presentation.AssetEditors.GameEditor.ViewModels
         {
             Controller = controllerFactory(this);
             CopyErrorToClipboardCommand = new AnonymousCommand(ServiceProvider, CopyErrorToClipboard);
-            ResumeCommand = new AnonymousCommand(ServiceProvider, ResumeFromError);
+            ResumeCommand = new AnonymousCommand(ServiceProvider, Resume);
         }
 
         /// <summary>
@@ -77,16 +77,6 @@ namespace Xenko.Assets.Presentation.AssetEditors.GameEditor.ViewModels
             base.Destroy();
         }
 
-        public void HideGame()
-        {
-            Controller.OnHideGame();
-        }
-
-        public void ShowGame()
-        {
-            Controller.OnShowGame();
-        }
-
         protected virtual async Task<bool> InitializeEditor()
         {
             Dispatcher.EnsureAccess();
@@ -122,7 +112,7 @@ namespace Xenko.Assets.Presentation.AssetEditors.GameEditor.ViewModels
                 SafeClipboard.SetText(log);
         }
 
-        private void ResumeFromError()
+        private void Resume()
         {
             Controller.GetService<IEditorGameRecoveryViewModelService>()?.Resume();
         }
