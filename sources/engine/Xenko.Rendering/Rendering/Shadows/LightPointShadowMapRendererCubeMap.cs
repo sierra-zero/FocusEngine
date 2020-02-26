@@ -243,54 +243,59 @@ namespace Xenko.Rendering.Shadows
                 return new ShaderClassSource(ShaderName, lightCurrentCount);
             }
 
+            private object locker = new object();
+
             public override void ApplyDrawParameters(RenderDrawContext context, ParameterCollection parameters, FastListStruct<LightDynamicEntry> currentLights, ref BoundingBoxExt boundingBox)
             {
                 var boundingBox2 = (BoundingBox)boundingBox;
                 bool shadowMapCreated = false;
                 int lightIndex = 0;
 
-                for (int i = 0; i < currentLights.Count; ++i)
+                lock (locker)
                 {
-                    var lightEntry = currentLights[i];
-                    if (lightEntry.Light.BoundingBox.Intersects(ref boundingBox2))
+                    for (int i = 0; i < currentLights.Count; ++i)
                     {
-                        var shaderData = (ShaderData)lightEntry.ShadowMapTexture.ShaderData;
-
-                        // Copy per-face data
-                        for (int j = 0; j < 6; j++)
+                        var lightEntry = currentLights[i];
+                        if (lightEntry.Light.BoundingBox.Intersects(ref boundingBox2))
                         {
-                            worldToShadow[lightIndex * 6 + j] = shaderData.WorldToShadow[j];
-                            inverseWorldToShadow[lightIndex * 6 + j] = Matrix.Invert(shaderData.WorldToShadow[j]);
-                        }
+                            var shaderData = (ShaderData)lightEntry.ShadowMapTexture.ShaderData;
 
-                        depthBiases[lightIndex] = shaderData.DepthBias;
-                        offsetScales[lightIndex] = shaderData.OffsetScale;
-                        depthParameters[lightIndex] = shaderData.DepthParameters;
-                        lightIndex++;
-
-                        // TODO: should be setup just once at creation time
-                        if (!shadowMapCreated)
-                        {
-                            shadowMapTexture = shaderData.Texture;
-                            if (shadowMapTexture != null)
+                            // Copy per-face data
+                            for (int j = 0; j < 6; j++)
                             {
-                                shadowMapTextureSize = new Vector2(shadowMapTexture.Width, shadowMapTexture.Height);
-                                shadowMapTextureTexelSize = 1.0f / shadowMapTextureSize;
+                                worldToShadow[lightIndex * 6 + j] = shaderData.WorldToShadow[j];
+                                inverseWorldToShadow[lightIndex * 6 + j] = Matrix.Invert(shaderData.WorldToShadow[j]);
                             }
-                            shadowMapCreated = true;
+
+                            depthBiases[lightIndex] = shaderData.DepthBias;
+                            offsetScales[lightIndex] = shaderData.OffsetScale;
+                            depthParameters[lightIndex] = shaderData.DepthParameters;
+                            lightIndex++;
+
+                            // TODO: should be setup just once at creation time
+                            if (!shadowMapCreated)
+                            {
+                                shadowMapTexture = shaderData.Texture;
+                                if (shadowMapTexture != null)
+                                {
+                                    shadowMapTextureSize = new Vector2(shadowMapTexture.Width, shadowMapTexture.Height);
+                                    shadowMapTextureTexelSize = 1.0f / shadowMapTextureSize;
+                                }
+                                shadowMapCreated = true;
+                            }
                         }
                     }
+
+                    parameters.Set(shadowMapTextureKey, shadowMapTexture);
+                    parameters.Set(shadowMapTextureSizeKey, shadowMapTextureSize);
+                    parameters.Set(shadowMapTextureTexelSizeKey, shadowMapTextureTexelSize);
+
+                    parameters.Set(worldToShadowKey, worldToShadow);
+                    parameters.Set(inverseWorldToShadowKey, inverseWorldToShadow);
+                    parameters.Set(depthParametersKey, depthParameters);
+                    parameters.Set(depthBiasesKey, depthBiases);
+                    parameters.Set(offsetScalesKey, offsetScales);
                 }
-
-                parameters.Set(shadowMapTextureKey, shadowMapTexture);
-                parameters.Set(shadowMapTextureSizeKey, shadowMapTextureSize);
-                parameters.Set(shadowMapTextureTexelSizeKey, shadowMapTextureTexelSize);
-
-                parameters.Set(worldToShadowKey, worldToShadow);
-                parameters.Set(inverseWorldToShadowKey, inverseWorldToShadow);
-                parameters.Set(depthParametersKey, depthParameters);
-                parameters.Set(depthBiasesKey, depthBiases);
-                parameters.Set(offsetScalesKey, offsetScales);
             }
         }
     }

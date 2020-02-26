@@ -277,51 +277,56 @@ namespace Xenko.Rendering.Shadows
                 Array.Resize(ref depthBiases, lightCurrentCount);
             }
 
+            private object locker = new object();
+
             public override void ApplyDrawParameters(RenderDrawContext context, ParameterCollection parameters, FastListStruct<LightDynamicEntry> currentLights, ref BoundingBoxExt boundingBox)
             {
                 var boundingBox2 = (BoundingBox)boundingBox;
                 bool shadowMapCreated = false;
                 int lightIndex = 0;
 
-                for (int i = 0; i < currentLights.Count; ++i)
+                lock (locker)
                 {
-                    var lightEntry = currentLights[i];
-                    if (lightEntry.Light.BoundingBox.Intersects(ref boundingBox2))
+                    for (int i = 0; i < currentLights.Count; ++i)
                     {
-                        var shaderData = (ShaderData)lightEntry.ShadowMapTexture.ShaderData;
-                        offsets[lightIndex] = shaderData.Offset;
-                        backfaceOffsets[lightIndex] = shaderData.BackfaceOffset;
-                        faceSizes[lightIndex] = shaderData.FaceSize;
-                        depthParameters[lightIndex] = shaderData.DepthParameters;
-                        depthBiases[lightIndex] = shaderData.DepthBias;
-                        viewMatrices[lightIndex] = shaderData.View;
-                        lightIndex++;
-
-                        // TODO: should be setup just once at creation time
-                        if (!shadowMapCreated)
+                        var lightEntry = currentLights[i];
+                        if (lightEntry.Light.BoundingBox.Intersects(ref boundingBox2))
                         {
-                            shadowMapTexture = shaderData.Texture;
-                            if (shadowMapTexture != null)
+                            var shaderData = (ShaderData)lightEntry.ShadowMapTexture.ShaderData;
+                            offsets[lightIndex] = shaderData.Offset;
+                            backfaceOffsets[lightIndex] = shaderData.BackfaceOffset;
+                            faceSizes[lightIndex] = shaderData.FaceSize;
+                            depthParameters[lightIndex] = shaderData.DepthParameters;
+                            depthBiases[lightIndex] = shaderData.DepthBias;
+                            viewMatrices[lightIndex] = shaderData.View;
+                            lightIndex++;
+
+                            // TODO: should be setup just once at creation time
+                            if (!shadowMapCreated)
                             {
-                                shadowMapTextureSize = new Vector2(shadowMapTexture.Width, shadowMapTexture.Height);
-                                shadowMapTextureTexelSize = 1.0f / shadowMapTextureSize;
+                                shadowMapTexture = shaderData.Texture;
+                                if (shadowMapTexture != null)
+                                {
+                                    shadowMapTextureSize = new Vector2(shadowMapTexture.Width, shadowMapTexture.Height);
+                                    shadowMapTextureTexelSize = 1.0f / shadowMapTextureSize;
+                                }
+                                shadowMapCreated = true;
                             }
-                            shadowMapCreated = true;
                         }
                     }
+
+                    parameters.Set(shadowMapTextureKey, shadowMapTexture);
+                    parameters.Set(shadowMapTextureSizeKey, shadowMapTextureSize);
+                    parameters.Set(shadowMapTextureTexelSizeKey, shadowMapTextureTexelSize);
+
+                    parameters.Set(viewKey, viewMatrices);
+                    parameters.Set(offsetsKey, offsets);
+                    parameters.Set(backfaceOffsetsKey, backfaceOffsets);
+                    parameters.Set(faceSizesKey, faceSizes);
+                    parameters.Set(depthParametersKey, depthParameters);
+
+                    parameters.Set(depthBiasesKey, depthBiases);
                 }
-
-                parameters.Set(shadowMapTextureKey, shadowMapTexture);
-                parameters.Set(shadowMapTextureSizeKey, shadowMapTextureSize);
-                parameters.Set(shadowMapTextureTexelSizeKey, shadowMapTextureTexelSize);
-
-                parameters.Set(viewKey, viewMatrices);
-                parameters.Set(offsetsKey, offsets);
-                parameters.Set(backfaceOffsetsKey, backfaceOffsets);
-                parameters.Set(faceSizesKey, faceSizes);
-                parameters.Set(depthParametersKey, depthParameters);
-
-                parameters.Set(depthBiasesKey, depthBiases);
             }
         }
     }
