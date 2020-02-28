@@ -335,6 +335,9 @@ namespace Xenko.Core.Assets.Editor.ViewModel
 
                 // And initialize the actions view model
                 sessionViewModel.ActionHistory.Initialize();
+
+                // grab path for backup/restore
+                EditorViewModel.Instance.projectPath = Path.GetDirectoryName(session.SolutionPath.FullPath);
             }
             finally
             {
@@ -347,6 +350,7 @@ namespace Xenko.Core.Assets.Editor.ViewModel
         private static void BackupProjectFiles()
         {
             var path = EditorViewModel.Instance.projectPath;
+            if (path == null || path.Length == 0) return;
             string[] files = Directory.GetFiles(path, "*.xk*", SearchOption.AllDirectories);
             for (int i=0; i<files.Length; i++)
             {
