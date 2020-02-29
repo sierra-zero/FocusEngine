@@ -79,7 +79,7 @@ namespace Xenko.Rendering.Lights
                 {
                     for (int i = 0; i < AmbientColor.Length; i++)
                     {
-                        AmbientColor[i] = new Color3(0.0f);
+                        AmbientColor[i] = new Color3();
                     }
                 }
             }

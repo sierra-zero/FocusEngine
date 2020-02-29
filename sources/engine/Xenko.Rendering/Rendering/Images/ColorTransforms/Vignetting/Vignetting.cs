@@ -25,7 +25,7 @@ namespace Xenko.Rendering.Images
         {
             Amount = 0.8f;
             Radius = 0.7f;
-            Color = new Color3(0f);
+            Color = Color3.Black;
         }
 
         /// <summary>

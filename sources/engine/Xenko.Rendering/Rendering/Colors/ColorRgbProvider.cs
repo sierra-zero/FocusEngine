@@ -20,7 +20,7 @@ namespace Xenko.Rendering.Colors
         /// </summary>
         public ColorRgbProvider()
         {
-            Value = new Color3(1.0f);
+            Value = Color3.White;
         }
 
         /// <summary>

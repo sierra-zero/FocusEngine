@@ -26,7 +26,7 @@ namespace Xenko.Rendering.Images
         {
             Threshold = 0.2f;
             Steepness = 1.0f;
-            Color = new Color3(1.0f);
+            Color = Color3.White;
         }
 
         /// <summary>
@@ -71,7 +71,7 @@ namespace Xenko.Rendering.Images
 
         protected override void SetDefaultParameters()
         {
-            Color = new Color3(1.0f);
+            Color = Color3.White;
 
             base.SetDefaultParameters();
         }

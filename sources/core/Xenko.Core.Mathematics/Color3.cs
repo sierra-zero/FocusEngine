@@ -43,6 +43,16 @@ namespace Xenko.Core.Mathematics
         private const string ToStringFormat = "R:{0} G:{1} B:{2}";
 
         /// <summary>
+        /// The Black color (0, 0, 0).
+        /// </summary>
+        public static readonly Color3 Black = new Color3(0.0f);
+
+        /// <summary>
+        /// The White color (1, 1, 1).
+        /// </summary>
+        public static readonly Color3 White = new Color3(1.0f);
+
+        /// <summary>
         /// The red component of the color.
         /// </summary>
         [DataMember(0)]

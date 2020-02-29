@@ -36,7 +36,7 @@ namespace Xenko.Rendering.Lights
         /// <returns>Gets the color of this light in linear space.</returns>
         public Color3 ComputeColor(ColorSpace colorSpace, float intensity)
         {
-            var color = (Color != null ? Color.ComputeColor() : new Color3(1.0f));
+            var color = (Color != null ? Color.ComputeColor() : Color3.White);
             color = color.ToColorSpace(colorSpace) * intensity;
             return color;
         }
