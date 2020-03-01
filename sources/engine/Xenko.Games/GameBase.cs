@@ -467,7 +467,7 @@ namespace Xenko.Games
             }
 
             // Gets the GameWindow Context
-            Context = gameContext ?? GameContextFactory.NewDefaultGameContext();
+            Context = gameContext ?? GameContextFactory.NewGameContext(AppContextType.Desktop);
 
             PrepareContext();
 

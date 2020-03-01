@@ -348,6 +348,11 @@ namespace Xenko.Games
             }
         }
 
+        public int GetWindowIndex()
+        {
+            return window?.GetWindowDisplay() ?? 0;
+        }
+
         protected override void Destroy()
         {
             if (window != null)

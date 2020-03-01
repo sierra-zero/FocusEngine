@@ -18,6 +18,7 @@ using Xenko.Engine.Processors;
 using Xenko.Games;
 using Xenko.Graphics;
 using Xenko.Graphics.Font;
+using Xenko.Graphics.SDL;
 using Xenko.Input;
 using Xenko.Profiling;
 using Xenko.Rendering;
@@ -237,7 +238,7 @@ namespace Xenko.Engine
         /// <summary>
         /// Gets default settings that will be used on game startup, if AutoLoadDefaultSettings is true. Caps resolution to native display resolution.
         /// </summary>
-        public void GetDefaultSettings(out int width, out int height, out bool fullscreen, out float fov) {
+        public void GetDefaultSettings(out int width, out int height, out bool fullscreen, out float fov, Window useSDLWindow = null) {
             string defaultFile = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location) + "/DefaultResolution.txt";
             // default settings are maximum native resolution
             bool gotCustomWH = false;
@@ -264,8 +265,10 @@ namespace Xenko.Engine
             }
             try
             {
-                // cap values to native resolution
-                Graphics.SDL.Window.GetDisplayInformation(out int native_width, out int native_height, out int refresh_rate);
+                // cap values to native resolution (try to use display window)
+                int native_width, native_height, refresh_rate, index = 0;
+                if (useSDLWindow is Window gwsdl) index = gwsdl.GetWindowDisplay();
+                Graphics.SDL.Window.GetDisplayInformation(out native_width, out native_height, out refresh_rate, index);
                 if (width >= native_width &&
                     height >= native_height)
                 {
@@ -398,7 +401,7 @@ namespace Xenko.Engine
                         deviceManager.PreferredGraphicsProfile = new[] { renderingSettings.DefaultGraphicsProfile };
                     }
 
-                    GetDefaultSettings(out renderingSettings.DefaultBackBufferWidth, out renderingSettings.DefaultBackBufferHeight, out bool fullScreen, out float fov);
+                    GetDefaultSettings(out renderingSettings.DefaultBackBufferWidth, out renderingSettings.DefaultBackBufferHeight, out bool fullScreen, out float fov, (Context as GameContextSDL)?.Control ?? null);
                     deviceManager.IsFullScreen = fullScreen;
 
                     if (renderingSettings.DefaultBackBufferWidth > 0) deviceManager.PreferredBackBufferWidth = renderingSettings.DefaultBackBufferWidth;
