@@ -1,5 +1,6 @@
 // Copyright (c) Xenko contributors (https://xenko.com)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
+using System;
 using Xenko.Core;
 using Xenko.Core.Mathematics;
 using Xenko.Core.Serialization;
@@ -39,50 +40,34 @@ namespace Xenko.Physics
         [DataMember(70)]
         public float HeightScale;
 
-        public static Heightmap Create<T>(Int2 size, Vector2 range, float scale, T[] data) where T : struct
+        public static Heightmap Create<T>(Int2 size, HeightfieldTypes heightType, Vector2 heightRange, float heightScale, T[] data)
         {
-            if (!HeightfieldColliderShapeDesc.IsValidHeightStickSize(size) || data == null)
+            if (data == null) throw new ArgumentNullException(nameof(data));
+
+            HeightmapUtils.CheckHeightParameters(size, heightType, heightRange, heightScale, true);
+
+            var length = size.X * size.Y;
+
+            switch (data)
             {
-                return null;
+                case float[] floats when floats.Length == length: break;
+                case short[] shorts when shorts.Length == length: break;
+                case byte[] bytes when bytes.Length == length: break;
+                default: throw new ArgumentException($"{ typeof(T[]) } is not supported in { heightType } height type. Or { nameof(data) }.{ nameof(data).Length } doesn't match { nameof(size) }.");
             }
 
-            var type = data.GetType();
+            var heightmap = new Heightmap
+            {
+                HeightType = heightType,
+                Size = size,
+                HeightRange = heightRange,
+                HeightScale = heightScale,
+                Floats = data as float[],
+                Shorts = data as short[],
+                Bytes = data as byte[],
+            };
 
-            if (type == typeof(float[]))
-            {
-                return new Heightmap
-                {
-                    HeightType = HeightfieldTypes.Float,
-                    Size = size,
-                    HeightRange = range,
-                    HeightScale = scale,
-                    Floats = data as float[],
-                };
-            }
-            else if (type == typeof(short[]))
-            {
-                return new Heightmap
-                {
-                    HeightType = HeightfieldTypes.Short,
-                    Size = size,
-                    HeightRange = range,
-                    HeightScale = scale,
-                    Shorts = data as short[],
-                };
-            }
-            else if (type == typeof(byte[]))
-            {
-                return new Heightmap
-                {
-                    HeightType = HeightfieldTypes.Byte,
-                    Size = size,
-                    HeightRange = range,
-                    HeightScale = scale,
-                    Bytes = data as byte[],
-                };
-            }
-
-            return null;
+            return heightmap;
         }
     }
 }
