@@ -108,16 +108,6 @@ namespace Xenko.Graphics
             // Get next image
             Result r = GraphicsDevice.NativeDevice.AcquireNextImageWithResult(swapChain, ulong.MaxValue, SharpVulkan.Semaphore.Null, presentFence, out currentBufferIndex);
 
-            if (r == Result.ErrorOutOfDate) {
-                // re-create and do a "lite" re-present
-                // unfortunately this will likely crash, since recreating swapchains isn't stable
-                CreateSwapChain();
-                while (toPresent.IsEmpty == false) toPresent.TryDequeue(out _);
-                toPresent.Enqueue(currentBufferIndex);
-                presentWaiter.Set();
-                return;
-            }
-
             // reset dummy fence
             fixed (Fence* fences = &presentFence)
             {
