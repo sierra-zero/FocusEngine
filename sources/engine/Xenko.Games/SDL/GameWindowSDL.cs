@@ -44,6 +44,7 @@ namespace Xenko.Games
         public override void BeginScreenDeviceChange(bool willBeFullScreen)
         {
             IsFullscreen = willBeFullScreen;
+            if (!willBeFullScreen) window?.RecenterWindow();
         }
 
         public override void EndScreenDeviceChange(int clientWidth, int clientHeight)

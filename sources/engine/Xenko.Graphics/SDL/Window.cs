@@ -47,7 +47,7 @@ namespace Xenko.Graphics.SDL
         /// Get the current display information of the display (defaults to 0, the first display).
         /// </summary>
         public static void GetDisplayInformation(out int width, out int height, out int refresh_rate, int display = 0) {
-            SDL.SDL_GetCurrentDisplayMode(display, out SDL.SDL_DisplayMode mode);
+            SDL.SDL_GetDesktopDisplayMode(display, out SDL.SDL_DisplayMode mode);
             width = mode.w;
             height = mode.h;
             refresh_rate = mode.refresh_rate;
@@ -224,6 +224,11 @@ namespace Xenko.Graphics.SDL
             SDL.SDL_ShowWindow(SdlHandle);
         }
 
+        public static int GetNumberOfDisplays()
+        {
+            return SDL.SDL_GetNumVideoDisplays();
+        }
+
         /// <summary>
         /// Are we showing the window in full screen mode?
         /// </summary>
@@ -231,26 +236,33 @@ namespace Xenko.Graphics.SDL
         {
             get
             {
-                return (SDL.SDL_GetWindowFlags(SdlHandle) & (uint)SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN) != 0;
+                uint flags = SDL.SDL_GetWindowFlags(SdlHandle);
+                return (flags & (uint)SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN) != 0 ||
+                       (flags & (uint)SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN_DESKTOP) != 0;
+
             }
             set
             {
                 if (IsFullScreen == value) return;
-                SDL.SDL_SetWindowFullscreen(SdlHandle, (uint)(value ? SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN : 0));
-                SDL.SDL_GetCurrentDisplayMode(SDL.SDL_GetWindowDisplayIndex(SdlHandle), out SDL.SDL_DisplayMode mode);
+                int displayIndex = SDL.SDL_GetWindowDisplayIndex(SdlHandle);
+                SDL.SDL_GetCurrentDisplayMode(displayIndex, out SDL.SDL_DisplayMode mode);
                 if (value) {
-                    oldSize = ClientSize;
-                    oldLocation = Location;
+                    SDL.SDL_GetDesktopDisplayMode(displayIndex, out SDL.SDL_DisplayMode nativemode);
+                    SDL.SDL_SetWindowFullscreen(SdlHandle, nativemode.w <= ClientSize.Width && nativemode.h <= ClientSize.Height ? (uint)SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN_DESKTOP : (uint)SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN);
                     Location = Point.Zero;
-                    if( oldSize.Value.Width != mode.w ||
-                        oldSize.Value.Height != mode.h ) ClientSize = new Size2(mode.w, mode.h);
-                } else {
-                    if( oldLocation.HasValue == false || oldLocation.Value == Point.Zero ) {
-                        Location = new Point((int)((mode.w - 1280) * 0.5f), (int)((mode.h - 720) * 0.5));
-                    } else Location = oldLocation.Value;
-                    ClientSize = oldSize ?? new Size2(1280, 720);
+                }
+                else {
+                    SDL.SDL_SetWindowFullscreen(SdlHandle, 0);
+                    Location = new Point((int)((mode.w - ClientSize.Width) * 0.5f), (int)((mode.h - ClientSize.Height) * 0.5));
                 }
             }
+        }
+
+        public void RecenterWindow()
+        {
+            int displayIndex = SDL.SDL_GetWindowDisplayIndex(SdlHandle);
+            SDL.SDL_GetDesktopDisplayMode(displayIndex, out SDL.SDL_DisplayMode nativemode);
+            Location = new Point((int)((nativemode.w - ClientSize.Width) * 0.5f), (int)((nativemode.h - ClientSize.Height) * 0.5));
         }
 
         /// <summary>
