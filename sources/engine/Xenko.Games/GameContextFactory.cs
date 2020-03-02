@@ -10,7 +10,6 @@ namespace Xenko.Games
     /// </summary>
     public static class GameContextFactory
     {
-        [Obsolete("Use NewGameContext with the proper AppContextType.")]
         internal static GameContext NewDefaultGameContext()
         {
             // Default context is Desktop
