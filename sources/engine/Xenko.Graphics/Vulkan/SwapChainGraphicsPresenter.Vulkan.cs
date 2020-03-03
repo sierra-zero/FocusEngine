@@ -311,8 +311,8 @@ namespace Xenko.Graphics
             // Create surface
 #if XENKO_UI_SDL
             var control = Description.DeviceWindowHandle.NativeWindow as SDL.Window;
-            SDL2.SDL.SDL_Vulkan_CreateSurface(control.SdlHandle, GraphicsDevice.NativeInstance.NativeHandle, out IntPtr surfacePtr);
-            surface = new Surface(surfacePtr);
+            SDL2.SDL.SDL_Vulkan_CreateSurface(control.SdlHandle, GraphicsDevice.NativeInstance.NativeHandle, out ulong surfacePtr);
+            surface = new Surface(new IntPtr((long)surfacePtr));
 #elif XENKO_PLATFORM_WINDOWS
             var controlHandle = Description.DeviceWindowHandle.Handle;
             if (controlHandle == IntPtr.Zero)
