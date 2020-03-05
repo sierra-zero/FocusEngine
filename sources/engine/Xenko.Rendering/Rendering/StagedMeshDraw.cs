@@ -24,6 +24,11 @@ namespace Xenko.Rendering.Rendering {
         /// <param name="vertexBuffer">Vertex buffer</param>
         /// <returns></returns>
         public static StagedMeshDraw MakeStagedMeshDraw<T>(uint[] indexBuffer, T[] vertexBuffer, VertexDeclaration vertexBufferLayout) where T : struct {
+
+            // sanity checks
+            if (indexBuffer.Length == 0 || vertexBuffer.Length == 0)
+                throw new ArgumentException("Trying to make a StagedMeshDraw with empty index or vertex buffer!");
+
             StagedMeshDrawTyped<T> smdt = new StagedMeshDrawTyped<T>();
             smdt.PrimitiveType = PrimitiveType.TriangleList;
             smdt.DrawCount = indexBuffer.Length;
