@@ -258,7 +258,6 @@ namespace Xenko.Graphics
             }
 
             rendererName = Adapter.Description;
-            SharpVulkan.ResultExtensions.SuppressValidationExceptions = (deviceCreationFlags & DeviceCreationFlags.NoValidationExceptions) != 0;
 
             PhysicalDeviceProperties physicalDeviceProperties;
             NativePhysicalDevice.GetProperties(out physicalDeviceProperties);
