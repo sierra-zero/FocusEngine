@@ -24,11 +24,15 @@ namespace Xenko.Core.Threading
 
         public ThreadPool()
         {
-            // Cache delegate to avoid pointless allocation
-            Action<object> cachedTaskLoop = (o) => ProcessWorkItems();
             // fire up worker threads
-            for (int i = 0; i < Environment.ProcessorCount; i++)
-                new Task(cachedTaskLoop, null, TaskCreationOptions.LongRunning).Start();
+            ThreadStart ts = new ThreadStart(ProcessWorkItems);
+            for (int i = 0; i < Dispatcher.MaxDegreeOfParallelism; i++)
+            {
+                Thread t = new Thread(ts);
+                t.Name = "ThreadPool #" + i;
+                t.IsBackground = true;
+                t.Start();
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -52,8 +56,6 @@ namespace Xenko.Core.Threading
 
         private void ProcessWorkItems()
         {
-            Thread.CurrentThread.IsBackground = true;
-
             while (true)
             {
                 Action workItem = null;

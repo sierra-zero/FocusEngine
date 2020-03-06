@@ -10,7 +10,7 @@ namespace Xenko.Physics.Engine
 {
     internal class BepuSimpleThreadDispatcher : IThreadDispatcher, IDisposable
     {
-        public int ThreadCount => Environment.ProcessorCount;
+        public int ThreadCount => Xenko.Core.Threading.Dispatcher.MaxDegreeOfParallelism;
         private BepuUtilities.Memory.BufferPool[] buffers;
 
         public BepuSimpleThreadDispatcher()

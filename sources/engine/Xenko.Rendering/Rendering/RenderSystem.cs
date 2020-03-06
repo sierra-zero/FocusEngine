@@ -344,7 +344,7 @@ namespace Xenko.Rendering
             else
             {
                 // Create at most one batch per processor
-                int batchCount = Math.Min(Environment.ProcessorCount, renderNodeCount);
+                int batchCount = Math.Min(Xenko.Core.Threading.Dispatcher.MaxDegreeOfParallelism, renderNodeCount);
                 int batchSize = (renderNodeCount + (batchCount - 1)) / batchCount;
                 batchCount = (renderNodeCount + (batchSize - 1)) / batchSize;
 

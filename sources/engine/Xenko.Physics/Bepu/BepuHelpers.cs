@@ -436,7 +436,7 @@ namespace Xenko.Physics.Bepu
             int sliced = 0;
             while (sliced < triangleCount)
             {
-                int grablen = Math.Min(triangleCount / System.Environment.ProcessorCount, triangleCount - sliced);
+                int grablen = Math.Min(triangleCount / Xenko.Core.Threading.Dispatcher.MaxDegreeOfParallelism, triangleCount - sliced);
                 meshBuffers.Add(triangles.Slice(sliced, grablen));
                 sliced += grablen;
             }
