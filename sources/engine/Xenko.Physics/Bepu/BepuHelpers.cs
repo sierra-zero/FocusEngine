@@ -163,8 +163,8 @@ namespace Xenko.Physics.Bepu
             {
                 BepuStaticColliderComponent sc = new BepuStaticColliderComponent();
                 sc.ColliderShape = shapes[i];
-                sc.Position = offsets?[i] ?? Vector3.Zero;
-                sc.Rotation = rotations?[i] ?? Quaternion.Identity;
+                if (offsets != null && offsets.Count > i) sc.Position = offsets[i];
+                if (rotations != null && rotations.Count > i) sc.Rotation = rotations[i];
                 sc.CanCollideWith = collidesWith;
                 sc.CollisionGroup = group;
                 sc.FrictionCoefficient = FrictionCoefficient;
