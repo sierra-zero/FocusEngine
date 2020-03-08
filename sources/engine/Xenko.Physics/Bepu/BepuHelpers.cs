@@ -433,12 +433,20 @@ namespace Xenko.Physics.Bepu
 
             List<BepuUtilities.Memory.Buffer<Triangle>> meshBuffers = new List<BepuUtilities.Memory.Buffer<Triangle>>();
 
-            int sliced = 0;
-            while (sliced < triangleCount)
+            if (triangleCount < Xenko.Core.Threading.Dispatcher.MaxDegreeOfParallelism * 2f)
             {
-                int grablen = Math.Min(triangleCount / Xenko.Core.Threading.Dispatcher.MaxDegreeOfParallelism, triangleCount - sliced);
-                meshBuffers.Add(triangles.Slice(sliced, grablen));
-                sliced += grablen;
+                // if we have a really small mesh, doesn't make sense to split it up a bunch
+                meshBuffers.Add(triangles);
+            }
+            else
+            {
+                int sliced = 0;
+                while (sliced < triangleCount)
+                {
+                    int grablen = Math.Min(triangleCount / Xenko.Core.Threading.Dispatcher.MaxDegreeOfParallelism, triangleCount - sliced);
+                    meshBuffers.Add(triangles.Slice(sliced, grablen));
+                    sliced += grablen;
+                }
             }
 
             // list of meshes to make static colliders with
