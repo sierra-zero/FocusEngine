@@ -303,11 +303,13 @@ namespace Xenko.Engine
             StagedMeshDraw md;
             if (vertsNT != null)
             {
-                md = StagedMeshDraw.MakeStagedMeshDraw<VertexPositionNormalTextureTangent>(indicies, vertsNT.ToArray(), VertexPositionNormalTextureTangent.Layout);
+                var vertsNTa = vertsNT.ToArray();
+                md = StagedMeshDraw.MakeStagedMeshDraw<VertexPositionNormalTextureTangent>(ref indicies, ref vertsNTa, VertexPositionNormalTextureTangent.Layout);
             }
             else if (vertsNC != null)
             {
-                md = StagedMeshDraw.MakeStagedMeshDraw<VertexPositionNormalColor>(indicies, vertsNC.ToArray(), VertexPositionNormalColor.Layout);
+                var vertsNCa = vertsNC.ToArray();
+                md = StagedMeshDraw.MakeStagedMeshDraw<VertexPositionNormalColor>(ref indicies, ref vertsNCa, VertexPositionNormalColor.Layout);
             }
             else return;
 

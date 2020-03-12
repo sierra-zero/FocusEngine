@@ -185,7 +185,7 @@ namespace Xenko.Physics.Bepu
                 if (sc.ColliderShape is Mesh m)
                 {
                     sc.AddedToScene = false;
-                    DisposeMesh(m);
+                    m.Dispose();
                     sc.ColliderShape = null;
                 }
             }
@@ -387,8 +387,6 @@ namespace Xenko.Physics.Bepu
             return true;
         }
 
-        private static Dictionary<Mesh, BepuUtilities.Memory.BufferPool> BufferPoolMap = new Dictionary<Mesh, BepuUtilities.Memory.BufferPool>();
-
         public static unsafe bool GenerateMeshShape(List<Vector3> positions, List<int> indicies, out BepuPhysics.Collidables.Mesh outMesh, Vector3? scale = null)
         {
             var usePool = BepuSimulation.safeBufferPool;
@@ -406,8 +404,6 @@ namespace Xenko.Physics.Bepu
             }
 
             outMesh = new Mesh(triangles, new System.Numerics.Vector3(scale?.X ?? 1f, scale?.Y ?? 1f, scale?.Z ?? 1f), usePool);
-
-            BufferPoolMap[outMesh] = usePool;
 
             return true;
         }
@@ -449,39 +445,24 @@ namespace Xenko.Physics.Bepu
                 }
             }
 
-            // list of meshes to make static colliders with
-            List<IShape> meshes = new List<IShape>();
-
             // dispatch buffers to be made into meshes
             Xenko.Core.Threading.Dispatcher.For(0, meshBuffers.Count, (index) =>
             {
                 var pool = BepuSimulation.safeBufferPool;
-                var mesh = new Mesh(meshBuffers[index], new System.Numerics.Vector3(scale?.X ?? 1f, scale?.Y ?? 1f, scale?.Z ?? 1f), pool);
+                BepuStaticColliderComponent sc = new BepuStaticColliderComponent();
 
-                lock (meshes)
+                sc.ColliderShape = new Mesh(meshBuffers[index], new System.Numerics.Vector3(scale?.X ?? 1f, scale?.Y ?? 1f, scale?.Z ?? 1f), pool);
+                sc.CanCollideWith = collidesWith;
+                sc.CollisionGroup = group;
+                sc.FrictionCoefficient = friction;
+                sc.MaximumRecoveryVelocity = maximumRecoverableVelocity;
+                if (springSettings.HasValue) sc.SpringSettings = springSettings.Value;
+
+                lock (e)
                 {
-                    meshes.Add(mesh);
-                    BufferPoolMap[mesh] = pool;
+                    e.Add(sc);
                 }
             });
-
-            // generate a static collider for every mesh on the list for the entity e
-            GenerateStaticComponents(e, meshes, null, null, group, collidesWith, friction, maximumRecoverableVelocity, springSettings);
-        }
-
-        /// <summary>
-        /// Mesh had to have been made by BepuHelpers for the BufferPool to be tracked
-        /// </summary>
-        /// <param name="m"></param>
-        /// <returns>true if memory was cleared</returns>
-        public static bool DisposeMesh(Mesh m)
-        {
-            if(BufferPoolMap.TryGetValue(m, out var bp))
-            {
-                m.Dispose(bp);
-                return true;
-            }
-            return false;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

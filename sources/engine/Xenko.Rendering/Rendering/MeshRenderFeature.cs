@@ -99,21 +99,22 @@ namespace Xenko.Rendering
         public override void PrepareEffectPermutationsImpl(RenderDrawContext context)
         {
             // Setup ActiveMeshDraw
-            Dispatcher.ForEach(RenderObjects, renderObject =>
+            Dispatcher.For(0, RenderObjects.Count, (i) =>
             {
-                var renderMesh = (RenderMesh)renderObject;
+                var renderMesh = (RenderMesh)RenderObjects[i];
 
                 renderMesh.ActiveMeshDraw = renderMesh.Mesh.Draw;
 
                 // do we need to prepare the buffers with staged data first?
-                if (renderMesh.ActiveMeshDraw.VertexBuffers == null && renderMesh.ActiveMeshDraw is StagedMeshDraw) ((StagedMeshDraw)renderMesh.ActiveMeshDraw).performStage(Context.GraphicsDevice);
+                if (renderMesh.ActiveMeshDraw.VertexBuffers == null && renderMesh.ActiveMeshDraw is StagedMeshDraw smd)
+                    smd.performStage(Context.GraphicsDevice, smd);
             });
 
             base.PrepareEffectPermutationsImpl(context);
 
-            foreach (var renderFeature in RenderFeatures)
+            for (int i=0; i<RenderFeatures.Count; i++)
             {
-                renderFeature.PrepareEffectPermutations(context);
+                RenderFeatures[i].PrepareEffectPermutations(context);
             }
         }
 
@@ -123,9 +124,9 @@ namespace Xenko.Rendering
             base.Prepare(context);
 
             // Prepare each sub render feature
-            foreach (var renderFeature in RenderFeatures)
+            for (int i=0; i<RenderFeatures.Count; i++)
             {
-                renderFeature.Prepare(context);
+                RenderFeatures[i].Prepare(context);
             }
         }
 
