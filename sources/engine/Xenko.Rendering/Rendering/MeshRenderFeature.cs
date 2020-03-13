@@ -106,7 +106,7 @@ namespace Xenko.Rendering
                 renderMesh.ActiveMeshDraw = renderMesh.Mesh.Draw;
 
                 // do we need to prepare the buffers with staged data first?
-                if (renderMesh.ActiveMeshDraw.VertexBuffers == null && renderMesh.ActiveMeshDraw is StagedMeshDraw smd)
+                if (renderMesh.ActiveMeshDraw is StagedMeshDraw smd && smd.VertexBuffers == null)
                     smd.performStage(Context.GraphicsDevice, smd);
             });
 
