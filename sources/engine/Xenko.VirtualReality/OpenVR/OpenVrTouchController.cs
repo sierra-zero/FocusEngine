@@ -20,9 +20,35 @@ namespace Xenko.VirtualReality
         private Vector3 currentAngularVelocity;
         private Quaternion currentRot;
 
+        private Quaternion? holdOffset;
+        private float _holdoffset;
+
+        public override float HoldAngleOffset
+        { 
+            get => _holdoffset;
+            set 
+            {
+                _holdoffset = value;
+
+                holdOffset = Quaternion.RotationXDeg(_holdoffset);
+            }
+        }
+
         internal OpenVRTouchController(TouchControllerHand hand)
         {
             this.hand = (OpenVR.Controller.Hand)hand;
+        }
+
+        public override string DebugControllerState()
+        {
+            if (controller == null) return "No controller found!";
+            return "Axis0: " + controller.State.rAxis0.x.ToString() + ", " + controller.State.rAxis0.y.ToString() + "\n" +
+                   "Axis1: " + controller.State.rAxis1.x.ToString() + ", " + controller.State.rAxis1.y.ToString() + "\n" +
+                   "Axis2: " + controller.State.rAxis2.x.ToString() + ", " + controller.State.rAxis2.y.ToString() + "\n" +
+                   "Axis3: " + controller.State.rAxis3.x.ToString() + ", " + controller.State.rAxis3.y.ToString() + "\n" +
+                   "buttonPressed: " + controller.State.ulButtonPressed.ToString() + "\n" +
+                   "buttonTouched: " + controller.State.ulButtonTouched.ToString() + "\n" +
+                   "packetNum: " + controller.State.unPacketNum.ToString();
         }
 
         public override void Update(GameTime gameTime)
@@ -52,7 +78,15 @@ namespace Xenko.VirtualReality
                 if (internalState != DeviceState.Invalid)
                 {
                     Vector3 scale;
-                    mat.Decompose(out scale, out currentRot, out currentPos);
+                    if (holdOffset.HasValue)
+                    {
+                        mat.Decompose(out scale, out Quaternion tempRot, out currentPos);
+                        currentRot = tempRot * holdOffset.Value;
+                    } 
+                    else
+                    {
+                        mat.Decompose(out scale, out currentRot, out currentPos);
+                    }
                     currentLinearVelocity = vel;
                     currentAngularVelocity = new Vector3(MathUtil.DegreesToRadians(angVel.X), MathUtil.DegreesToRadians(angVel.Y), MathUtil.DegreesToRadians(angVel.Z));
                 }

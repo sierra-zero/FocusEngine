@@ -22,6 +22,8 @@ namespace Xenko.VirtualReality
         {           
         }
 
+        public abstract float HoldAngleOffset { get; set; }
+
         public abstract float Trigger { get; }
 
         public abstract float Grip { get; }
@@ -95,6 +97,8 @@ namespace Xenko.VirtualReality
         /// <param name="button"></param>
         /// <returns></returns>
         public abstract bool IsTouchReleased(TouchControllerButton button);
+
+        public abstract string DebugControllerState();
 
         public virtual void Dispose()
         {          
