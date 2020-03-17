@@ -95,7 +95,16 @@ namespace Xenko.Core
                            "Source: " + ex.Source + "\n" +
                            "Inner Exception: " + (ex.InnerException?.Message ?? "None") + "\n" +
                            "Inner Exception Trace: " + (ex.InnerException?.StackTrace ?? "None");
-            WriteLogToFile(error);
+
+            try
+            {
+                WriteLogToFile(error);
+            }
+            catch (Exception e)
+            {
+                // couldn't write the exception to file, throw it now
+                throw ex;
+            }
         }
 
         private static void UnhandledException(object sender, UnhandledExceptionEventArgs e)
