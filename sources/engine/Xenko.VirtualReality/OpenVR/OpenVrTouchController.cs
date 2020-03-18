@@ -81,7 +81,7 @@ namespace Xenko.VirtualReality
                     if (holdOffset.HasValue)
                     {
                         mat.Decompose(out scale, out Quaternion tempRot, out currentPos);
-                        currentRot = tempRot * holdOffset.Value;
+                        currentRot = holdOffset.Value * tempRot;
                     } 
                     else
                     {
