@@ -330,30 +330,41 @@ namespace Xenko.Rendering.Compositing
                         Vector3 cameraPos, cameraScale;
                         Matrix cameraRot;
 
-                        if (!vrSystem.PreviousUseCustomViewMatrix)
+                        if (camera.VRHeadSetsTransform)
                         {
-                            camera.Entity.Transform.WorldMatrix.Decompose(out cameraScale, out cameraRot, out cameraPos);
+                            if (camera.Entity.Transform.Parent != null)
+                            {
+                                camera.Entity.Transform.Parent.WorldMatrix.Decompose(out cameraScale, out cameraRot, out cameraPos);
+                            }
+                            else
+                            {
+                                cameraPos = Vector3.Zero;
+                                cameraScale = Vector3.One;
+                                cameraRot = Matrix.Identity;
+                            }
+
+                            camera.Entity.Transform.Position = VRSettings.VRDevice.HeadPosition;
+                            camera.Entity.Transform.Rotation = VRSettings.VRDevice.HeadRotation;
                         }
                         else
                         {
-                            camera.ViewMatrix.Decompose(out cameraScale, out cameraRot, out cameraPos);
-                            cameraRot.Transpose();
-                            Vector3.Negate(ref cameraPos, out cameraPos);
-                            Vector3.TransformCoordinate(ref cameraPos, ref cameraRot, out cameraPos);
-                        }
+                            if (!vrSystem.PreviousUseCustomViewMatrix)
+                            {
+                                camera.Entity.Transform.WorldMatrix.Decompose(out cameraScale, out cameraRot, out cameraPos);
+                            }
+                            else
+                            {
+                                camera.ViewMatrix.Decompose(out cameraScale, out cameraRot, out cameraPos);
+                                cameraRot.Transpose();
+                                Vector3.Negate(ref cameraPos, out cameraPos);
+                                Vector3.TransformCoordinate(ref cameraPos, ref cameraRot, out cameraPos);
+                            }
 
-                        if (VRSettings.IgnoreCameraRotation || camera.VRHeadSetsTransform)
-                        {
-                            // only remove the local rotation of the camera
-                            cameraRot *= Matrix.RotationQuaternion(Quaternion.Invert(camera.Entity.Transform.Rotation));
-                        }
-
-                        if (camera.VRHeadSetsTransform)
-                        {
-                            // take out my local position, which isn't meant to be passed on, but set by the VR head
-                            cameraPos -= camera.Entity.Transform.Position;
-                            camera.Entity.Transform.Position = VRSettings.VRDevice.HeadPosition;
-                            camera.Entity.Transform.Rotation = VRSettings.VRDevice.HeadRotation;
+                            if (VRSettings.IgnoreCameraRotation)
+                            {
+                                // only remove the local rotation of the camera
+                                cameraRot *= Matrix.RotationQuaternion(Quaternion.Invert(camera.Entity.Transform.Rotation));
+                            }
                         }
 
                         // Compute both view and projection matrices
