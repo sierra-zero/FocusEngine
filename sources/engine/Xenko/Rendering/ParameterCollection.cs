@@ -319,31 +319,32 @@ namespace Xenko.Rendering
         }
 
         /// <summary>
-        /// Gets blittable values.
+        /// Sets blittable values by copying a <see cref="ParameterCollection"/>'s values to this collection.
         /// </summary>
         /// <typeparam name="T"></typeparam>
-        /// <param name="key"></param>
-        /// <param name="outputValues">The array to store the values. A new array is created if null is passed, or the array
-        /// is too small to contain all the values.</param>
-        /// <returns>The number of valid items in the array.</returns>
-        public int GetValues<T>(ValueParameterKey<T> key, ref T[] outputValues) where T : struct
+        /// <param name="key">The key to store the copied values.</param>
+        /// <param name="source">The collection to retrieve the values to copy.</param>
+        /// <param name="sourceKey">The key for the source collection for the values to copy.</param>
+        public unsafe void SetValues<T>(ValueParameterKey<T> key, ParameterCollection source, ValueParameterKey<T> sourceKey) where T : struct
         {
-            var parameter = GetAccessor(key);
-            var data = GetValuePointer(parameter);
+            var sourceParameter = source.GetAccessor(sourceKey);
+            var destParameter = GetAccessor(key, sourceParameter.Count);
+            if (sourceParameter.Count > destParameter.Count)
+            {
+                throw new IndexOutOfRangeException();
+            }
 
             // Align to float4
             var stride = (Utilities.SizeOf<T>() + 15) / 16 * 16;
-            if (outputValues == null || outputValues.Length < parameter.Count)
-            {
-                outputValues = new T[parameter.Count];
-            }
-            for (int i = 0; i < parameter.Count; ++i)
-            {
-                Utilities.Read(data, ref outputValues[i]);
-                data += stride;
-            }
+            var sizeInBytes = sourceParameter.Count * stride;
 
-            return parameter.Count;
+            fixed (byte* sourceDataValues = source.DataValues)
+            fixed (byte* dataValues = DataValues)
+            {
+                var sourcePtr = (IntPtr)sourceDataValues + sourceParameter.Offset;
+                var destPtr = (IntPtr)dataValues + destParameter.Offset;
+                Utilities.CopyMemory(destPtr, sourcePtr, sizeInBytes);
+            }
         }
 
         /// <summary>
