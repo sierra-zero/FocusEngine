@@ -300,6 +300,7 @@ namespace Xenko.Rendering
         /// <typeparam name="T"></typeparam>
         /// <param name="key"></param>
         /// <returns></returns>
+        [Obsolete("Use GetValues<T> with ref to reduce unnecessary array instantiation.")]
         public T[] GetValues<T>(ValueParameterKey<T> key) where T : struct
         {
             var parameter = GetAccessor(key);
@@ -315,6 +316,34 @@ namespace Xenko.Rendering
             }
 
             return values;
+        }
+
+        /// <summary>
+        /// Gets blittable values.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="key"></param>
+        /// <param name="outputValues">The array to store the values. A new array is created if null is passed, or the array
+        /// is too small to contain all the values.</param>
+        /// <returns>The number of valid items in the array.</returns>
+        public int GetValues<T>(ValueParameterKey<T> key, ref T[] outputValues) where T : struct
+        {
+            var parameter = GetAccessor(key);
+            var data = GetValuePointer(parameter);
+
+            // Align to float4
+            var stride = (Utilities.SizeOf<T>() + 15) / 16 * 16;
+            if (outputValues == null || outputValues.Length < parameter.Count)
+            {
+                outputValues = new T[parameter.Count];
+            }
+            for (int i = 0; i < parameter.Count; ++i)
+            {
+                Utilities.Read(data, ref outputValues[i]);
+                data += stride;
+            }
+
+            return parameter.Count;
         }
 
         /// <summary>

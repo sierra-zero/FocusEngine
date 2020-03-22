@@ -90,6 +90,8 @@ namespace Xenko.Rendering.Lights
             private ObjectParameterKey<Texture> specularCubeMapkey;
             private ValueParameterKey<float> specularMipCountKey;
 
+            private Color3[] sphericalColors;
+
             public RenderLight Light { get; set; }
 
             public LightSkyBoxShaderGroup(ShaderSource mixin) : base(mixin)
@@ -146,14 +148,14 @@ namespace Xenko.Rendering.Lights
                 {
                     specularCubemapLevels = specularCubemap.MipLevels;
                 }
-                var sphericalColors = diffuseParameters.GetValues(SphericalHarmonicsEnvironmentColorKeys.SphericalColors);
+                int sphericalColorsCount = diffuseParameters.GetValues(SphericalHarmonicsEnvironmentColorKeys.SphericalColors, ref sphericalColors);
 
                 // global parameters
                 parameters.Set(intensityKey, intensity);
                 parameters.Set(skyMatrixKey, skyMatrix);
 
                 // This need to be working with new system
-                parameters.Set(sphericalColorsKey, sphericalColors);
+                parameters.Set(sphericalColorsKey, sphericalColorsCount, ref sphericalColors[0]);
                 parameters.Set(specularCubeMapkey, specularCubemap);
                 parameters.Set(specularMipCountKey, specularCubemapLevels);
             }
