@@ -5,11 +5,11 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 
-namespace Xenko.Core.Presentation.Themes.ExpressionDark
+namespace Xenko.Core.Presentation.Themes
 {
-    public partial class ExpressionDarkTheme : ResourceDictionary
+    public partial class MainStyle : ResourceDictionary
     {
-        public ExpressionDarkTheme()
+        public MainStyle()
         {
             InitializeComponent();
         }

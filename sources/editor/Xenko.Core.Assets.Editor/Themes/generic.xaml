@@ -6,7 +6,7 @@
                     xmlns:diagnostics="clr-namespace:Xenko.Core.Assets.Diagnostics;assembly=Xenko.Core.Assets">
 
   <ResourceDictionary.MergedDictionaries>
-    <ResourceDictionary Source="/Xenko.Core.Presentation;component/Themes/ExpressionDark/Theme.xaml"/>
+    <ResourceDictionary Source="/Xenko.Core.Presentation;component/Themes/MainStyle.xaml" />
     <ResourceDictionary Source="/Xenko.Core.Assets.Editor;component/View/CommonResources.xaml" />
   </ResourceDictionary.MergedDictionaries>
   

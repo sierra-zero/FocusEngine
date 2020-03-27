@@ -26,5 +26,7 @@ namespace Xenko.Core.Presentation.Themes
         {
             obj.SetValue(IsDarkProperty, value);
         }
+
+        public static ThemeType CurrentTheme { get; set; }
     }
 }

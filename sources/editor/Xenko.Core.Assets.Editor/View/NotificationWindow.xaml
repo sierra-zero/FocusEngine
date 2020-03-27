@@ -9,7 +9,7 @@
     <ResourceDictionary>
       <!-- MERGED DICTIONARIES: IMAGE DICTIONARY, PROPERTY GRID VIEWS -->
       <ResourceDictionary.MergedDictionaries>
-        <ResourceDictionary Source="/Xenko.Core.Presentation;component/Themes/ExpressionDark/Theme.xaml"/>
+        <ResourceDictionary Source="/Xenko.Core.Presentation;component/Themes/MainStyle.xaml"/>
       </ResourceDictionary.MergedDictionaries>
 
       <Style TargetType="Hyperlink">
