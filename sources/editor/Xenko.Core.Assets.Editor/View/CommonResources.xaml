@@ -10,9 +10,9 @@
                     mc:Ignorable="d">
 
   <ResourceDictionary.MergedDictionaries>
-    <ResourceDictionary Source="/Xenko.Core.Presentation;component/Themes/MainStyle.xaml" />
-    <ResourceDictionary Source="ImageDictionary.xaml"/>
-    <themes:ThemeResourceDictionary Source="../Themes/ExpressionDark/TableflowView.ExpressionDark.normalcolor.xaml"/>
+    <ResourceDictionary Source="/Xenko.Core.Presentation;component/Themes/ThemeSelector.xaml" />
+    <ResourceDictionary Source="ImageDictionary.xaml" />
+    <ResourceDictionary Source="../Themes/ThemeSelector.xaml" />
   </ResourceDictionary.MergedDictionaries>
 
   <Style TargetType="view:DataGridEx">

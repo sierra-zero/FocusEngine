@@ -16,14 +16,11 @@
 
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                    xmlns:s="clr-namespace:System;assembly=mscorlib"
-                    xmlns:themes="clr-namespace:Xenko.Core.Presentation.Themes;assembly=Xenko.Core.Presentation">
+                    xmlns:s="clr-namespace:System;assembly=mscorlib">
 
   <ResourceDictionary.MergedDictionaries>
 
-    <themes:ThemeResourceDictionary Source="pack://application:,,,/Xenko.Core.Presentation;component/Themes/Overrides/ExpressionDarkTheme.xaml"
-                                    ExpressionDarkSource="pack://application:,,,/Xenko.Core.Presentation;component/Themes/Overrides/ExpressionDarkTheme.xaml"
-                                    DarkSteelSource="pack://application:,,,/Xenko.Core.Presentation;component/Themes/Overrides/DarkSteelTheme.xaml" />
+    <ResourceDictionary Source="pack://application:,,,/Xenko.Core.Presentation;component/Themes/ThemeSelector.xaml"/>
 
     <!-- Include the view independant, color-scheme independant, theme resources -->
     <ResourceDictionary Source="Resources/ExpressionDark.normalcolor.Resources.xaml" />

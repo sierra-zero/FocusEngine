@@ -9,7 +9,7 @@
   <Window.Resources>
     <ResourceDictionary>
       <ResourceDictionary.MergedDictionaries>
-        <ResourceDictionary Source="/Xenko.Core.Presentation;component/Themes/MainStyle.xaml" />
+        <ResourceDictionary Source="/Xenko.Core.Presentation;component/Themes/ThemeSelector.xaml" />
       </ResourceDictionary.MergedDictionaries>
     </ResourceDictionary>
   </Window.Resources>

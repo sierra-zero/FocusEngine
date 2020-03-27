@@ -1,4 +1,8 @@
 <!--
+// Copyright (c) Xenko contributors (https://xenko.com)
+// Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
+//
+// Original code:
 // (c) Copyright Microsoft Corporation.
 // This source is subject to Microsoft Public License (Ms-PL).
 // Please see http://go.microsoft.com/fwlink/?LinkID=131993 for details.
@@ -20,18 +24,19 @@
                     xmlns:local="clr-namespace:Xenko.Core.Presentation"
                     xmlns:xk="http://schemas.xenko.com/xaml/presentation"
                     xmlns:themes="clr-namespace:Xenko.Core.Presentation.Themes"
-                    x:Class="Xenko.Core.Presentation.Themes.MainStyle"
+                    x:Class="Xenko.Core.Presentation.Themes.ThemeSelector"
                     mc:Ignorable="d">
   <ResourceDictionary.MergedDictionaries>
     <ResourceDictionary Source="generic.xaml"/>
     <ResourceDictionary Source="pack://application:,,,/Xenko.Core.Presentation;component/Resources/VectorResources.xaml" />
     <!--
     // ExpressionDark is the default/fallback theme.
-    // When adding a new theme, do a search all for themes:ThemeResourceDictionary on all *.xaml files
-    // since there are a few other files that may need to include new sources.
+    // When adding a new theme, ensure all themes:ThemeResourceDictionary in every *.xaml files
+    // are updated to ensure the theme is correctly applied.
     -->
     <themes:ThemeResourceDictionary Source="Overrides/ExpressionDarkTheme.xaml"
                                     ExpressionDarkSource="Overrides/ExpressionDarkTheme.xaml"
+                                    TestSource="Overrides/TestTheme.xaml"
                                     DarkSteelSource="Overrides/DarkSteelTheme.xaml" />
   </ResourceDictionary.MergedDictionaries>
 

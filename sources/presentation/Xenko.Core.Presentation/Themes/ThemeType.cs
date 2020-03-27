@@ -5,9 +5,9 @@ namespace Xenko.Core.Presentation.Themes
 {
     public enum ThemeType
     {
-        [Display("Blend Dark (Default)")]
+        [Display("Expression Dark (Default)")]
         ExpressionDark,
         [Display("Dark Steel")]
-        DarkSteel
+        DarkSteel,
     }
 }

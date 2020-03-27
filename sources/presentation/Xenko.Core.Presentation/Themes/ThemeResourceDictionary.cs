@@ -10,6 +10,8 @@ namespace Xenko.Core.Presentation.Themes
         private Uri expressionDarkSource;
         private Uri darkSteelSource;
 
+        // New themes are added here as new properties.
+
         public Uri ExpressionDarkSource
         {
             get => expressionDarkSource;
@@ -42,11 +44,6 @@ namespace Xenko.Core.Presentation.Themes
         {
             sourceBackingField = value;
             UpdateSource(ThemeController.CurrentTheme);
-        }
-
-        protected override void OnGettingValue(object key, ref object value, out bool canCache)
-        {
-            base.OnGettingValue(key, ref value, out canCache);
         }
     }
 }

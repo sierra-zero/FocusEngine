@@ -7,9 +7,9 @@ using System.Windows.Media;
 
 namespace Xenko.Core.Presentation.Themes
 {
-    public partial class MainStyle : ResourceDictionary
+    public partial class ThemeSelector : ResourceDictionary
     {
-        public MainStyle()
+        public ThemeSelector()
         {
             InitializeComponent();
         }
