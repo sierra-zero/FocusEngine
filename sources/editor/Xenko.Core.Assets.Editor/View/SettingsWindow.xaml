@@ -57,7 +57,7 @@
 
       <GridSplitter Grid.Column="1" Width="5" ResizeBehavior="PreviousAndNext" VerticalAlignment="Stretch" />
 
-      <xk:PropertyView NameColumnSize="310" Grid.Column="2" ItemsSource="{Binding ViewModel.RootNode.Children}" BorderThickness="1" Background="{DynamicResource HoverBrush}" Padding="5">
+      <xk:PropertyView NameColumnSize="310" Grid.Column="2" ItemsSource="{Binding ViewModel.RootNode.Children}" BorderThickness="1" Background="{DynamicResource BackgroundBrush}" Padding="5">
         <xk:PropertyView.ItemContainerStyle>
           <Style BasedOn="{StaticResource {x:Type xk:PropertyViewItem}}" TargetType="xk:PropertyViewItem">
             <Setter Property="Background" Value="Transparent"/>
