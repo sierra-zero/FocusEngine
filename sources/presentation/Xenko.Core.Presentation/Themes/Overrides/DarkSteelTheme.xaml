@@ -28,7 +28,7 @@
   <SolidColorBrush x:Key="DarkDefaultForeground" Color="#0395D7" />
   <SolidColorBrush x:Key="NormalDarkBackground" Color="#1A1A1D" />
 
-  <SolidColorBrush x:Key="BackgroundBrush" Color="#323234"/>
+  <SolidColorBrush x:Key="BackgroundBrush" Color="#383838"/>
   <SolidColorBrush x:Key="TextBrush" Color="#E6E6E6" />
   <SolidColorBrush x:Key="HyperlinkBrush" Color="#FF00A0FF" />
   <SolidColorBrush x:Key="NormalBrush" Color="#4A4A4D" />
@@ -48,7 +48,7 @@
   <SolidColorBrush x:Key="AlphaBrush" Color="#FFBCBCBC"/>
   <SolidColorBrush x:Key="LengthBrush" Color="#FFBCBCBC"/>
 
-  <SolidColorBrush x:Key="ControlBackgroundBrush" Color="#232323" />
+  <SolidColorBrush x:Key="ControlBackgroundBrush" Color="#474747" />
 
   <SolidColorBrush x:Key="SelectedBackgroundBrush" Color="#3399FF"/>
 
