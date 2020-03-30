@@ -12,6 +12,7 @@ using Xenko.Core;
 using Xenko.Core.Annotations;
 using Xenko.Core.IO;
 using Xenko.Core.Streaming;
+using Xenko.Core.Threading;
 using Xenko.Engine;
 using Xenko.Games;
 using Xenko.Graphics;
@@ -28,6 +29,7 @@ namespace Xenko.Streaming
     public class StreamingManager : GameSystemBase, IStreamingManager, ITexturesStreamingProvider
     {
         private readonly List<StreamableResource> resources = new List<StreamableResource>(512);
+        private readonly ReaderWriterLockSlim resourceLocker = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
         private readonly Dictionary<object, StreamableResource> resourcesLookup = new Dictionary<object, StreamableResource>(512);
         private readonly List<StreamableResource> activeStreaming = new List<StreamableResource>(8); // Important: alwasy use inside lock(resources)
         private int lastUpdateResourcesIndex;
@@ -129,7 +131,7 @@ namespace Xenko.Streaming
                 Services.RemoveService<ITexturesStreamingProvider>();
             }
 
-            lock (resources)
+            using (resourceLocker.WriteLock())
             {
                 resources.ForEach(x => x.Release());
                 resources.Clear();
@@ -154,7 +156,7 @@ namespace Xenko.Streaming
         public T Get<T>(object obj) where T : StreamableResource
         {
             StreamableResource result;
-            lock (resources)
+            using (resourceLocker.ReadLock())
             {
                 resourcesLookup.TryGetValue(obj, out result);
             }
@@ -286,7 +288,7 @@ namespace Xenko.Streaming
             var alreadyHasOptions = resource.StreamingOptions.HasValue;
             var newOptions = combineOptions && alreadyHasOptions ? options.CombineWith(resource.StreamingOptions.Value) : options;
 
-            lock (resources)
+            using (resourceLocker.ReadLock())
             {
                 resource.StreamingOptions = newOptions;
 
@@ -309,7 +311,7 @@ namespace Xenko.Streaming
         {
             Debug.Assert(resource != null && isDisposing == false, $"resource[{resource}] != null && isDisposing[{isDisposing}] == false");
 
-            lock (resources)
+            using (resourceLocker.WriteLock())
             {
                 Debug.Assert(!resources.Contains(resource), "!resources.Contains(resource)");
 
@@ -325,7 +327,7 @@ namespace Xenko.Streaming
 
             Debug.Assert(resource != null, "resource != null");
 
-            lock (resources)
+            using (resourceLocker.WriteLock())
             {
                 Debug.Assert(resources.Contains(resource), "resources.Contains(resource)");
 
@@ -365,7 +367,7 @@ namespace Xenko.Streaming
         /// <inheritdoc />
         void ITexturesStreamingProvider.FullyLoadTexture(Texture obj, ref ImageDescription imageDescription, ref ContentStorageHeader storageHeader)
         {
-            lock (resources)
+            using (resourceLocker.ReadLock())
             {
                 // Get streaming object
                 var resource = CreateStreamingTexture(obj, ref imageDescription, ref storageHeader);
@@ -381,7 +383,7 @@ namespace Xenko.Streaming
         /// <inheritdoc />
         void ITexturesStreamingProvider.RegisterTexture(Texture obj, ref ImageDescription imageDescription, ref ContentStorageHeader storageHeader)
         {
-            lock (resources)
+            using (resourceLocker.UpgradableReadLock())
             {
                 CreateStreamingTexture(obj, ref imageDescription, ref storageHeader);
             }
@@ -392,7 +394,7 @@ namespace Xenko.Streaming
         {
             Debug.Assert(obj != null, "obj != null");
 
-            lock (resources)
+            using (resourceLocker.ReadLock())
             {
                 var resource = Get(obj);
                 resource?.Release();
@@ -403,7 +405,7 @@ namespace Xenko.Streaming
         void IStreamingManager.FullyLoadResource(object obj)
         {
             StreamableResource resource;
-            lock (resources)
+            using (resourceLocker.ReadLock())
             {
                 resource = Get<StreamableResource>(obj);
             }
@@ -438,7 +440,7 @@ namespace Xenko.Streaming
                 return;
 
             // Update resources
-            lock (resources)
+            using (resourceLocker.ReadLock())
             {
                 if (Enabled)
                 {
@@ -574,7 +576,7 @@ namespace Xenko.Streaming
         {
             if (!Enabled)
             {
-                lock (resources)
+                using (resourceLocker.ReadLock())
                 {
                     activeStreaming.ForEach(stream => stream.StopStreaming());
                     FlushSync();
