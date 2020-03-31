@@ -393,7 +393,12 @@ namespace Xenko.Physics.Bepu
 
             // ok, should have what we need to make triangles
             int triangleCount = indicies.Count / 3;
-            usePool.Take<Triangle>(triangleCount, out BepuUtilities.Memory.Buffer<Triangle> triangles);
+
+            BepuUtilities.Memory.Buffer<Triangle> triangles;
+            lock (usePool)
+            {
+                usePool.Take<Triangle>(triangleCount, out triangles);
+            }
 
             for (int i = 0; i < triangleCount; i ++)
             {
@@ -403,7 +408,10 @@ namespace Xenko.Physics.Bepu
                 triangles[i].C = ToBepu(positions[indicies[shiftedi+2]]);
             }
 
-            outMesh = new Mesh(triangles, new System.Numerics.Vector3(scale?.X ?? 1f, scale?.Y ?? 1f, scale?.Z ?? 1f), usePool);
+            lock (usePool)
+            {
+                outMesh = new Mesh(triangles, new System.Numerics.Vector3(scale?.X ?? 1f, scale?.Y ?? 1f, scale?.Z ?? 1f), usePool);
+            }
 
             return true;
         }
@@ -417,7 +425,12 @@ namespace Xenko.Physics.Bepu
 
             // ok, should have what we need to make triangles
             int triangleCount = indicies.Count / 3;
-            usePool.Take<Triangle>(triangleCount, out BepuUtilities.Memory.Buffer<Triangle> triangles);
+
+            BepuUtilities.Memory.Buffer<Triangle> triangles;
+            lock (usePool)
+            {
+                usePool.Take<Triangle>(triangleCount, out triangles);
+            }
 
             for (int i = 0; i < triangleCount; i++)
             {
@@ -451,7 +464,11 @@ namespace Xenko.Physics.Bepu
                 var pool = BepuSimulation.safeBufferPool;
                 BepuStaticColliderComponent sc = new BepuStaticColliderComponent();
 
-                sc.ColliderShape = new Mesh(meshBuffers[index], new System.Numerics.Vector3(scale?.X ?? 1f, scale?.Y ?? 1f, scale?.Z ?? 1f), pool);
+                lock (pool)
+                {
+                    sc.ColliderShape = new Mesh(meshBuffers[index], new System.Numerics.Vector3(scale?.X ?? 1f, scale?.Y ?? 1f, scale?.Z ?? 1f), pool);
+                }
+
                 sc.CanCollideWith = collidesWith;
                 sc.CollisionGroup = group;
                 sc.FrictionCoefficient = friction;
