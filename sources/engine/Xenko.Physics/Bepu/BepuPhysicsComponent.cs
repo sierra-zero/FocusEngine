@@ -96,7 +96,7 @@ namespace Xenko.Engine
         /// <value>
         /// The tag.
         /// </value>
-        [DataMemberIgnore]
+        [DataMember]
         public string Tag { get; set; }
 
         [DataMember]
@@ -108,7 +108,7 @@ namespace Xenko.Engine
         [DataMember]
         public SpringSettings SpringSettings = new SpringSettings(30f, 20f);
 
-        [DataMember]
+        [DataMemberIgnore]
         virtual public IShape ColliderShape { get; set; }
 
         [DataMemberIgnore]
