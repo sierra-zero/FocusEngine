@@ -14,7 +14,6 @@
     <XenkoBuildTags>*</XenkoBuildTags>
     <XenkoBulletPlatform></XenkoBulletPlatform> <!--Empty by default, only iOS needs special care-->
     <XenkoBulletPlatform Condition="'$(XenkoPlatform)' == 'iOS'">iOS</XenkoBulletPlatform>
-    <XenkoBulletSignedDir Condition="'$(XenkoSign)' == 'true'">Signed\</XenkoBulletSignedDir>
     <XenkoCodeAnalysis>true</XenkoCodeAnalysis>
   </PropertyGroup>
   <ItemGroup>
@@ -31,7 +30,7 @@
       <HintPath>..\..\..\deps\bepuphysics2\BepuUtilities.dll</HintPath>
     </Reference>
     <Reference Include="BulletSharp">
-      <HintPath>..\..\..\deps\BulletPhysics\$(XenkoBulletPlatform)\$(XenkoBulletSignedDir)BulletSharp.NetStandard.dll</HintPath>
+      <HintPath>..\..\..\deps\BulletPhysics\$(XenkoBulletPlatform)\BulletSharp.NetStandard.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
