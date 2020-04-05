@@ -46,6 +46,6 @@ namespace Xenko.Graphics
         /// <summary>
         /// The number of active reference to this resource.
         /// </summary>
-        public int ReferenceCount { get; internal set; }
+        public int ReferenceCount;
     }
 }

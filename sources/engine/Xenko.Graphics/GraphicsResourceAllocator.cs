@@ -3,8 +3,9 @@
 
 using System;
 using System.Collections.Generic;
-
+using System.Threading;
 using Xenko.Core;
+using Xenko.Core.Threading;
 
 namespace Xenko.Graphics
 {
@@ -19,7 +20,7 @@ namespace Xenko.Graphics
         // TODO: Check if we should introduce an enum for the kind of scope (per DrawCore, per Frame...etc.)
         // TODO: Add statistics method (number of objects allocated...etc.)
 
-        private readonly object thisLock = new object();
+        private ReaderWriterLockSlim thisLock = new ReaderWriterLockSlim();
         private readonly Dictionary<TextureDescription, List<GraphicsResourceLink>> textureCache = new Dictionary<TextureDescription, List<GraphicsResourceLink>>();
         private readonly Dictionary<BufferDescription, List<GraphicsResourceLink>> bufferCache = new Dictionary<BufferDescription, List<GraphicsResourceLink>>();
         private readonly Dictionary<QueryPoolDescription, List<GraphicsResourceLink>> queryPoolCache = new Dictionary<QueryPoolDescription, List<GraphicsResourceLink>>();
@@ -86,7 +87,7 @@ namespace Xenko.Graphics
             if (recyclePolicy == null) throw new ArgumentNullException("recyclePolicy");
 
             // Global lock to be threadsafe. 
-            lock (thisLock)
+            using (thisLock.WriteLock())
             {
                 Recycle(textureCache, recyclePolicy);
                 Recycle(bufferCache, recyclePolicy);
@@ -100,11 +101,7 @@ namespace Xenko.Graphics
         /// <returns>A texture</returns>
         public Texture GetTemporaryTexture(TextureDescription description)
         {
-            // Global lock to be threadsafe. 
-            lock (thisLock)
-            {
-                return GetTemporaryResource(textureCache, description, createTextureDelegate, getTextureDefinitionDelegate, PixelFormat.None);
-            }
+            return GetTemporaryResource(textureCache, description, createTextureDelegate, getTextureDefinitionDelegate, PixelFormat.None);
         }
 
         /// <summary>
@@ -115,20 +112,12 @@ namespace Xenko.Graphics
         /// <returns>A texture</returns>
         public Buffer GetTemporaryBuffer(BufferDescription description, PixelFormat viewFormat = PixelFormat.None)
         {
-            // Global lock to be threadsafe. 
-            lock (thisLock)
-            {
-                return GetTemporaryResource(bufferCache, description, createBufferDelegate, getBufferDescriptionDelegate, viewFormat);
-            }
+            return GetTemporaryResource(bufferCache, description, createBufferDelegate, getBufferDescriptionDelegate, viewFormat);
         }
 
         public QueryPool GetQueryPool(QueryType queryType, int queryCount)
         {
-            // Global lock to be threadsafe. 
-            lock (thisLock)
-            {
-                return GetTemporaryResource(queryPoolCache, new QueryPoolDescription(queryType, queryCount), createQueryPoolDelegate, getQueryPoolDescriptionDelegate, PixelFormat.None);
-            }
+            return GetTemporaryResource(queryPoolCache, new QueryPoolDescription(queryType, queryCount), createQueryPoolDelegate, getQueryPoolDescriptionDelegate, PixelFormat.None);
         }
 
         /// <summary>
@@ -137,11 +126,7 @@ namespace Xenko.Graphics
         /// <param name="resource"></param>
         public void AddReference(GraphicsResource resource)
         {
-            // Global lock to be threadsafe. 
-            lock (thisLock)
-            {
-                UpdateReference(resource, 1);
-            }
+            UpdateReference(resource, 1);
         }
 
         /// <summary>
@@ -150,11 +135,7 @@ namespace Xenko.Graphics
         /// <param name="resource"></param>
         public void ReleaseReference(GraphicsResourceBase resource)
         {
-            // Global lock to be threadsafe. 
-            lock (thisLock)
-            {
-                UpdateReference(resource, -1);
-            }
+            UpdateReference(resource, -1);
         }
 
         /// <summary>
@@ -186,7 +167,7 @@ namespace Xenko.Graphics
 
         protected override void Destroy()
         {
-            lock (thisLock)
+            using (thisLock.WriteLock())
             {
                 DisposeCache(textureCache, true);
                 DisposeCache(bufferCache, true);
@@ -236,19 +217,28 @@ namespace Xenko.Graphics
         {
             // For a specific description, get allocated textures
             List<GraphicsResourceLink> resourceLinks;
-            if (!cache.TryGetValue(description, out resourceLinks))
+            using (thisLock.UpgradableReadLock())
             {
-                resourceLinks = new List<GraphicsResourceLink>();
-                cache.Add(description, resourceLinks);
-            }
-
-            // Find a texture available
-            foreach (var resourceLink in resourceLinks)
-            {
-                if (resourceLink.ReferenceCount == 0)
+                if (!cache.TryGetValue(description, out resourceLinks))
                 {
-                    UpdateCounter(resourceLink, 1);
-                    return (TResource)resourceLink.Resource;
+                    resourceLinks = new List<GraphicsResourceLink>();
+                    using (thisLock.WriteLock())
+                    {
+                        cache.Add(description, resourceLinks);
+                    }
+                }
+
+                // Find a texture available without locking
+                for (int i = 0; i < resourceLinks.Count; i++)
+                {
+                    int rc = Interlocked.CompareExchange(ref resourceLinks[i].ReferenceCount, 1, 0);
+                    if (rc == 0)
+                    {
+                        resourceLinks[i].AccessTotalCount++;
+                        resourceLinks[i].AccessCountSinceLastRecycle++;
+                        resourceLinks[i].LastAccessTime = DateTime.Now;
+                        return (TResource)resourceLinks[i].Resource;
+                    }
                 }
             }
 
@@ -260,17 +250,28 @@ namespace Xenko.Graphics
             var realDescription = getDefinition(newResource);
 
             // For a specific description, get allocated textures
-            if (!cache.TryGetValue(realDescription, out resourceLinks))
+            using (thisLock.UpgradableReadLock())
             {
-                resourceLinks = new List<GraphicsResourceLink>();
-                cache.Add(description, resourceLinks);
+                if (!cache.TryGetValue(realDescription, out resourceLinks))
+                {
+                    resourceLinks = new List<GraphicsResourceLink>();
+                    using (thisLock.WriteLock())
+                    {
+                        cache.Add(description, resourceLinks);
+                    }
+                }
+
+                // Add the texture to the allocated textures
+                // Start RefCount == 1, because we don't want this texture to be available if a post FxProcessor is calling
+                // several times this GetTemporaryTexture method.
+                var newResourceLink = new GraphicsResourceLink(newResource) { ReferenceCount = 1 };
+
+                using (thisLock.WriteLock())
+                {
+                    resourceLinks.Add(newResourceLink);
+                }
             }
 
-            // Add the texture to the allocated textures
-            // Start RefCount == 1, because we don't want this texture to be available if a post FxProcessor is calling
-            // several times this GetTemporaryTexture method.
-            var newResourceLink = new GraphicsResourceLink(newResource) { ReferenceCount = 1 };
-            resourceLinks.Add(newResourceLink);
 
             return newResource;
         }
@@ -361,18 +362,14 @@ namespace Xenko.Graphics
 
         private void UpdateCounter(GraphicsResourceLink resourceLink, int deltaCount)
         {
-            if ((resourceLink.ReferenceCount + deltaCount) < 0)
-            {
-                throw new InvalidOperationException("Invalid decrement on reference count (must be >=0 after decrement). Current reference count: [{0}] Decrement: [{1}]".ToFormat(resourceLink.ReferenceCount, deltaCount));
-            }
+            int newVal = Interlocked.Add(ref resourceLink.ReferenceCount, deltaCount);
 
-            resourceLink.ReferenceCount += deltaCount;
+            if (newVal == 0)
+                GraphicsDevice.TagResource(resourceLink);
+
             resourceLink.AccessTotalCount++;
             resourceLink.AccessCountSinceLastRecycle++;
             resourceLink.LastAccessTime = DateTime.Now;
-
-            if (resourceLink.ReferenceCount == 0)
-                GraphicsDevice.TagResource(resourceLink);
         }
 
         /// <summary>

@@ -3,23 +3,22 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using System.Collections.Concurrent;
 
 namespace Xenko.Graphics
 {
     public class BufferPool : IDisposable
     {
-        // Vulkan preallocation
-        public static int BUFFERS_PER_POOL = 6;
-        public static int POOL_PREALLOCATION = 24;
-
 #if XENKO_GRAPHICS_API_DIRECT3D12
         private const bool UseBufferOffsets = true;
 #elif XENKO_GRAPHICS_API_VULKAN
         private const bool UseBufferOffsets = true;
-        public static Stack<Buffer> PreallocatedBuffers;
 #else
+        private int bufferIndex;
         private const bool UseBufferOffsets = false;
 #endif
+
+        private Buffer currentBuffer;
 
         private int constantBufferAlignment;
         public int Size;
@@ -28,9 +27,7 @@ namespace Xenko.Graphics
         private readonly GraphicsResourceAllocator allocator;
         private MappedResource mappedConstantBuffer;
         private CommandList commandList;
-
-        private int bufferIndex;
-        private Buffer[] constantBuffer;
+        private BufferDescription defaultDescription;
 
         private int bufferAllocationOffset;
 
@@ -48,26 +45,8 @@ namespace Xenko.Graphics
 
             this.commandList = clist;
 
-#if XENKO_GRAPHICS_API_VULKAN
-            // make buffers now, so we don't have to during gameplay which can cause threading / performance problems
-            // eats some memory up, but memory is cheap compared to CPU / stability
-            if (PreallocatedBuffers == null)
-            {
-                PreallocatedBuffers = new Stack<Buffer>();
-                for (int i=0;i<BUFFERS_PER_POOL*POOL_PREALLOCATION;i++)
-                    PreallocatedBuffers.Push(allocator.GetTemporaryBuffer(new BufferDescription(Size, BufferFlags.ConstantBuffer, GraphicsResourceUsage.Dynamic)));
-            }    
-            
-            // pick our buffers, hopefully from preallocated pool
-            constantBuffer = new Buffer[BUFFERS_PER_POOL];
-            for (int i=0;i<constantBuffer.Length;i++)
-            {
-                constantBuffer[i] = PreallocatedBuffers.Count > 0 ? PreallocatedBuffers.Pop() :
-                                                                    allocator.GetTemporaryBuffer(new BufferDescription(Size, BufferFlags.ConstantBuffer, GraphicsResourceUsage.Dynamic));
-            }
-#else
-            constantBuffer = new Buffer[1];
-#endif
+            defaultDescription = new BufferDescription(Size, BufferFlags.ConstantBuffer, GraphicsResourceUsage.Dynamic);
+
             Reset();
         }
 
@@ -79,7 +58,7 @@ namespace Xenko.Graphics
         public void Dispose()
         {
             if (UseBufferOffsets)
-                allocator.ReleaseReference(constantBuffer[bufferIndex]);
+                allocator.ReleaseReference(currentBuffer);
             else
                 Marshal.FreeHGlobal(Data);
             Data = IntPtr.Zero;
@@ -92,7 +71,7 @@ namespace Xenko.Graphics
                 using (new DefaultCommandListLock(commandList))
                 {
                     this.commandList = commandList;
-                    mappedConstantBuffer = commandList.MapSubresource(constantBuffer[bufferIndex], 0, MapMode.WriteNoOverwrite);
+                    mappedConstantBuffer = commandList.MapSubresource(currentBuffer, 0, MapMode.WriteNoOverwrite);
                     Data = mappedConstantBuffer.DataBox.DataPointer;
                 }
             }
@@ -112,15 +91,12 @@ namespace Xenko.Graphics
 
         public void Reset()
         {
-#if !XENKO_GRAPHICS_API_VULKAN
             // Release previous buffer
-            if (constantBuffer[bufferIndex] != null)
-                allocator.ReleaseReference(constantBuffer[bufferIndex]);
+            if (currentBuffer != null)
+                allocator.ReleaseReference(currentBuffer);
 
-            constantBuffer[bufferIndex] = allocator.GetTemporaryBuffer(new BufferDescription(Size, BufferFlags.ConstantBuffer, GraphicsResourceUsage.Dynamic));
-#else
-            bufferIndex = (bufferIndex + 1) % constantBuffer.Length;
-#endif
+            currentBuffer = allocator.GetTemporaryBuffer(defaultDescription);
+
             bufferAllocationOffset = 0;
         }
 
@@ -152,7 +128,7 @@ namespace Xenko.Graphics
             {
                 bufferPoolAllocationResult.Uploaded = true;
                 bufferPoolAllocationResult.Offset = result;
-                bufferPoolAllocationResult.Buffer = constantBuffer[bufferIndex];
+                bufferPoolAllocationResult.Buffer = currentBuffer;
             }
             else
             {
