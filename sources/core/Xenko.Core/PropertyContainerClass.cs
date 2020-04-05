@@ -84,6 +84,11 @@ namespace Xenko.Core
             inner.CopyTo(ref destination);
         }
 
+        public void CopyTo(PropertyContainerClass destination)
+        {
+            inner.CopyTo(ref destination.inner);
+        }
+
         /// <inheritdoc />
         public object Get([NotNull] PropertyKey propertyKey)
         {
