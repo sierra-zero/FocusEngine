@@ -147,7 +147,9 @@ namespace Xenko.Graphics
             desiredExtensionNames.Add("VK_KHR_android_surface"); // android
             desiredExtensionNames.Add("VK_KHR_xlib_surface"); // linux
             desiredExtensionNames.Add("VK_KHR_xcb_surface"); // linux
+            desiredExtensionNames.Add("VK_MVK_macos_surface"); // macos
             desiredExtensionNames.Add("VK_EXT_metal_surface"); // macos
+            desiredExtensionNames.Add("VK_MVK_moltenvk"); // macos
             desiredExtensionNames.Add("VK_NV_external_memory_capabilities"); // NVIDIA needs this one for OpenVR
             desiredExtensionNames.Add("VK_KHR_external_memory_capabilities"); // this one might be used in the future for OpenVR
 
