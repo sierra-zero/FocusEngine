@@ -36,7 +36,6 @@
     -->
     <themes:ThemeResourceDictionary Source="Overrides/ExpressionDarkTheme.xaml"
                                     ExpressionDarkSource="Overrides/ExpressionDarkTheme.xaml"
-                                    TestSource="Overrides/TestTheme.xaml"
                                     DarkSteelSource="Overrides/DarkSteelTheme.xaml" />
   </ResourceDictionary.MergedDictionaries>
 
