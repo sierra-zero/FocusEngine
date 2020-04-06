@@ -294,6 +294,8 @@ namespace Xenko.Particles.Rendering
         /// <inheritdoc/>
         public override unsafe void Draw(RenderDrawContext context, RenderView renderView, RenderViewStage renderViewStage, int startIndex, int endIndex)
         {
+            if (ParticleSystemSettings.DisableAllDrawing) return;
+
             var commandList = context.CommandList;
 
             // register all texture usage
