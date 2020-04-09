@@ -578,34 +578,6 @@ namespace Xenko.Engine
             }
         }
 
-        protected override void EndDraw(bool present)
-        {
-#if XENKO_PLATFORM_WINDOWS_DESKTOP
-            // Allow to make a screenshot using CTRL+c+F12 (on release of F12)
-            if (Input.HasKeyboard)
-            {
-                if (Input.IsKeyDown(Keys.LeftCtrl)
-                    && Input.IsKeyDown(Keys.C)
-                    && Input.IsKeyReleased(Keys.F12))
-                {
-                    var currentFilePath = Assembly.GetEntryAssembly().Location;
-                    var timeNow = DateTime.Now.ToString("s", CultureInfo.InvariantCulture).Replace(':', '_');
-                    var newFileName = Path.Combine(
-                        Path.GetDirectoryName(currentFilePath),
-                        Path.GetFileNameWithoutExtension(currentFilePath) + "_" + timeNow + ".png");
-
-                    Console.WriteLine("Saving screenshot: {0}", newFileName);
-
-                    using (var stream = System.IO.File.Create(newFileName))
-                    {
-                        GraphicsDevice.Presenter.BackBuffer.Save(GraphicsContext.CommandList, stream, ImageFileType.Png);
-                    }
-                }
-            }
-#endif
-            base.EndDraw(present);
-        }
-
         /// <summary>
         /// Loads the content.
         /// </summary>
