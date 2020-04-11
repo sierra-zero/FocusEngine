@@ -68,6 +68,31 @@ namespace Xenko.Physics.Bepu
             }
         }
 
+        [DataMemberIgnore]
+        public BepuUtilities.Memory.BufferPool PoolUsedForMesh;
+
+        [DataMember]
+        public bool DisposeMeshOnDetach { get; set; } = false;
+
+        /// <summary>
+        /// Dispose the mesh right now. Should best be done after confirmed removed from simulation, which DisposeMeshOnDetach boolean can do for you.
+        /// </summary>
+        /// <returns>true if dispose worked</returns>
+        public bool DisposeMesh()
+        {
+            if (ColliderShape is Mesh m && PoolUsedForMesh != null)
+            {
+                lock (PoolUsedForMesh)
+                {
+                    m.Dispose(PoolUsedForMesh);
+                }
+                ColliderShape = null;
+                PoolUsedForMesh = null;
+                return true;
+            }
+            return false;
+        }
+
         internal void preparePose()
         {
             staticDescription.Pose.Position = BepuHelpers.ToBepu(Position);

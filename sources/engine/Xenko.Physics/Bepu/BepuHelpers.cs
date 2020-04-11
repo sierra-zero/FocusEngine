@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using BepuPhysics.Collidables;
 using BepuPhysics.Constraints;
+using BepuUtilities.Memory;
 using Xenko.Core;
 using Xenko.Core.Mathematics;
 using Xenko.Engine;
@@ -175,23 +176,6 @@ namespace Xenko.Physics.Bepu
         }
 
         /// <summary>
-        /// Disposes of all mesh buffers used on an entity, of all static colliders
-        /// </summary>
-        /// <param name="e">Entity to dispose of static mesh colliders</param>
-        public static void DisposeAllStaticMeshes(Entity e)
-        {
-            foreach(BepuStaticColliderComponent sc in e.GetAll<BepuStaticColliderComponent>())
-            {
-                if (sc.ColliderShape is Mesh m)
-                {
-                    sc.AddedToScene = false;
-                    m.Dispose();
-                    sc.ColliderShape = null;
-                }
-            }
-        }
-
-        /// <summary>
         /// Easily makes a Compound shape for you, given a list of individual shapes and how they should be offset.
         /// </summary>
         /// <param name="shapes">List of convex shapes</param>
@@ -358,15 +342,16 @@ namespace Xenko.Physics.Bepu
         /// Generate a mesh collider from a given mesh. The mesh must have a readable buffer behind it to generate veriticies from
         /// </summary>
         /// <returns>Returns false if no mesh could be made</returns>
-        public static unsafe bool GenerateMeshShape(Xenko.Rendering.Mesh modelMesh, out BepuPhysics.Collidables.Mesh outMesh, Vector3? scale = null)
+        public static unsafe bool GenerateMeshShape(Xenko.Rendering.Mesh modelMesh, out BepuPhysics.Collidables.Mesh outMesh, out BepuUtilities.Memory.BufferPool poolUsed, Vector3? scale = null)
         {
             if (getMeshOutputs(modelMesh, out var positions, out var indicies) == false)
             {
                 outMesh = default;
+                poolUsed = null;
                 return false;
             }
 
-            return GenerateMeshShape(positions, indicies, out outMesh, scale);
+            return GenerateMeshShape(positions, indicies, out outMesh, out poolUsed, scale);
         }
 
         /// <summary>
@@ -375,42 +360,42 @@ namespace Xenko.Physics.Bepu
         /// <returns>Returns false if no mesh could be made</returns>
         public static unsafe bool GenerateBigMeshStaticColliders(Entity e, Xenko.Rendering.Mesh modelMesh, Vector3? scale = null,
                                                                  CollisionFilterGroups group = CollisionFilterGroups.DefaultFilter, CollisionFilterGroupFlags collidesWith = CollisionFilterGroupFlags.AllFilter,
-                                                                 float friction = 0.5f, float maximumRecoverableVelocity = 1f, SpringSettings? springSettings = null)
+                                                                 float friction = 0.5f, float maximumRecoverableVelocity = 1f, SpringSettings? springSettings = null, bool disposeOnDetach = false)
         {
             if (getMeshOutputs(modelMesh, out var positions, out var indicies) == false)
             {
                 return false;
             }
 
-            GenerateBigMeshStaticColliders(e, positions, indicies, scale, group, collidesWith, friction, maximumRecoverableVelocity, springSettings);
+            GenerateBigMeshStaticColliders(e, positions, indicies, scale, group, collidesWith, friction, maximumRecoverableVelocity, springSettings, disposeOnDetach);
 
             return true;
         }
 
-        public static unsafe bool GenerateMeshShape(List<Vector3> positions, List<int> indicies, out BepuPhysics.Collidables.Mesh outMesh, Vector3? scale = null)
+        public static unsafe bool GenerateMeshShape(List<Vector3> positions, List<int> indicies, out BepuPhysics.Collidables.Mesh outMesh, out BepuUtilities.Memory.BufferPool poolUsed, Vector3? scale = null)
         {
-            var usePool = BepuSimulation.safeBufferPool;
+            poolUsed = BepuSimulation.safeBufferPool;
 
             // ok, should have what we need to make triangles
             int triangleCount = indicies.Count / 3;
 
             BepuUtilities.Memory.Buffer<Triangle> triangles;
-            lock (usePool)
+            lock (poolUsed)
             {
-                usePool.Take<Triangle>(triangleCount, out triangles);
+                poolUsed.Take<Triangle>(triangleCount, out triangles);
             }
 
-            for (int i = 0; i < triangleCount; i ++)
+            Xenko.Core.Threading.Dispatcher.For(0, triangleCount, (i) =>
             {
                 int shiftedi = i * 3;
                 triangles[i].A = ToBepu(positions[indicies[shiftedi]]);
-                triangles[i].B = ToBepu(positions[indicies[shiftedi+1]]);
-                triangles[i].C = ToBepu(positions[indicies[shiftedi+2]]);
-            }
+                triangles[i].B = ToBepu(positions[indicies[shiftedi + 1]]);
+                triangles[i].C = ToBepu(positions[indicies[shiftedi + 2]]);
+            });
 
-            lock (usePool)
+            lock (poolUsed)
             {
-                outMesh = new Mesh(triangles, new System.Numerics.Vector3(scale?.X ?? 1f, scale?.Y ?? 1f, scale?.Z ?? 1f), usePool);
+                outMesh = new Mesh(triangles, new System.Numerics.Vector3(scale?.X ?? 1f, scale?.Y ?? 1f, scale?.Z ?? 1f), poolUsed);
             }
 
             return true;
@@ -418,68 +403,70 @@ namespace Xenko.Physics.Bepu
 
         public static unsafe void GenerateBigMeshStaticColliders(Entity e, List<Vector3> positions, List<int> indicies, Vector3? scale = null,
                                                                  CollisionFilterGroups group = CollisionFilterGroups.DefaultFilter, CollisionFilterGroupFlags collidesWith = CollisionFilterGroupFlags.AllFilter,
-                                                                 float friction = 0.5f, float maximumRecoverableVelocity = 1f, SpringSettings? springSettings = null)
+                                                                 float friction = 0.5f, float maximumRecoverableVelocity = 1f, SpringSettings? springSettings = null, bool disposeOnDetach = false)
         {
-            // get a thread-safe buffer pool
-            var usePool = BepuSimulation.safeBufferPool;
-
             // ok, should have what we need to make triangles
             int triangleCount = indicies.Count / 3;
-
-            BepuUtilities.Memory.Buffer<Triangle> triangles;
-            lock (usePool)
-            {
-                usePool.Take<Triangle>(triangleCount, out triangles);
-            }
-
-            for (int i = 0; i < triangleCount; i++)
-            {
-                int shiftedi = i * 3;
-                triangles[i].A = ToBepu(positions[indicies[shiftedi]]);
-                triangles[i].B = ToBepu(positions[indicies[shiftedi + 1]]);
-                triangles[i].C = ToBepu(positions[indicies[shiftedi + 2]]);
-            }
-
-            List<BepuUtilities.Memory.Buffer<Triangle>> meshBuffers = new List<BepuUtilities.Memory.Buffer<Triangle>>();
 
             if (triangleCount < Xenko.Core.Threading.Dispatcher.MaxDegreeOfParallelism * 2f)
             {
                 // if we have a really small mesh, doesn't make sense to split it up a bunch
-                meshBuffers.Add(triangles);
+                var scc = new BepuStaticColliderComponent();
+                scc.CanCollideWith = collidesWith;
+                scc.CollisionGroup = group;
+                scc.FrictionCoefficient = friction;
+                scc.DisposeMeshOnDetach = disposeOnDetach;
+                scc.MaximumRecoveryVelocity = maximumRecoverableVelocity;
+                if (springSettings.HasValue) scc.SpringSettings = springSettings.Value;
+                GenerateMeshShape(positions, indicies, out var outMesh, out scc.PoolUsedForMesh, scale);
+                scc.ColliderShape = outMesh;
+                e.Add(scc);
             }
             else
             {
-                int sliced = 0;
-                while (sliced < triangleCount)
+                int trianglesPerThread = 1 + (triangleCount / Xenko.Core.Threading.Dispatcher.MaxDegreeOfParallelism);
+                BepuStaticColliderComponent[] scs = new BepuStaticColliderComponent[Xenko.Core.Threading.Dispatcher.MaxDegreeOfParallelism];
+                var scalev3 = new System.Numerics.Vector3(scale?.X ?? 1f, scale?.Y ?? 1f, scale?.Z ?? 1f);
+                Xenko.Core.Threading.Dispatcher.For(0, scs.Length, (index) =>
                 {
-                    int grablen = Math.Min(triangleCount / Xenko.Core.Threading.Dispatcher.MaxDegreeOfParallelism, triangleCount - sliced);
-                    meshBuffers.Add(triangles.Slice(sliced, grablen));
-                    sliced += grablen;
-                }
+                    var pool = BepuSimulation.safeBufferPool;
+                    int triangleStart = index * trianglesPerThread;
+                    int triangleEnd = Math.Min(triangleStart + trianglesPerThread, triangleCount);
+                    int triangleLen = triangleEnd - triangleStart;
+                    if (triangleLen <= 0) return;
+                    BepuUtilities.Memory.Buffer<Triangle> buf;
+                    lock (pool)
+                    {
+                        pool.Take<Triangle>(triangleLen, out buf);
+                    }
+                    int pos = 0;
+                    for (int i=triangleStart; i<triangleEnd; i++)
+                    {
+                        int shiftedi = i * 3;
+                        buf[pos].A = ToBepu(positions[indicies[shiftedi]]);
+                        buf[pos].B = ToBepu(positions[indicies[shiftedi + 1]]);
+                        buf[pos].C = ToBepu(positions[indicies[shiftedi + 2]]);
+                        pos++;
+                    }
+                    scs[index] = new BepuStaticColliderComponent();
+                    ref var sc = ref scs[index];
+                    sc.PoolUsedForMesh = pool;
+                    sc.CanCollideWith = collidesWith;
+                    sc.CollisionGroup = group;
+                    sc.FrictionCoefficient = friction;
+                    sc.DisposeMeshOnDetach = disposeOnDetach;
+                    sc.MaximumRecoveryVelocity = maximumRecoverableVelocity;
+                    if (springSettings.HasValue) sc.SpringSettings = springSettings.Value;
+
+                    lock (sc.PoolUsedForMesh)
+                    {
+                        sc.ColliderShape = new Mesh(buf, scalev3, sc.PoolUsedForMesh);
+                    }
+                });
+
+                for (int i = 0; i < scs.Length; i++)
+                    if (scs[i] != null) e.Add(scs[i]);
             }
-
-            // dispatch buffers to be made into meshes
-            Xenko.Core.Threading.Dispatcher.For(0, meshBuffers.Count, (index) =>
-            {
-                var pool = BepuSimulation.safeBufferPool;
-                BepuStaticColliderComponent sc = new BepuStaticColliderComponent();
-
-                lock (pool)
-                {
-                    sc.ColliderShape = new Mesh(meshBuffers[index], new System.Numerics.Vector3(scale?.X ?? 1f, scale?.Y ?? 1f, scale?.Z ?? 1f), pool);
-                }
-
-                sc.CanCollideWith = collidesWith;
-                sc.CollisionGroup = group;
-                sc.FrictionCoefficient = friction;
-                sc.MaximumRecoveryVelocity = maximumRecoverableVelocity;
-                if (springSettings.HasValue) sc.SpringSettings = springSettings.Value;
-
-                lock (e)
-                {
-                    e.Add(sc);
-                }
-            });
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -40,6 +40,7 @@ namespace Xenko.Physics.Bepu
         public ReaderWriterLockSlim simulationLocker { get; private set; } = new ReaderWriterLockSlim();
 
         public ConcurrentQueue<Action<float>> ActionsBeforeSimulationStep = new ConcurrentQueue<Action<float>>();
+        public ConcurrentQueue<Action<float>> ActionsAfterSimulationStep = new ConcurrentQueue<Action<float>>();
 
         public static float TimeScale = 1f;
         public static int MaxSubSteps = 1;
@@ -467,6 +468,7 @@ namespace Xenko.Physics.Bepu
                         internalSimulation.Statics.Remove(addedIndex);
                         StaticMappings.Remove(addedIndex);
                     }
+                    if (scc.DisposeMeshOnDetach) scc.DisposeMesh();
                 } 
                 else if (component is BepuRigidbodyComponent rigidBody)
                 {

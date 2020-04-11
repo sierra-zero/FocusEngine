@@ -216,6 +216,9 @@ namespace Xenko.Physics
                             rb.UpdateTransformationComponent();
                         });
                     }
+
+                    // do anything after simulation
+                    while (physicsScene.BepuSimulation.ActionsAfterSimulationStep.TryDequeue(out Action<float> a)) a(time);
                 }
             }
         }
