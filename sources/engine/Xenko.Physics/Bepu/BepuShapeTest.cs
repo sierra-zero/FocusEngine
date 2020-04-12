@@ -42,7 +42,7 @@ namespace Xenko.Physics.Bepu
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public void OnPairCompleted<TManifold>(int pairId, ref TManifold manifold) where TManifold : struct, IContactManifold<TManifold>
+            public void OnPairCompleted<TManifold>(int pairId, ref TManifold manifold) where TManifold : unmanaged, IContactManifold<TManifold>
             {
                 if (manifold.Count > 0)
                 {
