@@ -255,21 +255,21 @@ namespace Xenko.Physics.Bepu
                     VertexPositionNormalColor[] vpnc = verts as VertexPositionNormalColor[];
                     positions = new List<Vector3>(vpnc.Length);
                     for (int k = 0; k < vpnc.Length; k++)
-                        positions[k] = vpnc[k].Position;
+                        positions.Add(vpnc[k].Position);
                 }
                 else if (verts is VertexPositionNormalTexture[])
                 {
                     VertexPositionNormalTexture[] vpnc = verts as VertexPositionNormalTexture[];
                     positions = new List<Vector3>(vpnc.Length);
                     for (int k = 0; k < vpnc.Length; k++)
-                        positions[k] = vpnc[k].Position;
+                        positions.Add(vpnc[k].Position);
                 }
                 else if (verts is VertexPositionNormalTextureTangent[])
                 {
                     VertexPositionNormalTextureTangent[] vpnc = verts as VertexPositionNormalTextureTangent[];
                     positions = new List<Vector3>(vpnc.Length);
                     for (int k = 0; k < vpnc.Length; k++)
-                        positions[k] = vpnc[k].Position;
+                        positions.Add(vpnc[k].Position);
                 }
                 else
                 {
@@ -279,7 +279,9 @@ namespace Xenko.Physics.Bepu
                 }
 
                 // take care of indicies
-                indicies = new List<int>((int[])(object)smd.Indicies);
+                indicies = new List<int>(smd.Indicies.Length);
+                for (int i = 0; i < smd.Indicies.Length; i++)
+                    indicies.Add((int)smd.Indicies[i]);
             }
             else
             {
@@ -352,6 +354,57 @@ namespace Xenko.Physics.Bepu
             }
 
             return GenerateMeshShape(positions, indicies, out outMesh, out poolUsed, scale);
+        }
+
+        private static void CollectMeshes(Entity e, List<Xenko.Rendering.Mesh> meshes)
+        {
+            foreach(ModelComponent mc in e.GetAll<ModelComponent>())
+            {
+                if (mc.Model == null) continue;
+                for (int i=0;i<mc.Model.Meshes.Count; i++)
+                {
+                    meshes.Add(mc.Model.Meshes[i]);
+                }
+            }
+            foreach (Entity child in e.GetChildren())
+                CollectMeshes(child, meshes);
+        }
+
+        public static void DisposeAllMeshes(Entity e)
+        {
+            foreach (BepuStaticColliderComponent scc in e.GetAll<BepuStaticColliderComponent>())
+                scc.DisposeMesh();
+            foreach (Entity child in e.GetChildren())
+                DisposeAllMeshes(child);
+        }
+
+        /// <summary>
+        /// Generate a mesh collider from all meshes in an entity. The meshes must have a readable buffer behind it to generate veriticies from
+        /// </summary>
+        /// <returns>Returns false if no mesh could be made</returns>
+        public static unsafe bool GenerateBigMeshStaticColliders(Entity e, CollisionFilterGroups group = CollisionFilterGroups.DefaultFilter, CollisionFilterGroupFlags collidesWith = CollisionFilterGroupFlags.AllFilter,
+                                                                 float friction = 0.5f, float maximumRecoverableVelocity = 1f, SpringSettings? springSettings = null, bool disposeOnDetach = false)
+        {
+            // get all meshes
+            List<Xenko.Rendering.Mesh> meshes = new List<Xenko.Rendering.Mesh>();
+            CollectMeshes(e, meshes);
+            List<Vector3> allPositions = new List<Vector3>();
+            List<int> allIndicies = new List<int>();
+            for (int i=0; i<meshes.Count; i++)
+            {
+                getMeshOutputs(meshes[i], out var pos, out var indicies);
+                for (int j=0; j<indicies.Count; j++)
+                {
+                    allIndicies.Add(indicies[j] + allPositions.Count);
+                }
+                allPositions.AddRange(pos);
+            }
+
+            if (allIndicies.Count == 0 || allPositions.Count == 0) return false;
+
+            GenerateBigMeshStaticColliders(e, allPositions, allIndicies, e.Transform.WorldScale(), group, collidesWith, friction, maximumRecoverableVelocity, springSettings, disposeOnDetach);
+
+            return true;
         }
 
         /// <summary>
