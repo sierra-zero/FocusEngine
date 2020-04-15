@@ -124,6 +124,11 @@ namespace Xenko.Assets
             return settings;
         }
 
+        public T GetOrDefault<T>() where T : Configuration, new()
+        {
+            return TryGet<T>() ?? ObjectFactoryRegistry.NewInstance<T>();
+        }
+
         public T GetOrCreate<T>(PlatformType platform) where T : Configuration, new()
         {
             ConfigPlatforms configPlatform;
