@@ -92,6 +92,7 @@ namespace Xenko.Physics.Bepu
             for (int overlapIndex = 0; overlapIndex < broadPhaseEnumerator.components.Count; ++overlapIndex)
             {
                 BepuPhysicsComponent bpc = broadPhaseEnumerator.components[overlapIndex];
+                if (bpc == null || bpc.ColliderShape == null) continue;
                 batcher.CacheShapeB(bpc.ColliderShape.TypeId, queryShapeType, queryShapeData, queryShapeSize, out var cachedQueryShapeData);
                 int size = bpc.ColliderShape.GetSize();
                 lock (batcher.Pool)
@@ -107,7 +108,7 @@ namespace Xenko.Physics.Bepu
             batcher.Flush();
             // free memory used
             for (int i = 0; i < shapeMemories.Length; i++)
-                batcher.Pool.Return<byte>(ref shapeMemories[i]);
+                 if (shapeMemories[i].Allocated) batcher.Pool.Return<byte>(ref shapeMemories[i]);
         }
 
         /// <summary>
