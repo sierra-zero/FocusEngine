@@ -270,7 +270,7 @@ namespace Xenko.Core.Assets.Editor.ViewModel
         public void RemoveRecentFile(UFile filePath)
         {
             //Get all versions of showing on recent files
-            var xenkoVersions = RecentFiles?.Select(x => x.Version).ToList();
+            var xenkoVersions = RecentFiles?.Select(x => x.Version).Distinct().ToList();
             if (xenkoVersions != null)
             {
                 foreach (var item in xenkoVersions)
@@ -297,7 +297,7 @@ namespace Xenko.Core.Assets.Editor.ViewModel
         {
             RecentFiles.Clear();
 
-            //Get only files that is current version or older
+            // Get only files that is current version or older
             foreach (var item in MRU.MostRecentlyUsedFiles.Where(x => string.Compare(x.Version, EditorVersionMajor, StringComparison.Ordinal) <= 0).Take(10))
             {
                 RecentFiles.Add(new MostRecentlyUsedFile() { FilePath = item.FilePath, Timestamp = item.Timestamp, Version = item.Version });
