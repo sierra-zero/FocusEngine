@@ -100,12 +100,12 @@
         <MenuItem Header="{xk:Localize Update selected assets from their source, Context=Menu}" Command="{Binding Session.SourceTracker.UpdateSelectedAssetsFromSourceCommand}" InputGestureText="{x:Static stringsEd:KeyGestures.UpdateSelectedAssetsFromSource}" Icon="{xk:Image {StaticResource UpdateSelectedAssetsFromSource}}"/>
         <MenuItem Header="{xk:Localize Update all assets with modified source, Context=Menu}" Command="{Binding Session.SourceTracker.UpdateAllAssetsWithModifiedSourceCommand}" InputGestureText="{x:Static stringsEd:KeyGestures.UpdateAllAssetsWithModifiedSource}" Icon="{xk:Image {StaticResource UpdateAllAssetsWithModifiedSource}}"/>
         <!-- Explore -->
-        <MenuItem Header="{sd:Localize Explore, Context=Menu}" Style="{StaticResource MenuGroupSeparatorStyle}"/>
-        <MenuItem Header="{sd:Localize Open with text editor, Context=Menu}" Command="{Binding Session.OpenWithTextEditorCommand}" CommandParameter="{Binding SingleSelectedAsset}" Icon="{sd:Image {StaticResource ImageOpenWithTextEditor}}"/>
-        <MenuItem Header="{sd:Localize Open asset file, Context=Menu}" Command="{Binding Session.OpenAssetFileCommand}" CommandParameter="{Binding SingleSelectedAsset}" Icon="{sd:Image {StaticResource ImageOpenAssetFile}}"/>
-        <MenuItem Header="{sd:Localize Open source file, Context=Menu}" Command="{Binding Session.OpenSourceFileCommand}" CommandParameter="{Binding SingleSelectedAsset}" Icon="{sd:Image {StaticResource ImageOpenSourceFile}}"/>
-        <MenuItem Header="{sd:Localize Show in Explorer, Context=Menu}" Command="{Binding Session.ExploreCommand}" CommandParameter="{Binding SelectedContent}" Icon="{sd:Image {StaticResource ImageExplore}}"/>
-        <MenuItem Header="{sd:Localize Show source file in Explorer, Context=Menu}" Command="{Binding Session.ExploreSourceFileCommand}" CommandParameter="{Binding SingleSelectedAsset}" Icon="{sd:Image {StaticResource ImageExplore}}"/>
+        <MenuItem Header="{xk:Localize Explore, Context=Menu}" Style="{StaticResource MenuGroupSeparatorStyle}"/>
+        <MenuItem Header="{xk:Localize Open with text editor, Context=Menu}" Command="{Binding Session.OpenWithTextEditorCommand}" CommandParameter="{Binding SingleSelectedAsset}" Icon="{xk:Image {StaticResource ImageOpenWithTextEditor}}"/>
+        <MenuItem Header="{xk:Localize Open asset file, Context=Menu}" Command="{Binding Session.OpenAssetFileCommand}" CommandParameter="{Binding SingleSelectedAsset}" Icon="{xk:Image {StaticResource ImageOpenAssetFile}}"/>
+        <MenuItem Header="{xk:Localize Open source file, Context=Menu}" Command="{Binding Session.OpenSourceFileCommand}" CommandParameter="{Binding SingleSelectedAsset}" Icon="{xk:Image {StaticResource ImageOpenSourceFile}}"/>
+        <MenuItem Header="{xk:Localize Show in Explorer, Context=Menu}" Command="{Binding Session.ExploreCommand}" CommandParameter="{Binding SelectedContent}" Icon="{xk:Image {StaticResource ImageExplore}}"/>
+        <MenuItem Header="{xk:Localize Show source file in Explorer, Context=Menu}" Command="{Binding Session.ExploreSourceFileCommand}" CommandParameter="{Binding SingleSelectedAsset}" Icon="{xk:Image {StaticResource ImageExplore}}"/>
       </ContextMenu>
 
     </ResourceDictionary>
