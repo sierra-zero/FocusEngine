@@ -3,6 +3,7 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using Xenko.Core;
 using Xenko.Core.Assets;
 using Xenko.Core.Assets.Analysis;
 using Xenko.Core.Diagnostics;
@@ -19,6 +20,8 @@ namespace Xenko.Assets.Models
 {
     public abstract class ModelAssetImporter : AssetImporterBase
     {
+        public static readonly PropertyKey<bool> DeduplicateMaterialsKey = new PropertyKey<bool>("DeduplicateMaterials", typeof(ModelAssetImporter));
+
         public override IEnumerable<Type> RootAssetTypes
         {
             get

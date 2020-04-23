@@ -8,6 +8,7 @@ using Xenko.Core.IO;
 using Xenko.Animations;
 using Xenko.Assets.Textures;
 using Xenko.Importer.Common;
+using Xenko.Collections.Generic;
 
 namespace Xenko.Assets.Models
 {
@@ -33,7 +34,11 @@ namespace Xenko.Assets.Models
         public override EntityInfo GetEntityInfo(UFile localPath, Logger logger, AssetImporterParameters importParameters)
         {
             var meshConverter = new Importer.AssimpNET.MeshConverter(logger);
-            var entityInfo = meshConverter.ExtractEntity(localPath.FullPath, null, importParameters.IsTypeSelectedForOutput(typeof(TextureAsset)));
+
+            if (!importParameters.InputParameters.TryGet(DeduplicateMaterialsKey, out var deduplicateMaterials))
+                deduplicateMaterials = true;    // Dedupe is the default value
+
+            var entityInfo = meshConverter.ExtractEntity(localPath.FullPath, null, importParameters.IsTypeSelectedForOutput(typeof(TextureAsset)), deduplicateMaterials);
             return entityInfo;
         }
 
@@ -64,6 +69,22 @@ namespace Xenko.Assets.Models
                 startTime = CompressedTimeSpan.Zero;
             if (endTime == CompressedTimeSpan.MinValue)
                 endTime = CompressedTimeSpan.Zero;
+        }
+
+        public override IEnumerable<AssetItem> Import(UFile localPath, AssetImporterParameters importParameters)
+        {
+            var assetItems = base.Import(localPath, importParameters);
+            // Need to remember the DeduplicateMaterials setting per ModelAsset since the importer may be rerun on this asset
+            if (!importParameters.InputParameters.TryGet(DeduplicateMaterialsKey, out var deduplicateMaterials))
+                deduplicateMaterials = true;    // Dedupe is the default value
+            foreach (var item in assetItems)
+            {
+                if (item.Asset is ModelAsset modelAsset)
+                {
+                    modelAsset.DeduplicateMaterials = deduplicateMaterials;
+                }
+            }
+            return assetItems;
         }
     }
 }
