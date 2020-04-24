@@ -8,7 +8,7 @@ using Xenko.Core.IO;
 using Xenko.Animations;
 using Xenko.Assets.Textures;
 using Xenko.Importer.Common;
-using Xenko.Collections.Generic;
+using System.Collections.Generic;
 
 namespace Xenko.Assets.Models
 {
