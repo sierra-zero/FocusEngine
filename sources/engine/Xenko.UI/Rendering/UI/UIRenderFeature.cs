@@ -331,6 +331,8 @@ namespace Xenko.Rendering.UI
             rendererManager.RegisterRenderer(element, renderer);
         }
 
+        private static Matrix ReallyCloseUI = Matrix.Transformation(new Vector3(0.531f), Quaternion.Identity, new Vector3(0f, 0f, 60f));
+
         private class UIElementState
         {
             public readonly RenderUIElement RenderObject;
@@ -344,14 +346,12 @@ namespace Xenko.Rendering.UI
 
             public void Update(RenderUIElement renderObject, float vFoV, ref Matrix viewMatrix, ref Matrix projMatrix, Vector3 camPosition)
             {
-                var frustumHeight = 2 * (float)Math.Tan(MathUtil.DegreesToRadians(vFoV) / 2);
-
                 var worldMatrix = renderObject.WorldMatrix;
 
                 // rotate the UI element perpendicular to the camera view vector, if billboard is activated
                 if (renderObject.IsFullScreen)
                 {
-                    worldMatrix = Matrix.Identity;
+                    worldMatrix = ReallyCloseUI;
                 }
                 else
                 {
@@ -386,6 +386,7 @@ namespace Xenko.Rendering.UI
                         Vector3.Dot(ref forwardVector, ref distVec, out distScalar);
                         distScalar = Math.Abs(distScalar);
 
+                        var frustumHeight = 2 * (float)Math.Tan(MathUtil.DegreesToRadians(vFoV) / 2);
                         var worldScale = frustumHeight * distScalar * UIComponent.FixedSizeVerticalUnit; // FrustumHeight already is 2*Tan(FOV/2)
 
                         worldMatrix.Row1 *= worldScale;
