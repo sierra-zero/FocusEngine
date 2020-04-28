@@ -886,6 +886,17 @@ namespace Xenko.UI
             }
         }
 
+        private Vector3 lastResolution;
+
+        /// <summary>
+        /// Rearrange the UIElement now, perhaps right after changes to its position, so it will be ready for the next frame.
+        /// </summary>
+        public void RearrangeNow()
+        {
+            Measure(lastResolution);
+            Arrange(lastResolution, false);
+        }
+
         /// <summary>
         /// Updates the <see cref="DesiredSize"/> of a <see cref="UIElement"/>.
         /// Parent elements call this method from their own implementations to form a recursive layout update.
@@ -1012,6 +1023,9 @@ namespace Xenko.UI
                 CollapseOverride();
                 return;
             }
+
+            // store for possible later rearrange
+            lastResolution = finalSizeWithMargins;
 
             // initialize the element size with the user suggested size (maybe NaN if not set)
             var elementSize = new Vector3(Width, Height, Depth);
