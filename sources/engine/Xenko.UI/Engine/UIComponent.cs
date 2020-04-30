@@ -20,9 +20,9 @@ namespace Xenko.Engine
     [ComponentCategory("UI")]
     public sealed class UIComponent : ActivableEntityComponent
     {
-        public static readonly float DefaultDepth = 1000;
-        public static readonly float DefaultHeight = 720;
-        public static readonly float DefaultWidth = 1280;
+        public static readonly float DefaultDepth = 128f;
+        public static readonly float DefaultHeight = 720f;
+        public static readonly float DefaultWidth = 1280f;
 
         public UIComponent()
         {
@@ -47,13 +47,24 @@ namespace Xenko.Engine
         [DefaultValue(true)]
         public bool IsFullScreen { get; set; } = true;
 
+        private Vector3 internalResolution;
+
         /// <summary>
         /// Gets or sets the virtual resolution of the UI in virtual pixels.
         /// </summary>
         /// <userdoc>The value in pixels of the resolution of the UI</userdoc>
         [DataMember(30)]
         [Display("Resolution")]
-        public Vector3 Resolution { get; set; }
+        public Vector3 Resolution
+        {
+            get => internalResolution;
+            set
+            {
+                internalResolution.Z = 128f;
+                internalResolution.X = value.X;
+                internalResolution.Y = value.Y;
+            }
+        }
 
         /// <summary>
         /// Gets or sets the actual size of the UI component in world units. This value is ignored in fullscreen mode.
