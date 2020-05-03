@@ -42,6 +42,7 @@ namespace Xenko.Core.Assets
         public PackageLoadParameters()
         {
             LoadMissingDependencies = true;
+            RegisterPackageAssemblies = false;
             LoadAssemblyReferences = true;
             AutoCompileProjects = true;
             AutoLoadTemporaryAssets = true;
@@ -54,6 +55,11 @@ namespace Xenko.Core.Assets
         /// </summary>
         /// <value><c>true</c> if [load missing dependencies]; otherwise, <c>false</c>.</value>
         public bool LoadMissingDependencies { get; set; }
+
+        /// <summary>
+        /// Register the package's assemblies from the project.
+        /// </summary>
+        public bool RegisterPackageAssemblies { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether [load assembly references].
