@@ -21,10 +21,5 @@ namespace Xenko.Core.Assets
         /// An executable.
         /// </summary>
         Executable,
-
-        /// <summary>
-        /// A plugin.
-        /// </summary>
-        Plugin,
     }
 }
