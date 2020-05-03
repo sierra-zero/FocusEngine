@@ -60,13 +60,11 @@ namespace Xenko.Core.Threading
             {
                 Action workItem = null;
                 var lockTaken = false;
-                int workItemCount;
                 try
                 {
                     spinLock.Enter(ref lockTaken);
-                    workItemCount = workItems.Count;
 
-                    if (workItemCount > 0)
+                    if (workItems.Count > 0)
                         workItem = workItems.Dequeue();
                 }
                 finally
@@ -88,9 +86,8 @@ namespace Xenko.Core.Threading
                     }
                     PooledDelegateHelper.Release(workItem);
                 }
-
-                // only reset and wait if we took our last job
-                if (workItemCount <= 1) workAvailable.WaitOne();
+                // couldn't find work, wait until some more is available
+                else workAvailable.WaitOne();
             }
         }
     }
