@@ -243,7 +243,7 @@ namespace Xenko.GameStudio
                 {
                     assembliesToReload.Add(modifiedAssembly.Value);
                 }
-                else if (modifiedAssembly.Key.ProjectReference != null)
+                else
                 {
                     // If source code has changed, rebuild. If the build is successfull, reload the assembly.
                     // Otherwise add the assembly back to the list of modified ones.
