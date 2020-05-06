@@ -25,5 +25,15 @@ namespace Xenko.Rendering
         /// The resolution is determined by the height, the ratio of the target, and the depth.
         /// </summary>
         FixedHeightAdaptableWidth,
+
+        /// <summary>
+        /// Proportionally shrinks or grows in either direction as needed so nothing gets cut off, and screen is filled.
+        /// </summary>
+        AutoFit,
+
+        /// <summary>
+        /// Proportionally sizes UI up to the resolution, but no more. Shrinks if needed so nothing gets cut off.
+        /// </summary>
+        AutoShrink
     }
 }

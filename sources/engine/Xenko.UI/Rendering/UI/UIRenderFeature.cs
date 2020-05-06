@@ -135,10 +135,31 @@ namespace Xenko.Rendering.UI
                     var targetSize = new Vector2(context.CommandList.RenderTargets[0].Width, context.CommandList.RenderTargets[0].Height);
 
                     // update the virtual resolution of the renderer
-                    if (renderObject.ResolutionStretch == ResolutionStretch.FixedWidthAdaptableHeight)
-                        virtualResolution.Y = virtualResolution.X * targetSize.Y / targetSize.X;
-                    if (renderObject.ResolutionStretch == ResolutionStretch.FixedHeightAdaptableWidth)
-                        virtualResolution.X = virtualResolution.Y * targetSize.X / targetSize.Y;
+                    switch (renderObject.ResolutionStretch)
+                    {
+                        case ResolutionStretch.FixedWidthAdaptableHeight:
+                            virtualResolution.Y = virtualResolution.X * targetSize.Y / targetSize.X;
+                            break;
+                        case ResolutionStretch.FixedHeightAdaptableWidth:
+                            virtualResolution.X = virtualResolution.Y * targetSize.X / targetSize.Y;
+                            break;
+                        case ResolutionStretch.AutoFit:
+                            float aspect = targetSize.X / targetSize.Y;
+                            float virtAspect = virtualResolution.X / virtualResolution.Y;
+                            if (aspect >= virtAspect)
+                                goto case ResolutionStretch.FixedHeightAdaptableWidth;
+                            goto case ResolutionStretch.FixedWidthAdaptableHeight;
+                        case ResolutionStretch.AutoShrink:
+                            if (targetSize.X < virtualResolution.X ||
+                                targetSize.Y < virtualResolution.Y)
+                                goto case ResolutionStretch.AutoFit;
+                            else
+                            {
+                                virtualResolution.X = targetSize.X * targetSize.X / virtualResolution.X;
+                                virtualResolution.Y = targetSize.Y * targetSize.Y / virtualResolution.Y;
+                            }
+                            break;
+                    }
 
                     uiElementState.Update(renderObject, virtualResolution);
                 }
@@ -149,6 +170,9 @@ namespace Xenko.Rendering.UI
                         uiElementState.Update(renderObject, cameraComponent.VerticalFieldOfView,
                                               ref renderView.View, ref renderView.Projection, cameraComponent.Entity.Transform.WorldPosition());
                 }
+
+                if (renderObject.Source is UIComponent uic)
+                    uic.RenderedResolution = virtualResolution;
 
                 PickingUpdate(uiElementState.RenderObject, context.CommandList.Viewport, ref uiElementState.WorldViewProjectionMatrix, drawTime, events);
 

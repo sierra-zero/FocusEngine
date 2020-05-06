@@ -67,6 +67,12 @@ namespace Xenko.Engine
         }
 
         /// <summary>
+        /// Gets the virtual resolution used after any resizing due to resolution.
+        /// </summary>
+        [DataMemberIgnore]
+        public Vector3 RenderedResolution { get; internal set; }
+
+        /// <summary>
         /// Gets or sets the actual size of the UI component in world units. This value is ignored in fullscreen mode.
         /// </summary>
         /// <userdoc>The actual size of the UI component in world units. This value is ignored in fullscreen mode.</userdoc>
@@ -81,8 +87,8 @@ namespace Xenko.Engine
         /// <userdoc>Indicate how the virtual resolution value should be interpreted</userdoc>
         [DataMember(40)]
         [Display("Resolution Stretch")]
-        [DefaultValue(ResolutionStretch.FixedWidthAdaptableHeight)]
-        public ResolutionStretch ResolutionStretch { get; set; } = ResolutionStretch.FixedWidthAdaptableHeight;
+        [DefaultValue(ResolutionStretch.AutoFit)]
+        public ResolutionStretch ResolutionStretch { get; set; } = ResolutionStretch.AutoFit;
 
         /// <summary>
         /// Gets or sets the value indicating whether the UI should be displayed as billboard.
