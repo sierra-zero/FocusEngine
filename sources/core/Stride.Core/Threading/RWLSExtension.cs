@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 
-namespace Xenko.Core.Threading
+namespace Stride.Core.Threading
 {
     public static class RWLSExtension
     {

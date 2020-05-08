@@ -1,16 +1,16 @@
 <Project>
-  <Import Project="..\..\targets\Xenko.Core.PreSettings.targets" />
+  <Import Project="..\..\targets\Stride.Core.PreSettings.targets" />
   <Import Project="Sdk.props" Sdk="MSBuild.Sdk.Extras" Version="2.0.54" />
   <PropertyGroup>
     <ProductVersion>8.0.30703</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <XenkoAssemblyProcessor>true</XenkoAssemblyProcessor>
-    <XenkoAssemblyProcessorOptions>--auto-module-initializer --serialization</XenkoAssemblyProcessorOptions>
+    <StrideAssemblyProcessor>true</StrideAssemblyProcessor>
+    <StrideAssemblyProcessorOptions>--auto-module-initializer --serialization</StrideAssemblyProcessorOptions>
     <TargetFramework>$(TargetFrameworkTool)</TargetFramework>
-    <XenkoBuildTags>WindowsTools</XenkoBuildTags>
-    <XenkoOutputFolder>Tests\$(AssemblyName)</XenkoOutputFolder>
-    <XenkoCompilerTargetsEnable Condition="'$(XenkoPackageBuild)' == 'true'">false</XenkoCompilerTargetsEnable>
+    <StrideBuildTags>WindowsTools</StrideBuildTags>
+    <StrideOutputFolder>Tests\$(AssemblyName)</StrideOutputFolder>
+    <StrideCompilerTargetsEnable Condition="'$(StridePackageBuild)' == 'true'">false</StrideCompilerTargetsEnable>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="xunit" Version="2.3.1" />
@@ -22,11 +22,11 @@
     <EmbeddedResource Include="files\*.yaml" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Xenko.Core.Yaml\Xenko.Core.Yaml.csproj" />
+    <ProjectReference Include="..\Stride.Core.Yaml\Stride.Core.Yaml.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />
   </ItemGroup>
-  <Import Project="$(XenkoPostSettingsTargets)" />
+  <Import Project="$(StridePostSettingsTargets)" />
   <Import Project="Sdk.targets" Sdk="MSBuild.Sdk.Extras" Version="2.0.54" />
 </Project>

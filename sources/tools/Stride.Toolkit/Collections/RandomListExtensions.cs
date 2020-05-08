@@ -1,4 +1,4 @@
-using Xenko.Core.Mathematics;
+using Stride.Core.Mathematics;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,7 +6,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Xenko.Toolkit.Collections
+namespace Stride.Toolkit.Collections
 {
     /// <summary>
     /// Extensions for <see cref="Random"/>.

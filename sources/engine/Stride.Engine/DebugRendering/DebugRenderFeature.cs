@@ -1,17 +1,17 @@
-// Copyright (c) Xenko contributors (https://xenko.com)
+// Copyright (c) Stride contributors (https://stride3d.net)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
 using System.Runtime.InteropServices;
-using Xenko.Core.Collections;
-using Xenko.Core.Mathematics;
-using Xenko.Core.Threading;
-using Xenko.Graphics;
-using Xenko.Rendering;
+using Stride.Core.Collections;
+using Stride.Core.Mathematics;
+using Stride.Core.Threading;
+using Stride.Graphics;
+using Stride.Rendering;
 
-using Buffer = Xenko.Graphics.Buffer;
+using Buffer = Stride.Graphics.Buffer;
 
-namespace Xenko.Engine
+namespace Stride.Engine
 {
     public class DebugRenderFeature : RootRenderFeature
     {
@@ -598,7 +598,7 @@ namespace Xenko.Engine
             if (neededBufferSize > buffer.ElementCount)
             {
                 buffer.Dispose();
-                var newBuffer = Xenko.Graphics.Buffer.New(
+                var newBuffer = Stride.Graphics.Buffer.New(
                     device,
                     dataPtr,
                     buffer.StructureByteStride,
@@ -874,7 +874,7 @@ namespace Xenko.Engine
         {
         }
 
-        /* FIXME: is there a nicer way to handle dispose, some xenko idiom? */
+        /* FIXME: is there a nicer way to handle dispose, some stride idiom? */
 
         public override void Unload()
         {

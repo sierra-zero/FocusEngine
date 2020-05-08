@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Xenko.Engine;
+using Stride.Engine;
 
-namespace Xenko.Toolkit.Engine
+namespace Stride.Toolkit.Engine
 {
     internal readonly struct ScriptDelegateWatcher
     {

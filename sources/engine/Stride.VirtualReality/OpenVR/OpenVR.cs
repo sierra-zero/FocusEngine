@@ -1,21 +1,21 @@
-// Copyright (c) Xenko contributors (https://xenko.com) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
-#if XENKO_GRAPHICS_API_VULKAN || XENKO_GRAPHICS_API_DIRECT3D11
+#if STRIDE_GRAPHICS_API_VULKAN || STRIDE_GRAPHICS_API_DIRECT3D11
 
 using System;
 using System.Text;
-#if XENKO_GRAPHICS_API_DIRECT3D11
+#if STRIDE_GRAPHICS_API_DIRECT3D11
 using SharpDX.Direct3D11;
-#elif XENKO_GRAPHICS_API_VULKAN
+#elif STRIDE_GRAPHICS_API_VULKAN
 using SharpVulkan;
 #endif
 using Valve.VR;
-using Xenko.Core;
-using Xenko.Core.Mathematics;
-using Xenko.Games;
-using Xenko.Graphics;
+using Stride.Core;
+using Stride.Core.Mathematics;
+using Stride.Games;
+using Stride.Graphics;
 
-namespace Xenko.VirtualReality
+namespace Stride.VirtualReality
 {
     public static class OpenVR
     {
@@ -205,7 +205,7 @@ namespace Xenko.VirtualReality
 
         public static bool InitDone = false;
 
-#if XENKO_GRAPHICS_API_VULKAN
+#if STRIDE_GRAPHICS_API_VULKAN
         private static unsafe VRVulkanTextureData_t vkTexData;
         public static bool InitVulkan(GameBase baseGame) {
             vkTexData = new VRVulkanTextureData_t {
@@ -250,7 +250,7 @@ namespace Xenko.VirtualReality
                 vMin = viewport.Y,
                 vMax = viewport.Height,
             };
-#if XENKO_GRAPHICS_API_VULKAN
+#if STRIDE_GRAPHICS_API_VULKAN
             vkTexData.m_nHeight = (uint)texture.Height;
             vkTexData.m_nWidth = (uint)texture.Width;
             vkTexData.m_nImage = (ulong)texture.NativeImage.NativeHandle;
@@ -267,7 +267,7 @@ namespace Xenko.VirtualReality
                     return Valve.VR.OpenVR.Compositor.Submit(eyeIndex == 0 ? EVREye.Eye_Left : EVREye.Eye_Right, ref tex, ref bounds, EVRSubmitFlags.Submit_Default) == EVRCompositorError.None;
                 }
             }
-#elif XENKO_GRAPHICS_API_DIRECT3D11
+#elif STRIDE_GRAPHICS_API_DIRECT3D11
             var tex = new Texture_t {
                     eType = ETextureType.DirectX,
                     handle = texture.SharedHandle,
@@ -496,7 +496,7 @@ namespace Xenko.VirtualReality
 
         public static Texture GetMirrorTexture(GraphicsDevice device, int eyeIndex)
         {
-#if XENKO_GRAPHICS_API_DIRECT3D11
+#if STRIDE_GRAPHICS_API_DIRECT3D11
             var nativeDevice = device.NativeDevice.NativePointer;
             var eyeTexSrv = IntPtr.Zero;
             Valve.VR.OpenVR.Compositor.GetMirrorTextureD3D11(eyeIndex == 0 ? EVREye.Eye_Left : EVREye.Eye_Right, nativeDevice, ref eyeTexSrv);

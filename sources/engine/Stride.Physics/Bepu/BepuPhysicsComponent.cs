@@ -1,4 +1,4 @@
-// Copyright (c) Xenko contributors (https://xenko.com) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
@@ -8,24 +8,24 @@ using System.Runtime.CompilerServices;
 using BepuPhysics;
 using BepuPhysics.Collidables;
 using BepuPhysics.Constraints;
-using Xenko.Core;
-using Xenko.Core.Annotations;
-using Xenko.Core.Collections;
-using Xenko.Core.Diagnostics;
-using Xenko.Core.Mathematics;
-using Xenko.Core.MicroThreading;
-using Xenko.Engine.Design;
-using Xenko.Extensions;
-using Xenko.Games;
-using Xenko.Graphics.GeometricPrimitives;
-using Xenko.Physics;
-using Xenko.Physics.Bepu;
-using Xenko.Physics.Engine;
-using Xenko.Rendering;
-using Xenko.Rendering.Materials;
-using Xenko.Rendering.Materials.ComputeColors;
+using Stride.Core;
+using Stride.Core.Annotations;
+using Stride.Core.Collections;
+using Stride.Core.Diagnostics;
+using Stride.Core.Mathematics;
+using Stride.Core.MicroThreading;
+using Stride.Engine.Design;
+using Stride.Extensions;
+using Stride.Games;
+using Stride.Graphics.GeometricPrimitives;
+using Stride.Physics;
+using Stride.Physics.Bepu;
+using Stride.Physics.Engine;
+using Stride.Rendering;
+using Stride.Rendering.Materials;
+using Stride.Rendering.Materials.ComputeColors;
 
-namespace Xenko.Engine
+namespace Stride.Engine
 {
     [DataContract("BepuPhysicsComponent", Inherited = true)]
     [Display("BepuPhysics", Expand = ExpandRule.Once)]
@@ -164,7 +164,7 @@ namespace Xenko.Engine
         virtual public float SpeculativeMargin { get; set; } = 0.1f;
 
         private static Material debugShapeMaterial;
-        private static Xenko.Rendering.Mesh cubeMesh;
+        private static Stride.Rendering.Mesh cubeMesh;
 
         public Entity AttachDebugShapeAsChild()
         {
@@ -179,7 +179,7 @@ namespace Xenko.Engine
             }
             else return null;
 
-            Vector3 centerOffset = BepuHelpers.ToXenko(max + min) * 0.5f;
+            Vector3 centerOffset = BepuHelpers.ToStride(max + min) * 0.5f;
 
             Game g = ServiceRegistry.instance.GetService<IGame>() as Game;
 

@@ -2,20 +2,20 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <!-- Do not compile unit test when packaging -->
-    <XenkoCompilerTargetsEnable Condition="'$(XenkoSkipUnitTests)' == 'true'">false</XenkoCompilerTargetsEnable>
-    <XenkoCompilerTargetsEnable Condition="'$(XenkoPackageBuild)' == 'true'">false</XenkoCompilerTargetsEnable>
+    <StrideCompilerTargetsEnable Condition="'$(StrideSkipUnitTests)' == 'true'">false</StrideCompilerTargetsEnable>
+    <StrideCompilerTargetsEnable Condition="'$(StridePackageBuild)' == 'true'">false</StrideCompilerTargetsEnable>
     
-    <XenkoUnitTest>true</XenkoUnitTest>
-    <XenkoCommonDependenciesDir></XenkoCommonDependenciesDir>
+    <StrideUnitTest>true</StrideUnitTest>
+    <StrideCommonDependenciesDir></StrideCommonDependenciesDir>
 
     <!-- Unit tests are executables (execute asset compiler, embed native libraries, etc... -->
-    <XenkoIsExecutable>true</XenkoIsExecutable>
+    <StrideIsExecutable>true</StrideIsExecutable>
 
-    <!-- Setup Asset Compiler MSBuild SolutionDir and SolutionName to point to Xenko Windows
+    <!-- Setup Asset Compiler MSBuild SolutionDir and SolutionName to point to Stride Windows
          Also disable BuildProjectReferences, otherwise it would try to recompile assemblies currently locked by the CompilerApp itself.
          However, that means that Tests dependencies must be compiled properly on Windows (should be the case usually).
     -->
-    <XenkoCompileAssetOptions>--compile-property:BuildProjectReferences=false</XenkoCompileAssetOptions>
+    <StrideCompileAssetOptions>--compile-property:BuildProjectReferences=false</StrideCompileAssetOptions>
 
     <!-- Workaround for solution dependencies with incompatible frameworks: https://github.com/Microsoft/msbuild/issues/2661#issuecomment-338808156 -->
     <AddSyntheticProjectReferencesForSolutionDependencies>false</AddSyntheticProjectReferencesForSolutionDependencies>
@@ -23,19 +23,19 @@
   </PropertyGroup>
   
   <PropertyGroup>
-    <XenkoCommonDependenciesDir>$(XenkoPackageXenko)\deps\</XenkoCommonDependenciesDir>
+    <StrideCommonDependenciesDir>$(StridePackageStride)\deps\</StrideCommonDependenciesDir>
   </PropertyGroup>
 
   <!-- Override graphics platform (no need to get it from game settings asset) -->
-  <Target Name="XenkoGetGraphicsPlatform">
-    <!-- Do nothing for XenkoGraphicsApi, keep it as set by locals target -->
+  <Target Name="StrideGetGraphicsPlatform">
+    <!-- Do nothing for StrideGraphicsApi, keep it as set by locals target -->
     <PropertyGroup>
-      <XenkoCompileAssetOptions>$(XenkoCompileAssetOptions) --property:XenkoGraphicsApi=$(XenkoGraphicsApi)</XenkoCompileAssetOptions>
+      <StrideCompileAssetOptions>$(StrideCompileAssetOptions) --property:StrideGraphicsApi=$(StrideGraphicsApi)</StrideCompileAssetOptions>
     </PropertyGroup>
   </Target>
 
-  <!-- Used by Xenko.build to detect if unit tests prefer to run in 32 or 64 bits -->
-  <Target Name="_XenkoAfterGetTargetPathWithTargetPlatformMoniker" AfterTargets="GetTargetPathWithTargetPlatformMoniker">
+  <!-- Used by Stride.build to detect if unit tests prefer to run in 32 or 64 bits -->
+  <Target Name="_StrideAfterGetTargetPathWithTargetPlatformMoniker" AfterTargets="GetTargetPathWithTargetPlatformMoniker">
     <ItemGroup>
       <TargetPathWithTargetPlatformMoniker Update="$(TargetPath)">
         <PlatformTarget>$(PlatformTarget)</PlatformTarget>
@@ -43,11 +43,11 @@
     </ItemGroup>
   </Target>
 
-  <!-- Make sure xksl/xkfx are properly setup with code generator; also mark generated code file as dependent -->
+  <!-- Make sure sdsl/sdfx are properly setup with code generator; also mark generated code file as dependent -->
   <ItemGroup>
-    <Compile Update="**\*.xksl.cs" DependentUpon="%(Filename)" />
-    <None Update="**\*.xksl" Generator="XenkoShaderKeyGenerator" />
-    <Compile Update="**\*.xkfx.cs" DependentUpon="%(Filename)" />
-    <None Update="**\*.xkfx" Generator="XenkoEffectCodeGenerator" />
+    <Compile Update="**\*.sdsl.cs" DependentUpon="%(Filename)" />
+    <None Update="**\*.sdsl" Generator="StrideShaderKeyGenerator" />
+    <Compile Update="**\*.sdfx.cs" DependentUpon="%(Filename)" />
+    <None Update="**\*.sdfx" Generator="StrideEffectCodeGenerator" />
   </ItemGroup>
 </Project>

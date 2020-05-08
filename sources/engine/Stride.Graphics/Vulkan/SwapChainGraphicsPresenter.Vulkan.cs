@@ -1,6 +1,6 @@
-// Copyright (c) Xenko contributors (https://xenko.com) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
-#if XENKO_GRAPHICS_API_VULKAN
+#if STRIDE_GRAPHICS_API_VULKAN
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -10,10 +10,10 @@ using System.Runtime.InteropServices;
 using SharpVulkan;
 using System.Threading;
 using ImageLayout = SharpVulkan.ImageLayout;
-using Xenko.Core;
-using Xenko.Core.Threading;
+using Stride.Core;
+using Stride.Core.Threading;
 
-namespace Xenko.Graphics
+namespace Stride.Graphics
 {
     /// <summary>
     /// Graphics presenter for SwapChain.
@@ -309,14 +309,14 @@ namespace Xenko.Graphics
                 throw new ArgumentException("DeviceWindowHandle cannot be null");
             }
             // Create surface
-#if XENKO_UI_SDL
+#if STRIDE_UI_SDL
             var control = Description.DeviceWindowHandle.NativeWindow as SDL.Window;
 
             if (SDL2.SDL.SDL_Vulkan_CreateSurface(control.SdlHandle, GraphicsDevice.NativeInstance.NativeHandle, out ulong surfacePtr) == SDL2.SDL.SDL_bool.SDL_FALSE)
                 throw new NotSupportedException("Couldn't create an SDL2 Vulkan surface! SdlHandle:" + control.SdlHandle + ", NativeHandle:" + GraphicsDevice.NativeInstance.NativeHandle);
 
             surface = new Surface(new IntPtr((long)surfacePtr));
-#elif XENKO_PLATFORM_WINDOWS
+#elif STRIDE_PLATFORM_WINDOWS
             var controlHandle = Description.DeviceWindowHandle.Handle;
             if (controlHandle == IntPtr.Zero)
             {
@@ -330,9 +330,9 @@ namespace Xenko.Graphics
                 WindowHandle = controlHandle,
             };
             surface = GraphicsDevice.NativeInstance.CreateWin32Surface(surfaceCreateInfo);
-#elif XENKO_PLATFORM_ANDROID
+#elif STRIDE_PLATFORM_ANDROID
             throw new NotImplementedException();
-#elif XENKO_PLATFORM_LINUX
+#elif STRIDE_PLATFORM_LINUX
             throw new NotSupportedException("Only SDL is supported for the time being on Linux");
 #else
             throw new NotSupportedException();

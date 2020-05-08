@@ -1,5 +1,5 @@
-using Xenko;
-using Xenko.Core.Mathematics;
+using Stride;
+using Stride.Core.Mathematics;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -7,9 +7,9 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
-using Xenko.Core;
+using Stride.Core;
 
-namespace Xenko.Toolkit.Mathematics
+namespace Stride.Toolkit.Mathematics
 {
     /// <summary>
     /// Represents a three dimensional line based on a 2 points in space.
@@ -31,7 +31,7 @@ namespace Xenko.Toolkit.Mathematics
         public Vector3 End;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="XenkoToolkit.Mathematics.RaySegment"/> struct.
+        /// Initializes a new instance of the <see cref="StrideToolkit.Mathematics.RaySegment"/> struct.
         /// </summary>
         /// <param name="start">The position in three dimensional space where the ray starts.</param>
         /// <param name="end">The position in three dimensional space where the ray ends.</param>
@@ -130,11 +130,11 @@ namespace Xenko.Toolkit.Mathematics
         }
 
         /// <summary>
-        /// Determines whether the specified <see cref="Xenko.Core.Mathematics.Vector4"/> is equal to this instance.
+        /// Determines whether the specified <see cref="Stride.Core.Mathematics.Vector4"/> is equal to this instance.
         /// </summary>
-        /// <param name="value">The <see cref="Xenko.Core.Mathematics.Vector4"/> to compare with this instance.</param>
+        /// <param name="value">The <see cref="Stride.Core.Mathematics.Vector4"/> to compare with this instance.</param>
         /// <returns>
-        /// <c>true</c> if the specified <see cref="Xenko.Core.Mathematics.Vector4"/> is equal to this instance; otherwise, <c>false</c>.
+        /// <c>true</c> if the specified <see cref="Stride.Core.Mathematics.Vector4"/> is equal to this instance; otherwise, <c>false</c>.
         /// </returns>
         public bool Equals(RaySegment value)
         {

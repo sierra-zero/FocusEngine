@@ -1,14 +1,14 @@
-using Xenko.Core.Mathematics;
-using Xenko.Engine;
-using Xenko.Rendering.Compositing;
+using Stride.Core.Mathematics;
+using Stride.Engine;
+using Stride.Rendering.Compositing;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Xenko.Toolkit.Mathematics;
+using Stride.Toolkit.Mathematics;
 
-namespace Xenko.Toolkit.Engine
+namespace Stride.Toolkit.Engine
 {
     /// <summary>
     /// Extensions for <see cref="CameraComponent"/>.

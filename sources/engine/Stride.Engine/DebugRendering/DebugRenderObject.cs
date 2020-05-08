@@ -1,14 +1,14 @@
-// Copyright (c) Xenko contributors (https://xenko.com)
+// Copyright (c) Stride contributors (https://stride3d.net)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
-using Xenko.Core.Collections;
-using Xenko.Core.Mathematics;
-using Xenko.Graphics;
-using Xenko.Rendering;
+using Stride.Core.Collections;
+using Stride.Core.Mathematics;
+using Stride.Graphics;
+using Stride.Rendering;
 
-using static Xenko.Engine.DebugRenderFeature;
+using static Stride.Engine.DebugRenderFeature;
 
-namespace Xenko.Engine
+namespace Stride.Engine
 {
     public class DebugRenderObject : RenderObject
     {

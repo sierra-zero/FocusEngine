@@ -1,17 +1,17 @@
-// Copyright (c) Xenko contributors (https://xenko.com) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Collections.Concurrent;
 
-namespace Xenko.Graphics
+namespace Stride.Graphics
 {
     public class BufferPool : IDisposable
     {
-#if XENKO_GRAPHICS_API_DIRECT3D12
+#if STRIDE_GRAPHICS_API_DIRECT3D12
         private const bool UseBufferOffsets = true;
-#elif XENKO_GRAPHICS_API_VULKAN
+#elif STRIDE_GRAPHICS_API_VULKAN
         private const bool UseBufferOffsets = true;
 #else
         private int bufferIndex;

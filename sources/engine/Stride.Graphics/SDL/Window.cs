@@ -1,10 +1,10 @@
-// Copyright (c) Xenko contributors (https://xenko.com) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
-#if XENKO_UI_SDL
+#if STRIDE_UI_SDL
 using System;
-using Xenko.Core.Mathematics;
+using Stride.Core.Mathematics;
 
-namespace Xenko.Graphics.SDL
+namespace Stride.Graphics.SDL
 {
     using System.Collections.Generic;
 #pragma warning disable SA1200 // Using directives must be placed correctly
@@ -13,7 +13,7 @@ namespace Xenko.Graphics.SDL
 #pragma warning restore SA1200 // Using directives must be placed correctly
     public class Window : IDisposable
     {
-#if XENKO_GRAPHICS_API_OPENGL
+#if STRIDE_GRAPHICS_API_OPENGL
         private IntPtr glContext;
 #endif
 
@@ -28,13 +28,13 @@ namespace Xenko.Graphics.SDL
         static Window()
         {
             SDL.SDL_Init(SDL.SDL_INIT_EVERYTHING);
-#if XENKO_GRAPHICS_API_OPENGL
+#if STRIDE_GRAPHICS_API_OPENGL
             // Set our OpenGL version. It has to be done before any SDL window creation
             // SDL_GL_CONTEXT_CORE gives us only the newer version, deprecated functions are disabled
             int res = SDL.SDL_GL_SetAttribute(SDL.SDL_GLattr.SDL_GL_CONTEXT_PROFILE_MASK, (int)SDL.SDL_GLprofile.SDL_GL_CONTEXT_PROFILE_CORE);
             // 4.2 is the lowest version we support.
             res = SDL.SDL_GL_SetAttribute(SDL.SDL_GLattr.SDL_GL_CONTEXT_MAJOR_VERSION, 4);
-#if XENKO_PLATFORM_MACOS
+#if STRIDE_PLATFORM_MACOS
             res = SDL.SDL_GL_SetAttribute(SDL.SDL_GLattr.SDL_GL_CONTEXT_MINOR_VERSION, 1);
 #else
             res = SDL.SDL_GL_SetAttribute(SDL.SDL_GLattr.SDL_GL_CONTEXT_MINOR_VERSION, 2);
@@ -97,9 +97,9 @@ namespace Xenko.Graphics.SDL
         /// <param name="title">Title of the window, see Text property.</param>
         public Window(string title)
         {
-#if XENKO_GRAPHICS_API_OPENGL
+#if STRIDE_GRAPHICS_API_OPENGL
             var flags = SDL.SDL_WindowFlags.SDL_WINDOW_HIDDEN | SDL.SDL_WindowFlags.SDL_WINDOW_OPENGL;
-#elif XENKO_GRAPHICS_API_VULKAN
+#elif STRIDE_GRAPHICS_API_VULKAN
             var flags = SDL.SDL_WindowFlags.SDL_WINDOW_HIDDEN | SDL.SDL_WindowFlags.SDL_WINDOW_VULKAN;
 #else
             var flags = SDL.SDL_WindowFlags.SDL_WINDOW_HIDDEN;
@@ -121,19 +121,19 @@ namespace Xenko.Graphics.SDL
                 }
                 else
                 {
-#if XENKO_PLATFORM_WINDOWS_DESKTOP
+#if STRIDE_PLATFORM_WINDOWS_DESKTOP
                     Handle = info.info.win.window;
-#elif XENKO_PLATFORM_LINUX
+#elif STRIDE_PLATFORM_LINUX
                     Handle = info.info.x11.window;
                     Display = info.info.x11.display;
-#elif XENKO_PLATFORM_MACOS
+#elif STRIDE_PLATFORM_MACOS
                     Handle = info.info.cocoa.window;
 #endif
                 }
                 Application.RegisterWindow(this);
                 Application.ProcessEvents();
 
-#if XENKO_GRAPHICS_API_OPENGL
+#if STRIDE_GRAPHICS_API_OPENGL
                 glContext = SDL.SDL_GL_CreateContext(SdlHandle);
                 if (glContext == IntPtr.Zero)
                 {
@@ -377,7 +377,7 @@ namespace Xenko.Graphics.SDL
         {
             get
             {
-#if XENKO_GRAPHICS_API_OPENGL || XENKO_GRAPHICS_API_VULKAN
+#if STRIDE_GRAPHICS_API_OPENGL || STRIDE_GRAPHICS_API_VULKAN
                 int w, h;
                 SDL.SDL_GL_GetDrawableSize(SdlHandle, out w, out h);
                 return new Size2(w, h);
@@ -401,7 +401,7 @@ namespace Xenko.Graphics.SDL
         {
             get
             {
-#if XENKO_GRAPHICS_API_OPENGL || XENKO_GRAPHICS_API_VULKAN
+#if STRIDE_GRAPHICS_API_OPENGL || STRIDE_GRAPHICS_API_VULKAN
                 int w, h;
                 SDL.SDL_GL_GetDrawableSize(SdlHandle, out w, out h);
                 return new Rectangle(0, 0, w, h);
@@ -634,7 +634,7 @@ namespace Xenko.Graphics.SDL
         /// </summary>
         public IntPtr Handle { get; private set; }
 
-#if XENKO_PLATFORM_LINUX
+#if STRIDE_PLATFORM_LINUX
         /// <summary>
         /// Display of current Window.
         /// </summary>
@@ -679,7 +679,7 @@ namespace Xenko.Graphics.SDL
         {
             get { return SdlHandle != IntPtr.Zero; }
         }
-#if XENKO_GRAPHICS_API_OPENGL
+#if STRIDE_GRAPHICS_API_OPENGL
         /// <summary>
         /// Current instance as seen as a IWindowInfo.
         /// </summary>
@@ -732,7 +732,7 @@ namespace Xenko.Graphics.SDL
                     Application.UnregisterWindow(this);
                 }
 
-#if XENKO_GRAPHICS_API_OPENGL
+#if STRIDE_GRAPHICS_API_OPENGL
                 // Dispose OpenGL context
                 DummyGLContext?.Dispose();
                 DummyGLContext = null;

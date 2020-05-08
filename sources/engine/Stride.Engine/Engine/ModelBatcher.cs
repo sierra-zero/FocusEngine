@@ -1,22 +1,22 @@
 using System.Collections.Generic;
 using System.Text;
-using Xenko.Engine;
-using Xenko.Core.Serialization.Contents;
-using Xenko.Rendering;
-using Xenko.Graphics;
-using Xenko.Core.Serialization;
-using Xenko.Graphics.Data;
+using Stride.Engine;
+using Stride.Core.Serialization.Contents;
+using Stride.Rendering;
+using Stride.Graphics;
+using Stride.Core.Serialization;
+using Stride.Graphics.Data;
 using System;
-using Xenko.Extensions;
-using Xenko.Core.Mathematics;
+using Stride.Extensions;
+using Stride.Core.Mathematics;
 using System.Linq;
 using System.Threading.Tasks;
-using Xenko.Rendering.Materials;
-using Xenko.Core;
+using Stride.Rendering.Materials;
+using Stride.Core;
 using System.Runtime.InteropServices;
-using Xenko.Rendering.Rendering;
+using Stride.Rendering.Rendering;
 
-namespace Xenko.Engine
+namespace Stride.Engine
 {
     /// <summary>
     /// System for batching entities and models together, to reduce draw calls and entity processing overhead. Works great with static geometry.
@@ -189,8 +189,8 @@ namespace Xenko.Engine
                         }
                         else
                         {
-                            Xenko.Graphics.Buffer buf = modelMesh.Draw?.VertexBuffers[0].Buffer;
-                            Xenko.Graphics.Buffer ibuf = modelMesh.Draw?.IndexBuffer.Buffer;
+                            Stride.Graphics.Buffer buf = modelMesh.Draw?.VertexBuffers[0].Buffer;
+                            Stride.Graphics.Buffer ibuf = modelMesh.Draw?.IndexBuffer.Buffer;
                             if (buf == null || buf.VertIndexData == null ||
                                 ibuf == null || ibuf.VertIndexData == null)
                             {

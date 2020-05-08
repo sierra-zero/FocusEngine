@@ -1,14 +1,14 @@
-// Copyright (c) Xenko contributors (https://xenko.com) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
-#if XENKO_UI_SDL
+#if STRIDE_UI_SDL
 using System;
 using System.Collections.Generic;
 using System.Text;
 using SDL2;
-using Xenko.Graphics.SDL;
+using Stride.Graphics.SDL;
 
-namespace Xenko.Input
+namespace Stride.Input
 {
     internal class KeyboardSDL : KeyboardDeviceBase, ITextInputDevice, IDisposable
     {
@@ -59,7 +59,7 @@ namespace Xenko.Input
         {
             // wait, do we want to filter repeating keys?
             if (e.repeat > 0 && KeyEvent.DisableRepeats) return;
-            // Try to map to a xenko key
+            // Try to map to a stride key
             Keys key = ConvertSDLKey(e.keysym.sym);
             if (key != Keys.None)
             {
@@ -106,7 +106,7 @@ namespace Xenko.Input
         }
 
         /// <summary>
-        /// Converts an SDL key to a Xenko key
+        /// Converts an SDL key to a Stride key
         /// </summary>
         private static Keys ConvertSDLKey(SDL.SDL_Keycode k) {
             switch (k) {

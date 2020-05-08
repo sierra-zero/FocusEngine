@@ -1,6 +1,6 @@
 <Project>
-  <Import Project="..\..\sources\shared\Xenko.NuGetResolver\Xenko.NuGetResolver.projitems" Label="Shared" />
-  <Import Project="..\..\sources\targets\Xenko.PreSettings.targets" />
+  <Import Project="..\..\sources\shared\Stride.NuGetResolver\Stride.NuGetResolver.projitems" Label="Shared" />
+  <Import Project="..\..\sources\targets\Stride.PreSettings.targets" />
   <Import Project="Sdk.props" Sdk="MSBuild.Sdk.Extras" Version="2.0.54" />
   <PropertyGroup>
     <TargetFramework>$(TargetFrameworkTool)</TargetFramework>
@@ -8,9 +8,9 @@
     <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
     <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
     <GenerateAssemblyInformationalVersionAttribute>false</GenerateAssemblyInformationalVersionAttribute>
-    <XenkoOutputFolder>Tests\$(AssemblyName)</XenkoOutputFolder>
-    <XenkoAssemblyProcessor>true</XenkoAssemblyProcessor>
-    <XenkoAssemblyProcessorOptions>--auto-module-initializer</XenkoAssemblyProcessorOptions>
+    <StrideOutputFolder>Tests\$(AssemblyName)</StrideOutputFolder>
+    <StrideAssemblyProcessor>true</StrideAssemblyProcessor>
+    <StrideAssemblyProcessorOptions>--auto-module-initializer</StrideAssemblyProcessorOptions>
     <IsPackable>true</IsPackable>
   </PropertyGroup>
   <ItemGroup>
@@ -27,12 +27,12 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\sources\editor\Xenko.Assets.Presentation\Xenko.Assets.Presentation.csproj" />
-    <ProjectReference Include="..\..\sources\editor\Xenko.Samples.Templates\Xenko.Samples.Templates.csproj" />
-    <ProjectReference Include="..\..\sources\engine\Xenko.Games.Testing\Xenko.Games.Testing.csproj" />
-    <ProjectReference Include="..\..\sources\tools\Xenko.ConnectionRouter\Xenko.ConnectionRouter.csproj" />
-    <ProjectReference Include="..\..\sources\tools\Xenko.SamplesTestServer\Xenko.SamplesTestServer.csproj" />
+    <ProjectReference Include="..\..\sources\editor\Stride.Assets.Presentation\Stride.Assets.Presentation.csproj" />
+    <ProjectReference Include="..\..\sources\editor\Stride.Samples.Templates\Stride.Samples.Templates.csproj" />
+    <ProjectReference Include="..\..\sources\engine\Stride.Games.Testing\Stride.Games.Testing.csproj" />
+    <ProjectReference Include="..\..\sources\tools\Stride.ConnectionRouter\Stride.ConnectionRouter.csproj" />
+    <ProjectReference Include="..\..\sources\tools\Stride.SamplesTestServer\Stride.SamplesTestServer.csproj" />
   </ItemGroup>
-  <Import Project="$(XenkoPostSettingsTargets)" />
+  <Import Project="$(StridePostSettingsTargets)" />
   <Import Project="Sdk.targets" Sdk="MSBuild.Sdk.Extras" Version="2.0.54" />
 </Project>

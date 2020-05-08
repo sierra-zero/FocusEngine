@@ -2,9 +2,9 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using Xenko.Engine;
+using Stride.Engine;
 
-namespace Xenko.Toolkit.Engine
+namespace Stride.Toolkit.Engine
 {
     public static partial class EntityExtensions
     {

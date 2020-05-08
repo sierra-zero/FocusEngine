@@ -1,10 +1,10 @@
-// Copyright (c) Xenko contributors (https://xenko.com)
+// Copyright (c) Stride contributors (https://stride3d.net)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
-using Xenko.Core.Assets.Editor.Settings;
-using Xenko.Core.Settings;
-using Xenko.Core.Translation;
+using Stride.Core.Assets.Editor.Settings;
+using Stride.Core.Settings;
+using Stride.Core.Translation;
 
-namespace Xenko.Core.Presentation.Themes
+namespace Stride.Core.Presentation.Themes
 {
     public static class ThemesSettings
     {

@@ -1,21 +1,21 @@
-// Copyright (c) Xenko contributors (https://xenko.com) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using Xenko.Core;
-using Xenko.Core.Diagnostics;
-using Xenko.Core.Mathematics;
-using Xenko.Core.Threading;
-using Xenko.Engine;
-using Xenko.Games;
-using Xenko.Graphics;
-using Xenko.Input;
-using Xenko.UI;
-using Xenko.UI.Renderers;
+using Stride.Core;
+using Stride.Core.Diagnostics;
+using Stride.Core.Mathematics;
+using Stride.Core.Threading;
+using Stride.Engine;
+using Stride.Games;
+using Stride.Graphics;
+using Stride.Input;
+using Stride.UI;
+using Stride.UI.Renderers;
 
-namespace Xenko.Rendering.UI
+namespace Stride.Rendering.UI
 {
     public partial class UIRenderFeature : RootRenderFeature
     {
@@ -199,7 +199,7 @@ namespace Xenko.Rendering.UI
             ConcurrentCollector<UIElementState> uiElementStates = new ConcurrentCollector<UIElementState>();
             if (GraphicsDevice.Platform == GraphicsPlatform.Vulkan)
             {
-                Xenko.Core.Threading.Dispatcher.For(startIndex, endIndex, (index) =>
+                Stride.Core.Threading.Dispatcher.For(startIndex, endIndex, (index) =>
                 {
                     initUIElementStates(context, renderView, renderViewStage, uiElementStates, index, drawTime, events);
                 });

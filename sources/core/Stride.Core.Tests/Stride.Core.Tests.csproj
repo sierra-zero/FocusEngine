@@ -1,21 +1,21 @@
 ﻿<Project>
-  <Import Project="..\..\targets\Xenko.Core.PreSettings.targets" />
+  <Import Project="..\..\targets\Stride.Core.PreSettings.targets" />
   <Import Project="Sdk.props" Sdk="MSBuild.Sdk.Extras" Version="2.0.54" />
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <AssemblyName>Xenko.Core.Tests</AssemblyName>
-    <RootNamespace>Xenko.Core.Tests</RootNamespace>
+    <AssemblyName>Stride.Core.Tests</AssemblyName>
+    <RootNamespace>Stride.Core.Tests</RootNamespace>
     <TargetFramework>net48</TargetFramework>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <EnableDefaultItems>false</EnableDefaultItems>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <XenkoAssemblyProcessor>true</XenkoAssemblyProcessor>
-    <XenkoAssemblyProcessorOptions>--auto-module-initializer --serialization</XenkoAssemblyProcessorOptions>
-    <XenkoBuildTags>Windows;Android;iOS</XenkoBuildTags>
-    <XenkoOutputFolder>Tests\$(AssemblyName)</XenkoOutputFolder>
-    <XenkoCompilerTargetsEnable Condition="'$(XenkoPackageBuild)' == 'true'">false</XenkoCompilerTargetsEnable>
-    <XenkoCompilerTargetsEnable Condition="'$(XenkoSkipUnitTests)' == 'true'">false</XenkoCompilerTargetsEnable>
-    <XenkoCompilerTargetsEnable Condition="'$(XenkoNETRuntime)' == 'CoreCLR'">false</XenkoCompilerTargetsEnable>
+    <StrideAssemblyProcessor>true</StrideAssemblyProcessor>
+    <StrideAssemblyProcessorOptions>--auto-module-initializer --serialization</StrideAssemblyProcessorOptions>
+    <StrideBuildTags>Windows;Android;iOS</StrideBuildTags>
+    <StrideOutputFolder>Tests\$(AssemblyName)</StrideOutputFolder>
+    <StrideCompilerTargetsEnable Condition="'$(StridePackageBuild)' == 'true'">false</StrideCompilerTargetsEnable>
+    <StrideCompilerTargetsEnable Condition="'$(StrideSkipUnitTests)' == 'true'">false</StrideCompilerTargetsEnable>
+    <StrideCompilerTargetsEnable Condition="'$(StrideNETRuntime)' == 'CoreCLR'">false</StrideCompilerTargetsEnable>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="xunit" Version="2.3.1" />
@@ -45,17 +45,17 @@
     <Compile Include="TestWatcher.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Xenko.Core.Serialization\Xenko.Core.Serialization.csproj">
+    <ProjectReference Include="..\Stride.Core.Serialization\Stride.Core.Serialization.csproj">
       <Project>{5210FB81-B807-49BB-AF0D-31FB6A83A572}</Project>
-      <Name>Xenko.Core.Serialization</Name>
+      <Name>Stride.Core.Serialization</Name>
     </ProjectReference>
-    <XenkoEmbeddedNativeLibrary Include="$(XenkoPackageXenkoPlatformBin)\libcore">
+    <StrideEmbeddedNativeLibrary Include="$(StridePackageStridePlatformBin)\libcore">
       <Visible>false</Visible>
-    </XenkoEmbeddedNativeLibrary>
+    </StrideEmbeddedNativeLibrary>
   </ItemGroup>
   <ItemGroup>
     <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />
   </ItemGroup>
-  <Import Project="$(XenkoPostSettingsTargets)" />
+  <Import Project="$(StridePostSettingsTargets)" />
   <Import Project="Sdk.targets" Sdk="MSBuild.Sdk.Extras" Version="2.0.54" />
 </Project>

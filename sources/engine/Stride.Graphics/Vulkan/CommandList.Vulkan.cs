@@ -1,16 +1,16 @@
-// Copyright (c) Xenko contributors (https://xenko.com) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
-#if XENKO_GRAPHICS_API_VULKAN
+#if STRIDE_GRAPHICS_API_VULKAN
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using SharpVulkan;
-using Xenko.Core;
-using Xenko.Core.Threading;
-using Xenko.Core.Collections;
-using Xenko.Core.Mathematics;
+using Stride.Core;
+using Stride.Core.Threading;
+using Stride.Core.Collections;
+using Stride.Core.Mathematics;
 
-namespace Xenko.Graphics
+namespace Stride.Graphics
 {
     public partial class CommandList
     {
@@ -319,7 +319,7 @@ namespace Xenko.Graphics
             GraphicsDevice.NativeDevice.AllocateDescriptorSets(ref allocateInfo, &localDescriptorSet);
             this.descriptorSet = localDescriptorSet;
 
-#if !XENKO_GRAPHICS_NO_DESCRIPTOR_COPIES
+#if !STRIDE_GRAPHICS_NO_DESCRIPTOR_COPIES
             copies.Clear(true);
 
             foreach (var mapping in activePipeline.DescriptorBindingMapping)
@@ -509,7 +509,7 @@ namespace Xenko.Graphics
             }
         }
 
-#if !XENKO_GRAPHICS_NO_DESCRIPTOR_COPIES
+#if !STRIDE_GRAPHICS_NO_DESCRIPTOR_COPIES
         private readonly FastList<SharpVulkan.DescriptorSet> boundDescriptorSets = new FastList<SharpVulkan.DescriptorSet>();
 #else
         private readonly FastList<DescriptorSet> boundDescriptorSets = new FastList<DescriptorSet>();
@@ -523,7 +523,7 @@ namespace Xenko.Graphics
             boundDescriptorSets.Clear(true);
             for (int i = 0; i < descriptorSets.Length; i++)
             {
-#if !XENKO_GRAPHICS_NO_DESCRIPTOR_COPIES
+#if !STRIDE_GRAPHICS_NO_DESCRIPTOR_COPIES
                 boundDescriptorSets.Add(descriptorSets[i].NativeDescriptorSet);
 #else
                 boundDescriptorSets.Add(descriptorSets[i]);

@@ -1,28 +1,28 @@
 <Project>
-  <Import Project="..\..\targets\Xenko.PreSettings.UnitTests.targets" />
+  <Import Project="..\..\targets\Stride.PreSettings.UnitTests.targets" />
   <Import Project="Sdk.props" Sdk="MSBuild.Sdk.Extras" Version="2.0.54" />
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <RootNamespace>Xenko.Shaders.Tests</RootNamespace>
-    <AssemblyName>Xenko.Shaders.Tests</AssemblyName>
+    <RootNamespace>Stride.Shaders.Tests</RootNamespace>
+    <AssemblyName>Stride.Shaders.Tests</AssemblyName>
     <TargetFramework>$(TargetFrameworkTool)</TargetFramework>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-    <XenkoPlatform>Windows</XenkoPlatform>
-    <XenkoBuildProfile>Windows</XenkoBuildProfile>
-    <XenkoPackageGuid>{3fb96652-1efa-47e5-8a78-acbf06d50f24}</XenkoPackageGuid>
-    <XenkoGraphicsApi Condition="'$(XenkoGraphicsApi)' == ''">Direct3D11</XenkoGraphicsApi>
-    <XenkoOutputFolder>Tests\$(XenkoGraphicsApi)\$(AssemblyName)</XenkoOutputFolder>
+    <StridePlatform>Windows</StridePlatform>
+    <StrideBuildProfile>Windows</StrideBuildProfile>
+    <StridePackageGuid>{3fb96652-1efa-47e5-8a78-acbf06d50f24}</StridePackageGuid>
+    <StrideGraphicsApi Condition="'$(StrideGraphicsApi)' == ''">Direct3D11</StrideGraphicsApi>
+    <StrideOutputFolder>Tests\$(StrideGraphicsApi)\$(AssemblyName)</StrideOutputFolder>
     <!-- Force msbuild to check to rebuild this assembly instead of letting VS IDE guess -->
     <DisableFastUpToDateCheck>true</DisableFastUpToDateCheck>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <XenkoOpenSourceSign>false</XenkoOpenSourceSign>
+    <StrideOpenSourceSign>false</StrideOpenSourceSign>
   </PropertyGroup>
   <PropertyGroup>
-    <StartupObject>Xenko.Shaders.Tests.TestMixinCompiler</StartupObject>
+    <StartupObject>Stride.Shaders.Tests.TestMixinCompiler</StartupObject>
   </PropertyGroup>
   <PropertyGroup>
-    <OutputPath>..\..\..\Bin\$(XenkoPlatformFullName)\$(XenkoOutputFolder)</OutputPath>
-    <IntermediateOutputPath>$(BaseIntermediateOutputPath)$(XenkoPlatformFullName)-$(XenkoGraphicsApi)\$(Configuration)</IntermediateOutputPath>
+    <OutputPath>..\..\..\Bin\$(StridePlatformFullName)\$(StrideOutputFolder)</OutputPath>
+    <IntermediateOutputPath>$(BaseIntermediateOutputPath)$(StridePlatformFullName)-$(StrideGraphicsApi)\$(Configuration)</IntermediateOutputPath>
   </PropertyGroup>
   <ItemGroup>
     <Compile Remove="TestCodeGen.cs" />
@@ -33,12 +33,12 @@
     <PackageReference Include="xunit.runner.visualstudio" Version="2.3.1" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Xenko.Assets\Xenko.Assets.csproj" />
-    <ProjectReference Include="..\Xenko.Engine\Xenko.Engine.csproj" />
+    <ProjectReference Include="..\Stride.Assets\Stride.Assets.csproj" />
+    <ProjectReference Include="..\Stride.Engine\Stride.Engine.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />
   </ItemGroup>
   <Import Project="Sdk.targets" Sdk="MSBuild.Sdk.Extras" Version="2.0.54" />
-  <Import Project="..\..\targets\Xenko.UnitTests.targets" />
+  <Import Project="..\..\targets\Stride.UnitTests.targets" />
 </Project>

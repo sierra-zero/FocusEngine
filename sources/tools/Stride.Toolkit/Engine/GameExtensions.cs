@@ -1,11 +1,11 @@
-using Xenko.Games;
+using Stride.Games;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Xenko.Toolkit.Engine
+namespace Stride.Toolkit.Engine
 {
     /// <summary>
     /// Extensions for <see cref="IGame"/>

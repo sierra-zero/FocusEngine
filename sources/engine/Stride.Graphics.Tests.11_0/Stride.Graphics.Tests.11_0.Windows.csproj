@@ -1,30 +1,30 @@
 ﻿<Project>
-  <Import Project="..\..\targets\Xenko.PreSettings.UnitTests.targets" />
+  <Import Project="..\..\targets\Stride.PreSettings.UnitTests.targets" />
   <Import Project="Sdk.props" Sdk="MSBuild.Sdk.Extras" Version="2.0.54" />
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <RootNamespace>Xenko.Graphics.Tests</RootNamespace>
-    <AssemblyName>Xenko.Graphics.Tests.11_0</AssemblyName>
+    <RootNamespace>Stride.Graphics.Tests</RootNamespace>
+    <AssemblyName>Stride.Graphics.Tests.11_0</AssemblyName>
     <TargetFramework>net461</TargetFramework>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-    <XenkoBuildTags>*</XenkoBuildTags>
-    <XenkoPlatform>Windows</XenkoPlatform>
-    <XenkoBuildProfile>Windows</XenkoBuildProfile>
-    <XenkoPackageGuid>{04ed1618-1a06-4a69-ac34-1006a978af11}</XenkoPackageGuid>
-    <XenkoAssemblySign>true</XenkoAssemblySign>
-    <XenkoGraphicsApi Condition="'$(XenkoGraphicsApi)' == ''">Direct3D11</XenkoGraphicsApi>
-    <XenkoOutputFolder>Tests\$(XenkoGraphicsApi)\$(AssemblyName)</XenkoOutputFolder>
+    <StrideBuildTags>*</StrideBuildTags>
+    <StridePlatform>Windows</StridePlatform>
+    <StrideBuildProfile>Windows</StrideBuildProfile>
+    <StridePackageGuid>{04ed1618-1a06-4a69-ac34-1006a978af11}</StridePackageGuid>
+    <StrideAssemblySign>true</StrideAssemblySign>
+    <StrideGraphicsApi Condition="'$(StrideGraphicsApi)' == ''">Direct3D11</StrideGraphicsApi>
+    <StrideOutputFolder>Tests\$(StrideGraphicsApi)\$(AssemblyName)</StrideOutputFolder>
     <!-- Force msbuild to check to rebuild this assembly instead of letting VS IDE guess -->
     <DisableFastUpToDateCheck>true</DisableFastUpToDateCheck>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup>
-    <XenkoCurrentPackagePath>$(MSBuildThisFileDirectory)Xenko.Graphics.Tests.11_0.xkpkg</XenkoCurrentPackagePath>
-    <OutputPath>..\..\..\Bin\$(XenkoPlatformFullName)\$(XenkoOutputFolder)</OutputPath>
-    <IntermediateOutputPath>$(BaseIntermediateOutputPath)$(XenkoPlatformFullName)-$(XenkoGraphicsApi)\$(Configuration)</IntermediateOutputPath>
+    <StrideCurrentPackagePath>$(MSBuildThisFileDirectory)Stride.Graphics.Tests.11_0.sdpkg</StrideCurrentPackagePath>
+    <OutputPath>..\..\..\Bin\$(StridePlatformFullName)\$(StrideOutputFolder)</OutputPath>
+    <IntermediateOutputPath>$(BaseIntermediateOutputPath)$(StridePlatformFullName)-$(StrideGraphicsApi)\$(Configuration)</IntermediateOutputPath>
   </PropertyGroup>
   <PropertyGroup>
-    <StartupObject>Xenko.Graphics.Tests.TestRadiancePrefilteringGgx</StartupObject>
+    <StartupObject>Stride.Graphics.Tests.TestRadiancePrefilteringGgx</StartupObject>
   </PropertyGroup>
   <ItemGroup>
     <Compile Remove="TestCubemapDeferred.cs" />
@@ -32,8 +32,8 @@
     <Compile Remove="TestCubemapRendering.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Xenko.Engine\Xenko.Engine.csproj" />
-    <ProjectReference Include="..\Xenko.Graphics.Regression\Xenko.Graphics.Regression.csproj" />
+    <ProjectReference Include="..\Stride.Engine\Stride.Engine.csproj" />
+    <ProjectReference Include="..\Stride.Graphics.Regression\Stride.Graphics.Regression.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />
@@ -42,5 +42,5 @@
     <Folder Include="Properties\" />
   </ItemGroup>
   <Import Project="Sdk.targets" Sdk="MSBuild.Sdk.Extras" Version="2.0.54" />
-  <Import Project="..\..\targets\Xenko.UnitTests.targets" />
+  <Import Project="..\..\targets\Stride.UnitTests.targets" />
 </Project>

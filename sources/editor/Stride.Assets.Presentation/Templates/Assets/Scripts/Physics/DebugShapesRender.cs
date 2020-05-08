@@ -1,10 +1,10 @@
 using System.Linq;
 using System.Threading.Tasks;
-using Xenko.Input;
-using Xenko.Engine;
-using Xenko.Physics;
-using Xenko.Rendering;
-using Xenko.Rendering.Compositing;
+using Stride.Input;
+using Stride.Engine;
+using Stride.Physics;
+using Stride.Rendering;
+using Stride.Rendering.Compositing;
 
 namespace ##Namespace##
 {
@@ -26,7 +26,7 @@ namespace ##Namespace##
             compositor.RenderStages.Add(shapesRenderState);
             var meshRenderFeature = compositor.RenderFeatures.OfType<MeshRenderFeature>().First();
             meshRenderFeature.RenderStageSelectors.Add(new SimpleGroupToRenderStageSelector {
-                EffectName = "XenkoForwardShadingEffect",
+                EffectName = "StrideForwardShadingEffect",
                 RenderGroup = (RenderGroupMask)(1 << (int)RenderGroup),
                 RenderStage = shapesRenderState,
             });

@@ -1,17 +1,17 @@
-// Copyright (c) Xenko contributors (https://xenko.com) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.ServiceModel;
-using Xenko.Core.BuildEngine;
-using Xenko.Core.Diagnostics;
-using Xenko.Core.Presentation.ViewModel;
+using Stride.Core.BuildEngine;
+using Stride.Core.Diagnostics;
+using Stride.Core.Presentation.ViewModel;
 
-namespace Xenko.GameStudio.Logs
+namespace Stride.GameStudio.Logs
 {
     [ServiceBehavior(InstanceContextMode = InstanceContextMode.Single, UseSynchronizationContext = false)]
     public sealed class BuildLogViewModel : LoggerViewModel, IForwardSerializableLogRemote
     {
-        private const string BasePipeName = "net.pipe://localhost/Xenko.Core.Assets.Editor";
+        private const string BasePipeName = "net.pipe://localhost/Stride.Core.Assets.Editor";
         private readonly ServiceHost host;
 
         public BuildLogViewModel(IViewModelServiceProvider serviceProvider)
@@ -30,11 +30,11 @@ namespace Xenko.GameStudio.Logs
             foreach (var logger in Loggers.Keys)
             {
                 // print out shader errors first
-                if (Xenko.Rendering.EffectSystem.ShaderCompilerErrors.Count > 0) {
-                    foreach (string err in Xenko.Rendering.EffectSystem.ShaderCompilerErrors) {
+                if (Stride.Rendering.EffectSystem.ShaderCompilerErrors.Count > 0) {
+                    foreach (string err in Stride.Rendering.EffectSystem.ShaderCompilerErrors) {
                         logger.Error(err + "\n{{end of shader error history entry}}");
                     }
-                    Xenko.Rendering.EffectSystem.ShaderCompilerErrors.Clear();
+                    Stride.Rendering.EffectSystem.ShaderCompilerErrors.Clear();
                 }
 
                 logger.Log(message);

@@ -1,4 +1,4 @@
-// Copyright (c) Xenko contributors (https://xenko.com) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
@@ -15,18 +15,18 @@ using BepuPhysics.Constraints;
 using BepuPhysics.Trees;
 using BepuUtilities;
 using BepuUtilities.Memory;
-using Xenko.Core;
-using Xenko.Core.Collections;
-using Xenko.Core.Diagnostics;
-using Xenko.Core.Mathematics;
-using Xenko.Core.Threading;
-using Xenko.Engine;
-using Xenko.Engine.Design;
-using Xenko.Games;
-using Xenko.Physics.Engine;
-using Xenko.Rendering;
+using Stride.Core;
+using Stride.Core.Collections;
+using Stride.Core.Diagnostics;
+using Stride.Core.Mathematics;
+using Stride.Core.Threading;
+using Stride.Engine;
+using Stride.Engine.Design;
+using Stride.Games;
+using Stride.Physics.Engine;
+using Stride.Rendering;
 
-namespace Xenko.Physics.Bepu
+namespace Stride.Physics.Bepu
 {
     public class BepuSimulation : IDisposable
     {
@@ -234,8 +234,8 @@ namespace Xenko.Physics.Bepu
                     {
                         ar.CurrentPhysicalContacts[index].A = A;
                         ar.CurrentPhysicalContacts[index].B = B;
-                        ar.CurrentPhysicalContacts[index].Normal = BepuHelpers.ToXenko(manifold.SimpleGetNormal());
-                        ar.CurrentPhysicalContacts[index].Offset = BepuHelpers.ToXenko(manifold.SimpleGetOffset());
+                        ar.CurrentPhysicalContacts[index].Normal = BepuHelpers.ToStride(manifold.SimpleGetNormal());
+                        ar.CurrentPhysicalContacts[index].Offset = BepuHelpers.ToStride(manifold.SimpleGetOffset());
                     }
                 }
                 if ((br?.CollectCollisions ?? false))
@@ -245,8 +245,8 @@ namespace Xenko.Physics.Bepu
                     {
                         br.CurrentPhysicalContacts[index].A = B;
                         br.CurrentPhysicalContacts[index].B = A;
-                        br.CurrentPhysicalContacts[index].Normal = -BepuHelpers.ToXenko(manifold.SimpleGetNormal());
-                        br.CurrentPhysicalContacts[index].Offset = B.Position - (A.Position + BepuHelpers.ToXenko(manifold.SimpleGetOffset()));
+                        br.CurrentPhysicalContacts[index].Normal = -BepuHelpers.ToStride(manifold.SimpleGetNormal());
+                        br.CurrentPhysicalContacts[index].Offset = B.Position - (A.Position + BepuHelpers.ToStride(manifold.SimpleGetOffset()));
                     }
                 }
             }
@@ -766,7 +766,7 @@ namespace Xenko.Physics.Bepu
         /// <param name="filterFlags">The collision group that this shape sweep can collide with</param>
         /// <returns></returns>
         /// <exception cref="System.Exception">This kind of shape cannot be used for a ShapeSweep.</exception>
-        public BepuHitResult ShapeSweep<TShape>(TShape shape, Vector3 position, Xenko.Core.Mathematics.Quaternion rotation, Vector3 endpoint, CollisionFilterGroupFlags hitGroups = DefaultFlags, BepuPhysicsComponent skipComponent = null) where TShape : unmanaged, IConvexShape
+        public BepuHitResult ShapeSweep<TShape>(TShape shape, Vector3 position, Stride.Core.Mathematics.Quaternion rotation, Vector3 endpoint, CollisionFilterGroupFlags hitGroups = DefaultFlags, BepuPhysicsComponent skipComponent = null) where TShape : unmanaged, IConvexShape
         {
             Vector3 diff = endpoint - position;
             float length = diff.Length();
@@ -787,7 +787,7 @@ namespace Xenko.Physics.Bepu
         /// <param name="filterFlags">The collision group that this shape sweep can collide with</param>
         /// <returns></returns>
         /// <exception cref="System.Exception">This kind of shape cannot be used for a ShapeSweep.</exception>
-        public BepuHitResult ShapeSweep<TShape>(TShape shape, Vector3 position, Xenko.Core.Mathematics.Quaternion rotation, Vector3 direction, float length, CollisionFilterGroupFlags hitGroups = DefaultFlags, BepuPhysicsComponent skipComponent = null) where TShape : unmanaged, IConvexShape
+        public BepuHitResult ShapeSweep<TShape>(TShape shape, Vector3 position, Stride.Core.Mathematics.Quaternion rotation, Vector3 direction, float length, CollisionFilterGroupFlags hitGroups = DefaultFlags, BepuPhysicsComponent skipComponent = null) where TShape : unmanaged, IConvexShape
         {
             SweepTestFirst sshh = new SweepTestFirst()
             {
@@ -821,7 +821,7 @@ namespace Xenko.Physics.Bepu
         /// <param name="filterGroup">The collision group of this shape sweep</param>
         /// <param name="filterFlags">The collision group that this shape sweep can collide with</param>
         /// <exception cref="System.Exception">This kind of shape cannot be used for a ShapeSweep.</exception>
-        public void ShapeSweepPenetrating<TShape>(TShape shape, Vector3 position, Xenko.Core.Mathematics.Quaternion rotation, Vector3 endpoint, List<BepuHitResult> output, CollisionFilterGroupFlags hitGroups = DefaultFlags) where TShape : unmanaged, IConvexShape
+        public void ShapeSweepPenetrating<TShape>(TShape shape, Vector3 position, Stride.Core.Mathematics.Quaternion rotation, Vector3 endpoint, List<BepuHitResult> output, CollisionFilterGroupFlags hitGroups = DefaultFlags) where TShape : unmanaged, IConvexShape
         {
             Vector3 diff = endpoint - position;
             float length = diff.Length();
@@ -842,7 +842,7 @@ namespace Xenko.Physics.Bepu
         /// <param name="filterGroup">The collision group of this shape sweep</param>
         /// <param name="filterFlags">The collision group that this shape sweep can collide with</param>
         /// <exception cref="System.Exception">This kind of shape cannot be used for a ShapeSweep.</exception>
-        public void ShapeSweepPenetrating<TShape>(TShape shape, Vector3 position, Xenko.Core.Mathematics.Quaternion rotation, Vector3 direction, float length, List<BepuHitResult> output, CollisionFilterGroupFlags hitGroups = DefaultFlags) where TShape : unmanaged, IConvexShape
+        public void ShapeSweepPenetrating<TShape>(TShape shape, Vector3 position, Stride.Core.Mathematics.Quaternion rotation, Vector3 direction, float length, List<BepuHitResult> output, CollisionFilterGroupFlags hitGroups = DefaultFlags) where TShape : unmanaged, IConvexShape
         {
             SweepTestAll sshh = new SweepTestAll()
             {

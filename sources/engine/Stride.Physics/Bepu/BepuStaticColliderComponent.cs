@@ -1,14 +1,14 @@
-// Copyright (c) Xenko contributors (https://xenko.com) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
 using System.Runtime.CompilerServices;
 using BepuPhysics;
 using BepuPhysics.Collidables;
-using Xenko.Core;
-using Xenko.Engine;
+using Stride.Core;
+using Stride.Engine;
 
-namespace Xenko.Physics.Bepu
+namespace Stride.Physics.Bepu
 {
     [DataContract("BepuStaticColliderComponent")]
     [Display("Bepu Static collider")]
@@ -37,13 +37,13 @@ namespace Xenko.Physics.Bepu
         }
 
         [DataMember]
-        private Xenko.Core.Mathematics.Vector3? usePosition;
+        private Stride.Core.Mathematics.Vector3? usePosition;
 
         [DataMember]
-        private Xenko.Core.Mathematics.Quaternion? useRotation;
+        private Stride.Core.Mathematics.Quaternion? useRotation;
 
         [DataMemberIgnore]
-        public override Xenko.Core.Mathematics.Vector3 Position
+        public override Stride.Core.Mathematics.Vector3 Position
         {
             get
             {
@@ -56,7 +56,7 @@ namespace Xenko.Physics.Bepu
         }
 
         [DataMemberIgnore]
-        public override Xenko.Core.Mathematics.Quaternion Rotation
+        public override Stride.Core.Mathematics.Quaternion Rotation
         {
             get
             {

@@ -1,11 +1,11 @@
 <Project>
-  <Import Project="..\..\targets\Xenko.PreSettings.targets" />
+  <Import Project="..\..\targets\Stride.PreSettings.targets" />
   <Import Project="Sdk.props" Sdk="MSBuild.Sdk.Extras" Version="2.0.54" />
   <PropertyGroup>
-    <XenkoAssemblyProcessor>true</XenkoAssemblyProcessor>
+    <StrideAssemblyProcessor>true</StrideAssemblyProcessor>
     <TargetFramework>$(TargetFrameworkTool)</TargetFramework>
-    <XenkoCompilerTargetsEnable Condition="'$(XenkoPackageBuild)' == 'true'">false</XenkoCompilerTargetsEnable>
-    <XenkoOutputFolder>Tests\$(AssemblyName)</XenkoOutputFolder>
+    <StrideCompilerTargetsEnable Condition="'$(StridePackageBuild)' == 'true'">false</StrideCompilerTargetsEnable>
+    <StrideOutputFolder>Tests\$(AssemblyName)</StrideOutputFolder>
   </PropertyGroup>
   <PropertyGroup>
     <StartupObject>
@@ -25,15 +25,15 @@
     <PackageReference Include="xunit.runner.visualstudio" Version="2.3.1" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\Xenko.Core.Assets.Tests\Helpers\GuidGenerator.cs">
+    <Compile Include="..\Stride.Core.Assets.Tests\Helpers\GuidGenerator.cs">
       <Link>Helpers\GuidGenerator.cs</Link>
     </Compile>
-    <Compile Include="..\Xenko.Core.Assets.Tests\Helpers\IdentifierGenerator.cs">
+    <Compile Include="..\Stride.Core.Assets.Tests\Helpers\IdentifierGenerator.cs">
       <Link>Helpers\IdentifierGenerator.cs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Xenko.Core.Assets.Quantum\Xenko.Core.Assets.Quantum.csproj" />
+    <ProjectReference Include="..\Stride.Core.Assets.Quantum\Stride.Core.Assets.Quantum.csproj" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
@@ -41,6 +41,6 @@
   <ItemGroup>
     <Service Include="{82a7f48d-3b50-4b1e-b82e-3ada8210c358}" />
   </ItemGroup>
-  <Import Project="$(XenkoPostSettingsTargets)" />
+  <Import Project="$(StridePostSettingsTargets)" />
   <Import Project="Sdk.targets" Sdk="MSBuild.Sdk.Extras" Version="2.0.54" />
 </Project>

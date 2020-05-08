@@ -1,15 +1,15 @@
 <Project>
 
-  <Import Project="..\..\targets\Xenko.Core.PreSettings.targets" />
+  <Import Project="..\..\targets\Stride.Core.PreSettings.targets" />
   <Import Project="Sdk.props" Sdk="MSBuild.Sdk.Extras" Version="2.0.54" />
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>$(TargetFrameworkTool)</TargetFramework>
-    <XenkoAssemblyProcessor>true</XenkoAssemblyProcessor>
-    <XenkoAssemblyProcessorOptions>--auto-module-initializer --serialization</XenkoAssemblyProcessorOptions>
-    <XenkoCompilerTargetsEnable Condition="'$(XenkoPackageBuild)' == 'true'">false</XenkoCompilerTargetsEnable>
-    <XenkoOutputFolder>Tests\$(AssemblyName)</XenkoOutputFolder>
+    <StrideAssemblyProcessor>true</StrideAssemblyProcessor>
+    <StrideAssemblyProcessorOptions>--auto-module-initializer --serialization</StrideAssemblyProcessorOptions>
+    <StrideCompilerTargetsEnable Condition="'$(StridePackageBuild)' == 'true'">false</StrideCompilerTargetsEnable>
+    <StrideOutputFolder>Tests\$(AssemblyName)</StrideOutputFolder>
   </PropertyGroup>
 
   <ItemGroup>
@@ -19,14 +19,14 @@
   </ItemGroup>
   
   <ItemGroup>
-    <ProjectReference Include="..\Xenko.Core.BuildEngine.Common\Xenko.Core.BuildEngine.Common.csproj" />
+    <ProjectReference Include="..\Stride.Core.BuildEngine.Common\Stride.Core.BuildEngine.Common.csproj" />
   </ItemGroup>
   
   <ItemGroup>
     <Service Include="{82a7f48d-3b50-4b1e-b82e-3ada8210c358}" />
   </ItemGroup>
 
-  <Import Project="$(XenkoPostSettingsTargets)" />
+  <Import Project="$(StridePostSettingsTargets)" />
   <Import Project="Sdk.targets" Sdk="MSBuild.Sdk.Extras" Version="2.0.54" />
 
 </Project>

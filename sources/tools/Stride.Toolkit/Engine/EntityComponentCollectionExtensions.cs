@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using Xenko.Engine;
+using Stride.Engine;
 
-namespace Xenko.Toolkit.Engine
+namespace Stride.Toolkit.Engine
 {
     /// <summary>
     /// Extension methods for <see cref="IEnumerable{EntityComponent}"/> and <see cref="IEnumerable{ActivableEntityComponent}"/>.

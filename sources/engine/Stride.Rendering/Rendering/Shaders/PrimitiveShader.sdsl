@@ -1,4 +1,4 @@
-namespace Xenko.Rendering
+namespace Stride.Rendering
 {
     /* Still doesn't compile on vulkan due to the following:
     System.InvalidOperationException: 'Could not compile shader: Info: C:\Users\Phr00t\AppData\Local\Temp\tmp9081.vert

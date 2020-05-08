@@ -1,10 +1,10 @@
-// Copyright (c) Xenko contributors (https://xenko.com) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
-using Xenko.Engine;
-using Xenko.Physics.Bepu;
+using Stride.Engine;
+using Stride.Physics.Bepu;
 
-namespace Xenko.Physics
+namespace Stride.Physics
 {
     /// <summary>
     /// Extension methods for the <see cref="ScriptComponent"/> related to phystics

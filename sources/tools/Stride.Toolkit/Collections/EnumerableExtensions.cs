@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Xenko.Toolkit.Collections
+namespace Stride.Toolkit.Collections
 {
     /// <summary>
     /// Extension methods for <see cref="IEnumerable{T}"/>.

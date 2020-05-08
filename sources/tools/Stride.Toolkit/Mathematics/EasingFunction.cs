@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Xenko.Toolkit.Mathematics
+namespace Stride.Toolkit.Mathematics
 {
     /// <summary>
     /// The type of easing functions implemented in <see cref="Easing"/>

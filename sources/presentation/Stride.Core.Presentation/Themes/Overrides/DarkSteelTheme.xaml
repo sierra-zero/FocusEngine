@@ -1,12 +1,12 @@
 <!--
-// Copyright (c) Xenko contributors (https://xenko.com)
+// Copyright (c) Stride contributors (https://stride3d.net)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 -->
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
                     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-                    x:Class="Xenko.Core.Presentation.Themes.Overrides.DarkSteelTheme"
+                    x:Class="Stride.Core.Presentation.Themes.Overrides.DarkSteelTheme"
                     mc:Ignorable="d">
   <!-- Main Colors -->
 

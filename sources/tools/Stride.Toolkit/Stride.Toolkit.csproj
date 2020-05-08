@@ -3,19 +3,19 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <LangVersion>latest</LangVersion>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Description>A Toolkit for the Xenko game engine.</Description>
-    <PackageTags>Xenko gamedev Game</PackageTags>
+    <Description>A Toolkit for the Stride game engine.</Description>
+    <PackageTags>Stride gamedev Game</PackageTags>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
    <PropertyGroup>
-    <XenkoAssemblySign>true</XenkoAssemblySign>
-    <XenkoRuntime>true</XenkoRuntime>
+    <StrideAssemblySign>true</StrideAssemblySign>
+    <StrideRuntime>true</StrideRuntime>
   </PropertyGroup>
-  <Import Project="..\..\targets\Xenko.PreSettings.targets" />
+  <Import Project="..\..\targets\Stride.PreSettings.targets" />
   <PropertyGroup>
-    <XenkoAssemblyProcessor>true</XenkoAssemblyProcessor>
-    <XenkoPlatformDependent>true</XenkoPlatformDependent>
-    <XenkoBuildTags>*</XenkoBuildTags>
+    <StrideAssemblyProcessor>true</StrideAssemblyProcessor>
+    <StridePlatformDependent>true</StridePlatformDependent>
+    <StrideBuildTags>*</StrideBuildTags>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="..\..\shared\SharedAssemblyInfo.cs">
@@ -25,7 +25,7 @@
   <ItemGroup>
     <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />
   </ItemGroup>
-  <Import Project="$(XenkoPostSettingsTargets)" />
+  <Import Project="$(StridePostSettingsTargets)" />
   <ItemGroup>
     <None Include="Engine\EntityExtensions.GetComponents.cs">
       <DesignTime>True</DesignTime>
@@ -34,9 +34,9 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\core\Xenko.Core\Xenko.Core.csproj" />
-    <ProjectReference Include="..\..\engine\Xenko.Engine\Xenko.Engine.csproj" />
-    <ProjectReference Include="..\..\engine\Xenko.Physics\Xenko.Physics.csproj" />
+    <ProjectReference Include="..\..\core\Stride.Core\Stride.Core.csproj" />
+    <ProjectReference Include="..\..\engine\Stride.Engine\Stride.Engine.csproj" />
+    <ProjectReference Include="..\..\engine\Stride.Physics\Stride.Physics.csproj" />
   </ItemGroup>
   <ItemGroup>
     <None Update="Engine\EntityExtensions.GetComponents.tt">

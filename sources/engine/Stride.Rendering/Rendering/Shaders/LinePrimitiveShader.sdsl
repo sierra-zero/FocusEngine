@@ -1,4 +1,4 @@
-namespace Xenko.Rendering
+namespace Stride.Rendering
 {
 
     shader LinePrimitiveShader : ShaderBase, ColorBase {

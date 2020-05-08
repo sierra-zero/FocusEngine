@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
-using Xenko.Core.Mathematics;
-using Xenko.Engine;
+using Stride.Core.Mathematics;
+using Stride.Engine;
 
-namespace Xenko.Physics
+namespace Stride.Physics
 {
     public class OverlapTest
     {
@@ -11,7 +11,7 @@ namespace Xenko.Physics
         {
             public PhysicsComponent ContactComponent;
             public float Distance;
-            public Xenko.Core.Mathematics.Vector3 Position, Normal;
+            public Stride.Core.Mathematics.Vector3 Position, Normal;
         }
 
         [ThreadStatic]
@@ -70,7 +70,7 @@ namespace Xenko.Physics
         /// <param name="contactTest">If true, contact test overlapping objects. See ContactResults for output. Defaults to false</param>
         /// <param name="stopAfterFirstContact">If contact testing, should we stop contact testing after our first contact was found?</param>
         /// <returns>Number of overlapping objects</returns>
-        public static int PerformOverlapTest(ColliderShape shape, Xenko.Core.Mathematics.Vector3? position = null,
+        public static int PerformOverlapTest(ColliderShape shape, Stride.Core.Mathematics.Vector3? position = null,
                                              CollisionFilterGroups myGroup = CollisionFilterGroups.DefaultFilter,
                                              CollisionFilterGroupFlags overlapsWith = CollisionFilterGroupFlags.AllFilter,
                                              bool contactTest = false, bool stopAfterFirstContact = false)

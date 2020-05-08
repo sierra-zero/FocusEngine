@@ -1,4 +1,4 @@
-using Xenko.Core.Mathematics;
+using Stride.Core.Mathematics;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,7 +6,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Xenko.Toolkit.Mathematics
+namespace Stride.Toolkit.Mathematics
 {
     /// <summary>
     /// Some more common utility methods for math operations.
@@ -78,7 +78,7 @@ namespace Xenko.Toolkit.Mathematics
         {
             var forward = target - eye;
             
-            // Which would create LH rotation. Xenko uses RH so we need to reverse it.
+            // Which would create LH rotation. Stride uses RH so we need to reverse it.
             forward *= -1f;
 
 

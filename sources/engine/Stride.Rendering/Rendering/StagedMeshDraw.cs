@@ -2,11 +2,11 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Text;
-using Xenko.Core;
-using Xenko.Games;
-using Xenko.Graphics;
+using Stride.Core;
+using Stride.Games;
+using Stride.Graphics;
 
-namespace Xenko.Rendering.Rendering {
+namespace Stride.Rendering.Rendering {
     public class StagedMeshDraw : MeshDraw {
 
         public Action<GraphicsDevice, StagedMeshDraw> performStage;
@@ -17,7 +17,7 @@ namespace Xenko.Rendering.Rendering {
         private StagedMeshDraw() { }
         private static object StagedLock = new object();
 
-        internal Xenko.Graphics.Buffer _vertexBuffer, _indexBuffer;
+        internal Stride.Graphics.Buffer _vertexBuffer, _indexBuffer;
         internal static GraphicsDevice internalDevice;
 
         public void Dispose()
@@ -76,12 +76,12 @@ namespace Xenko.Rendering.Rendering {
             smd.performStage = (GraphicsDevice graphicsDevice, StagedMeshDraw _smd) => {
                 lock (StagedLock)
                 {
-                    _smd._vertexBuffer = Xenko.Graphics.Buffer.Vertex.New<T>(
+                    _smd._vertexBuffer = Stride.Graphics.Buffer.Vertex.New<T>(
                         graphicsDevice,
                         (T[])_smd.Verticies,
                         GraphicsResourceUsage.Immutable
                     );
-                    _smd._indexBuffer = Xenko.Graphics.Buffer.Index.New<uint>(
+                    _smd._indexBuffer = Stride.Graphics.Buffer.Index.New<uint>(
                         graphicsDevice,
                         _smd.Indicies
                     );

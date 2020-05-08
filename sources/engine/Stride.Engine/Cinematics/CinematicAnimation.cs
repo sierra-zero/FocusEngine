@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using Xenko.Core.Mathematics;
-using Xenko.Engine;
+using Stride.Core.Mathematics;
+using Stride.Engine;
 
-namespace Xenko.Cinematics
+namespace Stride.Cinematics
 {
     /// <summary>
     /// What kind of action is a given CinematicAction?

@@ -1,14 +1,14 @@
-using Xenko.Core.MicroThreading;
-using Xenko.Engine;
-using Xenko.Engine.Events;
-using Xenko.Engine.Processors;
+using Stride.Core.MicroThreading;
+using Stride.Engine;
+using Stride.Engine.Events;
+using Stride.Engine.Processors;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Xenko.Toolkit.Engine
+namespace Stride.Toolkit.Engine
 {
     /// <summary>
     /// Extension methods for <see cref="ScriptSystem"/>.

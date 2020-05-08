@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Xenko.Engine;
-using Xenko.UI.Controls;
-using Xenko.UI.Panels;
+using Stride.Engine;
+using Stride.UI.Controls;
+using Stride.UI.Panels;
 
-namespace Xenko.UI
+namespace Stride.UI
 {
     /// <summary>
     /// Helper class to generate clickable lists within a Grid, given a UILibrary to use for each entry 

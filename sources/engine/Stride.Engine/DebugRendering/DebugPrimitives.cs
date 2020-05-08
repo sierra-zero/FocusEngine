@@ -1,4 +1,4 @@
-// Copyright (c) Xenko contributors (https://xenko.com)
+// Copyright (c) Stride contributors (https://stride3d.net)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 //
 // Copyright (c) 2010-2013 SharpDX - Alexandre Mutel
@@ -75,11 +75,11 @@
 
 using System;
 
-using Xenko.Core.Mathematics;
-using Xenko.Graphics.GeometricPrimitives;
-using Xenko.Graphics;
+using Stride.Core.Mathematics;
+using Stride.Graphics.GeometricPrimitives;
+using Stride.Graphics;
 
-namespace Xenko.Engine
+namespace Stride.Engine
 {
     public class DebugPrimitives
     {

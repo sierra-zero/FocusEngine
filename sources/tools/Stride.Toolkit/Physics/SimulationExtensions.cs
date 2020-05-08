@@ -1,13 +1,13 @@
-using Xenko.Core.Collections;
-using Xenko.Physics;
+using Stride.Core.Collections;
+using Stride.Physics;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Xenko.Toolkit.Mathematics;
+using Stride.Toolkit.Mathematics;
 
-namespace Xenko.Toolkit.Physics
+namespace Stride.Toolkit.Physics
 {
     /// <summary>
     /// Extensions for <see cref="SimulationExtensions"/>

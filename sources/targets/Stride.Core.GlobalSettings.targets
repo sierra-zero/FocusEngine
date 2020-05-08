@@ -1,4 +1,4 @@
-<!-- Global settings used to configure the XenkoPlatform -->
+<!-- Global settings used to configure the StridePlatform -->
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
   <!-- Sdk settings -->
@@ -8,21 +8,21 @@
     <GenerateAssemblyInformationalVersionAttribute>false</GenerateAssemblyInformationalVersionAttribute>
     <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
 
-    <_XenkoSharedAssemblyInfoLines Condition="'$(XenkoPackageBuild)' == 'true'">$([System.IO.File]::ReadAllText('$(MSBuildThisFileDirectory)..\shared\SharedAssemblyInfo.NuGet.cs'))</_XenkoSharedAssemblyInfoLines>
-    <_XenkoSharedAssemblyInfoLines Condition="'$(XenkoPackageBuild)' != 'true'">$([System.IO.File]::ReadAllText('$(MSBuildThisFileDirectory)..\shared\SharedAssemblyInfo.cs'))</_XenkoSharedAssemblyInfoLines>
-    <XenkoPublicVersion>$([System.Text.RegularExpressions.Regex]::Match($(_XenkoSharedAssemblyInfoLines), `.*PublicVersion = \"(.*)\";.*`).Groups[1].Value)</XenkoPublicVersion>
-    <XenkoNuGetVersionSuffix>$([System.Text.RegularExpressions.Regex]::Match($(_XenkoSharedAssemblyInfoLines), `.*NuGetVersionSuffix = \"(.*)\";.*`).Groups[1].Value)</XenkoNuGetVersionSuffix>
-    <XenkoBuildMetadata>$([System.Text.RegularExpressions.Regex]::Match($(_XenkoSharedAssemblyInfoLines), `.*BuildMetadata = \"(.*)\";.*`).Groups[1].Value)</XenkoBuildMetadata>
-    <XenkoNuGetVersion>$(XenkoPublicVersion)$(XenkoNuGetVersionSuffix)$(XenkoBuildMetadata)</XenkoNuGetVersion>
+    <_StrideSharedAssemblyInfoLines Condition="'$(StridePackageBuild)' == 'true'">$([System.IO.File]::ReadAllText('$(MSBuildThisFileDirectory)..\shared\SharedAssemblyInfo.NuGet.cs'))</_StrideSharedAssemblyInfoLines>
+    <_StrideSharedAssemblyInfoLines Condition="'$(StridePackageBuild)' != 'true'">$([System.IO.File]::ReadAllText('$(MSBuildThisFileDirectory)..\shared\SharedAssemblyInfo.cs'))</_StrideSharedAssemblyInfoLines>
+    <StridePublicVersion>$([System.Text.RegularExpressions.Regex]::Match($(_StrideSharedAssemblyInfoLines), `.*PublicVersion = \"(.*)\";.*`).Groups[1].Value)</StridePublicVersion>
+    <StrideNuGetVersionSuffix>$([System.Text.RegularExpressions.Regex]::Match($(_StrideSharedAssemblyInfoLines), `.*NuGetVersionSuffix = \"(.*)\";.*`).Groups[1].Value)</StrideNuGetVersionSuffix>
+    <StrideBuildMetadata>$([System.Text.RegularExpressions.Regex]::Match($(_StrideSharedAssemblyInfoLines), `.*BuildMetadata = \"(.*)\";.*`).Groups[1].Value)</StrideBuildMetadata>
+    <StrideNuGetVersion>$(StridePublicVersion)$(StrideNuGetVersionSuffix)$(StrideBuildMetadata)</StrideNuGetVersion>
     
-    <PackageVersion Condition=" '$(PackageVersion)' == '' ">$(XenkoNuGetVersion)</PackageVersion>
-    <PackageLicenseUrl>https://github.com/xenko3d/xenko/blob/master/LICENSE.md</PackageLicenseUrl>
-    <PackageProjectUrl>https://xenko.com</PackageProjectUrl>
-    <PackageIconUrl>https://raw.githubusercontent.com/xenko3d/media/master/images/mainlogo/nuget/logo.png</PackageIconUrl>
-    <RepositoryUrl>https://github.com/xenko3d/xenko</RepositoryUrl>
-    <Copyright>Copyright © Xenko contributors and Silicon Studio Corp.</Copyright>
-    <Authors>Xenko contributors;Silicon Studio Corp.</Authors>
-    <PackageTags>Xenko;3D;gamedev;Game Engine;engine;games;D3D;OpenGL;Vulkan</PackageTags>
+    <PackageVersion Condition=" '$(PackageVersion)' == '' ">$(StrideNuGetVersion)</PackageVersion>
+    <PackageLicenseUrl>https://github.com/stride3d/stride/blob/master/LICENSE.md</PackageLicenseUrl>
+    <PackageProjectUrl>https://stride3d.net</PackageProjectUrl>
+    <PackageIconUrl>https://raw.githubusercontent.com/stride3d/media/master/images/mainlogo/nuget/logo.png</PackageIconUrl>
+    <RepositoryUrl>https://github.com/stride3d/stride</RepositoryUrl>
+    <Copyright>Copyright © Stride contributors and Silicon Studio Corp.</Copyright>
+    <Authors>Stride contributors;Silicon Studio Corp.</Authors>
+    <PackageTags>Stride;3D;gamedev;Game Engine;engine;games;D3D;OpenGL;Vulkan</PackageTags>
     <PackageOutputPath>$(MSBuildThisFileDirectory)..\..\bin\packages\</PackageOutputPath>
 
     <!-- If we don't set it, default targets will add PlatformName in some cases -->
@@ -34,64 +34,64 @@
 
   <!--Import Local Pre Settings for the solution being loaded -->
   <Import Project="$(SolutionDir)$(SolutionName).GlobalSettings.Local.targets" Condition="Exists('$(SolutionDir)$(SolutionName).GlobalSettings.Local.targets')" />
-  <Import Project="$(SolutionDir)Xenko.Core.GlobalSettings.Local.targets" Condition="Exists('$(SolutionDir)Xenko.Core.GlobalSettings.Local.targets')" />
+  <Import Project="$(SolutionDir)Stride.Core.GlobalSettings.Local.targets" Condition="Exists('$(SolutionDir)Stride.Core.GlobalSettings.Local.targets')" />
 
   <!-- Default values -->
   <PropertyGroup>
-    <XenkoAssemblyProcessor Condition="'$(XenkoAssemblyProcessor)' == ''">false</XenkoAssemblyProcessor>
-    <XenkoAssemblyProcessorOptions Condition="'$(XenkoAssemblyProcessorOptions)' == ''">--auto-notify-property --auto-module-initializer --serialization</XenkoAssemblyProcessorOptions>
+    <StrideAssemblyProcessor Condition="'$(StrideAssemblyProcessor)' == ''">false</StrideAssemblyProcessor>
+    <StrideAssemblyProcessorOptions Condition="'$(StrideAssemblyProcessorOptions)' == ''">--auto-notify-property --auto-module-initializer --serialization</StrideAssemblyProcessorOptions>
   </PropertyGroup>
   
   <!-- 
     Global Settings per project
   -->
   <PropertyGroup>
-    <XenkoCommonDependenciesDir Condition="'$(XenkoCommonDependenciesDir)' == ''">$(MSBuildThisFileDirectory)..\..\deps\</XenkoCommonDependenciesDir>
-    <XenkoCommonDependenciesDir Condition="'$(XenkoCommonDependenciesDir)' != '' and !HasTrailingSlash('$(XenkoCommonDependenciesDir)')">$(XenkoCommonDependenciesDir)\</XenkoCommonDependenciesDir>
+    <StrideCommonDependenciesDir Condition="'$(StrideCommonDependenciesDir)' == ''">$(MSBuildThisFileDirectory)..\..\deps\</StrideCommonDependenciesDir>
+    <StrideCommonDependenciesDir Condition="'$(StrideCommonDependenciesDir)' != '' and !HasTrailingSlash('$(StrideCommonDependenciesDir)')">$(StrideCommonDependenciesDir)\</StrideCommonDependenciesDir>
     <ErrorReport>prompt</ErrorReport>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
 
-  <PropertyGroup Condition=" '$(XenkoPlatform)' == 'Windows' ">
+  <PropertyGroup Condition=" '$(StridePlatform)' == 'Windows' ">
     <!-- Limited version used by tools but that doesn't require installation of .NET on most computers (4.5.1 is default of many OS, 4.5.2/4.6 isn't) -->
-    <XenkoPlatformDefines>XENKO_PLATFORM_WINDOWS;XENKO_PLATFORM_WINDOWS_DESKTOP;NET45</XenkoPlatformDefines>
-    <NUnitLiteBinDir>$(XenkoCommonDependenciesDir)NUnitLite\net-4.0\</NUnitLiteBinDir>
+    <StridePlatformDefines>STRIDE_PLATFORM_WINDOWS;STRIDE_PLATFORM_WINDOWS_DESKTOP;NET45</StridePlatformDefines>
+    <NUnitLiteBinDir>$(StrideCommonDependenciesDir)NUnitLite\net-4.0\</NUnitLiteBinDir>
   </PropertyGroup>
   
-  <PropertyGroup Condition=" '$(XenkoPlatform)' == 'UWP' ">
+  <PropertyGroup Condition=" '$(StridePlatform)' == 'UWP' ">
     <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
-    <XenkoPlatformDefines>XENKO_PLATFORM_WINDOWS;XENKO_PLATFORM_UWP;NET45;NETFX_CORE;WINDOWS_UAP</XenkoPlatformDefines>
-    <NUnitLiteBinDir>$(XenkoCommonDependenciesDir)NUnitLite\net-win10\</NUnitLiteBinDir>
+    <StridePlatformDefines>STRIDE_PLATFORM_WINDOWS;STRIDE_PLATFORM_UWP;NET45;NETFX_CORE;WINDOWS_UAP</StridePlatformDefines>
+    <NUnitLiteBinDir>$(StrideCommonDependenciesDir)NUnitLite\net-win10\</NUnitLiteBinDir>
     <ExtrasUwpMetaPackageVersion>6.2.2</ExtrasUwpMetaPackageVersion>
   </PropertyGroup>
 
-  <PropertyGroup Condition=" '$(XenkoPlatform)' == 'Linux' ">
-    <XenkoPlatformDefines>XENKO_PLATFORM_LINUX;XENKO_PLATFORM_UNIX;NET45</XenkoPlatformDefines>
-    <NUnitLiteBinDir>$(XenkoCommonDependenciesDir)NUnitLite\net-4.0\</NUnitLiteBinDir>
+  <PropertyGroup Condition=" '$(StridePlatform)' == 'Linux' ">
+    <StridePlatformDefines>STRIDE_PLATFORM_LINUX;STRIDE_PLATFORM_UNIX;NET45</StridePlatformDefines>
+    <NUnitLiteBinDir>$(StrideCommonDependenciesDir)NUnitLite\net-4.0\</NUnitLiteBinDir>
   </PropertyGroup>
 
-  <PropertyGroup Condition=" '$(XenkoPlatform)' == 'macOS' ">
-    <XenkoPlatformDefines>XENKO_PLATFORM_MACOS;XENKO_PLATFORM_UNIX;NET45</XenkoPlatformDefines>
-    <NUnitLiteBinDir>$(XenkoCommonDependenciesDir)NUnitLite\net-4.0\</NUnitLiteBinDir>
+  <PropertyGroup Condition=" '$(StridePlatform)' == 'macOS' ">
+    <StridePlatformDefines>STRIDE_PLATFORM_MACOS;STRIDE_PLATFORM_UNIX;NET45</StridePlatformDefines>
+    <NUnitLiteBinDir>$(StrideCommonDependenciesDir)NUnitLite\net-4.0\</NUnitLiteBinDir>
   </PropertyGroup>
 
-  <PropertyGroup Condition=" '$(XenkoPlatform)' == 'Android' ">
-    <XenkoPlatformDefines>XENKO_PLATFORM_MONO_MOBILE;XENKO_PLATFORM_ANDROID;NET45</XenkoPlatformDefines>
+  <PropertyGroup Condition=" '$(StridePlatform)' == 'Android' ">
+    <StridePlatformDefines>STRIDE_PLATFORM_MONO_MOBILE;STRIDE_PLATFORM_ANDROID;NET45</StridePlatformDefines>
     <AndroidStoreUncompressedFileExtensions />
     <MandroidI18n />
     <!-- Avoid Xamarin.Android.Common.targets(519,3): error MSB4044: The "FilterAssemblies" task was not given a value for the required parameter "DesignTimeBuild". -->
     <DesignTimeBuild Condition="'$(DesignTimeBuild)' == ''">False</DesignTimeBuild>
-    <!-- Use AssemblyName rather than RootNamespace for Resource class otherwise it might clash between some assemblies (i.e. Xenko and Xenko.Engine) -->
+    <!-- Use AssemblyName rather than RootNamespace for Resource class otherwise it might clash between some assemblies (i.e. Stride and Stride.Engine) -->
     <AndroidResgenNamespace>$(AssemblyName)</AndroidResgenNamespace>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(XenkoPlatform)' == 'Android' And '$(OutputType)' == 'Exe' ">
+  <PropertyGroup Condition=" '$(StridePlatform)' == 'Android' And '$(OutputType)' == 'Exe' ">
     <AndroidApplication>true</AndroidApplication>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(XenkoPlatform)' == 'Android' And '$(Configuration)' == 'Debug' ">
+  <PropertyGroup Condition=" '$(StridePlatform)' == 'Android' And '$(Configuration)' == 'Debug' ">
     <AndroidUseSharedRuntime>True</AndroidUseSharedRuntime>
     <AndroidLinkMode>None</AndroidLinkMode>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(XenkoPlatform)' == 'Android' And '$(Configuration)' == 'Release' ">
+  <PropertyGroup Condition=" '$(StridePlatform)' == 'Android' And '$(Configuration)' == 'Release' ">
     <AndroidUseSharedRuntime>False</AndroidUseSharedRuntime>
     <AndroidLinkMode>SdkOnly</AndroidLinkMode>
   </PropertyGroup>
@@ -106,13 +106,13 @@
     </ItemGroup>
   </Target>
 
-  <PropertyGroup Condition=" '$(XenkoPlatform)' == 'iOS' ">
+  <PropertyGroup Condition=" '$(StridePlatform)' == 'iOS' ">
     <Platform Condition=" '$(Platform)' == '' ">iPhone</Platform>
-    <XenkoPlatformDefines>XENKO_PLATFORM_MONO_MOBILE;XENKO_PLATFORM_IOS;NET45</XenkoPlatformDefines>
+    <StridePlatformDefines>STRIDE_PLATFORM_MONO_MOBILE;STRIDE_PLATFORM_IOS;NET45</StridePlatformDefines>
   </PropertyGroup>
 
   <Choose>
-    <When Condition=" '$(XenkoPlatform)' == 'Android' Or '$(XenkoPlatform)' == 'iOS' Or '$(XenkoPlatform)' == 'UWP' ">
+    <When Condition=" '$(StridePlatform)' == 'Android' Or '$(StridePlatform)' == 'iOS' Or '$(StridePlatform)' == 'UWP' ">
       <ItemGroup>
         <Reference Include="System" />
         <Reference Include="System.Core" />
@@ -123,21 +123,21 @@
   </Choose>
 
   <!-- Create empty project platform configuration so that MSBuild and Visual Studio Configuration Manager know about it -->
-  <PropertyGroup Condition=" '$(XenkoPlatform)' == 'iOS' And '$(Configuration)|$(Platform)' == 'Debug|iPhone' "/>
-  <PropertyGroup Condition=" '$(XenkoPlatform)' == 'iOS' And '$(Configuration)|$(Platform)' == 'Release|iPhone' "/>
-  <PropertyGroup Condition=" '$(XenkoPlatform)' == 'iOS' And '$(Configuration)|$(Platform)' == 'Debug|iPhoneSimulator' "/>
-  <PropertyGroup Condition=" '$(XenkoPlatform)' == 'iOS' And '$(Configuration)|$(Platform)' == 'Release|iPhoneSimulator' "/>
+  <PropertyGroup Condition=" '$(StridePlatform)' == 'iOS' And '$(Configuration)|$(Platform)' == 'Debug|iPhone' "/>
+  <PropertyGroup Condition=" '$(StridePlatform)' == 'iOS' And '$(Configuration)|$(Platform)' == 'Release|iPhone' "/>
+  <PropertyGroup Condition=" '$(StridePlatform)' == 'iOS' And '$(Configuration)|$(Platform)' == 'Debug|iPhoneSimulator' "/>
+  <PropertyGroup Condition=" '$(StridePlatform)' == 'iOS' And '$(Configuration)|$(Platform)' == 'Release|iPhoneSimulator' "/>
 
   <!-- 
-    Settings XenkoNETRuntime specific
+    Settings StrideNETRuntime specific
   -->
-  <PropertyGroup Condition=" '$(XenkoNETRuntime)' == 'CoreCLR' ">
+  <PropertyGroup Condition=" '$(StrideNETRuntime)' == 'CoreCLR' ">
     <TargetFramework>netcoreapp2.0</TargetFramework>
   </PropertyGroup>
 
   <PropertyGroup>
-    <DefineConstants>$(XenkoPlatformDefines);$(DefineConstants)</DefineConstants>
-    <DefineConstants Condition="'$(XenkoNETRuntimeDefines)' != ''">$(DefineConstants);$(XenkoNETRuntimeDefines)</DefineConstants>
+    <DefineConstants>$(StridePlatformDefines);$(DefineConstants)</DefineConstants>
+    <DefineConstants Condition="'$(StrideNETRuntimeDefines)' != ''">$(DefineConstants);$(StrideNETRuntimeDefines)</DefineConstants>
   </PropertyGroup>
   
   <!-- SourceLink -->
@@ -147,11 +147,11 @@
 
   <!-- Copy the libcore.a and libfreetype.a libraries to the project root directory for future native link.
        Note: this target is redefined in References.targets for user projects -->
-  <Target Name="CopyXenkoNativeLibraries" Condition=" '$(XenkoPlatform)' == 'iOS' and '$(OutputType)' == 'Exe'">
+  <Target Name="CopyStrideNativeLibraries" Condition=" '$(StridePlatform)' == 'iOS' and '$(OutputType)' == 'Exe'">
   </Target>
 
-  <!-- Used by Xenko.build to detect if unit tests prefer to run in 32 or 64 bits (note: it's a copy of Xenko.UnitTests.targets one because some unit tests import Xenko.Core.PreSettings.targets rather than Xenko.UnitTests.targets) -->
-  <Target Name="_XenkoAfterGetTargetPathWithTargetPlatformMoniker" AfterTargets="GetTargetPathWithTargetPlatformMoniker">
+  <!-- Used by Stride.build to detect if unit tests prefer to run in 32 or 64 bits (note: it's a copy of Stride.UnitTests.targets one because some unit tests import Stride.Core.PreSettings.targets rather than Stride.UnitTests.targets) -->
+  <Target Name="_StrideAfterGetTargetPathWithTargetPlatformMoniker" AfterTargets="GetTargetPathWithTargetPlatformMoniker">
     <ItemGroup>
       <TargetPathWithTargetPlatformMoniker Update="$(TargetPath)">
         <PlatformTarget>$(PlatformTarget)</PlatformTarget>

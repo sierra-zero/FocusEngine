@@ -1,12 +1,12 @@
-using Xenko.Engine;
+using Stride.Engine;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Xenko.Toolkit.Collections;
+using Stride.Toolkit.Collections;
 
-namespace Xenko.Toolkit.Engine
+namespace Stride.Toolkit.Engine
 {
     /// <summary>
     /// Extensions for searching for an <see cref="EntityComponent"/> in an <see cref="Entity"/> hierarchy.

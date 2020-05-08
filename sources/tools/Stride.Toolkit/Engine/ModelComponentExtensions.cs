@@ -1,9 +1,9 @@
 using System;
-using Xenko.Engine;
-using Xenko.Rendering;
-using Xenko.Toolkit.Rendering;
+using Stride.Engine;
+using Stride.Rendering;
+using Stride.Toolkit.Rendering;
 
-namespace Xenko.Toolkit.Engine
+namespace Stride.Toolkit.Engine
 {
     /// <summary>
     /// Extension methods for <see cref="ModelComponent"/>.

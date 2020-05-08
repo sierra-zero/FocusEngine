@@ -1,4 +1,4 @@
-namespace Xenko.Toolkit.Engine
+namespace Stride.Toolkit.Engine
 {
     /// <summary>
     /// The coordinate space in which to operate.

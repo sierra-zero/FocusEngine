@@ -1,25 +1,25 @@
-// Copyright (c) Xenko contributors (https://xenko.com) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
 using System.Collections.Generic;
-using Xenko.Core;
-using Xenko.Core.Annotations;
-using Xenko.Core.Collections;
-using Xenko.Core.Mathematics;
-using Xenko.Rendering;
+using Stride.Core;
+using Stride.Core.Annotations;
+using Stride.Core.Collections;
+using Stride.Core.Mathematics;
+using Stride.Rendering;
 using BepuPhysics;
 using BepuUtilities;
-using Xenko.Engine;
-using Xenko.Physics;
+using Stride.Engine;
+using Stride.Physics;
 using BepuPhysics.Collidables;
 using BepuPhysics.Constraints;
 using System.Runtime.CompilerServices;
-using Xenko.Core.Threading;
+using Stride.Core.Threading;
 using System.Threading;
 using System.Collections.Concurrent;
 
-namespace Xenko.Physics.Bepu
+namespace Stride.Physics.Bepu
 {
     [DataContract("BepuRigidbodyComponent")]
     [Display("Bepu Rigidbody")]
@@ -527,7 +527,7 @@ namespace Xenko.Physics.Bepu
         {
             get
             {
-                return BepuHelpers.ToXenko(AddedToScene && PhysicsSystem.IsSimulationThread(Thread.CurrentThread) ? InternalBody.Pose.Position : bodyDescription.Pose.Position);
+                return BepuHelpers.ToStride(AddedToScene && PhysicsSystem.IsSimulationThread(Thread.CurrentThread) ? InternalBody.Pose.Position : bodyDescription.Pose.Position);
             }
             set
             {
@@ -547,11 +547,11 @@ namespace Xenko.Physics.Bepu
         }
 
         [DataMemberIgnore]
-        public override Xenko.Core.Mathematics.Quaternion Rotation
+        public override Stride.Core.Mathematics.Quaternion Rotation
         {
             get
             {
-                return BepuHelpers.ToXenko(AddedToScene && PhysicsSystem.IsSimulationThread(Thread.CurrentThread) ? InternalBody.Pose.Orientation : bodyDescription.Pose.Orientation);
+                return BepuHelpers.ToStride(AddedToScene && PhysicsSystem.IsSimulationThread(Thread.CurrentThread) ? InternalBody.Pose.Orientation : bodyDescription.Pose.Orientation);
             }
             set
             {
@@ -586,7 +586,7 @@ namespace Xenko.Physics.Bepu
         {
             get
             {
-                return BepuHelpers.ToXenko(AddedToScene && PhysicsSystem.IsSimulationThread(Thread.CurrentThread) ? InternalBody.Velocity.Angular : bodyDescription.Velocity.Angular);
+                return BepuHelpers.ToStride(AddedToScene && PhysicsSystem.IsSimulationThread(Thread.CurrentThread) ? InternalBody.Velocity.Angular : bodyDescription.Velocity.Angular);
             }
             set
             {
@@ -616,7 +616,7 @@ namespace Xenko.Physics.Bepu
         {
             get
             {
-                return BepuHelpers.ToXenko(AddedToScene && PhysicsSystem.IsSimulationThread(Thread.CurrentThread) ? InternalBody.Velocity.Linear : bodyDescription.Velocity.Linear);
+                return BepuHelpers.ToStride(AddedToScene && PhysicsSystem.IsSimulationThread(Thread.CurrentThread) ? InternalBody.Velocity.Linear : bodyDescription.Velocity.Linear);
             }
             set
             {
@@ -654,8 +654,8 @@ namespace Xenko.Physics.Bepu
         internal void UpdateCachedPoseAndVelocity()
         {
             ref BodyVelocity bv = ref InternalBody.Velocity;
-            VelocityLinearChange = BepuHelpers.ToXenko(bv.Linear - bodyDescription.Velocity.Linear);
-            VelocityAngularChange = BepuHelpers.ToXenko(bv.Angular - bodyDescription.Velocity.Angular);
+            VelocityLinearChange = BepuHelpers.ToStride(bv.Linear - bodyDescription.Velocity.Linear);
+            VelocityAngularChange = BepuHelpers.ToStride(bv.Angular - bodyDescription.Velocity.Angular);
             bodyDescription.Velocity = bv;
             bodyDescription.Pose = InternalBody.Pose;
             wasAwake = InternalBody.Awake;

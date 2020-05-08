@@ -1,6 +1,6 @@
 using System.Collections.Generic;
-using Xenko.Core.Mathematics;
-using Xenko.Engine;
+using Stride.Core.Mathematics;
+using Stride.Engine;
 
 /// <summary>
 /// Pool for recycling entities
@@ -82,7 +82,7 @@ public static class EntityPool {
 
         // Return an object to the inactive pool.
         public void ReturnToPool(Entity obj, ref bool active) {
-            if (Xenko.Engine.SceneSystem.DoNotDisposeOnNextRemoval) return;
+            if (Stride.Engine.SceneSystem.DoNotDisposeOnNextRemoval) return;
             if (active) inactive.Push(obj);
             obj.Scene = null;
             active = false;

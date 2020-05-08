@@ -1,16 +1,16 @@
-// Copyright (c) Xenko contributors (https://xenko.com) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 
 using System.Runtime.InteropServices;
-using Xenko.Core.Diagnostics;
-using Xenko.TextureConverter.AtitcWrapper;
-using Xenko.TextureConverter.Requests;
-using Xenko.Graphics;
-using Texture = Xenko.TextureConverter.AtitcWrapper.Texture;
+using Stride.Core.Diagnostics;
+using Stride.TextureConverter.AtitcWrapper;
+using Stride.TextureConverter.Requests;
+using Stride.Graphics;
+using Texture = Stride.TextureConverter.AtitcWrapper.Texture;
 
 
-namespace Xenko.TextureConverter.TexLibraries
+namespace Stride.TextureConverter.TexLibraries
 {
 
     /// <summary>
@@ -86,7 +86,7 @@ namespace Xenko.TextureConverter.TexLibraries
 
             libraryData.Textures = new Texture[image.SubImageArray.Length];
 
-            var bpp = Xenko.Graphics.PixelFormatExtensions.SizeInBits(image.Format);
+            var bpp = Stride.Graphics.PixelFormatExtensions.SizeInBits(image.Format);
 
             for (int i = 0; i < image.SubImageArray.Length; ++i)
             {
@@ -259,15 +259,15 @@ namespace Xenko.TextureConverter.TexLibraries
         /// <returns>
         ///     <c>true</c> if the formats is supported; otherwise, <c>false</c>.
         /// </returns>
-        public bool SupportFormat(Xenko.Graphics.PixelFormat format)
+        public bool SupportFormat(Stride.Graphics.PixelFormat format)
         {
             switch (format)
             {
-                case Xenko.Graphics.PixelFormat.R8G8B8A8_UNorm:
-                case Xenko.Graphics.PixelFormat.B8G8R8A8_UNorm:
-                case Xenko.Graphics.PixelFormat.ATC_RGB:
-                case Xenko.Graphics.PixelFormat.ATC_RGBA_Explicit:
-                case Xenko.Graphics.PixelFormat.ATC_RGBA_Interpolated:
+                case Stride.Graphics.PixelFormat.R8G8B8A8_UNorm:
+                case Stride.Graphics.PixelFormat.B8G8R8A8_UNorm:
+                case Stride.Graphics.PixelFormat.ATC_RGB:
+                case Stride.Graphics.PixelFormat.ATC_RGBA_Explicit:
+                case Stride.Graphics.PixelFormat.ATC_RGBA_Interpolated:
                     return true;
                 default:
                     return false;
@@ -275,22 +275,22 @@ namespace Xenko.TextureConverter.TexLibraries
         }
 
         /// <summary>
-        /// Retrieves the native format from <see cref="Xenko.Graphics.PixelFormat"/>.
+        /// Retrieves the native format from <see cref="Stride.Graphics.PixelFormat"/>.
         /// </summary>
         /// <param name="format">The format.</param>
         /// <returns>the corresponding <see cref="Format"/> format</returns>
-        private Format RetrieveNativeFormat(Xenko.Graphics.PixelFormat format)
+        private Format RetrieveNativeFormat(Stride.Graphics.PixelFormat format)
         {
             switch (format)
             {
-                case Xenko.Graphics.PixelFormat.R8G8B8A8_UNorm:
-                case Xenko.Graphics.PixelFormat.B8G8R8A8_UNorm:
+                case Stride.Graphics.PixelFormat.R8G8B8A8_UNorm:
+                case Stride.Graphics.PixelFormat.B8G8R8A8_UNorm:
                     return Format.ATI_TC_FORMAT_ARGB_8888;
-                case Xenko.Graphics.PixelFormat.ATC_RGB:
+                case Stride.Graphics.PixelFormat.ATC_RGB:
                     return Format.ATI_TC_FORMAT_ATC_RGB;
-                case Xenko.Graphics.PixelFormat.ATC_RGBA_Explicit:
+                case Stride.Graphics.PixelFormat.ATC_RGBA_Explicit:
                     return Format.ATI_TC_FORMAT_ATC_RGBA_Explicit;
-                case Xenko.Graphics.PixelFormat.ATC_RGBA_Interpolated:
+                case Stride.Graphics.PixelFormat.ATC_RGBA_Interpolated:
                     return Format.ATI_TC_FORMAT_ATC_RGBA_Interpolated;
                 default:
                     throw new TextureToolsException("UnHandled compression format by ATI texture.");

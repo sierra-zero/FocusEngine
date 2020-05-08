@@ -1,11 +1,11 @@
 <Project>
-  <Import Project="..\..\targets\Xenko.PreSettings.targets" />
+  <Import Project="..\..\targets\Stride.PreSettings.targets" />
   <Import Project="Sdk.props" Sdk="MSBuild.Sdk.Extras" Version="2.0.54" />
   <PropertyGroup>
-    <XenkoAssemblyProcessor>true</XenkoAssemblyProcessor>
+    <StrideAssemblyProcessor>true</StrideAssemblyProcessor>
     <TargetFramework>$(TargetFrameworkTool)</TargetFramework>
-    <XenkoCompilerTargetsEnable Condition="'$(XenkoPackageBuild)' == 'true'">false</XenkoCompilerTargetsEnable>
-    <XenkoOutputFolder>Tests\$(AssemblyName)</XenkoOutputFolder>
+    <StrideCompilerTargetsEnable Condition="'$(StridePackageBuild)' == 'true'">false</StrideCompilerTargetsEnable>
+    <StrideOutputFolder>Tests\$(AssemblyName)</StrideOutputFolder>
   </PropertyGroup>
   <PropertyGroup>
     <StartupObject>
@@ -24,8 +24,8 @@
     <PackageReference Include="xunit.runner.visualstudio" Version="2.3.1" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\assets\Xenko.Core.Assets.Quantum.Tests\Xenko.Core.Assets.Quantum.Tests.csproj" />
-    <ProjectReference Include="..\Xenko.Core.Assets.Editor\Xenko.Core.Assets.Editor.csproj" />
+    <ProjectReference Include="..\..\assets\Stride.Core.Assets.Quantum.Tests\Stride.Core.Assets.Quantum.Tests.csproj" />
+    <ProjectReference Include="..\Stride.Core.Assets.Editor\Stride.Core.Assets.Editor.csproj" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
@@ -34,6 +34,6 @@
   <ItemGroup>
     <Service Include="{82a7f48d-3b50-4b1e-b82e-3ada8210c358}" />
   </ItemGroup>
-  <Import Project="$(XenkoPostSettingsTargets)" />
+  <Import Project="$(StridePostSettingsTargets)" />
   <Import Project="Sdk.targets" Sdk="MSBuild.Sdk.Extras" Version="2.0.54" />
 </Project>

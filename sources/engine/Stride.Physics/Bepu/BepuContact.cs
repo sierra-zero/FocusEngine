@@ -2,14 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Text;
-using Xenko.Engine;
+using Stride.Engine;
 
-namespace Xenko.Physics.Bepu
+namespace Stride.Physics.Bepu
 {
     public struct BepuContact
     {
         public BepuPhysicsComponent A, B;
-        public Xenko.Core.Mathematics.Vector3 Normal, Offset;
+        public Stride.Core.Mathematics.Vector3 Normal, Offset;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Swap()

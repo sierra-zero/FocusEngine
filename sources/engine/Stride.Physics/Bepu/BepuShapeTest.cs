@@ -9,10 +9,10 @@ using System.Collections.Generic;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Text;
-using Xenko.Core.Threading;
-using Xenko.Engine;
+using Stride.Core.Threading;
+using Stride.Engine;
 
-namespace Xenko.Physics.Bepu
+namespace Stride.Physics.Bepu
 {
     /// <summary>
     /// Shows one way of handling collision queries that require contact-level test accuracy.
@@ -48,8 +48,8 @@ namespace Xenko.Physics.Bepu
                 {
                     contactList.Add(new BepuContact()
                     {
-                        Normal = BepuHelpers.ToXenko(manifold.SimpleGetNormal()),
-                        Offset = BepuHelpers.ToXenko(manifold.SimpleGetOffset())
+                        Normal = BepuHelpers.ToStride(manifold.SimpleGetNormal()),
+                        Offset = BepuHelpers.ToStride(manifold.SimpleGetOffset())
                     });
                 }
             }
@@ -119,7 +119,7 @@ namespace Xenko.Physics.Bepu
         /// <param name="pose">Pose of the query shape.</param>
         /// <param name="queryId">Id to use to refer to this query when the collision batcher finishes processing it.</param>
         /// <param name="batcher">Batcher to add the query's tests to.</param>
-        static public unsafe List<BepuContact> SingleQuery<TShape>(TShape shape, Xenko.Core.Mathematics.Vector3 position, Xenko.Core.Mathematics.Quaternion rotation, CollisionFilterGroupFlags lookingFor) where TShape : struct, IConvexShape
+        static public unsafe List<BepuContact> SingleQuery<TShape>(TShape shape, Stride.Core.Mathematics.Vector3 position, Stride.Core.Mathematics.Quaternion rotation, CollisionFilterGroupFlags lookingFor) where TShape : struct, IConvexShape
         {
             List<BepuContact> contacts = new List<BepuContact>();
             var batcher = new CollisionBatcher<BatcherCallbacks>(BepuSimulation.safeBufferPool, BepuSimulation.instance.internalSimulation.Shapes,

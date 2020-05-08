@@ -6,14 +6,14 @@ using System.Threading.Tasks;
 using BepuPhysics.Collidables;
 using BepuPhysics.Constraints;
 using BepuUtilities.Memory;
-using Xenko.Core;
-using Xenko.Core.Mathematics;
-using Xenko.Engine;
-using Xenko.Games;
-using Xenko.Graphics;
-using Xenko.Rendering.Rendering;
+using Stride.Core;
+using Stride.Core.Mathematics;
+using Stride.Engine;
+using Stride.Games;
+using Stride.Graphics;
+using Stride.Rendering.Rendering;
 
-namespace Xenko.Physics.Bepu
+namespace Stride.Physics.Bepu
 {
     public class BepuHelpers
     {
@@ -53,7 +53,7 @@ namespace Xenko.Physics.Bepu
             int count = mc.Model.Meshes.Count;
             for (int i=0; i<count; i++)
             {
-                Xenko.Rendering.Mesh m = mc.Model.Meshes[i];
+                Stride.Rendering.Mesh m = mc.Model.Meshes[i];
                 BoundingBox bb = m.BoundingBox;
                 Vector3 extent = bb.Extent;
                 if (extent.X > biggest.X) biggest.X = extent.X;
@@ -242,7 +242,7 @@ namespace Xenko.Physics.Bepu
             BepuSimulation.instance.Clear(clearBuffers);
         }
 
-        private static unsafe bool getMeshOutputs(Xenko.Rendering.Mesh modelMesh, out List<Vector3> positions, out List<int> indicies)
+        private static unsafe bool getMeshOutputs(Stride.Rendering.Mesh modelMesh, out List<Vector3> positions, out List<int> indicies)
         {
             if (modelMesh.Draw is StagedMeshDraw)
             {
@@ -285,8 +285,8 @@ namespace Xenko.Physics.Bepu
             }
             else
             {
-                Xenko.Graphics.Buffer buf = modelMesh.Draw?.VertexBuffers[0].Buffer;
-                Xenko.Graphics.Buffer ibuf = modelMesh.Draw?.IndexBuffer.Buffer;
+                Stride.Graphics.Buffer buf = modelMesh.Draw?.VertexBuffers[0].Buffer;
+                Stride.Graphics.Buffer ibuf = modelMesh.Draw?.IndexBuffer.Buffer;
                 if (buf == null || buf.VertIndexData == null ||
                     ibuf == null || ibuf.VertIndexData == null)
                 {
@@ -344,7 +344,7 @@ namespace Xenko.Physics.Bepu
         /// Generate a mesh collider from a given mesh. The mesh must have a readable buffer behind it to generate veriticies from
         /// </summary>
         /// <returns>Returns false if no mesh could be made</returns>
-        public static unsafe bool GenerateMeshShape(Xenko.Rendering.Mesh modelMesh, out BepuPhysics.Collidables.Mesh outMesh, out BepuUtilities.Memory.BufferPool poolUsed, Vector3? scale = null)
+        public static unsafe bool GenerateMeshShape(Stride.Rendering.Mesh modelMesh, out BepuPhysics.Collidables.Mesh outMesh, out BepuUtilities.Memory.BufferPool poolUsed, Vector3? scale = null)
         {
             if (getMeshOutputs(modelMesh, out var positions, out var indicies) == false)
             {
@@ -363,7 +363,7 @@ namespace Xenko.Physics.Bepu
         public static unsafe bool GenerateMeshShape(Entity e, out BepuPhysics.Collidables.Mesh outMesh, out BepuUtilities.Memory.BufferPool poolUsed)
         {
             // get all meshes
-            List<Xenko.Rendering.Mesh> meshes = new List<Xenko.Rendering.Mesh>();
+            List<Stride.Rendering.Mesh> meshes = new List<Stride.Rendering.Mesh>();
             CollectMeshes(e, meshes);
             List<Vector3> allPositions = new List<Vector3>();
             List<int> allIndicies = new List<int>();
@@ -387,7 +387,7 @@ namespace Xenko.Physics.Bepu
             return GenerateMeshShape(allPositions, allIndicies, out outMesh, out poolUsed, e.Transform.WorldScale());
         }
 
-        private static void CollectMeshes(Entity e, List<Xenko.Rendering.Mesh> meshes)
+        private static void CollectMeshes(Entity e, List<Stride.Rendering.Mesh> meshes)
         {
             foreach(ModelComponent mc in e.GetAll<ModelComponent>())
             {
@@ -417,7 +417,7 @@ namespace Xenko.Physics.Bepu
                                                                  float friction = 0.5f, float maximumRecoverableVelocity = 1f, SpringSettings? springSettings = null, bool disposeOnDetach = false)
         {
             // get all meshes
-            List<Xenko.Rendering.Mesh> meshes = new List<Xenko.Rendering.Mesh>();
+            List<Stride.Rendering.Mesh> meshes = new List<Stride.Rendering.Mesh>();
             CollectMeshes(e, meshes);
             List<Vector3> allPositions = new List<Vector3>();
             List<int> allIndicies = new List<int>();
@@ -442,7 +442,7 @@ namespace Xenko.Physics.Bepu
         /// Generate a mesh collider from a given mesh. The mesh must have a readable buffer behind it to generate veriticies from
         /// </summary>
         /// <returns>Returns false if no mesh could be made</returns>
-        public static unsafe bool GenerateBigMeshStaticColliders(Entity e, Xenko.Rendering.Mesh modelMesh, Vector3? scale = null,
+        public static unsafe bool GenerateBigMeshStaticColliders(Entity e, Stride.Rendering.Mesh modelMesh, Vector3? scale = null,
                                                                  CollisionFilterGroups group = CollisionFilterGroups.DefaultFilter, CollisionFilterGroupFlags collidesWith = CollisionFilterGroupFlags.AllFilter,
                                                                  float friction = 0.5f, float maximumRecoverableVelocity = 1f, SpringSettings? springSettings = null, bool disposeOnDetach = false)
         {
@@ -469,7 +469,7 @@ namespace Xenko.Physics.Bepu
                 poolUsed.Take<Triangle>(triangleCount, out triangles);
             }
 
-            Xenko.Core.Threading.Dispatcher.For(0, triangleCount, (i) =>
+            Stride.Core.Threading.Dispatcher.For(0, triangleCount, (i) =>
             {
                 int shiftedi = i * 3;
                 triangles[i].A = ToBepu(positions[indicies[shiftedi]]);
@@ -492,7 +492,7 @@ namespace Xenko.Physics.Bepu
             // ok, should have what we need to make triangles
             int triangleCount = indicies.Count / 3;
 
-            if (triangleCount < Xenko.Core.Threading.Dispatcher.MaxDegreeOfParallelism * 2f)
+            if (triangleCount < Stride.Core.Threading.Dispatcher.MaxDegreeOfParallelism * 2f)
             {
                 // if we have a really small mesh, doesn't make sense to split it up a bunch
                 var scc = new BepuStaticColliderComponent();
@@ -508,10 +508,10 @@ namespace Xenko.Physics.Bepu
             }
             else
             {
-                int trianglesPerThread = 1 + (triangleCount / Xenko.Core.Threading.Dispatcher.MaxDegreeOfParallelism);
-                BepuStaticColliderComponent[] scs = new BepuStaticColliderComponent[Xenko.Core.Threading.Dispatcher.MaxDegreeOfParallelism];
+                int trianglesPerThread = 1 + (triangleCount / Stride.Core.Threading.Dispatcher.MaxDegreeOfParallelism);
+                BepuStaticColliderComponent[] scs = new BepuStaticColliderComponent[Stride.Core.Threading.Dispatcher.MaxDegreeOfParallelism];
                 var scalev3 = new System.Numerics.Vector3(scale?.X ?? 1f, scale?.Y ?? 1f, scale?.Z ?? 1f);
-                Xenko.Core.Threading.Dispatcher.For(0, scs.Length, (index) =>
+                Stride.Core.Threading.Dispatcher.For(0, scs.Length, (index) =>
                 {
                     var pool = BepuSimulation.safeBufferPool;
                     int triangleStart = index * trianglesPerThread;
@@ -554,25 +554,25 @@ namespace Xenko.Physics.Bepu
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static unsafe System.Numerics.Vector3 ToBepu(Xenko.Core.Mathematics.Vector3 v)
+        public static unsafe System.Numerics.Vector3 ToBepu(Stride.Core.Mathematics.Vector3 v)
         {
             return *((System.Numerics.Vector3*)(void*)&v);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static unsafe Xenko.Core.Mathematics.Vector3 ToXenko(System.Numerics.Vector3 v)
+        public static unsafe Stride.Core.Mathematics.Vector3 ToStride(System.Numerics.Vector3 v)
         {
-            return *((Xenko.Core.Mathematics.Vector3*)(void*)&v);
+            return *((Stride.Core.Mathematics.Vector3*)(void*)&v);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static unsafe Xenko.Core.Mathematics.Quaternion ToXenko(System.Numerics.Quaternion q)
+        public static unsafe Stride.Core.Mathematics.Quaternion ToStride(System.Numerics.Quaternion q)
         {
-            return *((Xenko.Core.Mathematics.Quaternion*)(void*)&q);
+            return *((Stride.Core.Mathematics.Quaternion*)(void*)&q);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static unsafe System.Numerics.Quaternion ToBepu(Xenko.Core.Mathematics.Quaternion q)
+        public static unsafe System.Numerics.Quaternion ToBepu(Stride.Core.Mathematics.Quaternion q)
         {
             return *((System.Numerics.Quaternion*)(void*)&q);
         }

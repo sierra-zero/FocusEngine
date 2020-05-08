@@ -1,4 +1,4 @@
-namespace Xenko.Rendering.Images
+namespace Stride.Rendering.Images
 {
     /// <summary>
     /// Simple fog

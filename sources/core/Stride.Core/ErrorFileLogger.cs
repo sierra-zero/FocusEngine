@@ -4,7 +4,7 @@ using System.Diagnostics;
 using System.Text;
 using System.Threading;
 
-namespace Xenko.Core
+namespace Stride.Core
 {
     /// <summary>
     /// Enables creating crash logs to file, so it is easier to report crashes

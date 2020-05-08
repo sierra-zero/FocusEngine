@@ -1,40 +1,40 @@
 ﻿<Project>
-  <Import Project="..\..\targets\Xenko.PreSettings.UnitTests.targets" />
+  <Import Project="..\..\targets\Stride.PreSettings.UnitTests.targets" />
   <Import Project="Sdk.props" Sdk="MSBuild.Sdk.Extras" Version="2.0.54" />
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <RootNamespace>Xenko.Audio.Tests</RootNamespace>
-    <AssemblyName>Xenko.Audio.Tests</AssemblyName>
+    <RootNamespace>Stride.Audio.Tests</RootNamespace>
+    <AssemblyName>Stride.Audio.Tests</AssemblyName>
     <TargetFramework>net461</TargetFramework>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <EnableDefaultItems>false</EnableDefaultItems>
-    <XenkoBuildTags>*</XenkoBuildTags>
-    <XenkoPlatform>Windows</XenkoPlatform>
-    <XenkoBuildProfile>Windows</XenkoBuildProfile>
-    <XenkoPackageGuid>{637e7e88-bc09-4ddd-95eb-00114fd32e5e}</XenkoPackageGuid>
-    <XenkoGraphicsApi Condition="'$(XenkoGraphicsApi)' == ''">Direct3D11</XenkoGraphicsApi>
-    <XenkoOutputFolder>Tests\$(AssemblyName)</XenkoOutputFolder>
+    <StrideBuildTags>*</StrideBuildTags>
+    <StridePlatform>Windows</StridePlatform>
+    <StrideBuildProfile>Windows</StrideBuildProfile>
+    <StridePackageGuid>{637e7e88-bc09-4ddd-95eb-00114fd32e5e}</StridePackageGuid>
+    <StrideGraphicsApi Condition="'$(StrideGraphicsApi)' == ''">Direct3D11</StrideGraphicsApi>
+    <StrideOutputFolder>Tests\$(AssemblyName)</StrideOutputFolder>
     <!-- Force msbuild to check to rebuild this assembly instead of letting VS IDE guess -->
     <DisableFastUpToDateCheck>true</DisableFastUpToDateCheck>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <XenkoAssemblySign>true</XenkoAssemblySign>
+    <StrideAssemblySign>true</StrideAssemblySign>
   </PropertyGroup>
   <PropertyGroup>
-    <XenkoCurrentPackagePath>$(MSBuildThisFileDirectory)Xenko.Audio.Tests.xkpkg</XenkoCurrentPackagePath>
-    <OutputPath>..\..\..\Bin\$(XenkoPlatformFullName)\$(XenkoOutputFolder)</OutputPath>
-    <IntermediateOutputPath>$(BaseIntermediateOutputPath)$(XenkoPlatformFullName)-$(XenkoGraphicsApi)\$(Configuration)</IntermediateOutputPath>
+    <StrideCurrentPackagePath>$(MSBuildThisFileDirectory)Stride.Audio.Tests.sdpkg</StrideCurrentPackagePath>
+    <OutputPath>..\..\..\Bin\$(StridePlatformFullName)\$(StrideOutputFolder)</OutputPath>
+    <IntermediateOutputPath>$(BaseIntermediateOutputPath)$(StridePlatformFullName)-$(StrideGraphicsApi)\$(Configuration)</IntermediateOutputPath>
   </PropertyGroup>
   <PropertyGroup>
-    <StartupObject>Xenko.Audio.Tests.LaunchProgram</StartupObject>
+    <StartupObject>Stride.Audio.Tests.LaunchProgram</StartupObject>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\sources\engine\Xenko.Engine\Xenko.Engine.csproj">
+    <ProjectReference Include="..\..\..\sources\engine\Stride.Engine\Stride.Engine.csproj">
       <Project>{C121A566-555E-42B9-9B0A-1696529A9088}</Project>
-      <Name>Xenko.Engine</Name>
+      <Name>Stride.Engine</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Xenko.Graphics.Regression\Xenko.Graphics.Regression.csproj">
+    <ProjectReference Include="..\Stride.Graphics.Regression\Stride.Graphics.Regression.csproj">
       <Project>{D002FEB1-00A6-4AB1-A83F-1F253465E64D}</Project>
-      <Name>Xenko.Graphics.Regression</Name>
+      <Name>Stride.Graphics.Regression</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
@@ -65,34 +65,34 @@
     <Compile Include="TestSoundMusic.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="AudioAssets\a.xksnd" />
-    <None Include="AudioAssets\ae.xksnd" />
-    <None Include="AudioAssets\a_Music.xksnd" />
-    <None Include="AudioAssets\wave1HeaderCorrupted_Music.xksnd" />
-    <None Include="AudioAssets\wave1_4Channels_Music.xksnd" />
-    <None Include="AudioAssets\fiveptone_Music.xksnd" />
-    <None Include="AudioAssets\stereo_Music.xksnd" />
-    <None Include="AudioAssets\wave1_Music.xksnd" />
-    <None Include="AudioAssets\wave1MP3.xksnd" />
-    <None Include="AudioAssets\bizet.xksnd" />
-    <None Include="AudioAssets\sayuriWAV.xksnd" />
-    <None Include="AudioAssets\stereoOGG.xksnd" />
-    <None Include="AudioAssets\InvalidAudioFile.xksnd" />
-    <None Include="AudioAssets\fiveptone.xksnd" />
-    <None Include="AudioAssets\sayuri.xksnd" />
-    <None Include="AudioAssets\sayuriPart.xksnd" />
-    <None Include="AudioAssets\stereo.xksnd" />
-    <None Include="AudioAssets\wave1.xksnd" />
-    <None Include="AudioAssets\wave1HeaderCorrupted.xksnd" />
-    <None Include="AudioAssets\wave1_24bits.xksnd" />
-    <None Include="AudioAssets\wave1_4Channels.xksnd" />
-    <None Include="AudioAssets\wave2.xksnd" />
-    <None Include="Xenko.Audio.Tests.xkpkg" />
+    <None Include="AudioAssets\a.sdsnd" />
+    <None Include="AudioAssets\ae.sdsnd" />
+    <None Include="AudioAssets\a_Music.sdsnd" />
+    <None Include="AudioAssets\wave1HeaderCorrupted_Music.sdsnd" />
+    <None Include="AudioAssets\wave1_4Channels_Music.sdsnd" />
+    <None Include="AudioAssets\fiveptone_Music.sdsnd" />
+    <None Include="AudioAssets\stereo_Music.sdsnd" />
+    <None Include="AudioAssets\wave1_Music.sdsnd" />
+    <None Include="AudioAssets\wave1MP3.sdsnd" />
+    <None Include="AudioAssets\bizet.sdsnd" />
+    <None Include="AudioAssets\sayuriWAV.sdsnd" />
+    <None Include="AudioAssets\stereoOGG.sdsnd" />
+    <None Include="AudioAssets\InvalidAudioFile.sdsnd" />
+    <None Include="AudioAssets\fiveptone.sdsnd" />
+    <None Include="AudioAssets\sayuri.sdsnd" />
+    <None Include="AudioAssets\sayuriPart.sdsnd" />
+    <None Include="AudioAssets\stereo.sdsnd" />
+    <None Include="AudioAssets\wave1.sdsnd" />
+    <None Include="AudioAssets\wave1HeaderCorrupted.sdsnd" />
+    <None Include="AudioAssets\wave1_24bits.sdsnd" />
+    <None Include="AudioAssets\wave1_4Channels.sdsnd" />
+    <None Include="AudioAssets\wave2.sdsnd" />
+    <None Include="Stride.Audio.Tests.sdpkg" />
   </ItemGroup>
   <ItemGroup>
     <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />
   </ItemGroup>
-  <Import Project="..\Xenko.Shared\Refactor\Xenko.Refactor.projitems" Label="Shared" />
+  <Import Project="..\Stride.Shared\Refactor\Stride.Refactor.projitems" Label="Shared" />
   <Import Project="Sdk.targets" Sdk="MSBuild.Sdk.Extras" Version="2.0.54" />
-  <Import Project="..\..\targets\Xenko.UnitTests.targets" />
+  <Import Project="..\..\targets\Stride.UnitTests.targets" />
 </Project>

@@ -1,7 +1,7 @@
 using System;
-using Xenko.Rendering;
+using Stride.Rendering;
 
-namespace Xenko.Toolkit.Rendering
+namespace Stride.Toolkit.Rendering
 {
     /// <summary>
     /// Extension methods for <see cref="Material"/>.

@@ -6,11 +6,11 @@ using System.Threading;
 using BepuUtilities;
 using BepuUtilities.Memory;
 
-namespace Xenko.Physics.Engine
+namespace Stride.Physics.Engine
 {
     internal class BepuSimpleThreadDispatcher : IThreadDispatcher, IDisposable
     {
-        public int ThreadCount => Xenko.Core.Threading.Dispatcher.MaxDegreeOfParallelism;
+        public int ThreadCount => Stride.Core.Threading.Dispatcher.MaxDegreeOfParallelism;
         private BepuUtilities.Memory.BufferPool[] buffers;
 
         public BepuSimpleThreadDispatcher()
@@ -25,7 +25,7 @@ namespace Xenko.Physics.Engine
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void DispatchWorkers(Action<int> workerBody)
         {
-            Xenko.Core.Threading.Dispatcher.For(0, ThreadCount, workerBody);
+            Stride.Core.Threading.Dispatcher.For(0, ThreadCount, workerBody);
         }
 
         public void Dispose()

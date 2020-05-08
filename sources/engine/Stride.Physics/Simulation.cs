@@ -1,4 +1,4 @@
-// Copyright (c) Xenko contributors (https://xenko.com) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
@@ -7,13 +7,13 @@ using System.Runtime.ExceptionServices;
 using System.Security;
 using System.Threading;
 using BulletSharp;
-using Xenko.Core.Collections;
-using Xenko.Core.Diagnostics;
-using Xenko.Core.Mathematics;
-using Xenko.Engine;
-using Xenko.Rendering;
+using Stride.Core.Collections;
+using Stride.Core.Diagnostics;
+using Stride.Core.Mathematics;
+using Stride.Engine;
+using Stride.Rendering;
 
-namespace Xenko.Physics
+namespace Stride.Physics
 {
     public class Simulation : IDisposable
     {
@@ -555,7 +555,7 @@ namespace Xenko.Physics
         /// <returns>The list with hit results.</returns>
         public HitResult Raycast(Vector3 from, Vector3 to, CollisionFilterGroups filterGroup = DefaultGroup, CollisionFilterGroupFlags filterFlags = DefaultFlags)
         {
-            var callback = XenkoClosestRayResultCallback.Shared(ref from, ref to, filterGroup, filterFlags);
+            var callback = StrideClosestRayResultCallback.Shared(ref from, ref to, filterGroup, filterFlags);
             if (simulationLocker != null) simulationLocker.EnterReadLock();
             collisionWorld.RayTest(from, to, callback);
             if (simulationLocker != null) simulationLocker.ExitReadLock();
@@ -573,7 +573,7 @@ namespace Xenko.Physics
         /// <returns>The list with hit results.</returns>
         public bool Raycast(Vector3 from, Vector3 to, out HitResult result, CollisionFilterGroups filterGroup = DefaultGroup, CollisionFilterGroupFlags filterFlags = DefaultFlags)
         {
-            var callback = XenkoClosestRayResultCallback.Shared(ref from, ref to, filterGroup, filterFlags);
+            var callback = StrideClosestRayResultCallback.Shared(ref from, ref to, filterGroup, filterFlags);
             if (simulationLocker != null) simulationLocker.EnterReadLock();
             collisionWorld.RayTest(from, to, callback);
             if (simulationLocker != null) simulationLocker.ExitReadLock();
@@ -592,7 +592,7 @@ namespace Xenko.Physics
         /// <param name="filterFlags">The collision group that this raycast can collide with</param>
         public void RaycastPenetrating(Vector3 from, Vector3 to, IList<HitResult> resultsOutput, CollisionFilterGroups filterGroup = DefaultGroup, CollisionFilterGroupFlags filterFlags = DefaultFlags)
         {
-            var callback = XenkoAllHitsRayResultCallback.Shared(ref from, ref to, resultsOutput, filterGroup, filterFlags);
+            var callback = StrideAllHitsRayResultCallback.Shared(ref from, ref to, resultsOutput, filterGroup, filterFlags);
             if (simulationLocker != null) simulationLocker.EnterReadLock();
             collisionWorld.RayTest(from, to, callback);
             if (simulationLocker != null) simulationLocker.ExitReadLock();
@@ -646,7 +646,7 @@ namespace Xenko.Physics
             var sh = shape.InternalShape as BulletSharp.ConvexShape;
             if (sh == null) throw new Exception("This kind of shape cannot be used for a ShapeSweep.");
 
-            var callback = XenkoClosestConvexResultCallback.Shared(filterGroup, filterFlags);
+            var callback = StrideClosestConvexResultCallback.Shared(filterGroup, filterFlags);
             if (simulationLocker != null) simulationLocker.EnterReadLock();
             collisionWorld.ConvexSweepTest(sh, from, to, callback);
             if (simulationLocker != null) simulationLocker.ExitReadLock();
@@ -671,7 +671,7 @@ namespace Xenko.Physics
                 throw new Exception("This kind of shape cannot be used for a ShapeSweep.");
             }
             
-            var rcb = XenkoAllHitsConvexResultCallback.Shared(resultsOutput, filterGroup, filterFlags);
+            var rcb = StrideAllHitsConvexResultCallback.Shared(resultsOutput, filterGroup, filterFlags);
             if (simulationLocker != null) simulationLocker.EnterReadLock();
             collisionWorld.ConvexSweepTest(sh, from, to, rcb);
             if (simulationLocker != null) simulationLocker.ExitReadLock();
@@ -1100,14 +1100,14 @@ namespace Xenko.Physics
             }
         }
 
-        private class XenkoAllHitsConvexResultCallback : XenkoReusableConvexResultCallback
+        private class StrideAllHitsConvexResultCallback : StrideReusableConvexResultCallback
         {
             [ThreadStatic]
-            static XenkoAllHitsConvexResultCallback shared;
+            static StrideAllHitsConvexResultCallback shared;
 
             public IList<HitResult> ResultsList { get; set; }
 
-            public XenkoAllHitsConvexResultCallback(IList<HitResult> results)
+            public StrideAllHitsConvexResultCallback(IList<HitResult> results)
             {
                 ResultsList = results;
             }
@@ -1118,11 +1118,11 @@ namespace Xenko.Physics
                 return convexResult.m_hitFraction;
             }
 
-            public static XenkoAllHitsConvexResultCallback Shared(IList<HitResult> buffer, CollisionFilterGroups filterGroup = DefaultGroup, CollisionFilterGroupFlags filterMask = DefaultFlags)
+            public static StrideAllHitsConvexResultCallback Shared(IList<HitResult> buffer, CollisionFilterGroups filterGroup = DefaultGroup, CollisionFilterGroupFlags filterMask = DefaultFlags)
             {
                 if (shared == null)
                 {
-                    shared = new XenkoAllHitsConvexResultCallback(buffer);
+                    shared = new StrideAllHitsConvexResultCallback(buffer);
                 }
                 shared.ResultsList = buffer;
                 shared.Recycle(filterGroup, filterMask);
@@ -1130,10 +1130,10 @@ namespace Xenko.Physics
             }
         }
 
-        private class XenkoClosestConvexResultCallback : XenkoReusableConvexResultCallback
+        private class StrideClosestConvexResultCallback : StrideReusableConvexResultCallback
         {
             [ThreadStatic]
-            static XenkoClosestConvexResultCallback shared;
+            static StrideClosestConvexResultCallback shared;
 
             BulletSharp.LocalConvexResult closestHit;
             bool normalInWorldSpace;
@@ -1160,25 +1160,25 @@ namespace Xenko.Physics
                 closestHit = default;
             }
 
-            public static XenkoClosestConvexResultCallback Shared(CollisionFilterGroups filterGroup = DefaultGroup, CollisionFilterGroupFlags filterMask = DefaultFlags)
+            public static StrideClosestConvexResultCallback Shared(CollisionFilterGroups filterGroup = DefaultGroup, CollisionFilterGroupFlags filterMask = DefaultFlags)
             {
                 if (shared == null)
                 {
-                    shared = new XenkoClosestConvexResultCallback();
+                    shared = new StrideClosestConvexResultCallback();
                 }
                 shared.Recycle(filterGroup, filterMask);
                 return shared;
             }
         }
 
-        private class XenkoAllHitsRayResultCallback : XenkoReusableRayResultCallback
+        private class StrideAllHitsRayResultCallback : StrideReusableRayResultCallback
         {
             [ThreadStatic]
-            static XenkoAllHitsRayResultCallback shared;
+            static StrideAllHitsRayResultCallback shared;
 
             public IList<HitResult> ResultsList { get; set; }
 
-            public XenkoAllHitsRayResultCallback(ref Vector3 from, ref Vector3 to, IList<HitResult> results) : base(ref from, ref to)
+            public StrideAllHitsRayResultCallback(ref Vector3 from, ref Vector3 to, IList<HitResult> results) : base(ref from, ref to)
             {
                 ResultsList = results;
             }
@@ -1189,11 +1189,11 @@ namespace Xenko.Physics
                 return rayResult.m_hitFraction;
             }
 
-            public static XenkoAllHitsRayResultCallback Shared(ref Vector3 from, ref Vector3 to, IList<HitResult> buffer, CollisionFilterGroups filterGroup = DefaultGroup, CollisionFilterGroupFlags filterMask = DefaultFlags)
+            public static StrideAllHitsRayResultCallback Shared(ref Vector3 from, ref Vector3 to, IList<HitResult> buffer, CollisionFilterGroups filterGroup = DefaultGroup, CollisionFilterGroupFlags filterMask = DefaultFlags)
             {
                 if (shared == null)
                 {
-                    shared = new XenkoAllHitsRayResultCallback(ref from, ref to, buffer);
+                    shared = new StrideAllHitsRayResultCallback(ref from, ref to, buffer);
                 }
                 shared.ResultsList = buffer;
                 shared.Recycle(ref from, ref to, filterGroup, filterMask);
@@ -1201,17 +1201,17 @@ namespace Xenko.Physics
             }
         }
 
-        private class XenkoClosestRayResultCallback : XenkoReusableRayResultCallback
+        private class StrideClosestRayResultCallback : StrideReusableRayResultCallback
         {
             [ThreadStatic]
-            static XenkoClosestRayResultCallback shared;
+            static StrideClosestRayResultCallback shared;
 
             BulletSharp.LocalRayResult closestHit;
             bool normalInWorldSpace;
             float? closestFraction;
             public HitResult Result => ComputeHitResult(ref closestHit, normalInWorldSpace);
 
-            public XenkoClosestRayResultCallback(ref Vector3 from, ref Vector3 to) : base(ref from, ref to)
+            public StrideClosestRayResultCallback(ref Vector3 from, ref Vector3 to) : base(ref from, ref to)
             {
             }
 
@@ -1237,23 +1237,23 @@ namespace Xenko.Physics
                 closestHit = default;
             }
 
-            public static XenkoClosestRayResultCallback Shared(ref Vector3 from, ref Vector3 to, CollisionFilterGroups filterGroup = DefaultGroup, CollisionFilterGroupFlags filterMask = DefaultFlags)
+            public static StrideClosestRayResultCallback Shared(ref Vector3 from, ref Vector3 to, CollisionFilterGroups filterGroup = DefaultGroup, CollisionFilterGroupFlags filterMask = DefaultFlags)
             {
                 if (shared == null)
                 {
-                    shared = new XenkoClosestRayResultCallback(ref from, ref to);
+                    shared = new StrideClosestRayResultCallback(ref from, ref to);
                 }
                 shared.Recycle(ref from, ref to, filterGroup, filterMask);
                 return shared;
             }
         }
 
-        private abstract class XenkoReusableRayResultCallback : BulletSharp.RayResultCallback
+        private abstract class StrideReusableRayResultCallback : BulletSharp.RayResultCallback
         {
             public Vector3 RayFromWorld { get; protected set; }
             public Vector3 RayToWorld { get; protected set; }
 
-            public XenkoReusableRayResultCallback(ref Vector3 from, ref Vector3 to) : base()
+            public StrideReusableRayResultCallback(ref Vector3 from, ref Vector3 to) : base()
             {
                 RayFromWorld = from;
                 RayToWorld = to;
@@ -1295,7 +1295,7 @@ namespace Xenko.Physics
             }
         }
 
-        private abstract class XenkoReusableConvexResultCallback : BulletSharp.ConvexResultCallback
+        private abstract class StrideReusableConvexResultCallback : BulletSharp.ConvexResultCallback
         {
             public HitResult ComputeHitResult(ref BulletSharp.LocalConvexResult convexResult, bool normalInWorldSpace)
             {

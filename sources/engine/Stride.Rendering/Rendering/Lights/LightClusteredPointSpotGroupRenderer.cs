@@ -1,4 +1,4 @@
-// Copyright (c) Xenko contributors (https://xenko.com) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
@@ -6,17 +6,17 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Threading;
-using Xenko.Core;
-using Xenko.Core.Collections;
-using Xenko.Core.Mathematics;
-using Xenko.Core.Threading;
-using Xenko.Engine;
-using Xenko.Graphics;
-using Xenko.Rendering.Shadows;
-using Xenko.Shaders;
-using Buffer = Xenko.Graphics.Buffer;
+using Stride.Core;
+using Stride.Core.Collections;
+using Stride.Core.Mathematics;
+using Stride.Core.Threading;
+using Stride.Engine;
+using Stride.Graphics;
+using Stride.Rendering.Shadows;
+using Stride.Shaders;
+using Buffer = Stride.Graphics.Buffer;
 
-namespace Xenko.Rendering.Lights
+namespace Stride.Rendering.Lights
 {
     /// <summary>
     /// Light renderer for clustered shading.
@@ -324,7 +324,7 @@ namespace Xenko.Rendering.Lights
                     renderViewInfo.PointLights.Add(pointLightData);
                 }
 
-                Xenko.Core.Threading.Dispatcher.For(lightRange.Start, lightRange.End, (i) =>
+                Stride.Core.Threading.Dispatcher.For(lightRange.Start, lightRange.End, (i) =>
                 {
                     var light = lights[i].Light;
                     var pointLight = (LightPoint)light.Type;
@@ -401,7 +401,7 @@ namespace Xenko.Rendering.Lights
                     renderViewInfo.SpotLights.Add(spotLightData);
                 }
 
-                Xenko.Core.Threading.Dispatcher.For(lightRange.Start, lightRange.End, (i) =>
+                Stride.Core.Threading.Dispatcher.For(lightRange.Start, lightRange.End, (i) =>
                 {
                     var light = clusteredGroupRenderer.spotGroup.Lights[i].Light;
                     var spotLight = (LightSpot)light.Type;
@@ -445,12 +445,12 @@ namespace Xenko.Rendering.Lights
                 });
 
                 // setup for a fast indicies calculation (makes for a bigger indicies list, but it is super fast generating it)
-                int clustersPerThread = 1 + (totalClusterCount / Xenko.Core.Threading.Dispatcher.MaxDegreeOfParallelism);
+                int clustersPerThread = 1 + (totalClusterCount / Stride.Core.Threading.Dispatcher.MaxDegreeOfParallelism);
                 renderViewInfo.LightIndicesCount = totalClusterCount * totalLights;
                 if (renderViewInfo.LightIndices == null || renderViewInfo.LightIndices.Length < renderViewInfo.LightIndicesCount)
                     renderViewInfo.LightIndices = new byte[renderViewInfo.LightIndicesCount];
 
-                Xenko.Core.Threading.Dispatcher.For(0, Xenko.Core.Threading.Dispatcher.MaxDegreeOfParallelism, (thread) =>
+                Stride.Core.Threading.Dispatcher.For(0, Stride.Core.Threading.Dispatcher.MaxDegreeOfParallelism, (thread) =>
                 {
                     for (int clusterIndex = thread * clustersPerThread; clusterIndex < (thread + 1) * clustersPerThread && clusterIndex < totalClusterCount; clusterIndex++)
                     {
@@ -589,7 +589,7 @@ namespace Xenko.Rendering.Lights
                     fixed (PointLightData* pointLightsPtr = renderViewInfo.PointLights.Items)
                         context.CommandList.UpdateSubresource(clusteredGroupRenderer.pointLightsBuffer, 0, new DataBox((IntPtr)pointLightsPtr, 0, 0), new ResourceRegion(0, 0, 0, renderViewInfo.PointLights.Count * sizeof(PointLightData), 1, 1));
                 }
-#if XENKO_PLATFORM_MACOS
+#if STRIDE_PLATFORM_MACOS
                 // macOS doesn't like when we provide a null Buffer or if it is not sufficiently allocated.
                 // It would cause an inifite loop. So for now we just create one with one element but not initializing it.
                 else if (clusteredGroupRenderer.pointLightsBuffer == null || clusteredGroupRenderer.pointLightsBuffer.SizeInBytes < sizeof(PointLightData))
@@ -605,7 +605,7 @@ namespace Xenko.Rendering.Lights
                     fixed (SpotLightData* spotLightsPtr = renderViewInfo.SpotLights.Items)
                         context.CommandList.UpdateSubresource(clusteredGroupRenderer.spotLightsBuffer, 0, new DataBox((IntPtr)spotLightsPtr, 0, 0), new ResourceRegion(0, 0, 0, renderViewInfo.SpotLights.Count * sizeof(SpotLightData), 1, 1));
                 }
-#if XENKO_PLATFORM_MACOS
+#if STRIDE_PLATFORM_MACOS
                 // See previous macOS comment.
                 else if (clusteredGroupRenderer.spotLightsBuffer == null || clusteredGroupRenderer.spotLightsBuffer.SizeInBytes < sizeof(SpotLightData))
                 {
@@ -619,7 +619,7 @@ namespace Xenko.Rendering.Lights
                     fixed (byte* lightIndicesPtr = renderViewInfo.LightIndices)
                         context.CommandList.UpdateSubresource(clusteredGroupRenderer.lightIndicesBuffer, 0, new DataBox((IntPtr)lightIndicesPtr, 0, 0), new ResourceRegion(0, 0, 0, renderViewInfo.LightIndicesCount * sizeof(byte), 1, 1));
                 }
-#if XENKO_PLATFORM_MACOS
+#if STRIDE_PLATFORM_MACOS
                 // See previous macOS comment.
                 else if (clusteredGroupRenderer.lightIndicesBuffer == null || clusteredGroupRenderer.lightIndicesBuffer.SizeInBytes < sizeof(int))
                 {

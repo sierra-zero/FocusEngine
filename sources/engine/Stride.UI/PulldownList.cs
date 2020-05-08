@@ -2,13 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Xenko.Core;
-using Xenko.Engine;
-using Xenko.Input;
-using Xenko.UI.Controls;
-using Xenko.UI.Panels;
+using Stride.Core;
+using Stride.Engine;
+using Stride.Input;
+using Stride.UI.Controls;
+using Stride.UI.Panels;
 
-namespace Xenko.UI
+namespace Stride.UI
 {
     public class PulldownList : GridList
     {
