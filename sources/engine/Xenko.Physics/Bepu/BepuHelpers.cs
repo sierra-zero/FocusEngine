@@ -117,9 +117,10 @@ namespace Xenko.Physics.Bepu
             }
         }
 
-        public static IShape GenerateBoxOfEntity(Entity e, float scale = 1f, bool allowOffsetCompound = true)
+        public static IShape GenerateBoxOfEntity(Entity e, Vector3? scale = null, bool allowOffsetCompound = true)
         {
-            Vector3 b = getBounds(e, out Vector3 center) * scale * 2f;
+            Vector3 b = getBounds(e, out Vector3 center) * 2f;
+            if (scale.HasValue) b *= scale.Value;
             var box = new Box(b.X, b.Y, b.Z);
             if (allowOffsetCompound && center.LengthSquared() > 0.01f) return OffsetSingleShape(box, center);
             return box;
@@ -133,17 +134,19 @@ namespace Xenko.Physics.Bepu
             return box;
         }
 
-        public static IShape GenerateCapsuleOfEntity(Entity e, float scale = 1f, bool XZradius = true, bool allowOffsetCompound = true)
+        public static IShape GenerateCapsuleOfEntity(Entity e, Vector3? scale = null, bool XZradius = true, bool allowOffsetCompound = true)
         {
-            Vector3 b = getBounds(e, out Vector3 center) * scale;
+            Vector3 b = getBounds(e, out Vector3 center);
+            if (scale.HasValue) b *= scale.Value;
             var box = XZradius ? new Capsule(Math.Max(b.X, b.Z), b.Y * 2f) : new Capsule(b.Y, 2f * Math.Max(b.X, b.Z));
             if (allowOffsetCompound && center.LengthSquared() > 0.01f) return OffsetSingleShape(box, center);
             return box;
         }
 
-        public static IShape GenerateCylinderOfEntity(Entity e, float scale = 1f, bool XZradius = true, bool allowOffsetCompound = true)
+        public static IShape GenerateCylinderOfEntity(Entity e, Vector3? scale = null, bool XZradius = true, bool allowOffsetCompound = true)
         {
-            Vector3 b = getBounds(e, out Vector3 center) * scale;
+            Vector3 b = getBounds(e, out Vector3 center);
+            if (scale.HasValue) b *= scale.Value;
             var box = XZradius ? new Cylinder(Math.Max(b.X, b.Z), b.Y * 2f) : new Cylinder(b.Y, 2f * Math.Max(b.X, b.Z));
             if (allowOffsetCompound && center.LengthSquared() > 0.01f) return OffsetSingleShape(box, center);
             return box;
