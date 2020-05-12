@@ -662,10 +662,12 @@ namespace Xenko.Core.Assets.Editor.ViewModel
             if (asset != null)
             {
                 // Temporary code while we don't have an integrated text editor.
-                if (Editor.TextAssetTypes.Contains(asset.AssetType.Name))
+                switch (asset.AssetType.Name)
                 {
-                    OpenWithTextEditor(asset, EditorSettings.ShaderEditor.GetValue());
-                    return;
+                    case "EffectShaderAsset":
+                    case "EffectCompositorAsset":
+                        OpenWithTextEditor(asset, EditorSettings.ShaderEditor.GetValue());
+                        return;
                 }
 
                 ServiceProvider.Get<IEditorDialogService>().AssetEditorsManager.OpenAssetEditorWindow(asset);

@@ -99,12 +99,7 @@ namespace Xenko.Core.Assets.Editor.ViewModel
 
 #if DEBUG
         public ICommandBase DebugCommand { get; }
-#endif
 
-        // Temporary, until we integrate a proper text editor in the studio
-        protected internal virtual IEnumerable<string> TextAssetTypes => Enumerable.Empty<string>();
-
-#if DEBUG
         public void DebugFunction()
         {
             Console.WriteLine(@"DebugFunction invoked");

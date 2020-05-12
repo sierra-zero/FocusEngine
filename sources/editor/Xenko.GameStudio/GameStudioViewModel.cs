@@ -69,15 +69,6 @@ namespace Xenko.GameStudio
         [NotNull]
         public ICommandBase ReloadSessionCommand { get; }
 
-        protected internal override IEnumerable<string> TextAssetTypes
-        {
-            get
-            {
-                yield return nameof(EffectShaderAsset);
-                yield return nameof(EffectCompositorAsset);
-            }
-        }
-
         protected override void RestartAndCreateNewSession()
         {
             restartArguments = "/NewProject" + GetCommonArguments();
