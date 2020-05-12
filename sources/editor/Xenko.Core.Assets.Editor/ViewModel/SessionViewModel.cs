@@ -246,6 +246,61 @@ namespace Xenko.Core.Assets.Editor.ViewModel
         private int importEffectLogPendingCount;
         private bool selectionIsRoot;
         private bool isInFixupAssetContext;
+        private static FileSystemWatcher assetWatcher;
+
+        // Define the event handlers.
+        private static void OnChanged(object source, FileSystemEventArgs e)
+        {
+            string fullpath_small = e.FullPath.ToLower();
+
+            // ignore changes to source/internal files
+            if (fullpath_small.EndsWith(".cs") ||
+                fullpath_small.EndsWith(".old") ||
+                fullpath_small.EndsWith(".backup"))
+                return;
+
+            // make the change file!
+            string f = EditorViewModel.Instance.projectPath + "/files_changed";
+            File.WriteAllText(f, System.DateTime.Now.Ticks.ToString());
+        }
+
+        private static void PrepareSystemWatcher()
+        {
+            string[] assetDirs = Directory.GetDirectories(EditorViewModel.Instance.projectPath, "Assets", SearchOption.AllDirectories);
+            string path = assetDirs == null || assetDirs.Length == 0 ? null : assetDirs[0];
+
+            if (path == null || Directory.Exists(path) == false)
+            {
+                if (assetWatcher != null)
+                    assetWatcher.EnableRaisingEvents = false;
+
+                return;
+            }
+
+            if (assetWatcher == null)
+            {
+                assetWatcher = new FileSystemWatcher(path);
+
+                assetWatcher.NotifyFilter = NotifyFilters.LastWrite |
+                                            NotifyFilters.FileName |
+                                            NotifyFilters.DirectoryName;
+
+                assetWatcher.Changed += OnChanged;
+                assetWatcher.Created += OnChanged;
+                assetWatcher.Deleted += OnChanged;
+
+                assetWatcher.IncludeSubdirectories = true;
+            }
+            else
+            {
+                assetWatcher.Path = path;
+            }
+
+            // delete the changed file, since we don't know if changes happened while gamestudio was closed
+            File.Delete(EditorViewModel.Instance.projectPath + "/files_changed");
+
+            assetWatcher.EnableRaisingEvents = true;
+        }
 
         public static async Task<SessionViewModel> CreateNewSession(EditorViewModel editor, IViewModelServiceProvider serviceProvider, NewSessionParameters newSessionParameters)
         {
@@ -340,6 +395,9 @@ namespace Xenko.Core.Assets.Editor.ViewModel
 
                 // grab path for backup/restore
                 EditorViewModel.Instance.projectPath = Path.GetDirectoryName(session.SolutionPath.FullPath);
+
+                // asset monitor
+                PrepareSystemWatcher();
             }
             finally
             {
@@ -453,6 +511,9 @@ namespace Xenko.Core.Assets.Editor.ViewModel
 
             // grab path for backup/restore
             EditorViewModel.Instance.projectPath = Path.GetDirectoryName(path);
+
+            // asset monitor
+            PrepareSystemWatcher();
 
             // Register the node container to the copy/paste service.
             sessionViewModel.ServiceProvider.Get<CopyPasteService>().PropertyGraphContainer = sessionViewModel.GraphContainer;
