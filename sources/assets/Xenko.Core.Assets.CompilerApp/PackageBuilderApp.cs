@@ -267,6 +267,7 @@ namespace Xenko.Core.Assets.CompilerApp
                     var baseDirectory = Path.Combine(options.BuildDirectory, @"../../../../../");
                     var changeFile = baseDirectory + "/files_changed";
                     var buildFile = baseDirectory + "/files_built";
+                    var skipFile = baseDirectory + "/always_build";
                     long files_changed_ticks = 0, files_built_ticks = 0;
                     string[] buildlines = null;
                     string platform = options.Platform.ToString() + "-" + options.ProjectConfiguration;
@@ -288,13 +289,17 @@ namespace Xenko.Core.Assets.CompilerApp
                         }
                     }
 
-                    if (Process.GetProcessesByName("Focus.GameStudio").Length == 0)
+                    if (File.Exists(skipFile))
+                    {
+                        options.Logger.Info("Found always_build, so always building assets.");
+                    }
+                    else if (Process.GetProcessesByName("Focus.GameStudio").Length == 0)
                     {
                         options.Logger.Warning("Focus.GameStudio does not appear to be running, so the AssetCompiler will always rebuild assets.");
                     }
                     else if (files_changed_ticks > 0 && files_built_ticks > 0 && files_built_ticks > files_changed_ticks)
                     {
-                        options.Logger.Info("All assets appear up date for " + platform + ", so not doing any asset management to save time. If this is an error, delete files_changed and files_built in the root project directory.");
+                        options.Logger.Info("All Assets/ and Resources/ appear up date for " + platform + ", so skipping recompilation. If this is a mistake, delete files_changed and files_built in the root project directory. If you want to always build assets, make a file called always_build in the root project directory.");
                         return 0;
                     }
 

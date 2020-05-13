@@ -246,7 +246,7 @@ namespace Xenko.Core.Assets.Editor.ViewModel
         private int importEffectLogPendingCount;
         private bool selectionIsRoot;
         private bool isInFixupAssetContext;
-        private static FileSystemWatcher assetWatcher;
+        private static FileSystemWatcher assetWatcher, resourceWatcher;
 
         // Define the event handlers.
         private static void OnChanged(object source, FileSystemEventArgs e)
@@ -267,39 +267,57 @@ namespace Xenko.Core.Assets.Editor.ViewModel
         private static void PrepareSystemWatcher()
         {
             string[] assetDirs = Directory.GetDirectories(EditorViewModel.Instance.projectPath, "Assets", SearchOption.AllDirectories);
-            string path = assetDirs == null || assetDirs.Length == 0 ? null : assetDirs[0];
+            string[] resouDirs = Directory.GetDirectories(EditorViewModel.Instance.projectPath, "Resources", SearchOption.AllDirectories);
+            string apath = assetDirs == null || assetDirs.Length == 0 ? null : assetDirs[0];
+            string rpath = resouDirs == null || resouDirs.Length == 0 ? null : resouDirs[0];
 
-            if (path == null || Directory.Exists(path) == false)
+            if (apath == null || Directory.Exists(apath) == false || rpath == null || Directory.Exists(rpath) == false)
             {
                 if (assetWatcher != null)
+                {
                     assetWatcher.EnableRaisingEvents = false;
+                    resourceWatcher.EnableRaisingEvents = false;
+                }
 
                 return;
             }
 
             if (assetWatcher == null)
             {
-                assetWatcher = new FileSystemWatcher(path);
+                assetWatcher = new FileSystemWatcher(apath);
+                resourceWatcher = new FileSystemWatcher(rpath);
 
                 assetWatcher.NotifyFilter = NotifyFilters.LastWrite |
                                             NotifyFilters.FileName |
                                             NotifyFilters.DirectoryName;
 
+                resourceWatcher.NotifyFilter = NotifyFilters.LastWrite |
+                                               NotifyFilters.FileName |
+                                               NotifyFilters.DirectoryName;
+
                 assetWatcher.Changed += OnChanged;
                 assetWatcher.Created += OnChanged;
                 assetWatcher.Deleted += OnChanged;
+                assetWatcher.Renamed += OnChanged;
+                resourceWatcher.Changed += OnChanged;
+                resourceWatcher.Created += OnChanged;
+                resourceWatcher.Deleted += OnChanged;
+                resourceWatcher.Renamed += OnChanged;
 
                 assetWatcher.IncludeSubdirectories = true;
+                resourceWatcher.IncludeSubdirectories = true;
             }
             else
             {
-                assetWatcher.Path = path;
+                assetWatcher.Path = apath;
+                resourceWatcher.Path = rpath;
             }
 
             // delete the changed file, since we don't know if changes happened while gamestudio was closed
             File.Delete(EditorViewModel.Instance.projectPath + "/files_changed");
 
             assetWatcher.EnableRaisingEvents = true;
+            resourceWatcher.EnableRaisingEvents = true;
         }
 
         public static async Task<SessionViewModel> CreateNewSession(EditorViewModel editor, IViewModelServiceProvider serviceProvider, NewSessionParameters newSessionParameters)
