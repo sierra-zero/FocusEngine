@@ -526,6 +526,9 @@ namespace Xenko.Graphics
                 }
             } else yStart = 0f;
 
+            // clear any color tags
+            colorStack.Clear();
+
             if (scanOrder == TextAlignment.Left)
             {
                 // scan the whole text only one time following the text letter order
@@ -545,7 +548,7 @@ namespace Xenko.Graphics
                 {
                     // measure the size of the current line
                     var lineSize = Vector2.Zero;
-                    ForGlyph(commandList, ref text, ref requestedFontSize, MeasureStringGlyph, ref lineSize, startIndex, endIndex, updateGpuResources, 0f, 0f, vertAlign, ySpacing);
+                    ForGlyph(commandList, ref text, ref requestedFontSize, MeasureStringGlyph, ref lineSize, startIndex, endIndex, updateGpuResources, 0f, 0f, vertAlign, ySpacing, true);
 
                     // Determine the start position of the line along the x axis
                     // We round this value to the closest integer to force alignment of all characters to the same pixels
@@ -568,7 +571,7 @@ namespace Xenko.Graphics
         private Stack<Color4> colorStack = new Stack<Color4>();
         private void ForGlyph<T>(CommandList commandList, ref StringProxy text, ref Vector2 fontSize, GlyphAction<T> action, 
                                  ref T parameters, int forStart, int forEnd, bool updateGpuResources, float startX = 0, float startY = 0,
-                                 TextVerticalAlignment vertAlign = TextVerticalAlignment.Top, float fontSizeY = 0f)
+                                 TextVerticalAlignment vertAlign = TextVerticalAlignment.Top, float fontSizeY = 0f, bool skipTags = false)
         {
             var key = 0;
             var x = startX;
@@ -576,17 +579,16 @@ namespace Xenko.Graphics
 
             // tag management
             var escaping = false;
-            colorStack.Clear();
             for (var i = forStart; i < forEnd; i++)
             {
                 var character = text[i];
 
                 if (!escaping && character == '<') {
-                    // check tags
+                    // check tags?
                     if(CheckAndProcessColorTag(ref text, ref i, out Color4 color)) {
-                        colorStack.Push(color);
-                    } else if(colorStack.Count > 0 && EndsTag("</color>", ref text, ref i)) {
-                        colorStack.Pop();
+                        if (skipTags == false) colorStack.Push(color);
+                    } else if(EndsTag("</color>", ref text, ref i)) {
+                        if (skipTags == false && colorStack.Count > 0) colorStack.Pop();
                     }
                 }
                 else

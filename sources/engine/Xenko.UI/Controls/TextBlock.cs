@@ -268,8 +268,7 @@ namespace Xenko.UI.Controls
                 realSize.X /= sizeRatio.X;
                 realSize.Y /= sizeRatio.Y;
             }
-
-            if (Font.FontType == SpriteFontType.SDF)
+            else
             {
                 var scaleRatio = ActualTextSize / Font.Size;
                 realSize.X *= scaleRatio;
@@ -288,9 +287,11 @@ namespace Xenko.UI.Controls
                 return;
             }
 
+            string newlinedText = text.Replace("<br>", "\n");
+
             var availableWidth = availableSpace.X;
-            var currentLine = new StringBuilder(text.Length);
-            var currentText = new StringBuilder(2 * text.Length);
+            var currentLine = new StringBuilder(newlinedText.Length);
+            var currentText = new StringBuilder(2 * newlinedText.Length);
 
             var indexOfNewLine = 0;
             while (true)
@@ -303,10 +304,10 @@ namespace Xenko.UI.Controls
                 {
                     lineCurrentSize = CalculateTextSize(currentLine).X;
 
-                    if (lineCurrentSize > availableWidth || indexOfNewLine + indexNextCharacter >= text.Length)
+                    if (lineCurrentSize > availableWidth || indexOfNewLine + indexNextCharacter >= newlinedText.Length)
                         break;
 
-                    var currentCharacter = text[indexOfNewLine + indexNextCharacter];
+                    var currentCharacter = newlinedText[indexOfNewLine + indexNextCharacter];
 
                     if (currentCharacter == '\n')
                     {
