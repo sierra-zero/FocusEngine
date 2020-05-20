@@ -66,12 +66,19 @@ namespace Xenko.GameStudio
         [STAThread]
         public static void Main()
         {
+            // wait, are we already running?
+            if (Process.GetProcessesByName("Focus.GameStudio").Length > 1)
+            {
+                MessageBox.Show("Focus GameStudio is already running! Only one instance is possible at a time.", "Focus", MessageBoxButton.OK, MessageBoxImage.Error);
+                Environment.Exit(1);
+            }
+
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
             EditorPath.EditorTitle = XenkoGameStudio.EditorName;
 
             if (IntPtr.Size == 4)
             {
-                MessageBox.Show(EngineName + " " + GameStudioName + " requires a 64bit OS to run.", "Xenko", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show(EngineName + " " + GameStudioName + " requires a 64bit OS to run.", "Focus", MessageBoxButton.OK, MessageBoxImage.Error);
                 Environment.Exit(1);
             }
 
