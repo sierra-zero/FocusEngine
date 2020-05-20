@@ -8,6 +8,7 @@ using BepuPhysics.Constraints;
 using BepuUtilities.Memory;
 using Xenko.Core;
 using Xenko.Core.Mathematics;
+using Xenko.Core.Threading;
 using Xenko.Engine;
 using Xenko.Games;
 using Xenko.Graphics;
@@ -104,16 +105,22 @@ namespace Xenko.Physics.Bepu
 
             using (var compoundBuilder = new CompoundBuilder(BepuSimulation.safeBufferPool, BepuSimulation.instance.internalSimulation.Shapes, 1))
             {
-                if (kinematic)
+                using (BepuSimulation.instance.simulationLocker.WriteLock())
                 {
-                    compoundBuilder.AddForKinematicEasy(shape, new BepuPhysics.RigidPose(ToBepu(offset ?? Vector3.Zero), ToBepu(rotation ?? Quaternion.Identity)), 1f);
-                }
-                else
-                {
-                    compoundBuilder.AddEasy(shape, new BepuPhysics.RigidPose(ToBepu(offset ?? Vector3.Zero), ToBepu(rotation ?? Quaternion.Identity)), 1f);
+                    if (kinematic)
+                    {
+                        compoundBuilder.AddForKinematicEasy(shape, new BepuPhysics.RigidPose(ToBepu(offset ?? Vector3.Zero), ToBepu(rotation ?? Quaternion.Identity)), 1f);
+                    }
+                    else
+                    {
+                        compoundBuilder.AddEasy(shape, new BepuPhysics.RigidPose(ToBepu(offset ?? Vector3.Zero), ToBepu(rotation ?? Quaternion.Identity)), 1f);
+                    }
                 }
 
-                return compoundBuilder.BuildCompleteCompoundShape(BepuSimulation.instance.internalSimulation.Shapes, BepuSimulation.safeBufferPool, kinematic);
+                using (BepuSimulation.instance.simulationLocker.ReadLock())
+                {
+                    return compoundBuilder.BuildCompleteCompoundShape(BepuSimulation.instance.internalSimulation.Shapes, BepuSimulation.safeBufferPool, kinematic);
+                }
             }
         }
 
@@ -197,19 +204,25 @@ namespace Xenko.Physics.Bepu
                 {
                     if (shapes[i] is ICompoundShape) throw new InvalidOperationException("Cannot include compounds in another compound shape.");
 
-                    if (isDynamic)
+                    using (BepuSimulation.instance.simulationLocker.WriteLock())
                     {
-                        compoundBuilder.AddEasy(shapes[i] as IConvexShape, new BepuPhysics.RigidPose(ToBepu(offsets?[i] ?? Vector3.Zero), ToBepu(rotations?[i] ?? Quaternion.Identity)), 1f);
-                    } 
-                    else
-                    {
-                        if (shapes[i] is IConvexShape == false) allConvex = false;
+                        if (isDynamic)
+                        {
+                            compoundBuilder.AddEasy(shapes[i] as IConvexShape, new BepuPhysics.RigidPose(ToBepu(offsets?[i] ?? Vector3.Zero), ToBepu(rotations?[i] ?? Quaternion.Identity)), 1f);
+                        }
+                        else
+                        {
+                            if (shapes[i] is IConvexShape == false) allConvex = false;
 
-                        compoundBuilder.AddForKinematicEasy(shapes[i], new BepuPhysics.RigidPose(ToBepu(offsets?[i] ?? Vector3.Zero), ToBepu(rotations?[i] ?? Quaternion.Identity)), 1f);
+                            compoundBuilder.AddForKinematicEasy(shapes[i], new BepuPhysics.RigidPose(ToBepu(offsets?[i] ?? Vector3.Zero), ToBepu(rotations?[i] ?? Quaternion.Identity)), 1f);
+                        }
                     }
                 }
 
-                return compoundBuilder.BuildCompleteCompoundShape(BepuSimulation.instance.internalSimulation.Shapes, BepuSimulation.safeBufferPool, isDynamic, allConvex ? bigThreshold : int.MaxValue);
+                using (BepuSimulation.instance.simulationLocker.ReadLock())
+                {
+                    return compoundBuilder.BuildCompleteCompoundShape(BepuSimulation.instance.internalSimulation.Shapes, BepuSimulation.safeBufferPool, isDynamic, allConvex ? bigThreshold : int.MaxValue);
+                }
             }
         }
 
