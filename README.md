@@ -58,7 +58,7 @@ You can find the list of third party projects [here](THIRD%20PARTY.md).
 ## Documentation
 
 Find explanations and information about Xenko:
-* [Xenko Manual](https://doc.stride3d.net/latest/en/manual/index.html)
+* [Stride Manual](https://doc.stride3d.net/latest/en/manual/index.html)
 * [API Reference](https://doc.stride3d.net/latest/api/index.html)
 
 ## Community
