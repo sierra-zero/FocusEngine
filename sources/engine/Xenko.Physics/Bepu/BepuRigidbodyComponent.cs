@@ -134,11 +134,13 @@ namespace Xenko.Physics.Bepu
             {
                 if (value <= 0)
                 {
+                    _collectCollisions = false;
                     CurrentPhysicalContacts = null;
                     return;
                 }
 
-                CurrentPhysicalContacts = new BepuContact[value];
+                if (CurrentPhysicalContacts == null || CurrentPhysicalContacts.Length != value)
+                    CurrentPhysicalContacts = new BepuContact[value];
             }
         }
         
