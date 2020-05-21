@@ -3,7 +3,7 @@
 
 Welcome to the Focus Engine source code repository!
 
-Focus is an open-source C# game engine for realistic rendering and VR based off of Xenko. You'll still see "Xenko" in many places.
+Focus is an open-source C# game engine for realistic rendering and VR based off of Xenko/Stride. You'll still see "Xenko" in many places.
 The engine is highly modular and aims at giving game makers more flexibility in their development.
 Focus comes with an editor that allows you create and manage the content of your games or applications in a visual and intuitive way.
 
@@ -39,8 +39,8 @@ Most of Focus is similar to Stride and there shouldn't be any loss of functional
 * Performance: lots of tweaks have been made throughout the engine to maximize performance. This includes reducing locks and enumeration reduction, for example. GameStudio editor itself runs much smoother and can handle multiple tabs much better.
 * Easy adding/removing entities from the scene: Just do myEntity.Scene = myScene (to add it) or myEntity.Scene = null (to remove it).
 * Includes dfkeenan's toolkit designed for this fork (from https://github.com/dfkeenan/XenkoToolkit). May need to add the Toolkit Nuget package to use.
-* Takes good things from many different Xenko forks, including the original Xenko branch when it gets updated. May not get everything, like some of the tutorials, sample, non-PC platforms or launcher updates, which I don't maintain.
-* Simple binary distribution: No launcher needed. Just download and run the latest release (after making sure you have all of the Visual Studio build prerequisites, see https://github.com/phr00t/FocusEngine/releases.
+* Takes good things from many different Xenko/Stride forks, including the original branch when it gets updated. I don't get everything, as I focus on things that are more apparently beneficial to seasoned and commercial PC developers. I exclude tutorials, samples, non-PC platforms, launcher updates, internal naming conventions, building refactors etc. which I don't maintain.
+* Simple binary distribution: No launcher needed. Just download and run the latest release (after making sure you have all of the Visual Studio build prerequisites, see https://github.com/phr00t/FocusEngine/releases. However, if you want the latest (which you should), it is best to build from source, as I don't get to building the binary very often.
 * Probably lots of other stuff: haven't kept that great of track of improvements, I usually fix things as needed and keep moving forward!
 
 ## What is worse in this fork?
