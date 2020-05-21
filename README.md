@@ -7,17 +7,17 @@ Focus is an open-source C# game engine for realistic rendering and VR based off 
 The engine is highly modular and aims at giving game makers more flexibility in their development.
 Focus comes with an editor that allows you create and manage the content of your games or applications in a visual and intuitive way.
 
-![Focus Game Studio](https://xenko.com/images/external/script-editor.png)
+![Focus Game Studio](https://doc.stride3d.net/latest/en/manual/get-started/media/game-editor-scene.jpg)
 
-To learn more about Xenko, visit [xenko.com](https://xenko.com/).
+To learn more about Stride3D, visit [stride3d.net](https://stride3d.net/).
 
 ## Why this fork?
 
-My games require the engine to be developed at a faster pace than Xenko. I'm in need of fixes, new features and better performance. These changes will not be supported by the core team, and the absolute most recent changes may not be fully stable. However, you may find them very helpful, and in some cases, essential to projects.
+My games require the engine to be developed at a faster pace than Stride. I'm in need of fixes, new features and better performance. These changes will not be supported by the core team, and the absolute most recent changes may not be fully stable. However, you may find them very helpful, and in some cases, essential to projects.
 
 ## What is different?
 
-Most of Focus is similar to Xenko and there shouldn't be any loss of functionality over the original. Changes are focused on fixes, performance improvements and new features. However, I do not maintain different languages, Android support or the Launcher. The following is a rough list of "major" changes, but might not accurately reflect the current state of differences (since both githubs are moving targets which are hopefully improving):
+Most of Focus is similar to Stride and there shouldn't be any loss of functionality over the original. Changes are focused on fixes, performance improvements and new features. However, I do not maintain different languages, Android support or the Launcher. The following is a rough list of "major" changes, but might not accurately reflect the current state of differences (since both githubs are moving targets which are hopefully improving):
 
 * Virtual Reality: frame rate management, resolution detection, Vulkan support, and automatic UI interaction are some of the VR improvements you'll get "out of the box". Pretty much just need to enable OpenVR in your Graphics Compositor's Forward Renderer and you'll be good to go. Tracking hands is much easier, as you can simply select which hand to track right from GameStudio. Support for multiple forward renderers in VR, with post processing. See https://github.com/phr00t/FOVTester2 for a super simple example of how easy a VR project is.
 * Vulkan: Focus primarily uses Vulkan, which has been significantly overhauled to provide more performance you'd expect from the newer API. Vulkan works on MacOSX using MoltenVK and Linux. DirectX is deprecated and unsupported on this fork.
@@ -45,7 +45,7 @@ Most of Focus is similar to Xenko and there shouldn't be any loss of functionali
 
 ## What is worse in this fork?
 
-Android and mobile support, different languages, Universal Windows Platform support. I also work very little with DirectX, which is maintained just for the editor. Some changes I make to improve Vulkan might cause a (hopefully minor) bug in the DirectX API, which will be of low priority to fix. Vulkan isn't as fully featured as DirectX yet, so GPU instancing doesn't work on Vulkan (although you may find the ModelBatcher works in many cases).
+Android/mobile support, different languages, and Universal Windows Platform support. I also work very little with DirectX, which is maintained just for the editor. Some changes I make to improve Vulkan might cause a (hopefully minor) bug in the DirectX API, which will be of low priority to fix. Vulkan isn't as fully featured as DirectX yet, so GPU instancing doesn't work on Vulkan (although you may find the ModelBatcher works in many cases).
 
 Creating templates with this fork is semi broken (you'll get an error, but it still gets created). Just browse for it next time you open Focus. There is an issue for it on the issues tab.
 
@@ -58,15 +58,13 @@ You can find the list of third party projects [here](THIRD%20PARTY.md).
 ## Documentation
 
 Find explanations and information about Xenko:
-* [Xenko Manual](https://doc.xenko.com/latest/manual/index.html)
-* [API Reference](https://doc.xenko.com/latest/api/index.html)
-* [Release Notes](https://doc.xenko.com/latest/ReleaseNotes/index.html)
+* [Xenko Manual](https://doc.stride3d.net/latest/en/manual/index.html)
+* [API Reference](https://doc.stride3d.net/latest/api/index.html)
 
 ## Community
 
 Ask for help or report issues:
 * [Chat with the community on Discord](https://discord.gg/k563cUH)
-* [Discuss topics on our forums](http://forums.xenko.com/)
 * [Report engine issues](https://github.com/phr00t/xenko/issues)
 * [Donate to support the project](https://www.patreon.com/phr00tssoftware)
 
