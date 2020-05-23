@@ -1265,7 +1265,7 @@ namespace Xenko.Core.Assets
             if (package.IsSystem) return;
 
             var project = package.Container as SolutionProject;
-            if (project == null || project.FullPath == null || project.Type != ProjectType.Library)
+            if (project == null || project.FullPath == null)
                 return;
 
             string defaultNamespace;
