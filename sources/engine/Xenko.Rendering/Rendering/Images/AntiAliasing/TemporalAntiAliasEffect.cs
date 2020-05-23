@@ -46,6 +46,8 @@ namespace Xenko.Rendering.Images
 
         public bool NeedRangeDecompress => false;
 
+        public bool RequiresDepthBuffer => true;
+
         public bool RequiresVelocityBuffer => true;
 
         [DefaultValue(0.01f)]

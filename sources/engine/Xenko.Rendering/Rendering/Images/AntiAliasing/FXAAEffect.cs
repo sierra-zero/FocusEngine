@@ -28,6 +28,8 @@ namespace Xenko.Rendering.Images
 
         public bool NeedRangeDecompress => true;
 
+        public bool RequiresDepthBuffer => false;
+
         public bool RequiresVelocityBuffer => false;
 
         /// <summary>
