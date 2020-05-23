@@ -126,6 +126,9 @@ namespace Xenko.Shaders.Parser.Mixins
                 return;
             }
 
+            if (variable.IsGroup)
+                return;
+
             // no call on base
             // Semantic keyword: replace semantics
             foreach (var sem in variable.Qualifiers.Values.OfType<Semantic>())
