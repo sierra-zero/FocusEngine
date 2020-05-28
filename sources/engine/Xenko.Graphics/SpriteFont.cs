@@ -526,13 +526,13 @@ namespace Xenko.Graphics
                 }
             } else yStart = 0f;
 
-            // clear any color tags
-            colorStack.Clear();
+            // prepare color tag stack, if needed
+            Stack<Color4> colorstack = null;
 
             if (scanOrder == TextAlignment.Left)
             {
                 // scan the whole text only one time following the text letter order
-                ForGlyph(commandList, ref text, ref requestedFontSize, action, ref parameters, 0, text.Length, updateGpuResources, 0f, yStart, vertAlign, ySpacing);
+                ForGlyph(commandList, ref text, ref requestedFontSize, action, ref parameters, 0, text.Length, updateGpuResources, ref colorstack, 0f, yStart, vertAlign, ySpacing);
             }
             else
             {
@@ -548,7 +548,7 @@ namespace Xenko.Graphics
                 {
                     // measure the size of the current line
                     var lineSize = Vector2.Zero;
-                    ForGlyph(commandList, ref text, ref requestedFontSize, MeasureStringGlyph, ref lineSize, startIndex, endIndex, updateGpuResources, 0f, 0f, vertAlign, ySpacing, true);
+                    ForGlyph(commandList, ref text, ref requestedFontSize, MeasureStringGlyph, ref lineSize, startIndex, endIndex, updateGpuResources, ref colorstack, 0f, 0f, vertAlign, ySpacing, true);
 
                     // Determine the start position of the line along the x axis
                     // We round this value to the closest integer to force alignment of all characters to the same pixels
@@ -558,7 +558,7 @@ namespace Xenko.Graphics
                     xStart = (float)Math.Round(xStart);
 
                     // scan the line
-                    ForGlyph(commandList, ref text, ref requestedFontSize, action, ref parameters, startIndex, endIndex, updateGpuResources, xStart, yStart, vertAlign, ySpacing);
+                    ForGlyph(commandList, ref text, ref requestedFontSize, action, ref parameters, startIndex, endIndex, updateGpuResources, ref colorstack, xStart, yStart, vertAlign, ySpacing);
                     
                     // update variable before going to next line
                     yStart += ySpacing;
@@ -568,9 +568,8 @@ namespace Xenko.Graphics
             }
         }
 
-        private Stack<Color4> colorStack = new Stack<Color4>();
         private void ForGlyph<T>(CommandList commandList, ref StringProxy text, ref Vector2 fontSize, GlyphAction<T> action, 
-                                 ref T parameters, int forStart, int forEnd, bool updateGpuResources, float startX = 0, float startY = 0,
+                                 ref T parameters, int forStart, int forEnd, bool updateGpuResources, ref Stack<Color4> colorStack, float startX = 0, float startY = 0,
                                  TextVerticalAlignment vertAlign = TextVerticalAlignment.Top, float fontSizeY = 0f, bool skipTags = false)
         {
             var key = 0;
@@ -586,9 +585,14 @@ namespace Xenko.Graphics
                 if (!escaping && character == '<') {
                     // check tags?
                     if(CheckAndProcessColorTag(ref text, ref i, out Color4 color)) {
-                        if (skipTags == false) colorStack.Push(color);
+                        if (skipTags == false)
+                        {
+                            if (colorStack == null) colorStack = new Stack<Color4>();
+                            colorStack.Push(color);
+                        }
                     } else if(EndsTag("</color>", ref text, ref i)) {
-                        if (skipTags == false && colorStack.Count > 0) colorStack.Pop();
+                        if (skipTags == false && colorStack != null && colorStack.Count > 0)
+                            colorStack.Pop();
                     }
                 }
                 else
@@ -635,7 +639,7 @@ namespace Xenko.Graphics
                             float nextX = x + (glyph.XAdvance + GetExtraSpacing(fontSize.X)) * auxiliaryScaling.X;
 
                             // process color we will use, if any
-                            if (colorStack.Count > 0) {
+                            if (colorStack != null && colorStack.Count > 0) {
                                 // we have colors, but what kind of command do we have?
                                 if (parameters is InternalDrawCommand) {
                                     var idc = (InternalDrawCommand)(object)parameters;
