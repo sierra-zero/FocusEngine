@@ -185,9 +185,12 @@ namespace Xenko.Rendering
                     // automatically cull really small stuff?
                     if (CullSmallFactor > 0f)
                     {
-                        float distSq = (renderObject.BoundingBox.Center - pointOnPlane).LengthSquared();
-                        float objSize = 1f + (renderObject.BoundingBox.Extent.X * renderObject.BoundingBox.Extent.Y * renderObject.BoundingBox.Extent.Z);
-                        float objectFactor = (objSize * objSize) / (distSq * view.CameraFOV);
+                        ref var bb = ref renderObject.BoundingBox;
+                        float distSq = (bb.Center - pointOnPlane).LengthSquared();
+                        float objLen = bb.Extent.LengthSquared();
+                        float objVolume = 1f + (bb.Extent.X * bb.Extent.Y * bb.Extent.Z);
+                        float useSize = objLen > objVolume ? objLen : objVolume * objVolume;
+                        float objectFactor = useSize / (distSq * view.CameraFOV);
                         if (objectFactor < CullSmallFactor) return;
                     }
                 }
