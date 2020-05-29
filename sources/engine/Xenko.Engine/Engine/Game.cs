@@ -419,6 +419,7 @@ namespace Xenko.Engine
                 // apply rendersettings
                 Xenko.Graphics.Buffer.CaptureIndexBuffersOfSize = renderingSettings.CaptureIndexBufferOfSize;
                 Xenko.Graphics.Buffer.CaptureVertexBuffersOfSize = renderingSettings.CaptureVertexBufferOfSize;
+                VisibilityGroup.CullSmallFactor = renderingSettings.SmallCullFactor;
                 ModelComponent.DefaultShadowCasters = renderingSettings.DefaultShadowCasters;
 
                 // enable error file logging?

@@ -42,7 +42,7 @@ namespace Xenko.Rendering
 
         internal int LastFrameCollected;
 
-        internal float MinimumDistance;
+        internal float MinimumDistance, CameraFOV;
 
         internal float MaximumDistance;
 

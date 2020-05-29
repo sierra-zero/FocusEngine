@@ -53,6 +53,11 @@ namespace Xenko.Rendering
         /// </summary>
         public RenderObjectCollection RenderObjects { get; }
 
+        /// <summary>
+        /// Increase this to cull smaller objects from rendering at all (due to distance from camera)
+        /// </summary>
+        public static float CullSmallFactor = 0f;
+
         public VisibilityGroup(RenderSystem renderSystem)
         {
             Tags = new PropertyContainer(this);
@@ -169,11 +174,22 @@ namespace Xenko.Rendering
 
                 // Fast AABB transform: http://zeuxcg.org/2010/10/17/aabb-from-obb-with-component-wise-abs/
                 // Compute transformed AABB (by world)
-                if (cullingMode == CameraCullingMode.Frustum
-                    && renderObject.BoundingBox.Extent != Vector3.Zero
-                    && !FrustumContainsBox(ref frustum, ref renderObject.BoundingBox, view.VisiblityIgnoreDepthPlanes))
+                if (renderObject.BoundingBox.Extent != Vector3.Zero)
                 {
-                    return;
+                    if (cullingMode == CameraCullingMode.Frustum
+                        && !FrustumContainsBox(ref frustum, ref renderObject.BoundingBox, view.VisiblityIgnoreDepthPlanes))
+                    {
+                        return;
+                    }
+
+                    // automatically cull really small stuff?
+                    if (CullSmallFactor > 0f)
+                    {
+                        float distSq = (renderObject.BoundingBox.Center - pointOnPlane).LengthSquared();
+                        float objSize = renderObject.BoundingBox.Extent.LengthSquared();
+                        float objectFactor = objSize / (distSq * view.CameraFOV);
+                        if (objectFactor < CullSmallFactor) return;
+                    }
                 }
 
                 // Add object to list of visible objects

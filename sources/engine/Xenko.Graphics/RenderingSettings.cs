@@ -150,5 +150,11 @@ namespace Xenko.Graphics
         [DefaultValue(false)]
         public bool DisableErrorFileLog { get; set; } = false;
 
+        /// <summary>
+        /// Cull small things? 0f (the default) disables this feature. Higher numbers cull more things from being rendered.
+        /// </summary>
+        [DataMember(90)]
+        [DefaultValue(0f)]
+        public float SmallCullFactor { get; set; } = 0f;
     }
 }

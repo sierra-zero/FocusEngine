@@ -150,6 +150,7 @@ namespace Xenko.Rendering.Compositing
 
             // Copy camera data
             renderView.Camera = camera;
+            renderView.CameraFOV = camera.VerticalFieldOfView;
             renderView.View = camera.ViewMatrix;
             renderView.Projection = camera.ProjectionMatrix;
             renderView.NearClipPlane = camera.NearClipPlane;
