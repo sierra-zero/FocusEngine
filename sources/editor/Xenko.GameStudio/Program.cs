@@ -67,10 +67,15 @@ namespace Xenko.GameStudio
         public static void Main()
         {
             // wait, are we already running?
-            if (Process.GetProcessesByName("Focus.GameStudio").Length > 1)
+            int waitToClose = 16;
+            while (Process.GetProcessesByName("Focus.GameStudio").Length > 1)
             {
-                MessageBox.Show("Focus GameStudio is already running! Only one instance is possible at a time.", "Focus", MessageBoxButton.OK, MessageBoxImage.Error);
-                Environment.Exit(1);
+                if (waitToClose-- <= 0)
+                {
+                    MessageBox.Show("Focus GameStudio is already running! Only one instance is possible at a time.", "Focus", MessageBoxButton.OK, MessageBoxImage.Error);
+                    Environment.Exit(1);
+                }
+                Thread.Sleep(250);
             }
 
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
