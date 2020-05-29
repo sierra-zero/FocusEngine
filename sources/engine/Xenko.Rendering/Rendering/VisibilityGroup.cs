@@ -186,8 +186,8 @@ namespace Xenko.Rendering
                     if (CullSmallFactor > 0f)
                     {
                         float distSq = (renderObject.BoundingBox.Center - pointOnPlane).LengthSquared();
-                        float objSize = renderObject.BoundingBox.Extent.LengthSquared();
-                        float objectFactor = objSize / (distSq * view.CameraFOV);
+                        float objSize = 1f + (renderObject.BoundingBox.Extent.X * renderObject.BoundingBox.Extent.Y * renderObject.BoundingBox.Extent.Z);
+                        float objectFactor = (objSize * objSize) / (distSq * view.CameraFOV);
                         if (objectFactor < CullSmallFactor) return;
                     }
                 }
