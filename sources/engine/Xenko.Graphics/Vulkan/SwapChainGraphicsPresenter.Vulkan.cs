@@ -281,7 +281,7 @@ namespace Xenko.Graphics
                 clipped = true
             };
 
-            vkCreateSwapchainKHR(GraphicsDevice.NativeDevice, &swapchainCreateInfo, null, out var newSwapChain);
+            vkCreateSwapchainKHR(GraphicsDevice.NativeDevice, &swapchainCreateInfo, null, out swapChain);
 
             CreateBackBuffers();
 
