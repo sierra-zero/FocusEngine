@@ -654,6 +654,7 @@ namespace Xenko.Graphics
    internal abstract class ResourcePool<T> : ComponentBase
     {
         protected readonly GraphicsDevice GraphicsDevice;
+        private ReaderWriterLockSlim locker = new ReaderWriterLockSlim();
         private readonly Queue<KeyValuePair<long, T>> liveObjects = new Queue<KeyValuePair<long, T>>();
 
         protected ResourcePool(GraphicsDevice graphicsDevice)
@@ -663,7 +664,7 @@ namespace Xenko.Graphics
 
         public T GetObject()
         {
-            lock (liveObjects)
+            using (locker.UpgradableReadLock())
             {
                 // Check if first allocator is ready for reuse
                 if (liveObjects.Count > 0)
@@ -671,7 +672,10 @@ namespace Xenko.Graphics
                     var firstAllocator = liveObjects.Peek();
                     if (firstAllocator.Key <= GraphicsDevice.GetCompletedValue())
                     {
-                        liveObjects.Dequeue();
+                        using (locker.WriteLock())
+                        {
+                            liveObjects.Dequeue();
+                        }
                         ResetObject(firstAllocator.Value);
                         return firstAllocator.Value;
                     }
@@ -683,7 +687,7 @@ namespace Xenko.Graphics
 
         public void RecycleObject(long fenceValue, T obj)
         {
-            lock (liveObjects)
+            using (locker.WriteLock())
             {
                 liveObjects.Enqueue(new KeyValuePair<long, T>(fenceValue, obj));
             }
@@ -698,7 +702,7 @@ namespace Xenko.Graphics
         }
 
         public void ResetAll() {
-            lock (liveObjects) {
+            using (locker.WriteLock()) {
                 while(liveObjects.Count > 0) {
                     DestroyObject(liveObjects.Dequeue().Value);
                 }
