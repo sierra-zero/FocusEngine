@@ -585,7 +585,8 @@ namespace Xenko.Graphics
                 {
                     var fence = nativeFences.Dequeue();
                     vkDestroyFence(NativeDevice, fence.Value, null);
-                    lastCompletedFence = Math.Max(lastCompletedFence, fence.Key);
+                    if (fence.Key > lastCompletedFence)
+                        lastCompletedFence = fence.Key;
                 }
 
                 return lastCompletedFence;
@@ -654,8 +655,8 @@ namespace Xenko.Graphics
    internal abstract class ResourcePool<T> : ComponentBase
     {
         protected readonly GraphicsDevice GraphicsDevice;
-        private ReaderWriterLockSlim locker = new ReaderWriterLockSlim();
-        private readonly Queue<KeyValuePair<long, T>> liveObjects = new Queue<KeyValuePair<long, T>>();
+        private SpinLock spinLock = new SpinLock();
+        private readonly LinkedList<KeyValuePair<long, T>> liveObjects = new LinkedList<KeyValuePair<long, T>>();
 
         protected ResourcePool(GraphicsDevice graphicsDevice)
         {
@@ -664,21 +665,45 @@ namespace Xenko.Graphics
 
         public T GetObject()
         {
-            using (locker.UpgradableReadLock())
+            KeyValuePair<long, T>? firstAllocator = null;
+
+            bool lockTaken = false;
+            try
             {
-                // Check if first allocator is ready for reuse
-                if (liveObjects.Count > 0)
+                spinLock.Enter(ref lockTaken);
+
+                var node = liveObjects.First;
+                if (node != null)
                 {
-                    var firstAllocator = liveObjects.Peek();
-                    if (firstAllocator.Key <= GraphicsDevice.GetCompletedValue())
-                    {
-                        using (locker.WriteLock())
-                        {
-                            liveObjects.Dequeue();
-                        }
-                        ResetObject(firstAllocator.Value);
-                        return firstAllocator.Value;
-                    }
+                    firstAllocator = node.Value;
+                    liveObjects.RemoveFirst();
+                }
+            }
+            finally
+            {
+                if (lockTaken)
+                    spinLock.Exit(true);
+            }
+
+            if (firstAllocator.HasValue)
+            {
+                if (firstAllocator.Value.Key <= GraphicsDevice.GetCompletedValue())
+                {
+                    ResetObject(firstAllocator.Value.Value);
+                    return firstAllocator.Value.Value;
+                }
+
+                bool lockTakenAgain = false;
+                try
+                {
+                    spinLock.Enter(ref lockTakenAgain);
+
+                    liveObjects.AddFirst(firstAllocator.Value);
+                }
+                finally
+                {
+                    if (lockTakenAgain)
+                        spinLock.Exit(true);
                 }
             }
 
@@ -687,9 +712,17 @@ namespace Xenko.Graphics
 
         public void RecycleObject(long fenceValue, T obj)
         {
-            using (locker.WriteLock())
+            bool lockTaken = false;
+            try
             {
-                liveObjects.Enqueue(new KeyValuePair<long, T>(fenceValue, obj));
+                spinLock.Enter(ref lockTaken);
+
+                liveObjects.AddLast(new KeyValuePair<long, T>(fenceValue, obj));
+            }
+            finally
+            {
+                if (lockTaken)
+                    spinLock.Exit(true);
             }
         }
 
@@ -702,10 +735,28 @@ namespace Xenko.Graphics
         }
 
         public void ResetAll() {
-            using (locker.WriteLock()) {
-                while(liveObjects.Count > 0) {
-                    DestroyObject(liveObjects.Dequeue().Value);
+            while (true)
+            {
+                KeyValuePair<long, T>? toremove = null;
+
+                bool lockTaken = false;
+                try
+                {
+                    spinLock.Enter(ref lockTaken);
+
+                    toremove = liveObjects.First?.Value ?? null;
+                    if (toremove != null)
+                        liveObjects.RemoveFirst();
                 }
+                finally
+                {
+                    if (lockTaken)
+                        spinLock.Exit(true);
+                }
+
+                if (toremove.HasValue == false) break;
+
+                DestroyObject(toremove.Value.Value);
             }
         }
 
