@@ -403,6 +403,7 @@ namespace Xenko.Graphics
                     pDepthStencilState = &depthStencilState,
                     pColorBlendState = &colorBlendState,
                     pDynamicState = &dynamicState,
+                    pStages = (Vortice.Vulkan.VkPipelineShaderStageCreateInfo*)stagesPointer,
                     pViewportState = &viewportState,
                     renderPass = NativeRenderPass,
                     subpass = 0,
