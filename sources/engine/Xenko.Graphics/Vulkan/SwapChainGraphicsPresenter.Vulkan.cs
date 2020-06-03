@@ -23,11 +23,9 @@ namespace Xenko.Graphics
         private VkSwapchainKHR swapChain = VkSwapchainKHR.Null;
         private VkSurfaceKHR surface;
 
-        private ConcurrentQueue<uint> toPresent = new ConcurrentQueue<uint>();
-
         private Texture backbuffer;
         private SwapChainImageInfo[] swapchainImages;
-        private volatile uint currentBufferIndex;
+        private uint currentBufferIndex;
         private VkFence presentFence;
 
         private struct SwapChainImageInfo
@@ -70,6 +68,7 @@ namespace Xenko.Graphics
         private ManualResetEventSlim presentWaiter = new ManualResetEventSlim(false);
         private Thread presenterThread;
         private bool runPresenter;
+        private volatile uint presentFrame;
 
         private unsafe void PresenterThread() {
             VkSwapchainKHR swapChainCopy = swapChain;
@@ -84,24 +83,26 @@ namespace Xenko.Graphics
                 // wait until we have a frame to present
                 presentWaiter.Wait();
 
+                // set the frame
+                currentBufferIndexCopy = presentFrame; 
+
+                // prepare for next frame
+                presentWaiter.Reset();
+
                 // are we still OK to present?
                 if (runPresenter == false) return;
 
-                while (toPresent.TryDequeue(out currentBufferIndexCopy)) {
-                    using (GraphicsDevice.QueueLock.WriteLock())
-                    {
-                        vkQueuePresentKHR(GraphicsDevice.NativeCommandQueue, &presentInfo);
-                    }                
-                }
-
-                presentWaiter.Reset();
+                using (GraphicsDevice.QueueLock.WriteLock())
+                {
+                    vkQueuePresentKHR(GraphicsDevice.NativeCommandQueue, &presentInfo);
+                }                
             }
         }
 
         public override unsafe void Present()
         {
             // collect and let presenter thread know to present
-            toPresent.Enqueue(currentBufferIndex);
+            presentFrame = currentBufferIndex;
             presentWaiter.Set();
 
             // Get next image
