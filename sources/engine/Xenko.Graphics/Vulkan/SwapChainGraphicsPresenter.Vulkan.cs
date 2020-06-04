@@ -101,12 +101,15 @@ namespace Xenko.Graphics
 
         public override unsafe void Present()
         {
-            // collect and let presenter thread know to present
             presentFrame = currentBufferIndex;
-            presentWaiter.Set();
 
             // Get next image
-            vkAcquireNextImageKHR(GraphicsDevice.NativeDevice, swapChain, ulong.MaxValue, VkSemaphore.Null, presentFence, out currentBufferIndex);
+            using (GraphicsDevice.QueueLock.ReadLock())
+            {
+                vkAcquireNextImageKHR(GraphicsDevice.NativeDevice, swapChain, ulong.MaxValue, VkSemaphore.Null, presentFence, out currentBufferIndex);
+            }
+
+            presentWaiter.Set();
 
             // reset dummy fence
             fixed (VkFence* fences = &presentFence)
