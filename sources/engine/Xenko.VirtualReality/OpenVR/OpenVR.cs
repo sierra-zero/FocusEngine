@@ -7,7 +7,8 @@ using System.Text;
 #if XENKO_GRAPHICS_API_DIRECT3D11
 using SharpDX.Direct3D11;
 #elif XENKO_GRAPHICS_API_VULKAN
-using SharpVulkan;
+using Vortice.Vulkan;
+using static Vortice.Vulkan.Vulkan;
 #endif
 using Valve.VR;
 using Xenko.Core;
@@ -208,11 +209,12 @@ namespace Xenko.VirtualReality
 #if XENKO_GRAPHICS_API_VULKAN
         private static unsafe VRVulkanTextureData_t vkTexData;
         public static bool InitVulkan(GameBase baseGame) {
+            vkGetDeviceQueue((Vortice.Vulkan.VkDevice)baseGame.GraphicsDevice.NativeDevice, 0, 0, out VkQueue queue);
             vkTexData = new VRVulkanTextureData_t {
-                m_pDevice = baseGame.GraphicsDevice.NativeDevice.NativeHandle, // struct VkDevice_T *
-                m_pPhysicalDevice = baseGame.GraphicsDevice.NativePhysicalDevice.NativeHandle, // struct VkPhysicalDevice_T *
-                m_pInstance = baseGame.GraphicsDevice.NativeInstance.NativeHandle, // struct VkInstance_T *
-                m_pQueue = baseGame.GraphicsDevice.NativeDevice.GetQueue(0, 0).NativeHandle, // struct VkQueue_T *
+                m_pDevice = baseGame.GraphicsDevice.NativeDevice.Handle, // struct VkDevice_T *
+                m_pPhysicalDevice = baseGame.GraphicsDevice.NativePhysicalDevice.Handle, // struct VkPhysicalDevice_T *
+                m_pInstance = baseGame.GraphicsDevice.NativeInstance.Handle, // struct VkInstance_T *
+                m_pQueue = queue.Handle, // struct VkQueue_T *
                 m_nQueueFamilyIndex = 0,
                 m_nFormat = (uint)37, //VkFormat.VK_FORMAT_R8G8B8A8_UNORM (37)
             };
@@ -253,7 +255,7 @@ namespace Xenko.VirtualReality
 #if XENKO_GRAPHICS_API_VULKAN
             vkTexData.m_nHeight = (uint)texture.Height;
             vkTexData.m_nWidth = (uint)texture.Width;
-            vkTexData.m_nImage = (ulong)texture.NativeImage.NativeHandle;
+            vkTexData.m_nImage = (ulong)texture.NativeImage.Handle;
             vkTexData.m_nSampleCount = texture.IsMultisample ? (uint)texture.MultisampleCount : 1;
             unsafe {
                 fixed(VRVulkanTextureData_t* vkAddress = &vkTexData) {
@@ -543,13 +545,13 @@ namespace Xenko.VirtualReality
             if (followsHead)
             {
                 HmdMatrix34_t pose = new HmdMatrix34_t();
-                Utilities.CopyMemory((IntPtr)Interop.Fixed(ref pose), (IntPtr)Interop.Fixed(ref transform), Utilities.SizeOf<HmdMatrix34_t>());
+                Utilities.CopyMemory((IntPtr)Core.Interop.Fixed(ref pose), (IntPtr)Core.Interop.Fixed(ref transform), Utilities.SizeOf<HmdMatrix34_t>());
                 Valve.VR.OpenVR.Overlay.SetOverlayTransformTrackedDeviceRelative(overlayId, 0, ref pose);
             }
             else
             {
                 HmdMatrix34_t pose = new HmdMatrix34_t();
-                Utilities.CopyMemory((IntPtr)Interop.Fixed(ref pose), (IntPtr)Interop.Fixed(ref transform), Utilities.SizeOf<HmdMatrix34_t>());
+                Utilities.CopyMemory((IntPtr)Core.Interop.Fixed(ref pose), (IntPtr)Core.Interop.Fixed(ref transform), Utilities.SizeOf<HmdMatrix34_t>());
                 Valve.VR.OpenVR.Overlay.SetOverlayTransformAbsolute(overlayId, ETrackingUniverseOrigin.TrackingUniverseSeated, ref pose);
             }
         }

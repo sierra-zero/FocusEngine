@@ -1,4 +1,4 @@
-<Project>
+﻿<Project>
   <PropertyGroup>
     <XenkoRuntime>true</XenkoRuntime>
     <XenkoGraphicsApiDependent>true</XenkoGraphicsApiDependent>
@@ -20,28 +20,6 @@
     </When>
   </Choose>
   <Import Condition="$(XenkoUI.Contains('SDL'))" Project="..\..\targets\SDL.targets" />
-  <Choose>
-    <When Condition=" '$(XenkoGraphicsApi)' == 'Vulkan' ">
-      <Choose>
-        <When Condition=" '$(XenkoPlatform)' == 'Windows' Or '$(XenkoPlatform)' == 'macOS' ">
-          <ItemGroup>
-            <Reference Include="SharpVulkan">
-              <SpecificVersion>False</SpecificVersion>
-              <HintPath>$(XenkoDependenciesDir)\SharpVulkan\$(XenkoPlatform)\SharpVulkan.dll</HintPath>
-            </Reference>
-          </ItemGroup>
-        </When>
-        <Otherwise>
-          <ItemGroup>
-            <Reference Include="SharpVulkan">
-              <SpecificVersion>False</SpecificVersion>
-              <HintPath>$(XenkoDependenciesDir)\SharpVulkan\Other\SharpVulkan.dll</HintPath>
-            </Reference>
-          </ItemGroup>
-        </Otherwise>
-      </Choose>
-    </When>
-  </Choose>
   <Choose>
     <When Condition="$(XenkoUI.Contains('SDL'))">
       <ItemGroup>
@@ -90,6 +68,7 @@
     <ProjectReference Include="..\Xenko\Xenko.csproj" />
     <PackageReference Include="SharpDX.Direct3D11" Version="4.2.0" Condition="'$(XenkoPlatform)' == 'Windows' Or '$(XenkoPlatform)' == 'UWP'" />
     <PackageReference Include="SharpDX.D3DCompiler" Version="4.2.0" Condition="'$(XenkoPlatform)' == 'Windows' Or '$(XenkoPlatform)' == 'UWP'" />
+    <PackageReference Include="Vortice.Vulkan" Version="1.2.141-alpha-001" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Update="FrameworkResources.resx">
@@ -98,7 +77,6 @@
       <SubType>Designer</SubType>
     </EmbeddedResource>
   </ItemGroup>
-  <ItemGroup />
   <Import Project="..\Xenko.Shared\Refactor\Xenko.Refactor.projitems" Label="Shared" />
   <Import Project="$(XenkoPostSettingsTargets)" />
   <Import Project="Sdk.targets" Sdk="MSBuild.Sdk.Extras" Version="2.0.54" />
@@ -109,7 +87,6 @@
   <Target Name="IncludeExtraAssemblies">
     <ItemGroup>
       <BuildOutputInPackage Include="$(OutputPath)SharpFont.dll" />
-      <BuildOutputInPackage Include="$(OutputPath)SharpVulkan.dll" Condition=" '$(XenkoGraphicsApi)' == 'Vulkan' " />
       <BuildOutputInPackage Include="$(OutputPath)SDL2-CS.dll" Condition="$(XenkoUI.Contains('SDL'))" />
     </ItemGroup>
   </Target>

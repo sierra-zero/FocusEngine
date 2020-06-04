@@ -7,9 +7,9 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
-using SharpVulkan;
+using Vortice.Vulkan;
+using static Vortice.Vulkan.Vulkan;
 using System.Threading;
-using ImageLayout = SharpVulkan.ImageLayout;
 using Xenko.Core;
 using Xenko.Core.Threading;
 
@@ -20,20 +20,18 @@ namespace Xenko.Graphics
     /// </summary>
     public class SwapChainGraphicsPresenter : GraphicsPresenter
     {
-        private Swapchain swapChain = Swapchain.Null;
-        private Surface surface;
-
-        private ConcurrentQueue<uint> toPresent = new ConcurrentQueue<uint>();
+        private VkSwapchainKHR swapChain = VkSwapchainKHR.Null;
+        private VkSurfaceKHR surface;
 
         private Texture backbuffer;
         private SwapChainImageInfo[] swapchainImages;
-        private volatile uint currentBufferIndex;
-        private Fence presentFence;
+        private uint currentBufferIndex;
+        private VkFence presentFence;
 
         private struct SwapChainImageInfo
         {
-            public SharpVulkan.Image NativeImage;
-            public ImageView NativeColorAttachmentView;
+            public VkImage NativeImage;
+            public VkImageView NativeColorAttachmentView;
         }
 
         public SwapChainGraphicsPresenter(GraphicsDevice device, PresentationParameters presentationParameters)
@@ -70,48 +68,53 @@ namespace Xenko.Graphics
         private ManualResetEventSlim presentWaiter = new ManualResetEventSlim(false);
         private Thread presenterThread;
         private bool runPresenter;
+        private volatile uint presentFrame;
 
         private unsafe void PresenterThread() {
-            Swapchain swapChainCopy = swapChain;
+            VkSwapchainKHR swapChainCopy = swapChain;
             uint currentBufferIndexCopy = 0;
-            PresentInfo presentInfo = new PresentInfo {
-                StructureType = StructureType.PresentInfo,
-                SwapchainCount = 1,
-                Swapchains = new IntPtr(&swapChainCopy),
-                ImageIndices = new IntPtr(&currentBufferIndexCopy),
-                WaitSemaphoreCount = 0
+            VkPresentInfoKHR presentInfo = new VkPresentInfoKHR {
+                sType = VkStructureType.PresentInfoKHR,
+                swapchainCount = 1,
+                pSwapchains = &swapChainCopy,
+                pImageIndices = &currentBufferIndexCopy,
             };
             while (runPresenter) {
                 // wait until we have a frame to present
                 presentWaiter.Wait();
 
+                // set the frame
+                currentBufferIndexCopy = presentFrame; 
+
+                // prepare for next frame
+                presentWaiter.Reset();
+
                 // are we still OK to present?
                 if (runPresenter == false) return;
 
-                while (toPresent.TryDequeue(out currentBufferIndexCopy)) {
-                    using (GraphicsDevice.QueueLock.WriteLock())
-                    {
-                        GraphicsDevice.NativeCommandQueue.Present(ref presentInfo);        
-                    }                
-                }
-
-                presentWaiter.Reset();
+                using (GraphicsDevice.QueueLock.WriteLock())
+                {
+                    vkQueuePresentKHR(GraphicsDevice.NativeCommandQueue, &presentInfo);
+                }                
             }
         }
 
         public override unsafe void Present()
         {
-            // collect and let presenter thread know to present
-            toPresent.Enqueue(currentBufferIndex);
-            presentWaiter.Set();
+            presentFrame = currentBufferIndex;
 
             // Get next image
-            Result r = GraphicsDevice.NativeDevice.AcquireNextImageWithResult(swapChain, ulong.MaxValue, SharpVulkan.Semaphore.Null, presentFence, out currentBufferIndex);
+            using (GraphicsDevice.QueueLock.ReadLock())
+            {
+                vkAcquireNextImageKHR(GraphicsDevice.NativeDevice, swapChain, ulong.MaxValue, VkSemaphore.Null, presentFence, out currentBufferIndex);
+            }
+
+            presentWaiter.Set();
 
             // reset dummy fence
-            fixed (Fence* fences = &presentFence)
+            fixed (VkFence* fences = &presentFence)
             {
-                GraphicsDevice.NativeDevice.ResetFences(1, fences);
+                vkResetFences(GraphicsDevice.NativeDevice, 1, fences);
             }
 
             // Flip render targets
@@ -138,8 +141,8 @@ namespace Xenko.Graphics
         {
             DestroySwapchain();
 
-            GraphicsDevice.NativeInstance.DestroySurface(surface);
-            surface = Surface.Null;
+            vkDestroySurfaceKHR(GraphicsDevice.NativeInstance, surface, null);
+            surface = VkSurfaceKHR.Null;
 
             base.OnDestroyed();
         }
@@ -164,7 +167,7 @@ namespace Xenko.Graphics
 
         private unsafe void DestroySwapchain()
         {
-            if (swapChain == Swapchain.Null)
+            if (swapChain == VkSwapchainKHR.Null)
                 return;
     
             // stop our presenter thread
@@ -174,19 +177,19 @@ namespace Xenko.Graphics
                 presenterThread.Join();
             }
 
-            GraphicsDevice.NativeDevice.WaitIdle();
+            vkQueueWaitIdle(GraphicsDevice.NativeCommandQueue);
             CommandList.ResetAllPools();
 
             backbuffer.OnDestroyed();
 
             foreach (var swapchainImage in swapchainImages)
             {
-                GraphicsDevice.NativeDevice.DestroyImageView(swapchainImage.NativeColorAttachmentView);
+                vkDestroyImageView(GraphicsDevice.NativeDevice, swapchainImage.NativeColorAttachmentView, null);
             }
             swapchainImages = null;
 
-            GraphicsDevice.NativeDevice.DestroySwapchain(swapChain);
-            swapChain = Swapchain.Null;
+            vkDestroySwapchainKHR(GraphicsDevice.NativeDevice, swapChain, null);
+            swapChain = VkSwapchainKHR.Null;
         }
 
         private unsafe void CreateSwapChain()
@@ -203,10 +206,9 @@ namespace Xenko.Graphics
             {
                 var nativeFromat = VulkanConvertExtensions.ConvertPixelFormat(format);
 
-                FormatProperties formatProperties;
-                GraphicsDevice.NativePhysicalDevice.GetFormatProperties(nativeFromat, out formatProperties);
+                vkGetPhysicalDeviceFormatProperties(GraphicsDevice.NativePhysicalDevice, nativeFromat, out var formatProperties);
 
-                if ((formatProperties.OptimalTilingFeatures & FormatFeatureFlags.ColorAttachment) != 0)
+                if ((formatProperties.optimalTilingFeatures & VkFormatFeatureFlags.ColorAttachment) != 0)
                 {
                     Description.BackBufferFormat = format;
                     break;
@@ -215,69 +217,75 @@ namespace Xenko.Graphics
 
             // Queue
             // TODO VULKAN: Queue family is needed when creating the Device, so here we can just do a sanity check?
-            var queueNodeIndex = GraphicsDevice.NativePhysicalDevice.QueueFamilyProperties.
-                Where((properties, index) => (properties.QueueFlags & QueueFlags.Graphics) != 0 && GraphicsDevice.NativePhysicalDevice.GetSurfaceSupport((uint)index, surface)).
+            var queueNodeIndex = vkGetPhysicalDeviceQueueFamilyProperties(GraphicsDevice.NativePhysicalDevice).ToArray().
+                Where((properties, index) => (properties.queueFlags & VkQueueFlags.Graphics) != 0 && vkGetPhysicalDeviceSurfaceSupportKHR(GraphicsDevice.NativePhysicalDevice, (uint)index, surface, out var supported) == VkResult.Success && supported).
                 Select((properties, index) => index).First();
 
             // Surface format
             var backBufferFormat = VulkanConvertExtensions.ConvertPixelFormat(Description.BackBufferFormat);
 
-            var surfaceFormats = GraphicsDevice.NativePhysicalDevice.GetSurfaceFormats(surface);
-            if ((surfaceFormats.Length != 1 || surfaceFormats[0].Format != Format.Undefined) &&
-                !surfaceFormats.Any(x => x.Format == backBufferFormat))
+            var surfaceFormats = vkGetPhysicalDeviceSurfaceFormatsKHR(GraphicsDevice.NativePhysicalDevice, surface).ToArray();
+            if ((surfaceFormats.Length != 1 || surfaceFormats[0].format != VkFormat.Undefined) &&
+                !surfaceFormats.Any(x => x.format == backBufferFormat))
             {
-                backBufferFormat = surfaceFormats[0].Format;
+                backBufferFormat = surfaceFormats[0].format;
             }
 
             // Create swapchain
-            SurfaceCapabilities surfaceCapabilities;
-            GraphicsDevice.NativePhysicalDevice.GetSurfaceCapabilities(surface, out surfaceCapabilities);
+            vkGetPhysicalDeviceSurfaceCapabilitiesKHR(GraphicsDevice.NativePhysicalDevice, surface, out var surfaceCapabilities);
 
             // Buffer count
-            uint desiredImageCount = Math.Max(surfaceCapabilities.MinImageCount, 4);
-            if (surfaceCapabilities.MaxImageCount > 0 && desiredImageCount > surfaceCapabilities.MaxImageCount)
+            uint desiredImageCount = Math.Max(surfaceCapabilities.minImageCount, 4);
+            if (surfaceCapabilities.maxImageCount > 0 && desiredImageCount > surfaceCapabilities.maxImageCount)
             {
-                desiredImageCount = surfaceCapabilities.MaxImageCount;
+                desiredImageCount = surfaceCapabilities.maxImageCount;
             }
 
             // Transform
-            SurfaceTransformFlags preTransform;
-            if ((surfaceCapabilities.SupportedTransforms & SurfaceTransformFlags.Identity) != 0)
+            VkSurfaceTransformFlagsKHR preTransform;
+            if ((surfaceCapabilities.supportedTransforms & VkSurfaceTransformFlagsKHR.IdentityKHR) != 0)
             {
-                preTransform = SurfaceTransformFlags.Identity;
+                preTransform = VkSurfaceTransformFlagsKHR.IdentityKHR;
             }
             else
             {
-                preTransform = surfaceCapabilities.CurrentTransform;
+                preTransform = surfaceCapabilities.currentTransform;
             }
 
             // Find present mode
-            var swapChainPresentMode = PresentMode.Fifo; // Always supported, but slow
+            var swapChainPresentMode = VkPresentModeKHR.FifoKHR; // Always supported, but slow
             if (Description.PresentationInterval == PresentInterval.Immediate) {
-                var presentModes = GraphicsDevice.NativePhysicalDevice.GetSurfacePresentModes(surface);
-                if (presentModes.Contains(PresentMode.Mailbox)) swapChainPresentMode = PresentMode.Mailbox;
+                var presentModes = vkGetPhysicalDeviceSurfacePresentModesKHR(GraphicsDevice.NativePhysicalDevice, surface);
+                foreach (var pm in presentModes)
+                {
+                    if (pm == VkPresentModeKHR.MailboxKHR)
+                    {
+                        swapChainPresentMode = VkPresentModeKHR.MailboxKHR;
+                        break;
+                    }
+                }
             }
 
             // Create swapchain
-            var swapchainCreateInfo = new SwapchainCreateInfo
+            var swapchainCreateInfo = new VkSwapchainCreateInfoKHR
             {
-                StructureType = StructureType.SwapchainCreateInfo,
-                Surface = surface,
-                ImageArrayLayers = 1,
-                ImageSharingMode = SharingMode.Exclusive,
-                ImageExtent = new Extent2D((uint)Description.BackBufferWidth, (uint)Description.BackBufferHeight),
-                ImageFormat = backBufferFormat,
-                ImageColorSpace = Description.ColorSpace == ColorSpace.Gamma ? SharpVulkan.ColorSpace.SRgbNonlinear : 0,
-                ImageUsage = ImageUsageFlags.ColorAttachment | ImageUsageFlags.TransferDestination | (surfaceCapabilities.SupportedUsageFlags & ImageUsageFlags.TransferSource), // TODO VULKAN: Use off-screen buffer to emulate
-                PresentMode = swapChainPresentMode,
-                CompositeAlpha = CompositeAlphaFlags.Opaque,
-                MinImageCount = desiredImageCount,
-                PreTransform = preTransform,
-                OldSwapchain = Swapchain.Null,
-                Clipped = true
+                sType = VkStructureType.SwapchainCreateInfoKHR,
+                surface = surface,
+                imageArrayLayers = 1,
+                imageSharingMode = VkSharingMode.Exclusive,
+                imageExtent = new Vortice.Mathematics.Size(Description.BackBufferWidth, Description.BackBufferHeight),
+                imageFormat = backBufferFormat,
+                imageColorSpace = Description.ColorSpace == ColorSpace.Gamma ? VkColorSpaceKHR.SrgbNonLinearKHR : 0,
+                imageUsage = VkImageUsageFlags.ColorAttachment | VkImageUsageFlags.TransferDst | (surfaceCapabilities.supportedUsageFlags & VkImageUsageFlags.TransferSrc), // TODO VULKAN: Use off-screen buffer to emulate
+                presentMode = swapChainPresentMode,
+                compositeAlpha = VkCompositeAlphaFlagsKHR.OpaqueKHR,
+                minImageCount = desiredImageCount,
+                preTransform = preTransform,
+                oldSwapchain = swapChain,
+                clipped = true
             };
 
-            swapChain = GraphicsDevice.NativeDevice.CreateSwapchain(ref swapchainCreateInfo);
+            vkCreateSwapchainKHR(GraphicsDevice.NativeDevice, &swapchainCreateInfo, null, out swapChain);
 
             CreateBackBuffers();
 
@@ -312,10 +320,10 @@ namespace Xenko.Graphics
 #if XENKO_UI_SDL
             var control = Description.DeviceWindowHandle.NativeWindow as SDL.Window;
 
-            if (SDL2.SDL.SDL_Vulkan_CreateSurface(control.SdlHandle, GraphicsDevice.NativeInstance.NativeHandle, out ulong surfacePtr) == SDL2.SDL.SDL_bool.SDL_FALSE)
-                throw new NotSupportedException("Couldn't create an SDL2 Vulkan surface! SdlHandle:" + control.SdlHandle + ", NativeHandle:" + GraphicsDevice.NativeInstance.NativeHandle);
+            if (SDL2.SDL.SDL_Vulkan_CreateSurface(control.SdlHandle, GraphicsDevice.NativeInstance.Handle, out ulong surfacePtr) == SDL2.SDL.SDL_bool.SDL_FALSE)
+                throw new NotSupportedException("Couldn't create an SDL2 Vulkan surface! SdlHandle:" + control.SdlHandle + ", NativeHandle:" + GraphicsDevice.NativeInstance.Handle);
 
-            surface = new Surface(new IntPtr((long)surfacePtr));
+            surface = new VkSurfaceKHR(surfacePtr);
 #elif XENKO_PLATFORM_WINDOWS
             var controlHandle = Description.DeviceWindowHandle.Handle;
             if (controlHandle == IntPtr.Zero)
@@ -323,11 +331,11 @@ namespace Xenko.Graphics
                 throw new NotSupportedException($"Form of type [{Description.DeviceWindowHandle.GetType().Name}] is not supported. Only System.Windows.Control are supported");
             }
 
-            var surfaceCreateInfo = new Win32SurfaceCreateInfo
+            var surfaceCreateInfo = new VkWin32SurfaceCreateInfoKHR
             {
-                StructureType = StructureType.Win32SurfaceCreateInfo,
-                InstanceHandle = Process.GetCurrentProcess().Handle,
-                WindowHandle = controlHandle,
+                sType = VkStructureType.Win32SurfaceCreateInfoKHR,
+                instanceHandle = Process.GetCurrentProcess().Handle,
+                windowHandle = controlHandle,
             };
             surface = GraphicsDevice.NativeInstance.CreateWin32Surface(surfaceCreateInfo);
 #elif XENKO_PLATFORM_ANDROID
@@ -359,68 +367,68 @@ namespace Xenko.Graphics
             };
             backbuffer.InitializeWithoutResources(backBufferDescription);
 
-            var createInfo = new ImageViewCreateInfo
+            var createInfo = new VkImageViewCreateInfo
             {
-                StructureType = StructureType.ImageViewCreateInfo,
-                SubresourceRange = new ImageSubresourceRange(ImageAspectFlags.Color, 0, 1, 0, 1),
-                Format = backbuffer.NativeFormat,
-                ViewType = ImageViewType.Image2D
+                sType = VkStructureType.ImageViewCreateInfo,
+                subresourceRange = new VkImageSubresourceRange(VkImageAspectFlags.Color, 0, 1, 0, 1),
+                format = backbuffer.NativeFormat,
+                viewType = VkImageViewType.Image2D,
             };
 
             // We initialize swapchain images to PresentSource, since we swap them out while in this layout.
-            backbuffer.NativeAccessMask = AccessFlags.MemoryRead;
-            backbuffer.NativeLayout = ImageLayout.PresentSource;
+            backbuffer.NativeAccessMask = VkAccessFlags.MemoryRead;
+            backbuffer.NativeLayout = VkImageLayout.PresentSrcKHR;
 
-            var imageMemoryBarrier = new ImageMemoryBarrier
+            var imageMemoryBarrier = new VkImageMemoryBarrier
             {
-                StructureType = StructureType.ImageMemoryBarrier,
-                SubresourceRange = new ImageSubresourceRange(ImageAspectFlags.Color, 0, 1, 0, 1),
-                OldLayout = ImageLayout.Undefined,
-                NewLayout = ImageLayout.PresentSource,
-                SourceAccessMask = AccessFlags.None,
-                DestinationAccessMask = AccessFlags.MemoryRead
+                sType = VkStructureType.ImageMemoryBarrier,
+                subresourceRange = new VkImageSubresourceRange(VkImageAspectFlags.Color, 0, 1, 0, 1),
+                oldLayout = VkImageLayout.Undefined,
+                newLayout = VkImageLayout.PresentSrcKHR,
+                srcAccessMask = VkAccessFlags.None,
+                dstAccessMask = VkAccessFlags.MemoryRead
             };
 
             var commandBuffer = GraphicsDevice.NativeCopyCommandBuffer;
-            var beginInfo = new CommandBufferBeginInfo { StructureType = StructureType.CommandBufferBeginInfo };
-            commandBuffer.Begin(ref beginInfo);
+            var beginInfo = new VkCommandBufferBeginInfo { sType = VkStructureType.CommandBufferBeginInfo };
+            vkBeginCommandBuffer(commandBuffer, &beginInfo);
 
-            var buffers = GraphicsDevice.NativeDevice.GetSwapchainImages(swapChain);
+            var buffers = vkGetSwapchainImagesKHR(GraphicsDevice.NativeDevice, swapChain);
             swapchainImages = new SwapChainImageInfo[buffers.Length];
 
             for (int i = 0; i < buffers.Length; i++)
             {
                 // Create image views
-                swapchainImages[i].NativeImage = createInfo.Image = buffers[i];
-                swapchainImages[i].NativeColorAttachmentView = GraphicsDevice.NativeDevice.CreateImageView(ref createInfo);
+                swapchainImages[i].NativeImage = createInfo.image = buffers[i];
+                vkCreateImageView(GraphicsDevice.NativeDevice, &createInfo, null, out swapchainImages[i].NativeColorAttachmentView);
 
                 // Transition to default layout
-                imageMemoryBarrier.Image = buffers[i];
-                commandBuffer.PipelineBarrier(PipelineStageFlags.AllCommands, PipelineStageFlags.AllCommands, DependencyFlags.None, 0, null, 0, null, 1, &imageMemoryBarrier);
+                imageMemoryBarrier.image = buffers[i];
+                vkCmdPipelineBarrier(commandBuffer, VkPipelineStageFlags.AllCommands, VkPipelineStageFlags.AllCommands, VkDependencyFlags.None, 0, null, 0, null, 1, &imageMemoryBarrier);
             }
 
             // Close and submit
-            commandBuffer.End();
+            vkEndCommandBuffer(commandBuffer);
 
-            var submitInfo = new SubmitInfo
+            var submitInfo = new VkSubmitInfo
             {
-                StructureType = StructureType.SubmitInfo,
-                CommandBufferCount = 1,
-                CommandBuffers = new IntPtr(&commandBuffer),
+                sType = VkStructureType.SubmitInfo,
+                commandBufferCount = 1,
+                pCommandBuffers = &commandBuffer,
             };
-            GraphicsDevice.NativeCommandQueue.Submit(1, &submitInfo, Fence.Null);
-            GraphicsDevice.NativeCommandQueue.WaitIdle();
-            commandBuffer.Reset(CommandBufferResetFlags.None);
+            vkQueueSubmit(GraphicsDevice.NativeCommandQueue, 1, &submitInfo, VkFence.Null);
+            vkQueueWaitIdle(GraphicsDevice.NativeCommandQueue);
+            vkResetCommandBuffer(commandBuffer, VkCommandBufferResetFlags.None);
             
             // need to make a fence, but can immediately reset it, as it acts as a dummy
-            var fenceCreateInfo = new FenceCreateInfo { StructureType = StructureType.FenceCreateInfo };
-            presentFence = GraphicsDevice.NativeDevice.CreateFence(ref fenceCreateInfo);
+            var fenceCreateInfo = new VkFenceCreateInfo { sType = VkStructureType.FenceCreateInfo };
+            vkCreateFence(GraphicsDevice.NativeDevice, &fenceCreateInfo, null, out presentFence);
 
-            currentBufferIndex = GraphicsDevice.NativeDevice.AcquireNextImage(swapChain, ulong.MaxValue, SharpVulkan.Semaphore.Null, presentFence);
+            vkAcquireNextImageKHR(GraphicsDevice.NativeDevice, swapChain, ulong.MaxValue, VkSemaphore.Null, presentFence, out currentBufferIndex);
 
-            fixed (Fence* fences = &presentFence)
+            fixed (VkFence* fences = &presentFence)
             {
-                GraphicsDevice.NativeDevice.ResetFences(1, fences);
+                vkResetFences(GraphicsDevice.NativeDevice, 1, fences);
             }
 
             // Apply the first swap chain image to the texture
