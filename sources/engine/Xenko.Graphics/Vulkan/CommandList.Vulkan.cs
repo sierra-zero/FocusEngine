@@ -373,7 +373,7 @@ namespace Xenko.Graphics
 
                     case VkDescriptorType.Sampler:
                         var samplerState = heapObject.Value as SamplerState;
-                        descriptorData->ImageInfo = new VkDescriptorImageInfo { sampler = samplerState?.NativeSampler ?? GraphicsDevice.SamplerStates.LinearWrap.NativeSampler };
+                        descriptorData->ImageInfo = new VkDescriptorImageInfo { sampler = samplerState?.NativeSampler ?? GraphicsDevice.SamplerStates.LinearClamp.NativeSampler };
                         write->pImageInfo = &descriptorData->ImageInfo;
                         break;
 
