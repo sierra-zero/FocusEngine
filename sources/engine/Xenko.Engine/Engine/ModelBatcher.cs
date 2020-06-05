@@ -15,6 +15,7 @@ using Xenko.Rendering.Materials;
 using Xenko.Core;
 using System.Runtime.InteropServices;
 using Xenko.Rendering.Rendering;
+using Xenko.Core.Collections;
 
 namespace Xenko.Engine
 {
@@ -30,6 +31,18 @@ namespace Xenko.Engine
             public Matrix? Transform;
             public int MaterialIndex;
         }
+
+        private struct CachedData
+        {
+            public Vector3[] positions;
+            public Vector3[] normals;
+            public Vector2[] uvs;
+            public Color4[] colors;
+            public Vector4[] tangents;
+            public uint[] indicies;
+        }
+
+        private static CacheConcurrentDictionary<Mesh, CachedData> CachedModelData = new Core.Collections.CacheConcurrentDictionary<Mesh, CachedData>(24);
 
         /// <summary>
         /// Unpacks a raw buffer of vertex data into proper arrays
@@ -118,6 +131,11 @@ namespace Xenko.Engine
                 BatchingChunk chunk = chunks[i];
                 if (unbatched != null && unbatched.Contains(chunk.Entity)) continue; // don't try batching other things in this entity if some failed
                 if (chunk.Entity != null) chunk.Entity.Transform.UpdateWorldMatrix();
+                Matrix worldMatrix = chunk.Entity == null ? (chunk.Transform ?? Matrix.Identity) : chunk.Entity.Transform.WorldMatrix;
+                Matrix rot;
+                if (worldMatrix != Matrix.Identity)
+                    worldMatrix.GetRotationMatrix(out rot);
+                else rot = Matrix.Identity;
                 for (int j = 0; j < chunk.Model.Meshes.Count; j++)
                 {
                     Mesh modelMesh = chunk.Model.Meshes[j];
@@ -130,7 +148,17 @@ namespace Xenko.Engine
                         Color4[] colors = null;
 
                         //vertexes
-                        if (modelMesh.Draw is StagedMeshDraw)
+                        if (CachedModelData.TryGet(modelMesh, out var information))
+                        {
+                            // clone positions and normals, since they may change
+                            positions = (Vector3[])information.positions.Clone();
+                            normals = (Vector3[])information.normals.Clone();
+                            tangents = information.tangents;
+                            uvs = information.uvs;
+                            colors = information.colors;
+                            for (int k = 0; k < information.indicies.Length; k++) indiciesList.Add(information.indicies[k] + indexOffset);
+                        }
+                        else if (modelMesh.Draw is StagedMeshDraw)
                         {
                             StagedMeshDraw smd = modelMesh.Draw as StagedMeshDraw;
 
@@ -186,6 +214,19 @@ namespace Xenko.Engine
 
                             // take care of indicies
                             for (int k = 0; k < smd.Indicies.Length; k++) indiciesList.Add(smd.Indicies[k] + indexOffset);
+
+                            // cache this for later
+                            CachedModelData.Add(modelMesh,
+                                new CachedData()
+                                {
+                                    colors = colors,
+                                    indicies = smd.Indicies,
+                                    normals = (Vector3[])normals.Clone(),
+                                    positions = (Vector3[])positions.Clone(),
+                                    tangents = tangents,
+                                    uvs = uvs
+                                }
+                            );
                         }
                         else
                         {
@@ -205,7 +246,14 @@ namespace Xenko.Engine
                                 continue;
                             }
 
-                            if (indiciesList == null) indiciesList = new List<uint>();
+                            CachedData cmd = new CachedData()
+                            {
+                                colors = colors,
+                                positions = (Vector3[])positions.Clone(),
+                                normals = (Vector3[])normals.Clone(),
+                                uvs = uvs,
+                                tangents = tangents
+                            };
 
                             // indicies
                             fixed (byte* pdst = ibuf.VertIndexData)
@@ -215,9 +263,11 @@ namespace Xenko.Engine
                                     var dst = (uint*)pdst;
 
                                     int numIndices = ibuf.VertIndexData.Length / sizeof(uint);
+                                    cmd.indicies = new uint[numIndices];
                                     for (var k = 0; k < numIndices; k++)
                                     {
                                         // Offset indices
+                                        cmd.indicies[k] = dst[k];
                                         indiciesList.Add(dst[k] + indexOffset);
                                     }
                                 }
@@ -226,13 +276,17 @@ namespace Xenko.Engine
                                     var dst = (ushort*)pdst;
 
                                     int numIndices = ibuf.VertIndexData.Length / sizeof(ushort);
+                                    cmd.indicies = new uint[numIndices];
                                     for (var k = 0; k < numIndices; k++)
                                     {
                                         // Offset indices
+                                        cmd.indicies[k] = dst[k];
                                         indiciesList.Add(dst[k] + indexOffset);
                                     }
                                 }
                             }
+
+                            CachedModelData.Add(modelMesh, cmd);
                         }
 
                         // what kind of structure will we be making, if we haven't picked one already?
@@ -240,20 +294,25 @@ namespace Xenko.Engine
                         {
                             if (uvs != null)
                             {
-                                vertsNT = new List<VertexPositionNormalTextureTangent>();
+                                vertsNT = new List<VertexPositionNormalTextureTangent>(positions.Length);
                             }
                             else
                             {
-                                vertsNC = new List<VertexPositionNormalColor>();
+                                vertsNC = new List<VertexPositionNormalColor>(positions.Length);
                             }
                         }
 
-                        // transform verts/norms by matrix
-                        Matrix worldMatrix = chunk.Entity == null ? (chunk.Transform ?? Matrix.Identity) : chunk.Entity.Transform.WorldMatrix;
-                        bool matrixNeeded = worldMatrix != Matrix.Identity;
+                        // bounding box/finish list
+                        bool needmatrix = worldMatrix != Matrix.Identity;
                         for (int k = 0; k < positions.Length; k++)
                         {
-                            if (matrixNeeded) Vector3.Transform(ref positions[k], ref worldMatrix, out positions[k]);
+                            if (needmatrix)
+                            {
+                                Vector3.Transform(ref positions[k], ref worldMatrix, out positions[k]);
+
+                                if (normals != null)
+                                    Vector3.TransformNormal(ref normals[k], ref rot, out normals[k]);
+                            }
 
                             // update bounding box?
                             Vector3 pos = positions[k];
@@ -263,11 +322,6 @@ namespace Xenko.Engine
                             if (pos.X < bb.Minimum.X) bb.Minimum.X = pos.X;
                             if (pos.Y < bb.Minimum.Y) bb.Minimum.Y = pos.Y;
                             if (pos.Z < bb.Minimum.Z) bb.Minimum.Z = pos.Z;
-
-                            if (normals != null && matrixNeeded && worldMatrix.GetRotationMatrix(out Matrix rot))
-                            {
-                                Vector3.TransformNormal(ref normals[k], ref rot, out normals[k]);
-                            }
 
                             if (vertsNT != null)
                             {
