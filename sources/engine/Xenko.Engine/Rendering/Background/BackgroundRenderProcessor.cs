@@ -58,6 +58,9 @@ namespace Xenko.Rendering.Background
                 {
                     // Select the first active background
                     renderBackground.Is2D = backgroundComponent.Is2D;
+                    renderBackground.FullAlpha = backgroundComponent.AlphaColor;
+                    renderBackground.ZeroAlpha = backgroundComponent.ZeroColor;
+                    renderBackground.IsHorizon = backgroundComponent.IsHorizon;
                     renderBackground.Texture = backgroundComponent.Texture;
                     renderBackground.Intensity = backgroundComponent.Intensity;
                     renderBackground.RenderGroup = backgroundComponent.RenderGroup;

@@ -2,9 +2,9 @@
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System.ComponentModel;
-
 using Xenko.Core;
 using Xenko.Core.Annotations;
+using Xenko.Core.Mathematics;
 using Xenko.Engine.Design;
 using Xenko.Engine.Processors;
 using Xenko.Graphics;
@@ -64,5 +64,18 @@ namespace Xenko.Engine
         [Display("2D background")]
         [DefaultValue(false)]
         public bool Is2D { get; set; } = false;
+
+        [DataMember(50)]
+        [Display("Alpha Map Shaded")]
+        [DefaultValue(false)]
+        public bool IsHorizon { get; set; } = false;
+
+        [DataMember(60)]
+        [Display("Full Alpha Shade")]
+        public Color4 AlphaColor { get; set; } = new Color4(0.2f, 0.2f, 0.8f, 1f);
+
+        [DataMember(70)]
+        [Display("Zero Alpha Shade")]
+        public Color4 ZeroColor { get; set; } = new Color4(0.4f, 0.4f, 1f, 1f);
     }
 }

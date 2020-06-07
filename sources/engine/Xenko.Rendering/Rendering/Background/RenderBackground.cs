@@ -7,9 +7,10 @@ namespace Xenko.Rendering.Background
 {
     public class RenderBackground : RenderObject
     {
-        public bool Is2D;
+        public bool Is2D, IsHorizon;
         public Texture Texture;
         public float Intensity;
         public Quaternion Rotation;
+        public Color4 FullAlpha, ZeroAlpha;
     }
 }

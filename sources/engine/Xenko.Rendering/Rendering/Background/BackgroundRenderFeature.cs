@@ -17,6 +17,7 @@ namespace Xenko.Rendering.Background
         private DynamicEffectInstance backgroundCubemapEffect;
         private DynamicEffectInstance skyboxTextureEffect;
         private DynamicEffectInstance skyboxCubemapEffect;
+        private DynamicEffectInstance skyboxTextureHorizonEffect;
 
         public override Type SupportedRenderObjectType => typeof(RenderBackground);
 
@@ -65,12 +66,14 @@ namespace Xenko.Rendering.Background
             background2DEffect = new DynamicEffectInstance("BackgroundShader");
             backgroundCubemapEffect = new DynamicEffectInstance("BackgroundCubemapShader");
             skyboxTextureEffect = new DynamicEffectInstance("SkyboxShaderTexture");
+            skyboxTextureHorizonEffect = new DynamicEffectInstance("SkyboxShaderTextureHorizon");
             skyboxCubemapEffect = new DynamicEffectInstance("SkyboxShaderCubemap");
 
             background2DEffect.Initialize(Context.Services);
             backgroundCubemapEffect.Initialize(Context.Services);
             skyboxTextureEffect.Initialize(Context.Services);
             skyboxCubemapEffect.Initialize(Context.Services);
+            skyboxTextureHorizonEffect.Initialize(Context.Services);
 
             spriteBatch = new SpriteBatch(RenderSystem.GraphicsDevice) { VirtualResolution = new Vector3(1) };
         }
@@ -129,9 +132,20 @@ namespace Xenko.Rendering.Background
             // Setup the effect depending on the type of texture
             if (renderBackground.Texture.ViewDimension == TextureDimension.Texture2D)
             {
-                skyboxTextureEffect.UpdateEffect(graphicsDevice);
-                spriteBatch.Begin(context.GraphicsContext, SpriteSortMode.FrontToBack, BlendStates.Opaque, null, DepthStencilStates.DepthRead, null, skyboxTextureEffect);
-                spriteBatch.Parameters.Set(SkyboxShaderTextureKeys.Texture, renderBackground.Texture);
+                if (renderBackground.IsHorizon)
+                {
+                    skyboxTextureHorizonEffect.UpdateEffect(graphicsDevice);
+                    spriteBatch.Begin(context.GraphicsContext, SpriteSortMode.FrontToBack, BlendStates.Opaque, null, DepthStencilStates.DepthRead, null, skyboxTextureHorizonEffect);
+                    spriteBatch.Parameters.Set(SkyboxShaderTextureHorizonKeys.Texture, renderBackground.Texture);
+                    spriteBatch.Parameters.Set(SkyboxShaderTextureHorizonKeys.AlphaColor, renderBackground.FullAlpha);
+                    spriteBatch.Parameters.Set(SkyboxShaderTextureHorizonKeys.ZeroColor, renderBackground.ZeroAlpha);
+                }
+                else
+                {
+                    skyboxTextureEffect.UpdateEffect(graphicsDevice);
+                    spriteBatch.Begin(context.GraphicsContext, SpriteSortMode.FrontToBack, BlendStates.Opaque, null, DepthStencilStates.DepthRead, null, skyboxTextureEffect);
+                    spriteBatch.Parameters.Set(SkyboxShaderTextureKeys.Texture, renderBackground.Texture);
+                }
             }
             else if (renderBackground.Texture.ViewDimension == TextureDimension.TextureCube)
             {
