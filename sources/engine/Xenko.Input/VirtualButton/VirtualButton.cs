@@ -195,7 +195,7 @@ namespace Xenko.Input
         {
             foreach (var fieldInfo in type.GetTypeInfo().DeclaredFields)
             {
-                if (fieldInfo.IsStatic && fieldInfo.FieldType == typeof(VirtualButton))
+                if (fieldInfo.IsStatic && typeof(VirtualButton).IsAssignableFrom(fieldInfo.FieldType))
                 {
                     Register((VirtualButton)fieldInfo.GetValue(null));
                 }
