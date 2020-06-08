@@ -3,6 +3,7 @@
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
@@ -28,10 +29,12 @@ namespace Xenko.Streaming
     /// <seealso cref="Xenko.Graphics.Data.ITexturesStreamingProvider" />
     public class StreamingManager : GameSystemBase, IStreamingManager, ITexturesStreamingProvider
     {
+        private readonly ReaderWriterLockSlim resourceLocker = new ReaderWriterLockSlim();
         private readonly List<StreamableResource> resources = new List<StreamableResource>(512);
-        private readonly ReaderWriterLockSlim resourceLocker = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
-        private readonly Dictionary<object, StreamableResource> resourcesLookup = new Dictionary<object, StreamableResource>(512);
         private readonly List<StreamableResource> activeStreaming = new List<StreamableResource>(8); // Important: alwasy use inside lock(resources)
+
+        private readonly ConcurrentDictionary<object, StreamableResource> resourcesLookup = new ConcurrentDictionary<object, StreamableResource>(Environment.ProcessorCount, 512);
+
         private int lastUpdateResourcesIndex;
         private bool isDisposing;
         private int frameIndex;
@@ -156,11 +159,9 @@ namespace Xenko.Streaming
         public T Get<T>(object obj) where T : StreamableResource
         {
             StreamableResource result;
-            using (resourceLocker.ReadLock())
-            {
-                resourcesLookup.TryGetValue(obj, out result);
-            }
-            return result as T;
+            if (resourcesLookup.TryGetValue(obj, out result))
+                return result as T;
+            return null;
         }
 
         /// <summary>
@@ -288,22 +289,19 @@ namespace Xenko.Streaming
             var alreadyHasOptions = resource.StreamingOptions.HasValue;
             var newOptions = combineOptions && alreadyHasOptions ? options.CombineWith(resource.StreamingOptions.Value) : options;
 
-            using (resourceLocker.ReadLock())
+            resource.StreamingOptions = newOptions;
+
+            if (newOptions.LoadImmediately)
             {
-                resource.StreamingOptions = newOptions;
-
-                if (newOptions.LoadImmediately)
+                // ensure that the resource is not currently streaming
+                if (!resource.CanBeUpdated)
                 {
-                    // ensure that the resource is not currently streaming
-                    if (!resource.CanBeUpdated)
-                    {
-                        resource.StopStreaming();
-                        FlushSync();
-                    }
-
-                    // Stream resource to the maximum level
-                    FullyLoadResource(resource);
+                    resource.StopStreaming();
+                    FlushSync();
                 }
+
+                // Stream resource to the maximum level
+                FullyLoadResource(resource);
             }
         }
 
@@ -311,12 +309,13 @@ namespace Xenko.Streaming
         {
             Debug.Assert(resource != null && isDisposing == false, $"resource[{resource}] != null && isDisposing[{isDisposing}] == false");
 
+            resourcesLookup.TryAdd(resource.Resource, resource);
+
             using (resourceLocker.WriteLock())
             {
                 Debug.Assert(!resources.Contains(resource), "!resources.Contains(resource)");
 
                 resources.Add(resource);
-                resourcesLookup.Add(resource.Resource, resource);
             }
         }
 
@@ -332,7 +331,7 @@ namespace Xenko.Streaming
                 Debug.Assert(resources.Contains(resource), "resources.Contains(resource)");
 
                 resources.Remove(resource);
-                resourcesLookup.Remove(resource.Resource);
+                resourcesLookup.TryRemove(resource.Resource, out var _);
                 activeStreaming.Remove(resource);
             }
         }
@@ -440,23 +439,24 @@ namespace Xenko.Streaming
                 return;
 
             // Update resources
-            using (resourceLocker.ReadLock())
+            if (Enabled)
             {
-                if (Enabled)
-                {
-                    // Perform synchronization
-                    FlushSync();
+                // Perform synchronization
+                FlushSync();
 
 #if USE_TEST_MANUAL_QUALITY // Temporary testing code used for testing quality changing using K/L keys
-                    if (((Game)Game).Input.IsKeyPressed(Xenko.Input.Keys.K))
-                    {
-                        testQuality = Math.Min(testQuality + 5, 100);
-                    }
-                    if (((Game)Game).Input.IsKeyPressed(Xenko.Input.Keys.L))
-                    {
-                        testQuality = Math.Max(testQuality - 5, 0);
-                    }
+                if (((Game)Game).Input.IsKeyPressed(Xenko.Input.Keys.K))
+                {
+                    testQuality = Math.Min(testQuality + 5, 100);
+                }
+                if (((Game)Game).Input.IsKeyPressed(Xenko.Input.Keys.L))
+                {
+                    testQuality = Math.Max(testQuality - 5, 0);
+                }
 #endif
+                using (resourceLocker.ReadLock())
+                {
+
                     int resourcesCount = Resources.Count;
                     if (resourcesCount > 0)
                     {
@@ -560,15 +560,21 @@ namespace Xenko.Streaming
 
         private void FlushSync()
         {
-            for (int i = 0; i < activeStreaming.Count; i++)
+            using (resourceLocker.UpgradableReadLock())
             {
-                var resource = activeStreaming[i];
-                if (resource.IsTaskActive)
-                    continue;
+                for (int i = 0; i < activeStreaming.Count; i++)
+                {
+                    var resource = activeStreaming[i];
+                    if (resource.IsTaskActive)
+                        continue;
 
-                resource.FlushSync();
-                activeStreaming.RemoveAt(i);
-                i--;
+                    resource.FlushSync();
+                    using (resourceLocker.WriteLock())
+                    {
+                        activeStreaming.RemoveAt(i);
+                    }
+                    i--;
+                }
             }
         }
 
@@ -576,13 +582,10 @@ namespace Xenko.Streaming
         {
             if (!Enabled)
             {
-                using (resourceLocker.ReadLock())
-                {
-                    activeStreaming.ForEach(stream => stream.StopStreaming());
-                    FlushSync();
+                activeStreaming.ForEach(stream => stream.StopStreaming());
+                FlushSync();
 
-                    resources.ForEach(FullyLoadResource);
-                }
+                resources.ForEach(FullyLoadResource);
             }
         }
     }
