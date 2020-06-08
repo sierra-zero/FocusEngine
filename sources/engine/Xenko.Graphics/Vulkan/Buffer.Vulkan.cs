@@ -171,7 +171,10 @@ namespace Xenko.Graphics
 
             if (NativeMemory != VkDeviceMemory.Null)
             {
-                vkBindBufferMemory(GraphicsDevice.NativeDevice, NativeBuffer, NativeMemory, 0);
+                lock (BufferLocker)
+                {
+                    vkBindBufferMemory(GraphicsDevice.NativeDevice, NativeBuffer, NativeMemory, 0);
+                }
             }
 
             if (SizeInBytes > 0)
