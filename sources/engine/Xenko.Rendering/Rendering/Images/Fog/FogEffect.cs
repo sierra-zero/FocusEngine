@@ -20,6 +20,8 @@ namespace Xenko.Rendering
     {
         public static readonly ValueParameterKey<Color4> FogColor = ParameterKeys.NewValue<Color4>(new Color4(1,1,1,1));
         public static readonly ValueParameterKey<float> Density = ParameterKeys.NewValue<float>(1.0f);
+        public static readonly ValueParameterKey<float> FogStart = ParameterKeys.NewValue<float>(0f);
+        public static readonly ValueParameterKey<bool> skipBG = ParameterKeys.NewValue<bool>(false);
         public static readonly ValueParameterKey<float> zFar = ParameterKeys.NewValue<float>(1000f);
         public static readonly ValueParameterKey<float> zNear = ParameterKeys.NewValue<float>(0.1f);
         public static readonly ObjectParameterKey<Texture> DepthTexture = ParameterKeys.NewObject<Texture>();

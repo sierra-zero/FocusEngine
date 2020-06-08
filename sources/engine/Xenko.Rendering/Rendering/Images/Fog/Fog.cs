@@ -39,6 +39,12 @@ namespace Xenko.Rendering.Images {
         [DataMember(20)]
         public Color4 Color { get; set; } = new Color4(1.0f);
 
+        [DataMember(30)]
+        public float FogStart { get; set; } = 0f;
+
+        [DataMember(40)]
+        public bool SkipBackground { get; set; } = false;
+
         protected override void InitializeCore() {
             base.InitializeCore();
             ToLoadAndUnload(fogFilter);
@@ -74,6 +80,8 @@ namespace Xenko.Rendering.Images {
             fogFilter.Parameters.Set(FogEffectKeys.DepthTexture, depthTexture);
             fogFilter.Parameters.Set(FogEffectKeys.zFar, zMax);
             fogFilter.Parameters.Set(FogEffectKeys.zNear, zMin);
+            fogFilter.Parameters.Set(FogEffectKeys.FogStart, FogStart);
+            fogFilter.Parameters.Set(FogEffectKeys.skipBG, SkipBackground);
 
             fogFilter.SetInput(0, color);
             fogFilter.SetOutput(output);
