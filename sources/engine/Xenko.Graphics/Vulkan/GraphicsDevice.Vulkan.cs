@@ -654,29 +654,50 @@ namespace Xenko.Graphics
 
    internal abstract class ResourcePool<T> : ComponentBase
     {
+        private const int CHECK_COMPLETED_INTERVAL = 4;
+
         protected readonly GraphicsDevice GraphicsDevice;
+        private long completedValue;
+        private int checkCompleted;
         private SpinLock spinLock = new SpinLock();
-        private readonly LinkedList<KeyValuePair<long, T>> liveObjects = new LinkedList<KeyValuePair<long, T>>();
+        private readonly Queue<KeyValuePair<long, T>> liveObjects = new Queue<KeyValuePair<long, T>>();
 
         protected ResourcePool(GraphicsDevice graphicsDevice)
         {
             GraphicsDevice = graphicsDevice;
+            checkCompleted = CHECK_COMPLETED_INTERVAL;
         }
 
         public T GetObject()
         {
             KeyValuePair<long, T>? firstAllocator = null;
 
+            if (Interlocked.Increment(ref checkCompleted) >= CHECK_COMPLETED_INTERVAL)
+            {
+                // this check is slow, so only do it occassionally
+                // this may cause more objects to get created, but that is fine
+                // more things will come safely off the queue when this updates
+                completedValue = GraphicsDevice.GetCompletedValue();
+                checkCompleted = 0;
+            }
+
             bool lockTaken = false;
             try
             {
                 spinLock.Enter(ref lockTaken);
 
-                var node = liveObjects.First;
-                if (node != null)
+                if (liveObjects.Count > 0)
                 {
-                    firstAllocator = node.Value;
-                    liveObjects.RemoveFirst();
+                    firstAllocator = liveObjects.Peek();
+
+                    if (firstAllocator.Value.Key <= completedValue)
+                    {
+                        liveObjects.Dequeue();
+                    }
+                    else
+                    {
+                        firstAllocator = null;
+                    }
                 }
             }
             finally
@@ -687,24 +708,8 @@ namespace Xenko.Graphics
 
             if (firstAllocator.HasValue)
             {
-                if (firstAllocator.Value.Key <= GraphicsDevice.GetCompletedValue())
-                {
-                    ResetObject(firstAllocator.Value.Value);
-                    return firstAllocator.Value.Value;
-                }
-
-                bool lockTakenAgain = false;
-                try
-                {
-                    spinLock.Enter(ref lockTakenAgain);
-
-                    liveObjects.AddFirst(firstAllocator.Value);
-                }
-                finally
-                {
-                    if (lockTakenAgain)
-                        spinLock.Exit(true);
-                }
+                ResetObject(firstAllocator.Value.Value);
+                return firstAllocator.Value.Value;
             }
 
             return CreateObject();
@@ -717,7 +722,7 @@ namespace Xenko.Graphics
             {
                 spinLock.Enter(ref lockTaken);
 
-                liveObjects.AddLast(new KeyValuePair<long, T>(fenceValue, obj));
+                liveObjects.Enqueue(new KeyValuePair<long, T>(fenceValue, obj));
             }
             finally
             {
@@ -744,17 +749,15 @@ namespace Xenko.Graphics
                 {
                     spinLock.Enter(ref lockTaken);
 
-                    toremove = liveObjects.First?.Value ?? null;
-                    if (toremove != null)
-                        liveObjects.RemoveFirst();
+                    if (liveObjects.Count == 0) return;
+
+                    toremove = liveObjects.Dequeue();
                 }
                 finally
                 {
                     if (lockTaken)
                         spinLock.Exit(true);
                 }
-
-                if (toremove.HasValue == false) break;
 
                 DestroyObject(toremove.Value.Value);
             }
