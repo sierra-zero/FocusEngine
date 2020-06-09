@@ -192,6 +192,9 @@ namespace Xenko.Physics
 
                     if (Simulation.DisableSimulation == false)
                     {
+                        // don't make changes to rigidbodies while simulating
+                        BepuRigidbodyComponent.safeRun = false;
+
                         // simulate!
                         float totalTime = time;
                         for(int k=0; k<MaxSubSteps && totalTime > 0f; k++)
@@ -200,6 +203,8 @@ namespace Xenko.Physics
                             physicsScene.BepuSimulation.Simulate(simtime);
                             totalTime -= simtime;
                         }
+
+                        BepuRigidbodyComponent.safeRun = true;
 
                         // update all rigidbodies
                         Xenko.Core.Threading.Dispatcher.For(0, physicsScene.BepuSimulation.AllRigidbodies.Count, (j) =>

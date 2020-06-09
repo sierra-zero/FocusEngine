@@ -57,21 +57,8 @@ namespace Xenko.Physics.Bepu
 
         internal bool wasAwake;
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void SafeRun(Action dome)
-        {
-            if (PhysicsSystem.IsSimulationThread(Thread.CurrentThread))
-            {
-                dome();
-            }
-            else
-            {
-                BepuSimulation.instance.ActionsBeforeSimulationStep.Enqueue((time) =>
-                {
-                    dome();
-                });
-            }
-        }
+        // are we safe to make changes to rigidbodies (e.g. not simulating)
+        internal static volatile bool safeRun;
 
         /// <summary>
         /// Gets a value indicating whether this instance is active (awake).
@@ -91,7 +78,18 @@ namespace Xenko.Physics.Bepu
                 if (IsActive == value) return;
 
                 wasAwake = value;
-                SafeRun(delegate { InternalBody.Awake = value; });
+
+                if (safeRun)
+                {
+                    InternalBody.Awake = value;
+                }
+                else
+                {
+                    BepuSimulation.instance.ActionsBeforeSimulationStep.Enqueue((time) =>
+                    {
+                        InternalBody.Awake = value;
+                    });
+                }
             }
         }
 
@@ -115,7 +113,17 @@ namespace Xenko.Physics.Bepu
 
                 if (AddedToScene)
                 {
-                    SafeRun(delegate { InternalBody.Collidable.Continuity = bodyDescription.Collidable.Continuity; });
+                    if (safeRun)
+                    {
+                        InternalBody.Collidable.Continuity = bodyDescription.Collidable.Continuity;
+                    }
+                    else
+                    {
+                        BepuSimulation.instance.ActionsBeforeSimulationStep.Enqueue((time) =>
+                        {
+                            InternalBody.Collidable.Continuity = bodyDescription.Collidable.Continuity;
+                        });
+                    }
                 }
             }
         }
@@ -237,7 +245,17 @@ namespace Xenko.Physics.Bepu
 
                 if (AddedToScene)
                 {
-                    SafeRun(delegate { InternalBody.Activity.SleepThreshold = value; });
+                    if (safeRun)
+                    {
+                        InternalBody.Activity.SleepThreshold = value;
+                    }
+                    else
+                    {
+                        BepuSimulation.instance.ActionsBeforeSimulationStep.Enqueue((time) =>
+                        {
+                            InternalBody.Activity.SleepThreshold = value;
+                        });
+                    }
                 }
             }
         }
@@ -319,7 +337,17 @@ namespace Xenko.Physics.Bepu
 
             if (skipset == false && AddedToScene)
             {
-                SafeRun(delegate { InternalBody.LocalInertia = bodyDescription.LocalInertia; });
+                if (safeRun)
+                {
+                    InternalBody.LocalInertia = bodyDescription.LocalInertia;
+                }
+                else
+                {
+                    BepuSimulation.instance.ActionsBeforeSimulationStep.Enqueue((time) =>
+                    {
+                        InternalBody.LocalInertia = bodyDescription.LocalInertia;
+                    });
+                }
             }
         }
 
@@ -335,8 +363,39 @@ namespace Xenko.Physics.Bepu
 
                 if (AddedToScene)
                 {
-                    SafeRun(delegate { InternalBody.Collidable.SpeculativeMargin = value; });
+                    if (safeRun)
+                    {
+                        InternalBody.Collidable.SpeculativeMargin = value;
+                    }
+                    else
+                    {
+                        BepuSimulation.instance.ActionsBeforeSimulationStep.Enqueue((time) =>
+                        {
+                            InternalBody.Collidable.SpeculativeMargin = value;
+                        });
+                    }
                 }
+            }
+        }
+
+        internal void ColliderShapeInternalSwitching()
+        {
+            BepuSimulation bs = BepuSimulation.instance;
+
+            // don't worry about switching if we are to be removed
+            if (bs.ToBeRemoved.Contains(this))
+                return;
+
+            using (bs.simulationLocker.WriteLock())
+            {
+                // remove me with the old shape
+                bs.internalSimulation.Bodies.Remove(AddedHandle);
+                BepuSimulation.RigidMappings.Remove(AddedHandle);
+
+                // add me with the new shape
+                bodyDescription.Collidable = ColliderShape.GenerateDescription(bs.internalSimulation, SpeculativeMargin);
+                AddedHandle = bs.internalSimulation.Bodies.Add(bodyDescription);
+                BepuSimulation.RigidMappings[AddedHandle] = this;
             }
         }
 
@@ -354,25 +413,17 @@ namespace Xenko.Physics.Bepu
 
                     UpdateInertia(true);
 
-                    SafeRun(delegate {
-                        BepuSimulation bs = BepuSimulation.instance;
-
-                        // don't worry about switching if we are to be removed
-                        if (bs.ToBeRemoved.Contains(this))
-                            return;
-
-                        using (bs.simulationLocker.WriteLock())
+                    if (safeRun)
+                    {
+                        ColliderShapeInternalSwitching();
+                    }
+                    else
+                    {
+                        BepuSimulation.instance.ActionsBeforeSimulationStep.Enqueue((time) =>
                         {
-                            // remove me with the old shape
-                            bs.internalSimulation.Bodies.Remove(AddedHandle);
-                            BepuSimulation.RigidMappings.Remove(AddedHandle);
-
-                            // add me with the new shape
-                            bodyDescription.Collidable = ColliderShape.GenerateDescription(bs.internalSimulation, SpeculativeMargin);
-                            AddedHandle = bs.internalSimulation.Bodies.Add(bodyDescription);
-                            BepuSimulation.RigidMappings[AddedHandle] = this;
-                        }
-                    });
+                            ColliderShapeInternalSwitching();
+                        });
+                    }
                 }
                 else
                 {
@@ -500,7 +551,19 @@ namespace Xenko.Physics.Bepu
         public void ApplyImpulse(Vector3 impulse)
         {
             if (AddedToScene)
-                SafeRun(delegate { InternalBody.ApplyLinearImpulse(BepuHelpers.ToBepu(impulse)); });
+            {
+                if (safeRun)
+                {
+                    InternalBody.ApplyLinearImpulse(BepuHelpers.ToBepu(impulse));
+                }
+                else
+                {
+                    BepuSimulation.instance.ActionsBeforeSimulationStep.Enqueue((time) =>
+                    {
+                        InternalBody.ApplyLinearImpulse(BepuHelpers.ToBepu(impulse));
+                    });
+                }
+            }
         }
 
         /// <summary>
@@ -511,7 +574,19 @@ namespace Xenko.Physics.Bepu
         public void ApplyImpulse(Vector3 impulse, Vector3 localOffset)
         {
             if (AddedToScene)
-                SafeRun(delegate { InternalBody.ApplyImpulse(BepuHelpers.ToBepu(impulse), BepuHelpers.ToBepu(localOffset)); });
+            {
+                if (safeRun)
+                {
+                    InternalBody.ApplyImpulse(BepuHelpers.ToBepu(impulse), BepuHelpers.ToBepu(localOffset));
+                }
+                else
+                {
+                    BepuSimulation.instance.ActionsBeforeSimulationStep.Enqueue((time) =>
+                    {
+                        InternalBody.ApplyImpulse(BepuHelpers.ToBepu(impulse), BepuHelpers.ToBepu(localOffset));
+                    });
+                }
+            }
         }
 
         /// <summary>
@@ -521,7 +596,19 @@ namespace Xenko.Physics.Bepu
         public void ApplyTorqueImpulse(Vector3 torque)
         {
             if (AddedToScene)
-                SafeRun(delegate { InternalBody.ApplyAngularImpulse(BepuHelpers.ToBepu(torque)); });
+            {
+                if (safeRun)
+                {
+                    InternalBody.ApplyAngularImpulse(BepuHelpers.ToBepu(torque));
+                }
+                else
+                {
+                    BepuSimulation.instance.ActionsBeforeSimulationStep.Enqueue((time) =>
+                    {
+                        InternalBody.ApplyAngularImpulse(BepuHelpers.ToBepu(torque));
+                    });
+                }
+            }
         }
 
         [DataMemberIgnore]
@@ -540,11 +627,23 @@ namespace Xenko.Physics.Bepu
                 bodyDescription.Pose.Position.Z = value.Z;
 
                 if (AddedToScene)
-                    SafeRun(delegate { 
+                {
+                    if (safeRun)
+                    {
                         InternalBody.Pose.Position.X = value.X;
                         InternalBody.Pose.Position.Y = value.Y;
                         InternalBody.Pose.Position.Z = value.Z;
-                    });
+                    }
+                    else
+                    {
+                        BepuSimulation.instance.ActionsBeforeSimulationStep.Enqueue((time) =>
+                        {
+                            InternalBody.Pose.Position.X = value.X;
+                            InternalBody.Pose.Position.Y = value.Y;
+                            InternalBody.Pose.Position.Z = value.Z;
+                        });
+                    }
+                }
             }
         }
 
@@ -568,12 +667,25 @@ namespace Xenko.Physics.Bepu
                 bodyDescription.Pose.Orientation.W = value.W;
 
                 if (AddedToScene)
-                    SafeRun(delegate {
+                {
+                    if (safeRun)
+                    {
                         InternalBody.Pose.Orientation.X = value.X;
                         InternalBody.Pose.Orientation.Y = value.Y;
                         InternalBody.Pose.Orientation.Z = value.Z;
                         InternalBody.Pose.Orientation.W = value.W;
-                    });
+                    }
+                    else
+                    {
+                        BepuSimulation.instance.ActionsBeforeSimulationStep.Enqueue((time) =>
+                        {
+                            InternalBody.Pose.Orientation.X = value.X;
+                            InternalBody.Pose.Orientation.Y = value.Y;
+                            InternalBody.Pose.Orientation.Z = value.Z;
+                            InternalBody.Pose.Orientation.W = value.W;
+                        });
+                    }
+                }
             }
         }
 
@@ -599,11 +711,23 @@ namespace Xenko.Physics.Bepu
                 bodyDescription.Velocity.Angular.Z = value.Z;
 
                 if (AddedToScene)
-                    SafeRun(delegate {
+                {
+                    if (safeRun)
+                    {
                         InternalBody.Velocity.Angular.X = value.X;
                         InternalBody.Velocity.Angular.Y = value.Y;
                         InternalBody.Velocity.Angular.Z = value.Z;
-                    });
+                    }
+                    else
+                    {
+                        BepuSimulation.instance.ActionsBeforeSimulationStep.Enqueue((time) =>
+                        {
+                            InternalBody.Velocity.Angular.X = value.X;
+                            InternalBody.Velocity.Angular.Y = value.Y;
+                            InternalBody.Velocity.Angular.Z = value.Z;
+                        });
+                    }
+                }
             }
         }
 
@@ -629,11 +753,23 @@ namespace Xenko.Physics.Bepu
                 bodyDescription.Velocity.Linear.Z = value.Z;
 
                 if (AddedToScene)
-                    SafeRun(delegate {
+                {
+                    if (safeRun)
+                    {
                         InternalBody.Velocity.Linear.X = value.X;
                         InternalBody.Velocity.Linear.Y = value.Y;
                         InternalBody.Velocity.Linear.Z = value.Z;
-                    });
+                    }
+                    else
+                    {
+                        BepuSimulation.instance.ActionsBeforeSimulationStep.Enqueue((time) =>
+                        {
+                            InternalBody.Velocity.Linear.X = value.X;
+                            InternalBody.Velocity.Linear.Y = value.Y;
+                            InternalBody.Velocity.Linear.Z = value.Z;
+                        });
+                    }
+                }
             }
         }
 
