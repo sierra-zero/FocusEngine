@@ -18,6 +18,8 @@ using System.Runtime.CompilerServices;
 using Xenko.Core.Threading;
 using System.Threading;
 using System.Collections.Concurrent;
+using BulletSharp.SoftBody;
+using System.Collections;
 
 namespace Xenko.Physics.Bepu
 {
@@ -55,6 +57,94 @@ namespace Xenko.Physics.Bepu
         [DataMemberIgnore]
         public Action<BepuRigidbodyComponent, float> ActionPerSimulationTick;
 
+        private enum ACTION_TYPE
+        {
+            IsActive,
+            CcdMotionThreshold,
+            SleepThreshold,
+            UpdateInertia,
+            SpeculativeMargin,
+            ColliderShape,
+            ApplyImpulse,
+            ApplyImpulseOffset,
+            ApplyTorqueImpulse,
+            Position,
+            Rotation,
+            AngularVelocity,
+            LinearVelocity
+        }
+
+        internal bool[] NeedsAction = new bool[13];
+        internal object[] ActionObject = new object[13];
+
+        internal void UpdateAsyncState()
+        {
+            for (int i=0; i<NeedsAction.Length; i++)
+            {
+                if (NeedsAction[i])
+                {
+                    NeedsAction[i] = false;
+                    switch ((ACTION_TYPE)i)
+                    {
+                        case ACTION_TYPE.IsActive:
+                            InternalBody.Awake = (bool)ActionObject[i];
+                            break;
+                        case ACTION_TYPE.AngularVelocity:
+                            InternalBody.Velocity.Angular = (System.Numerics.Vector3)ActionObject[i];
+                            break;
+                        case ACTION_TYPE.ApplyImpulse:
+                            lock (ActionObject[i])
+                            {
+                                InternalBody.ApplyLinearImpulse((System.Numerics.Vector3)ActionObject[i]);
+                                ActionObject[i] = System.Numerics.Vector3.Zero;
+                            }
+                            break;
+                        case ACTION_TYPE.ApplyImpulseOffset:
+                            lock (impulsePairs)
+                            {
+                                while (impulsePairs.Count > 0)
+                                {
+                                    var pair = impulsePairs.Dequeue();
+                                    InternalBody.ApplyImpulse(pair[0], pair[1]);
+                                }
+                            }
+                            break;
+                        case ACTION_TYPE.ApplyTorqueImpulse:
+                            lock (ActionObject[i])
+                            {
+                                InternalBody.ApplyAngularImpulse((System.Numerics.Vector3)ActionObject[i]);
+                                ActionObject[i] = System.Numerics.Vector3.Zero;
+                            }
+                            break;
+                        case ACTION_TYPE.CcdMotionThreshold:
+                            InternalBody.Collidable.Continuity = (ContinuousDetectionSettings)ActionObject[i];
+                            break;
+                        case ACTION_TYPE.ColliderShape:
+                            ColliderShapeInternalSwitching();
+                            break;
+                        case ACTION_TYPE.LinearVelocity:
+                            InternalBody.Velocity.Linear = (System.Numerics.Vector3)ActionObject[i];
+                            break;
+                        case ACTION_TYPE.Position:
+                            InternalBody.Pose.Position = (System.Numerics.Vector3)ActionObject[i];
+                            break;
+                        case ACTION_TYPE.Rotation:
+                            InternalBody.Pose.Orientation = (System.Numerics.Quaternion)ActionObject[i];
+                            break;
+                        case ACTION_TYPE.SleepThreshold:
+                            InternalBody.Activity.SleepThreshold = (float)ActionObject[i];
+                            break;
+                        case ACTION_TYPE.SpeculativeMargin:
+                            InternalBody.Collidable.SpeculativeMargin = (float)ActionObject[i];
+                            break;
+                        case ACTION_TYPE.UpdateInertia:
+                            InternalBody.LocalInertia = (BodyInertia)ActionObject[i];
+                            break;
+                    }
+                }
+            }
+        }
+
         internal bool wasAwake;
 
         // are we safe to make changes to rigidbodies (e.g. not simulating)
@@ -85,10 +175,8 @@ namespace Xenko.Physics.Bepu
                 }
                 else
                 {
-                    BepuSimulation.instance.ActionsBeforeSimulationStep.Enqueue((time) =>
-                    {
-                        InternalBody.Awake = value;
-                    });
+                    ActionObject[(int)ACTION_TYPE.IsActive] = value;
+                    NeedsAction[(int)ACTION_TYPE.IsActive] = true;
                 }
             }
         }
@@ -119,10 +207,8 @@ namespace Xenko.Physics.Bepu
                     }
                     else
                     {
-                        BepuSimulation.instance.ActionsBeforeSimulationStep.Enqueue((time) =>
-                        {
-                            InternalBody.Collidable.Continuity = bodyDescription.Collidable.Continuity;
-                        });
+                        ActionObject[(int)ACTION_TYPE.CcdMotionThreshold] = bodyDescription.Collidable.Continuity;
+                        NeedsAction[(int)ACTION_TYPE.CcdMotionThreshold] = true;
                     }
                 }
             }
@@ -251,10 +337,8 @@ namespace Xenko.Physics.Bepu
                     }
                     else
                     {
-                        BepuSimulation.instance.ActionsBeforeSimulationStep.Enqueue((time) =>
-                        {
-                            InternalBody.Activity.SleepThreshold = value;
-                        });
+                        ActionObject[(int)ACTION_TYPE.SleepThreshold] = bodyDescription.Activity.SleepThreshold;
+                        NeedsAction[(int)ACTION_TYPE.SleepThreshold] = true;
                     }
                 }
             }
@@ -343,10 +427,8 @@ namespace Xenko.Physics.Bepu
                 }
                 else
                 {
-                    BepuSimulation.instance.ActionsBeforeSimulationStep.Enqueue((time) =>
-                    {
-                        InternalBody.LocalInertia = bodyDescription.LocalInertia;
-                    });
+                    ActionObject[(int)ACTION_TYPE.UpdateInertia] = bodyDescription.LocalInertia;
+                    NeedsAction[(int)ACTION_TYPE.UpdateInertia] = true;
                 }
             }
         }
@@ -369,10 +451,8 @@ namespace Xenko.Physics.Bepu
                     }
                     else
                     {
-                        BepuSimulation.instance.ActionsBeforeSimulationStep.Enqueue((time) =>
-                        {
-                            InternalBody.Collidable.SpeculativeMargin = value;
-                        });
+                        ActionObject[(int)ACTION_TYPE.SpeculativeMargin] = bodyDescription.Collidable.SpeculativeMargin;
+                        NeedsAction[(int)ACTION_TYPE.SpeculativeMargin] = true;
                     }
                 }
             }
@@ -419,10 +499,7 @@ namespace Xenko.Physics.Bepu
                     }
                     else
                     {
-                        BepuSimulation.instance.ActionsBeforeSimulationStep.Enqueue((time) =>
-                        {
-                            ColliderShapeInternalSwitching();
-                        });
+                        NeedsAction[(int)ACTION_TYPE.ColliderShape] = true;
                     }
                 }
                 else
@@ -558,13 +635,16 @@ namespace Xenko.Physics.Bepu
                 }
                 else
                 {
-                    BepuSimulation.instance.ActionsBeforeSimulationStep.Enqueue((time) =>
+                    lock (ActionObject[(int)ACTION_TYPE.ApplyImpulse])
                     {
-                        InternalBody.ApplyLinearImpulse(BepuHelpers.ToBepu(impulse));
-                    });
+                        ActionObject[(int)ACTION_TYPE.ApplyImpulse] = (System.Numerics.Vector3)ActionObject[(int)ACTION_TYPE.ApplyImpulse] + BepuHelpers.ToBepu(impulse);
+                        NeedsAction[(int)ACTION_TYPE.ApplyImpulse] = true;
+                    }
                 }
             }
         }
+
+        private Queue<System.Numerics.Vector3[]> impulsePairs = new Queue<System.Numerics.Vector3[]>();
 
         /// <summary>
         /// Applies the impulse.
@@ -581,10 +661,11 @@ namespace Xenko.Physics.Bepu
                 }
                 else
                 {
-                    BepuSimulation.instance.ActionsBeforeSimulationStep.Enqueue((time) =>
+                    lock (impulsePairs)
                     {
-                        InternalBody.ApplyImpulse(BepuHelpers.ToBepu(impulse), BepuHelpers.ToBepu(localOffset));
-                    });
+                        impulsePairs.Enqueue(new System.Numerics.Vector3[] { BepuHelpers.ToBepu(impulse), BepuHelpers.ToBepu(localOffset) });
+                        NeedsAction[(int)ACTION_TYPE.ApplyImpulseOffset] = true;
+                    }
                 }
             }
         }
@@ -603,10 +684,11 @@ namespace Xenko.Physics.Bepu
                 }
                 else
                 {
-                    BepuSimulation.instance.ActionsBeforeSimulationStep.Enqueue((time) =>
+                    lock (ActionObject[(int)ACTION_TYPE.ApplyTorqueImpulse])
                     {
-                        InternalBody.ApplyAngularImpulse(BepuHelpers.ToBepu(torque));
-                    });
+                        ActionObject[(int)ACTION_TYPE.ApplyTorqueImpulse] = (System.Numerics.Vector3)ActionObject[(int)ACTION_TYPE.ApplyTorqueImpulse] + BepuHelpers.ToBepu(torque);
+                        NeedsAction[(int)ACTION_TYPE.ApplyTorqueImpulse] = true;
+                    }
                 }
             }
         }
@@ -636,12 +718,8 @@ namespace Xenko.Physics.Bepu
                     }
                     else
                     {
-                        BepuSimulation.instance.ActionsBeforeSimulationStep.Enqueue((time) =>
-                        {
-                            InternalBody.Pose.Position.X = value.X;
-                            InternalBody.Pose.Position.Y = value.Y;
-                            InternalBody.Pose.Position.Z = value.Z;
-                        });
+                        ActionObject[(int)ACTION_TYPE.Position] = bodyDescription.Pose.Position;
+                        NeedsAction[(int)ACTION_TYPE.Position] = true;
                     }
                 }
             }
@@ -677,13 +755,8 @@ namespace Xenko.Physics.Bepu
                     }
                     else
                     {
-                        BepuSimulation.instance.ActionsBeforeSimulationStep.Enqueue((time) =>
-                        {
-                            InternalBody.Pose.Orientation.X = value.X;
-                            InternalBody.Pose.Orientation.Y = value.Y;
-                            InternalBody.Pose.Orientation.Z = value.Z;
-                            InternalBody.Pose.Orientation.W = value.W;
-                        });
+                        ActionObject[(int)ACTION_TYPE.Rotation] = bodyDescription.Pose.Orientation;
+                        NeedsAction[(int)ACTION_TYPE.Rotation] = true;
                     }
                 }
             }
@@ -720,12 +793,8 @@ namespace Xenko.Physics.Bepu
                     }
                     else
                     {
-                        BepuSimulation.instance.ActionsBeforeSimulationStep.Enqueue((time) =>
-                        {
-                            InternalBody.Velocity.Angular.X = value.X;
-                            InternalBody.Velocity.Angular.Y = value.Y;
-                            InternalBody.Velocity.Angular.Z = value.Z;
-                        });
+                        ActionObject[(int)ACTION_TYPE.AngularVelocity] = bodyDescription.Velocity.Angular;
+                        NeedsAction[(int)ACTION_TYPE.AngularVelocity] = true;
                     }
                 }
             }
@@ -762,12 +831,8 @@ namespace Xenko.Physics.Bepu
                     }
                     else
                     {
-                        BepuSimulation.instance.ActionsBeforeSimulationStep.Enqueue((time) =>
-                        {
-                            InternalBody.Velocity.Linear.X = value.X;
-                            InternalBody.Velocity.Linear.Y = value.Y;
-                            InternalBody.Velocity.Linear.Z = value.Z;
-                        });
+                        ActionObject[(int)ACTION_TYPE.LinearVelocity] = bodyDescription.Velocity.Linear;
+                        NeedsAction[(int)ACTION_TYPE.LinearVelocity] = true;
                     }
                 }
             }
@@ -797,6 +862,7 @@ namespace Xenko.Physics.Bepu
             bodyDescription.Velocity = bv;
             bodyDescription.Pose = InternalBody.Pose;
             wasAwake = InternalBody.Awake;
+            UpdateAsyncState();
         }
 
         /// <summary>

@@ -99,6 +99,12 @@ namespace Xenko.Engine
         [DataMember]
         public string Tag { get; set; }
 
+        /// <summary>
+        /// Object useful for storing more information regarding this physics body
+        /// </summary>
+        [DataMemberIgnore]
+        public object UserObject { get; set; }
+
         [DataMember]
         public float FrictionCoefficient = 0.5f;
 
