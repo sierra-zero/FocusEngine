@@ -162,12 +162,11 @@ namespace Xenko.Shaders
             unchecked
             {
                 int hashCode = 0;
-                foreach (var current in Mixins)
-                    hashCode = (hashCode * 397) ^ (current?.GetHashCode() ?? 0);
-                foreach (var current in Macros)
-                    hashCode = (hashCode * 397) ^ current.GetHashCode();
-                foreach (var current in Compositions)
-                    hashCode = (hashCode * 397) ^ current.GetHashCode();
+                for (int i=0; i<Mixins.Count; i++)
+                    hashCode = (hashCode * 397) ^ (Mixins[i]?.GetHashCode() ?? 0);
+                for (int i=0; i<Macros.Count; i++)
+                    hashCode = (hashCode * 397) ^ Macros[i].GetHashCode();
+                hashCode = (hashCode * 397) ^ Compositions.GetHashCode();
                 return hashCode;
             }
         }

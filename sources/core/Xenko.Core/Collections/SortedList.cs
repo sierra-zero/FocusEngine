@@ -68,6 +68,24 @@ namespace Xenko.Core.Collections
         {
         }
 
+        public override int GetHashCode()
+        {
+            if (table == null) return 0;
+
+            int hash = 397;
+
+            unchecked
+            {
+                for (int i = 0; i < table.Length; i++)
+                {
+                    hash ^= hash * 17 ^ (table[i].Key?.GetHashCode() ?? 103);
+                    hash ^= hash * 13 ^ (table[i].Value?.GetHashCode() ?? 137);
+                }
+            }
+
+            return hash;
+        }
+
         public SortedList(int capacity)
             : this(capacity, null)
         {
