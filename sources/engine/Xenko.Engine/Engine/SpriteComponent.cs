@@ -72,13 +72,12 @@ namespace Xenko.Engine
         public bool PremultipliedAlpha { get; set; }
 
         /// <summary>
-        /// Ignore the depth of other elements of the scene when rendering the sprite by disabling the depth test.
+        /// Set how to read and write to the depth buffer for this sprite.
         /// </summary>
-        /// <userdoc>Ignore the depth of other elements of the scene when rendering the sprite. When checked, the sprite is always put on top of previous elements.</userdoc>
         [DataMember(60)]
-        [DefaultValue(false)]
-        [Display("Ignore Depth")]
-        public bool IgnoreDepth;
+        [DefaultValue(RenderSprite.SpriteDepthMode.ReadWrite)]
+        [Display("Depth Mode")]
+        public RenderSprite.SpriteDepthMode DepthMode;
 
         /// <summary>
         /// Discard pixels with low alpha value when rendering the sprite by performing alpha cut off test.

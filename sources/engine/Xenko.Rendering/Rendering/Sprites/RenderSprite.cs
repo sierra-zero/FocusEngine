@@ -47,6 +47,13 @@ namespace Xenko.Rendering.Sprites
 
     public class RenderSprite : RenderObject
     {
+        public enum SpriteDepthMode
+        {
+            ReadWrite = 0,
+            ReadOnly = 1,
+            Ignore = 2
+        }
+
         // Cached states
         private Matrix lastWorldMatrix;
         private Vector2 lastHalfSpriteSize;
@@ -57,7 +64,7 @@ namespace Xenko.Rendering.Sprites
 
         public Sprite Sprite;
         public SpriteType SpriteType;
-        public bool IgnoreDepth;
+        public SpriteDepthMode DepthMode;
         public SpriteSampler Sampler;
         public SpriteBlend BlendMode;
         public SwizzleMode Swizzle;

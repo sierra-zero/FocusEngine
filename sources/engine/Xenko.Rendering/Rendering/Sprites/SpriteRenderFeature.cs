@@ -125,7 +125,7 @@ namespace Xenko.Rendering.Sprites
                 // Check if the current blend state has changed in any way, if not
                 // Note! It doesn't really matter in what order we build the bitmask, the result is not preserved anywhere except in this method
                 var currentBatchState = (uint)blendMode;
-                currentBatchState = (currentBatchState << 1) + (renderSprite.IgnoreDepth ? 1U : 0U);
+                currentBatchState = (currentBatchState << 1) + ((uint)renderSprite.DepthMode);
                 currentBatchState = (currentBatchState << 1) + (renderSprite.IsAlphaCutoff ? 1U : 0U);
                 currentBatchState = (currentBatchState << 2) + ((uint)renderSprite.Sampler);
 
@@ -136,7 +136,19 @@ namespace Xenko.Rendering.Sprites
                     if (renderSprite.IsAlphaCutoff)
                         currentEffect = batchContext.GetOrCreateAlphaCutoffSpriteEffect(RenderSystem.EffectSystem);
 
-                    var depthStencilState = renderSprite.IgnoreDepth ? DepthStencilStates.None : DepthStencilStates.Default;
+                    DepthStencilStateDescription depthStencilState;
+                    switch (renderSprite.DepthMode)
+                    {
+                        case RenderSprite.SpriteDepthMode.Ignore:
+                            depthStencilState = DepthStencilStates.None;
+                            break;
+                        case RenderSprite.SpriteDepthMode.ReadOnly:
+                            depthStencilState = DepthStencilStates.DepthRead;
+                            break;
+                        default:
+                            depthStencilState = DepthStencilStates.Default;
+                            break;
+                    }
 
                     var samplerState = context.GraphicsDevice.SamplerStates.LinearClamp;
                     if (renderSprite.Sampler != SpriteSampler.LinearClamp)

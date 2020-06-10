@@ -127,6 +127,7 @@ namespace Xenko.Rendering
             renderMesh.MaterialPass = materialPass;
 
             renderMesh.IsShadowCaster = modelComponent.IsShadowCaster;
+            renderMesh.TransparentWriteDepth = modelComponent.AlwaysDepthWrite;
             if (modelMaterialInstance != null)
             {
                 renderMesh.IsShadowCaster = renderMesh.IsShadowCaster && modelMaterialInstance.IsShadowCaster;

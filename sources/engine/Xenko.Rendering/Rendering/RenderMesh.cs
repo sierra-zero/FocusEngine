@@ -31,6 +31,8 @@ namespace Xenko.Rendering
 
         public bool IsScalingNegative;
 
+        public bool TransparentWriteDepth;
+
         public bool IsPreviousScalingNegative;
 
         public Matrix World = Matrix.Identity;

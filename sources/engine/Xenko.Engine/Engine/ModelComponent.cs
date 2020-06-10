@@ -147,6 +147,14 @@ namespace Xenko.Engine
         public bool IsShadowCaster { get; set; } = DefaultShadowCasters;
 
         /// <summary>
+        /// Even if we are transparent, still write to the depth buffer?
+        /// </summary>
+        [DataMember(35)]
+        [DefaultValue(false)]
+        [Display("Always Depth Write")]
+        public bool AlwaysDepthWrite { get; set; } = false;
+
+        /// <summary>
         /// The render group for this component.
         /// </summary>
         [DataMember(20)]

@@ -21,7 +21,7 @@ namespace Xenko.Rendering
             if (renderNode.RenderStage == TransparentRenderStage)
             {
                 pipelineState.BlendState = renderMesh.MaterialPass.BlendState ?? BlendStates.AlphaBlend;
-                pipelineState.DepthStencilState = DepthStencilStates.DepthRead;
+                pipelineState.DepthStencilState = renderMesh.TransparentWriteDepth ? DepthStencilStates.Default : DepthStencilStates.DepthRead;
                 if (isMultisample)
                     pipelineState.BlendState.AlphaToCoverageEnable = true;
             }

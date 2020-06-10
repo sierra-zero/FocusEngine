@@ -43,7 +43,7 @@ namespace Xenko.Rendering.Sprites
 
                     renderSprite.Sprite = currentSprite;
                     renderSprite.SpriteType = spriteComponent.SpriteType;
-                    renderSprite.IgnoreDepth = spriteComponent.IgnoreDepth;
+                    renderSprite.DepthMode = spriteComponent.DepthMode;
                     renderSprite.Sampler = spriteComponent.Sampler;
                     renderSprite.BlendMode = spriteComponent.BlendMode;
                     renderSprite.Swizzle = spriteComponent.Swizzle;
