@@ -171,10 +171,7 @@ namespace Xenko.Graphics
 
             if (NativeMemory != VkDeviceMemory.Null)
             {
-                lock (BufferLocker)
-                {
-                    vkBindBufferMemory(GraphicsDevice.NativeDevice, NativeBuffer, NativeMemory, 0);
-                }
+                vkBindBufferMemory(GraphicsDevice.NativeDevice, NativeBuffer, NativeMemory, 0);
             }
 
             if (SizeInBytes > 0)
@@ -215,7 +212,11 @@ namespace Xenko.Graphics
                         var sizeInBytes = bufferDescription.SizeInBytes;
                         VkBuffer uploadResource;
                         int uploadOffset;
-                        var uploadMemory = GraphicsDevice.AllocateUploadBuffer(sizeInBytes, out uploadResource, out uploadOffset);
+                        IntPtr uploadMemory;
+                        lock (BufferLocker)
+                        {
+                            uploadMemory = GraphicsDevice.AllocateUploadBuffer(sizeInBytes, out uploadResource, out uploadOffset);
+                        }
 
                         Utilities.CopyMemory(uploadMemory, dataPointer, sizeInBytes);
 
