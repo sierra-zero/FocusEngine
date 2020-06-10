@@ -35,13 +35,6 @@ namespace Xenko.Engine
     {
         protected static Logger logger = GlobalLogger.GetLogger("BepuPhysicsComponent");
 
-        internal int AddedHandle = -1;
-
-        public int GetHandle()
-        {
-            return AddedHandle;
-        }
-
         /// <summary>
         /// Allow the physics system to automatically add, based on changes to the entity in the scene?
         /// </summary>
@@ -50,6 +43,8 @@ namespace Xenko.Engine
 
         [DataMemberIgnore]
         public virtual bool AddedToScene { get; set; }
+
+        public virtual int HandleIndex { get => -1; }
 
         public BepuPhysicsComponent()
         {

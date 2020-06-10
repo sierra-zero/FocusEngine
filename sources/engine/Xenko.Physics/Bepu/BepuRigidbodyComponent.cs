@@ -36,6 +36,11 @@ namespace Xenko.Physics.Bepu
         [DataMemberIgnore]
         private BodyReference _internalReference;
 
+        [DataMemberIgnore]
+        public BodyHandle myBodyHandle;
+
+        public override int HandleIndex => myBodyHandle.Value;
+
         /// <summary>
         /// Reference to the body after being added to the scene
         /// </summary>
@@ -45,7 +50,7 @@ namespace Xenko.Physics.Bepu
             get
             {
                 _internalReference.Bodies = BepuSimulation.instance.internalSimulation.Bodies;
-                _internalReference.Handle = AddedHandle;
+                _internalReference.Handle = myBodyHandle;
 
                 return ref _internalReference;
             }
@@ -304,11 +309,11 @@ namespace Xenko.Physics.Bepu
 
         public BepuRigidbodyComponent() : base()
         {
-            bodyDescription = new BodyDescription();
             bodyDescription.Pose.Orientation.W = 1f;
             bodyDescription.LocalInertia.InverseMass = 1f;
             bodyDescription.Activity.MinimumTimestepCountUnderThreshold = 32;
             bodyDescription.Activity.SleepThreshold = 0.01f;
+            myBodyHandle.Value = -1;
         }
 
         public override TypedIndex ShapeIndex { get => bodyDescription.Collidable.Shape; }
@@ -469,13 +474,13 @@ namespace Xenko.Physics.Bepu
             using (bs.simulationLocker.WriteLock())
             {
                 // remove me with the old shape
-                bs.internalSimulation.Bodies.Remove(AddedHandle);
-                BepuSimulation.RigidMappings.Remove(AddedHandle);
+                bs.internalSimulation.Bodies.Remove(myBodyHandle);
+                BepuSimulation.RigidMappings.Remove(myBodyHandle.Value);
 
                 // add me with the new shape
                 bodyDescription.Collidable = ColliderShape.GenerateDescription(bs.internalSimulation, SpeculativeMargin);
-                AddedHandle = bs.internalSimulation.Bodies.Add(bodyDescription);
-                BepuSimulation.RigidMappings[AddedHandle] = this;
+                myBodyHandle = bs.internalSimulation.Bodies.Add(bodyDescription);
+                BepuSimulation.RigidMappings[myBodyHandle.Value] = this;
             }
         }
 
@@ -592,7 +597,7 @@ namespace Xenko.Physics.Bepu
         {
             get
             {
-                return AddedHandle != -1; 
+                return myBodyHandle.Value != -1; 
             }
             set
             {

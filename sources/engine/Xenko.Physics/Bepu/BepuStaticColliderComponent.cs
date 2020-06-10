@@ -17,12 +17,16 @@ namespace Xenko.Physics.Bepu
         public StaticDescription staticDescription;
         private StaticReference _internalStatic;
 
+        public StaticHandle myStaticHandle;
+
+        public override int HandleIndex => myStaticHandle.Value;
+
         public StaticReference InternalStatic
         {
             get
             {
                 _internalStatic.Statics = BepuSimulation.instance.internalSimulation.Statics;
-                _internalStatic.Handle = AddedHandle;
+                _internalStatic.Handle = myStaticHandle;
                 return _internalStatic;
             }
         }
@@ -31,9 +35,8 @@ namespace Xenko.Physics.Bepu
 
         public BepuStaticColliderComponent() : base ()
         {
-            _internalStatic = new StaticReference();
-            staticDescription = new StaticDescription();
             staticDescription.Pose.Orientation.W = 1f;
+            myStaticHandle.Value = -1;
         }
 
         [DataMember]
@@ -121,7 +124,7 @@ namespace Xenko.Physics.Bepu
         {
             get
             {
-                return AddedHandle != -1;
+                return myStaticHandle.Value != -1;
             }
             set
             {

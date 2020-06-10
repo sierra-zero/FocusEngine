@@ -122,9 +122,9 @@ namespace Xenko.Physics.Bepu
                     }
 
                     for (int i = 0; i < AllRigidbodies.Count; i++)
-                        AllRigidbodies[i].AddedHandle = -1;
+                        AllRigidbodies[i].myBodyHandle.Value = -1;
                     foreach (BepuStaticColliderComponent sc in StaticMappings.Values)
-                        sc.AddedHandle = -1;
+                        sc.myStaticHandle.Value = -1;
 
                     StaticMappings.Clear();
                     RigidMappings.Clear();
@@ -140,7 +140,7 @@ namespace Xenko.Physics.Bepu
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static BepuRigidbodyComponent getRigidFromIndex(int index)
         {
-            return RigidMappings[instance.internalSimulation.Bodies.ActiveSet.IndexToHandle[index]];
+            return RigidMappings[instance.internalSimulation.Bodies.ActiveSet.IndexToHandle[index].Value];
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -152,7 +152,7 @@ namespace Xenko.Physics.Bepu
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static BepuPhysicsComponent getFromReference(CollidableReference cref)
         {
-            return cref.Mobility == CollidableMobility.Static ? (BepuPhysicsComponent)StaticMappings[cref.Handle] : (BepuPhysicsComponent)RigidMappings[cref.Handle];
+            return cref.Mobility == CollidableMobility.Static ? (BepuPhysicsComponent)StaticMappings[cref.BodyHandle.Value] : (BepuPhysicsComponent)RigidMappings[cref.BodyHandle.Value];
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -426,7 +426,7 @@ namespace Xenko.Physics.Bepu
         {
             foreach (BepuPhysicsComponent component in ToBeAdded)
             {
-                if (component.AddedHandle > -1) continue; // already added
+                if (component.HandleIndex > -1) continue; // already added
                 if (component is BepuStaticColliderComponent scc)
                 {
                     // static stuff needs positions set first
@@ -434,8 +434,8 @@ namespace Xenko.Physics.Bepu
                     using (simulationLocker.WriteLock())
                     {
                         scc.staticDescription.Collidable = scc.ColliderShape.GenerateDescription(internalSimulation, scc.SpeculativeMargin);
-                        scc.AddedHandle = internalSimulation.Statics.Add(scc.staticDescription);
-                        StaticMappings[scc.AddedHandle] = scc;
+                        scc.myStaticHandle = internalSimulation.Statics.Add(scc.staticDescription);
+                        StaticMappings[scc.myStaticHandle.Value] = scc;
                     }
                 }
                 else if (component is BepuRigidbodyComponent rigidBody)
@@ -444,8 +444,8 @@ namespace Xenko.Physics.Bepu
                     {
                         rigidBody.bodyDescription.Collidable = rigidBody.ColliderShape.GenerateDescription(internalSimulation, rigidBody.SpeculativeMargin);
                         AllRigidbodies.Add(rigidBody);
-                        rigidBody.AddedHandle = internalSimulation.Bodies.Add(rigidBody.bodyDescription);
-                        RigidMappings[rigidBody.AddedHandle] = rigidBody;
+                        rigidBody.myBodyHandle = internalSimulation.Bodies.Add(rigidBody.bodyDescription);
+                        RigidMappings[rigidBody.myBodyHandle.Value] = rigidBody;
                     }
                     component.Position = component.Entity.Transform.WorldPosition() - (rigidBody.LocalPhysicsOffset ?? Vector3.Zero);
                     component.Rotation = component.Entity.Transform.WorldRotation();
@@ -458,25 +458,26 @@ namespace Xenko.Physics.Bepu
         {
             foreach (BepuPhysicsComponent component in ToBeRemoved)
             {
-                int addedIndex = component.AddedHandle;
-                if (addedIndex == -1) continue; // already removed
+                if (component.HandleIndex == -1) continue; // already removed
                 if (component is BepuStaticColliderComponent scc)
                 {
+                    StaticHandle sh = scc.myStaticHandle;
                     using(simulationLocker.WriteLock())
                     {
-                        scc.AddedHandle = -1;
-                        internalSimulation.Statics.Remove(addedIndex);
-                        StaticMappings.Remove(addedIndex);
+                        scc.myStaticHandle.Value = -1;
+                        internalSimulation.Statics.Remove(sh);
+                        StaticMappings.Remove(sh.Value);
                     }
                     if (scc.DisposeMeshOnDetach) scc.DisposeMesh();
                 } 
                 else if (component is BepuRigidbodyComponent rigidBody)
                 {
+                    BodyHandle bh = rigidBody.myBodyHandle;
                     using(simulationLocker.WriteLock())
                     {
-                        rigidBody.AddedHandle = -1;
-                        internalSimulation.Bodies.Remove(addedIndex);
-                        RigidMappings.Remove(addedIndex);
+                        rigidBody.myBodyHandle.Value = -1;
+                        internalSimulation.Bodies.Remove(bh);
+                        RigidMappings.Remove(bh.Value);
                         AllRigidbodies.Remove(rigidBody);
                     }
 
