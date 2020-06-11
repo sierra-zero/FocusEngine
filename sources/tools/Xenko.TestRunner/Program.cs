@@ -10,7 +10,6 @@ using System.Threading;
 using Mono.Options;
 using Xenko.ConnectionRouter;
 using Xenko.Engine.Network;
-using Xenko.Graphics.Regression;
 using static System.String;
 
 namespace Xenko.TestRunner
@@ -126,7 +125,6 @@ namespace Xenko.TestRunner
         {
             public string Serial;
             public string Name;
-            public TestPlatform Platform;
 
             public override string ToString()
             {

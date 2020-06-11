@@ -20,7 +20,6 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\engine\Xenko.Games.Testing\Xenko.Games.Testing.csproj" />
     <ProjectReference Include="..\Xenko.ConnectionRouter\Xenko.ConnectionRouter.csproj" />
   </ItemGroup>
   <ItemGroup>

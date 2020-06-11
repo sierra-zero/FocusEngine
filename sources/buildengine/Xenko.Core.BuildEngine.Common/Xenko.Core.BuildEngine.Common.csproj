@@ -10,7 +10,7 @@
     <XenkoAssemblyProcessorOptions>--auto-module-initializer --serialization</XenkoAssemblyProcessorOptions>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="EnvDTE" Version="8.0.1" />
+    <PackageReference Include="EnvDTE" Version="8.0.2" />
     <PackageReference Include="System.ServiceModel.Primitives" Version="4.5.3" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.ServiceModel" />

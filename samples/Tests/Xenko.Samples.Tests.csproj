@@ -29,9 +29,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\sources\editor\Xenko.Assets.Presentation\Xenko.Assets.Presentation.csproj" />
     <ProjectReference Include="..\..\sources\editor\Xenko.Samples.Templates\Xenko.Samples.Templates.csproj" />
-    <ProjectReference Include="..\..\sources\engine\Xenko.Games.Testing\Xenko.Games.Testing.csproj" />
     <ProjectReference Include="..\..\sources\tools\Xenko.ConnectionRouter\Xenko.ConnectionRouter.csproj" />
-    <ProjectReference Include="..\..\sources\tools\Xenko.SamplesTestServer\Xenko.SamplesTestServer.csproj" />
   </ItemGroup>
   <Import Project="$(XenkoPostSettingsTargets)" />
   <Import Project="Sdk.targets" Sdk="MSBuild.Sdk.Extras" Version="2.0.54" />
