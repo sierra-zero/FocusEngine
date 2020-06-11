@@ -31,7 +31,7 @@ namespace Xenko.Graphics
 
         private int bufferAllocationOffset;
 
-        internal BufferPool(GraphicsResourceAllocator allocator, GraphicsDevice graphicsDevice, int size, CommandList clist = null)
+        internal BufferPool(GraphicsResourceAllocator allocator, GraphicsDevice graphicsDevice, int size, int initialCount, CommandList clist = null)
         {
             constantBufferAlignment = graphicsDevice.ConstantBufferDataPlacementAlignment;
             if (size % constantBufferAlignment != 0)
@@ -47,12 +47,25 @@ namespace Xenko.Graphics
 
             defaultDescription = new BufferDescription(Size, BufferFlags.ConstantBuffer, GraphicsResourceUsage.Dynamic);
 
+            PrepareBuffers(initialCount);
+
             Reset();
         }
 
-        public static BufferPool New(GraphicsResourceAllocator allocator, GraphicsDevice graphicsDevice, int size, CommandList clist = null)
+        private void PrepareBuffers(int count)
         {
-            return new BufferPool(allocator, graphicsDevice, size, clist);
+            List<Buffer> toRelease = new List<Buffer>();
+
+            for (int i = 0; i < count; i++)
+                toRelease.Add(allocator.GetTemporaryBuffer(defaultDescription));
+
+            for (int i = 0; i < count; i++)
+                allocator.ReleaseReference(toRelease[i]);
+        }
+
+        public static BufferPool New(GraphicsResourceAllocator allocator, GraphicsDevice graphicsDevice, int size, int initialCount, CommandList clist = null)
+        {
+            return new BufferPool(allocator, graphicsDevice, size, initialCount, clist);
         }
 
         public void Dispose()

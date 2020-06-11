@@ -26,7 +26,7 @@ namespace Xenko.Graphics
         {
             CommandList = commandList ?? graphicsDevice.InternalMainCommandList ?? CommandList.New(graphicsDevice).DisposeBy(graphicsDevice);
             Allocator = allocator ?? new GraphicsResourceAllocator(graphicsDevice).DisposeBy(graphicsDevice);
-            ResourceGroupAllocator = new ResourceGroupAllocator(Allocator, CommandList).DisposeBy(graphicsDevice);
+            ResourceGroupAllocator = new ResourceGroupAllocator(Allocator, CommandList, 2).DisposeBy(graphicsDevice);
         }
     }
 }
