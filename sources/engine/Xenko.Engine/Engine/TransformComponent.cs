@@ -433,9 +433,9 @@ namespace Xenko.Engine
                 }
             }
 
-            foreach (var transformOperation in PostOperations)
+            for (int i=0; i<PostOperations.Count; i++)
             {
-                transformOperation.Process(this);
+                PostOperations[i].Process(this);
             }
         }
 

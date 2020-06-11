@@ -120,8 +120,10 @@ namespace Xenko.Engine.Processors
 
         private static void UpdateTransformationsRecursive(FastCollection<TransformComponent> transformationComponents)
         {
-            foreach (var transformation in transformationComponents)
+            for (int i=0; i<transformationComponents.Count; i++)
             {
+                TransformComponent transformation = transformationComponents[i];
+
                 UpdateTransformation(transformation);
 
                 // Recurse
