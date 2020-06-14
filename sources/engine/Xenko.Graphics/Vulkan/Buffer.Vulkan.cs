@@ -3,7 +3,7 @@
 #if XENKO_GRAPHICS_API_VULKAN
 using System;
 using System.Collections.Generic;
-
+using Xenko.Core.Threading;
 using Vortice.Vulkan;
 using static Vortice.Vulkan.Vulkan;
 using Xenko.Core;
@@ -213,7 +213,7 @@ namespace Xenko.Graphics
                         VkBuffer uploadResource;
                         int uploadOffset;
                         IntPtr uploadMemory;
-                        lock (BufferLocker)
+                        lock (GraphicsDevice.AllocateUploadLocker)
                         {
                             uploadMemory = GraphicsDevice.AllocateUploadBuffer(sizeInBytes, out uploadResource, out uploadOffset);
                         }
@@ -231,6 +231,7 @@ namespace Xenko.Graphics
                             dstOffset = 0,
                             size = (uint)sizeInBytes
                         };
+
                         vkCmdCopyBuffer(commandBuffer, uploadResource, NativeBuffer, 1, &bufferCopy);
                     }
                 }

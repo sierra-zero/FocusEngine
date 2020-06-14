@@ -372,9 +372,9 @@ namespace Xenko.Graphics
             EmptyTexture = Texture.New2D(this, 1, 1, PixelFormat.R8G8B8A8_UNorm_SRgb, TextureFlags.ShaderResource);
         }
 
+        internal object AllocateUploadLocker = new object();
         internal unsafe IntPtr AllocateUploadBuffer(int size, out VkBuffer resource, out int offset)
         {
-            // TODO D3D12 thread safety, should we simply use locks?
             if (nativeUploadBuffer == VkBuffer.Null || nativeUploadBufferOffset + size > nativeUploadBufferSize)
             {
                 if (nativeUploadBuffer != VkBuffer.Null)
@@ -671,14 +671,16 @@ namespace Xenko.Graphics
         public T GetObject()
         {
             KeyValuePair<long, T>? firstAllocator = null;
+            long newCompletedValue = -1;
 
             if (Interlocked.Increment(ref checkCompleted) >= CHECK_COMPLETED_INTERVAL)
             {
+                checkCompleted = 0;
+
                 // this check is slow, so only do it occassionally
                 // this may cause more objects to get created, but that is fine
                 // more things will come safely off the queue when this updates
-                completedValue = GraphicsDevice.GetCompletedValue();
-                checkCompleted = 0;
+                newCompletedValue = GraphicsDevice.GetCompletedValue();
             }
 
             bool lockTaken = false;
@@ -688,6 +690,9 @@ namespace Xenko.Graphics
 
                 if (liveObjects.Count > 0)
                 {
+                    if (newCompletedValue > completedValue)
+                        completedValue = newCompletedValue;
+
                     firstAllocator = liveObjects.Peek();
 
                     if (firstAllocator.Value.Key <= completedValue)
