@@ -156,6 +156,7 @@ namespace Xenko.Assets.Presentation.Templates
                 Description = parameters.Description,
                 Package = package,
                 Logger = parameters.Logger,
+                Namespace = parameters.Namespace
             };
 
             // Generate executable projects for each platform
