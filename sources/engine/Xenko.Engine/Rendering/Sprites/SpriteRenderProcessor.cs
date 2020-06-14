@@ -40,7 +40,7 @@ namespace Xenko.Rendering.Sprites
 
                     renderSprite.RenderGroup = spriteComponent.RenderGroup;
                     renderSprite.DistanceSortFudge = spriteComponent.DistanceSortFudge;
-
+                    renderSprite.SmallFactorMultiplier = spriteComponent.SmallFactorMultiplier;
                     renderSprite.Sprite = currentSprite;
                     renderSprite.SpriteType = spriteComponent.SpriteType;
                     renderSprite.DepthMode = spriteComponent.DepthMode;

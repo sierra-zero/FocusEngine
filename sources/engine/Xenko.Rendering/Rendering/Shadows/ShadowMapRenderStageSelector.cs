@@ -1,4 +1,4 @@
-﻿// Copyright (c) Xenko contributors (https://xenko.com) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) Xenko contributors (https://xenko.com) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System.ComponentModel;
 using Xenko.Engine;
@@ -19,11 +19,9 @@ namespace Xenko.Rendering.Shadows
             {
                 var renderMesh = (RenderMesh)renderObject;
 
-                // Only handle non-transparent meshes
-                //if (!renderMesh.MaterialPass.HasTransparency)
+                if (renderMesh.IsShadowCaster)
                 {
-                    if (renderMesh.IsShadowCaster)
-                        renderMesh.ActiveRenderStages[ShadowMapRenderStage.Index] = new ActiveRenderStage(EffectName);
+                    renderMesh.ActiveRenderStages[ShadowMapRenderStage.Index] = new ActiveRenderStage(EffectName, true);
                 }
             }
         }

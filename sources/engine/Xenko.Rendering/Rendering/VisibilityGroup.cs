@@ -58,6 +58,11 @@ namespace Xenko.Rendering
         /// </summary>
         public static float CullSmallFactor = 0f;
 
+        /// <summary>
+        /// Cull small shadows from being considered, even if it is a shadow caster
+        /// </summary>
+        public static float CullShadowsSmallFactor = 0f;
+
         public VisibilityGroup(RenderSystem renderSystem)
         {
             Tags = new PropertyContainer(this);
@@ -133,6 +138,7 @@ namespace Xenko.Rendering
             // Note sure this is really a good mechanism long term (it forces to recreate multiple time the same view, instead of using RenderStage + selectors or a similar mechanism)
             // This is still supported so that existing gizmo code kept working with new graphics refactor. Might be reconsidered at some point.
             var cullingMask = view.CullingMask;
+            var sqrtCameraFov = view.CameraFOV > 0 ? Math.Sqrt(view.CameraFOV) : 0f;
 
             // Process objects
             //foreach (var renderObject in RenderObjects)
@@ -174,7 +180,7 @@ namespace Xenko.Rendering
 
                 // Fast AABB transform: http://zeuxcg.org/2010/10/17/aabb-from-obb-with-component-wise-abs/
                 // Compute transformed AABB (by world)
-                if (renderObject.BoundingBox.Extent != Vector3.Zero)
+                if (renderObject.BoundingBox.Extent != Vector3.Zero && float.IsNaN(renderObject.BoundingBox.Center.X) == false)
                 {
                     if (cullingMode == CameraCullingMode.Frustum
                         && !FrustumContainsBox(ref frustum, ref renderObject.BoundingBox, view.VisiblityIgnoreDepthPlanes))
@@ -183,15 +189,32 @@ namespace Xenko.Rendering
                     }
 
                     // automatically cull really small stuff?
-                    if (CullSmallFactor > 0f)
+                    if (view.CameraFOV > 0 && (CullShadowsSmallFactor > 0f || CullSmallFactor > 0f))
                     {
                         ref var bb = ref renderObject.BoundingBox;
-                        float distSq = (bb.Center - pointOnPlane).LengthSquared();
-                        float objLen = bb.Extent.LengthSquared();
-                        float objVolume = 1f + (bb.Extent.X * bb.Extent.Y * bb.Extent.Z);
-                        float useSize = objLen > objVolume ? objLen : objVolume * objVolume;
-                        float objectFactor = useSize / (distSq * view.CameraFOV);
-                        if (objectFactor < CullSmallFactor) return;
+                        double dist = (bb.Center - pointOnPlane).Length() * sqrtCameraFov;
+                        // get max area squared
+                        float areaXY = bb.Extent.X * bb.Extent.Y;
+                        float areaZY = bb.Extent.Z * bb.Extent.Y;
+                        float areaXZ = bb.Extent.X * bb.Extent.Z;
+                        double maxArea;
+                        if (areaXY > areaZY && areaXY > areaXZ)
+                            maxArea = areaXY;
+                        else if (areaZY > areaXZ)
+                            maxArea = areaZY;
+                        else maxArea = areaXZ;
+                        // calculate factor (useful for shadows too), multiply by scale (12.909) to make easier numbers to work with
+                        double myFactor = renderObject.SmallFactorMultiplier * 12.909 * maxArea / dist;
+                        // do we need shadows removed?
+                        for (int i = 0; i < renderObject.ActiveRenderStages.Length; i++)
+                        {
+                            ref var ars = ref renderObject.ActiveRenderStages[i];
+
+                            if (ars.IsShadowStage)
+                                ars.TemporaryDisable = myFactor < CullShadowsSmallFactor || myFactor < CullSmallFactor;
+                        }
+                        // are we too small to render?
+                        if (myFactor < CullSmallFactor) return;
                     }
                 }
 

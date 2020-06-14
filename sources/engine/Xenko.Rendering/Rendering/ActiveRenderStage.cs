@@ -6,12 +6,29 @@ namespace Xenko.Rendering
     public struct ActiveRenderStage
     {
         public bool Active => EffectSelector != null;
+        public bool TemporaryDisable, IsShadowStage;
 
-        public EffectSelector EffectSelector;
-
-        public ActiveRenderStage(string effectName)
+        private EffectSelector _es;
+        public EffectSelector EffectSelector
         {
-            EffectSelector = new EffectSelector(effectName);
+            get
+            {
+                if (TemporaryDisable)
+                    return null;
+
+                return _es;
+            }
+            set
+            {
+                _es = value;
+            }
+        }
+
+        public ActiveRenderStage(string effectName, bool isShadow = false)
+        {
+            _es = new EffectSelector(effectName);
+            TemporaryDisable = false;
+            IsShadowStage = isShadow;
         }
     }
 }

@@ -156,5 +156,12 @@ namespace Xenko.Graphics
         [DataMember(90)]
         [DefaultValue(0f)]
         public float SmallCullFactor { get; set; } = 0f;
+
+        /// <summary>
+        /// Cull small things from casting shadows? 0f (the default) disables this feature. Higher numbers cull more things from being shadowed.
+        /// </summary>
+        [DataMember(100)]
+        [DefaultValue(0f)]
+        public float SmallShadowCullFactor { get; set; } = 0f;
     }
 }

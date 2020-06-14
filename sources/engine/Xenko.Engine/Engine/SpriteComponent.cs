@@ -135,6 +135,13 @@ namespace Xenko.Engine
         [DefaultValue(0f)]
         public float DistanceSortFudge { get; set; }
 
+        /// <summary>
+        /// Adjust smallness used for automatic culling. Can be useful for long and skinny things (lower number) or things you want to show more (higher number)
+        /// </summary>
+        [DataMember(110)]
+        [DefaultValue(1f)]
+        public float SmallFactorMultiplier { get; set; } = 1f;
+
         [DataMemberIgnore]
         internal double ElapsedTime;
 

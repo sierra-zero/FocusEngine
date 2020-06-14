@@ -85,6 +85,11 @@ namespace Xenko.Rendering
         public BoundingSphere BoundingSphere { get; set; }
 
         /// <summary>
+        /// Adjust smallness used for automatic culling. Can be useful for long and skinny things (lower number) or things you want to show more (higher number)
+        /// </summary>
+        public float SmallFactorMultiplierOverride { get; set; } = 1f;
+
+        /// <summary>
         /// Adds the specified mesh (for collection Initializers).
         /// </summary>
         /// <param name="mesh">The mesh.</param>

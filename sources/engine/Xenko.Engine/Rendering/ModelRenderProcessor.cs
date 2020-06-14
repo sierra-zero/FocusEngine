@@ -102,7 +102,7 @@ namespace Xenko.Rendering
                 for (int pass = 0; pass < passes; ++pass, ++meshIndex)
                 {
                     var renderMesh = renderModel.Meshes[meshIndex];
-
+                    
                     renderMesh.Enabled = modelComponent.Enabled;
                     renderMesh.RenderGroup = modelComponent.RenderGroup;
 
@@ -113,6 +113,12 @@ namespace Xenko.Rendering
                         var meshInfo = modelComponent.MeshInfos[sourceMeshIndex];
                         var nodeIndex = mesh.NodeIndex;
                         renderMesh.DistanceSortFudge = modelComponent.DistanceSortFudge;
+                        if (renderModel.Model.SmallFactorMultiplierOverride > 0.000001f)
+                            renderMesh.SmallFactorMultiplier = renderModel.Model.SmallFactorMultiplierOverride;
+                        else if (modelComponent.SmallFactorMultiplier > 0.000001f)
+                            renderMesh.SmallFactorMultiplier = modelComponent.SmallFactorMultiplier;
+                        else
+                            renderMesh.SmallFactorMultiplier = 1f;
                         renderMesh.World = nodeTransformations[nodeIndex].WorldMatrix;
                         renderMesh.IsScalingNegative = nodeTransformations[nodeIndex].IsScalingNegative;
                         renderMesh.BoundingBox = new BoundingBoxExt(meshInfo.BoundingBox);

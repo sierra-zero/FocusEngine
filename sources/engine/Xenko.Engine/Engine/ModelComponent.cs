@@ -171,6 +171,13 @@ namespace Xenko.Engine
         public float DistanceSortFudge { get; set; }
 
         /// <summary>
+        /// Multiply the small factor, if using that auto-culling system (see GameSettings -> Render Settings)
+        /// </summary>
+        [DataMember(40)]
+        [DefaultValue(1f)]
+        public float SmallFactorMultiplier { get; set; } = 1f;
+
+        /// <summary>
         /// Gets the bounding box in world space.
         /// </summary>
         /// <value>The bounding box.</value>
