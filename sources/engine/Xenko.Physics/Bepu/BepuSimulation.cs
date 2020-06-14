@@ -894,7 +894,10 @@ namespace Xenko.Physics.Bepu
         {
             if (internalSimulation == null || DisableSimulation) return;
 
-            internalSimulation.Timestep(deltaTime * TimeScale, threadDispatcher);
+            using (simulationLocker.ReadLock())
+            {
+                internalSimulation.Timestep(deltaTime * TimeScale, threadDispatcher);
+            }
         }
     }
 }
