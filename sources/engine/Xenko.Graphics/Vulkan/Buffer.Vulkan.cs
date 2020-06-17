@@ -257,7 +257,11 @@ namespace Xenko.Graphics
                 // Close and submit
                 vkEndCommandBuffer(commandBuffer);
 
-                vkQueueSubmit(GraphicsDevice.NativeCommandQueue, 1, &submitInfo, fence);
+                using (GraphicsDevice.QueueLock.ReadLock())
+                {
+                    vkQueueSubmit(GraphicsDevice.NativeCommandQueue, 1, &submitInfo, fence);
+                }
+
                 vkWaitForFences(GraphicsDevice.NativeDevice, 1, &fence, true, ulong.MaxValue);
 
                 vkFreeCommandBuffers(GraphicsDevice.NativeDevice, GraphicsDevice.NativeCopyCommandPool, 1, &commandBuffer);
