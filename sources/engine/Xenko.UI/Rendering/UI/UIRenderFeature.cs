@@ -225,7 +225,8 @@ namespace Xenko.Rendering.UI
                 // update the rendering context
                 renderingContext.GraphicsContext = context.GraphicsContext;
                 renderingContext.Time = drawTime;
-                renderingContext.RenderTarget = context.CommandList.RenderTargets[0]; // TODO: avoid hardcoded index 0
+
+                DepthStencilStateDescription stencilState = uiSystem.KeepStencilValueState;
 
                 // actually draw stuff
                 for (int j = 0; j < uiElementStates.Count; j++)
@@ -239,29 +240,38 @@ namespace Xenko.Rendering.UI
                     // update the rendering context values specific to this element
                     renderingContext.Resolution = renderObject.Resolution;
                     renderingContext.ViewProjectionMatrix = uiElementState.WorldViewProjectionMatrix;
-                    renderingContext.DepthStencilBuffer = context.CommandList.DepthStencilBuffer;
                     renderingContext.ShouldSnapText = renderObject.SnapText;
                     renderingContext.IsFullscreen = renderObject.IsFullScreen;
                     renderingContext.WorldMatrix3D = renderObject.WorldMatrix3D;
-
-                    // set the depth buffer, although we are probably not writing to it
-                    context.CommandList.SetRenderTarget(renderingContext.DepthStencilBuffer, renderingContext.RenderTarget);
+                    
+                    switch (renderObject.depthMode)
+                    {
+                        case Sprites.RenderSprite.SpriteDepthMode.Ignore:
+                            stencilState.DepthBufferWriteEnable = false;
+                            stencilState.DepthBufferEnable = false;
+                            break;
+                        case Sprites.RenderSprite.SpriteDepthMode.ReadOnly:
+                            stencilState.DepthBufferWriteEnable = false;
+                            stencilState.DepthBufferEnable = true;
+                            break;
+                        default:
+                            stencilState.DepthBufferWriteEnable = true;
+                            stencilState.DepthBufferEnable = true;
+                            break;
+                    }
 
                     // start the image draw session
                     renderingContext.StencilTestReferenceValue = 0;
-                    batch.Begin(context.GraphicsContext, ref uiElementState.WorldViewProjectionMatrix, BlendStates.AlphaBlend, uiSystem.KeepStencilValueState, renderingContext.StencilTestReferenceValue);
+                    batch.Begin(context.GraphicsContext, ref uiElementState.WorldViewProjectionMatrix, BlendStates.AlphaBlend, stencilState, renderingContext.StencilTestReferenceValue);
 
                     // Render the UI elements in the final render target
-                    RecursiveDrawWithClipping(context, rootElement, ref uiElementState.WorldViewProjectionMatrix, batch);
+                    RecursiveDrawWithClipping(context, rootElement, ref uiElementState.WorldViewProjectionMatrix, batch, ref stencilState);
 
                     batch.End();
                 }
 
                 ReturnBatch(batch);
             }
-
-            // revert the depth stencil buffer to the default value
-            context.CommandList.SetRenderTargets(context.CommandList.DepthStencilBuffer, context.CommandList.RenderTargetCount, context.CommandList.RenderTargets);
         }
 
         private UIBatch directXBatch;
@@ -286,7 +296,7 @@ namespace Xenko.Rendering.UI
                 batches.Enqueue(batch);
         }
 
-        private void RecursiveDrawWithClipping(RenderDrawContext context, UIElement element, ref Matrix worldViewProj, UIBatch batch)
+        private void RecursiveDrawWithClipping(RenderDrawContext context, UIElement element, ref Matrix worldViewProj, UIBatch batch, ref DepthStencilStateDescription dstate)
         {
             // if the element is not visible, we also remove all its children
             if (!element.IsVisible)
@@ -311,7 +321,7 @@ namespace Xenko.Rendering.UI
 
                 // update context and restart the batch
                 renderingContext.StencilTestReferenceValue += 1;
-                batch.Begin(context.GraphicsContext, ref worldViewProj, BlendStates.AlphaBlend, uiSystem.KeepStencilValueState, renderingContext.StencilTestReferenceValue);
+                batch.Begin(context.GraphicsContext, ref worldViewProj, BlendStates.AlphaBlend, dstate, renderingContext.StencilTestReferenceValue);
             }
 
             // render the design of the element
@@ -319,7 +329,7 @@ namespace Xenko.Rendering.UI
 
             // render the children
             foreach (var child in element.VisualChildrenCollection)
-                RecursiveDrawWithClipping(context, child, ref worldViewProj, batch);
+                RecursiveDrawWithClipping(context, child, ref worldViewProj, batch, ref dstate);
 
             // clear the element clipping region from the stencil buffer
             if (element.ClipToBounds)
@@ -336,7 +346,7 @@ namespace Xenko.Rendering.UI
 
                 // update context and restart the batch
                 renderingContext.StencilTestReferenceValue -= 1;
-                batch.Begin(context.GraphicsContext, ref worldViewProj, BlendStates.AlphaBlend, uiSystem.KeepStencilValueState, renderingContext.StencilTestReferenceValue);
+                batch.Begin(context.GraphicsContext, ref worldViewProj, BlendStates.AlphaBlend, dstate, renderingContext.StencilTestReferenceValue);
             }
         }
 

@@ -2,6 +2,7 @@
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using Xenko.Core.Mathematics;
 using Xenko.Engine;
+using Xenko.Rendering.Sprites;
 using Xenko.UI;
 
 namespace Xenko.Rendering.UI
@@ -23,6 +24,7 @@ namespace Xenko.Rendering.UI
         public bool IsBillboard;
         public bool SnapText;
         public bool IsFixedSize;
+        public RenderSprite.SpriteDepthMode depthMode;
 
         /// <summary>
         /// Last registered position of teh mouse

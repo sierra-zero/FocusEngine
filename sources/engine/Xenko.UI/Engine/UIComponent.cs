@@ -6,6 +6,7 @@ using Xenko.Core;
 using Xenko.Core.Mathematics;
 using Xenko.Engine.Design;
 using Xenko.Rendering;
+using Xenko.Rendering.Sprites;
 using Xenko.Rendering.UI;
 
 namespace Xenko.Engine
@@ -135,6 +136,9 @@ namespace Xenko.Engine
         [Display("Distance Sort Fudge")]
         [DefaultValue(0f)]
         public float DistanceSortFudge { get; set; }
+
+        [DataMember(100)]
+        public RenderSprite.SpriteDepthMode DepthMode { get; set; } = RenderSprite.SpriteDepthMode.ReadWrite;
 
         /// <summary>
         /// A fixed size UI component with height of 1 will be this much of the vertical resolution on screen

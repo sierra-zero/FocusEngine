@@ -25,16 +25,6 @@ namespace Xenko.UI.Renderers
         public GameTime Time { get; internal set; }
 
         /// <summary>
-        /// The final render target to draw to.
-        /// </summary>
-        public Texture RenderTarget { get; set; }
-
-        /// <summary>
-        /// The final depth stencil buffer to draw to.
-        /// </summary>
-        public Texture DepthStencilBuffer { get; set; }
-
-        /// <summary>
         /// The current reference value for the stencil test.
         /// </summary>
         public int StencilTestReferenceValue { get; set; }
