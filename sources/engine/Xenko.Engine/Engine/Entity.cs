@@ -137,6 +137,12 @@ namespace Xenko.Engine
         public PoolMember UsingPool;
 
         /// <summary>
+        /// Prevent this entity from being returned to the entity pool automatically. Useful if you are detaching something, but want to 'keep' it for readding.
+        /// </summary>
+        [DataMemberIgnore]
+        public bool PreventReturnToPoolOnDetach;
+
+        /// <summary>
         /// The entity manager which processes this entity.
         /// </summary>
         [DataMemberIgnore]

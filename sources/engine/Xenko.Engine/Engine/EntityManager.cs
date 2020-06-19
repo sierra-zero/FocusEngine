@@ -576,7 +576,10 @@ namespace Xenko.Engine
 
         protected virtual void OnEntityRemoved(Entity e)
         {
-            if (e.UsingPool != null) e.UsingPool.myPool.ReturnToPool(e, ref e.UsingPool.active);
+            if (e.UsingPool != null &&
+                e.PreventReturnToPoolOnDetach == false)
+                e.UsingPool.myPool.ReturnToPool(e, ref e.UsingPool.active);
+
             EntityRemoved?.Invoke(this, e);
         }
 
