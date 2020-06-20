@@ -28,6 +28,7 @@
 */
 using System;
 using System.Globalization;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace Xenko.Core.Mathematics
@@ -178,6 +179,30 @@ namespace Xenko.Core.Mathematics
                     default: throw new ArgumentOutOfRangeException(nameof(index), "Indices for Color3 run from 0 to 2, inclusive.");
                 }
             }
+        }
+
+        /// <summary>
+        /// Normalizes the RGB channels.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Normalize()
+        {
+            float length = (float)Math.Sqrt((R * R) + (G * G) + (B * B));
+            if (length > MathUtil.ZeroTolerance)
+            {
+                float inverse = 1.0f / length;
+                R *= inverse;
+                G *= inverse;
+                B *= inverse;
+            }
+        }
+
+        /// <summary>
+        /// Gets a value indicting whether this instance is normalized.
+        /// </summary>
+        public bool IsNormalized
+        {
+            get { return Math.Abs((R * R) + (G * G) + (B * B) - 1f) < MathUtil.ZeroTolerance; }
         }
 
         /// <summary>

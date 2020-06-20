@@ -28,6 +28,7 @@
 */
 using System;
 using System.Globalization;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace Xenko.Core.Mathematics
@@ -316,6 +317,30 @@ namespace Xenko.Core.Mathematics
             byte b = (byte)(B * 255.0f);
 
             return new Color(r, g, b, a);
+        }
+
+        /// <summary>
+        /// Normalizes the RGB channels.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Normalize()
+        {
+            float length = (float)Math.Sqrt((R * R) + (G * G) + (B * B));
+            if (length > MathUtil.ZeroTolerance)
+            {
+                float inverse = 1.0f / length;
+                R *= inverse;
+                G *= inverse;
+                B *= inverse;
+            }
+        }
+
+        /// <summary>
+        /// Gets a value indicting whether this instance is normalized.
+        /// </summary>
+        public bool IsNormalized
+        {
+            get { return Math.Abs((R * R) + (G * G) + (B * B) - 1f) < MathUtil.ZeroTolerance; }
         }
 
         /// <summary>
