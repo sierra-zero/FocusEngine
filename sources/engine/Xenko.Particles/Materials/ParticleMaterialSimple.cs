@@ -10,6 +10,7 @@ using Xenko.Graphics;
 using Xenko.Particles.Sorters;
 using Xenko.Particles.VertexLayouts;
 using Xenko.Rendering;
+using Xenko.Rendering.Sprites;
 
 namespace Xenko.Particles.Materials
 {
@@ -70,6 +71,14 @@ namespace Xenko.Particles.Materials
         [Display("Culling")]
         [DefaultValue(ParticleMaterialCulling.CullNone)]
         public ParticleMaterialCulling FaceCulling { get; set; }
+
+        [DataMember(50)]
+        [DefaultValue(RenderSprite.SpriteDepthMode.ReadOnly)]
+        public RenderSprite.SpriteDepthMode DepthMode { get; set; } = RenderSprite.SpriteDepthMode.ReadOnly;
+
+        [DataMember(60)]
+        [DefaultValue(SpriteBlend.AlphaBlend)]
+        public SpriteBlend BlendMode { get; set; } = SpriteBlend.AlphaBlend;
 
         /// <summary>
         /// Indicates if this material requires a color field in the vertex stream
@@ -132,9 +141,39 @@ namespace Xenko.Particles.Materials
             else if (FaceCulling == ParticleMaterialCulling.CullBack) pipelineState.RasterizerState = RasterizerStates.CullBack;
             else if (FaceCulling == ParticleMaterialCulling.CullFront) pipelineState.RasterizerState = RasterizerStates.CullFront;
 
-            pipelineState.BlendState = BlendStates.AlphaBlend;
+            switch (BlendMode)
+            {
+                default:
+                case SpriteBlend.Auto:
+                case SpriteBlend.AlphaBlend:
+                    pipelineState.BlendState = BlendStates.AlphaBlend;
+                    break;
+                case SpriteBlend.AdditiveBlend:
+                    pipelineState.BlendState = BlendStates.Additive;
+                    break;
+                case SpriteBlend.NoColor:
+                    pipelineState.BlendState = BlendStates.ColorDisabled;
+                    break;
+                case SpriteBlend.None:
+                    pipelineState.BlendState = BlendStates.Opaque;
+                    break;
+            }
 
-            pipelineState.DepthStencilState = DepthStencilStates.DepthRead;
+            switch (DepthMode)
+            {
+                case Xenko.Rendering.Sprites.RenderSprite.SpriteDepthMode.Ignore:
+                    pipelineState.DepthStencilState.DepthBufferEnable = false;
+                    pipelineState.DepthStencilState.DepthBufferWriteEnable = false;
+                    break;
+                default:
+                    pipelineState.DepthStencilState.DepthBufferEnable = true;
+                    pipelineState.DepthStencilState.DepthBufferWriteEnable = false;
+                    break;
+                case Xenko.Rendering.Sprites.RenderSprite.SpriteDepthMode.ReadWrite:
+                    pipelineState.DepthStencilState.DepthBufferEnable = true;
+                    pipelineState.DepthStencilState.DepthBufferWriteEnable = true;
+                    break;
+            }
         }
 
         /// <inheritdoc />
