@@ -14,12 +14,7 @@ shader ParticleComputeColorShader : ParticleBase
     // Shading of the sprite
     stage override float4 Shading()
     {
-        // -----------------------------------------------
-        // Base particle color
-        // -----------------------------------------------        
-        float4 finalColor = base.Shading() * baseColor.Compute();
-
-        return finalColor;
+        return baseColor.Compute();
     }
 };
 

@@ -24,8 +24,7 @@ namespace Xenko.Assets.Presentation.AssetEditors.EntityHierarchyEditor.Game
             if (memberNode == null)
                 return;
 
-            if (memberNode.Name == nameof(ParticleMaterialSimple.AlphaAdditive) ||
-                memberNode.Name == nameof(ParticleMaterialSimple.ZOffset) ||
+            if (memberNode.Name == nameof(ParticleMaterialSimple.AlphaCutoff) ||
                 memberNode.Name == nameof(ParticleMaterialSimple.SoftEdgeDistance))
             {
                 (memberNode.Parent.Retrieve() as ParticleMaterialSimple)?.ForceUpdate();

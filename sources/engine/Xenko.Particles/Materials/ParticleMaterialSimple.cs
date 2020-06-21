@@ -28,29 +28,6 @@ namespace Xenko.Particles.Materials
     public abstract class ParticleMaterialSimple : ParticleMaterial
     {
         /// <summary>
-        /// Shows if the particles should be rendered as alhpa-blended, additive or something in-between (lerp between the two methods)
-        /// </summary>
-        /// <userdoc>
-        /// Defines if the particles should be rendered as alpha-blended (0), additive (1) or something in-between (any value between 0 and 1)
-        /// </userdoc>
-        [DataMember(20)]
-        [DataMemberRange(0, 1, 0.01, 0.1, 3)]
-        [Display("Alpha-Add")]
-        [DefaultValue(0)]
-        public float AlphaAdditive { get; set; }
-
-        /// <summary>
-        /// Adjusts the depth of the particle in regard to opaque objects
-        /// </summary>
-        /// <userdoc>
-        /// Adjusts the depth of the particle in regard to opaque objects
-        /// </userdoc>
-        [DataMember(30)]
-        [Display("Z Offset")]
-        [DefaultValue(0)]
-        public float ZOffset { get; set; } = 0f;
-
-        /// <summary>
         /// If positive, soft particle edges will be calculated with maximum distance of the value set.
         /// </summary>
         /// <userdoc>
@@ -79,6 +56,10 @@ namespace Xenko.Particles.Materials
         [DataMember(60)]
         [DefaultValue(SpriteBlend.AlphaBlend)]
         public SpriteBlend BlendMode { get; set; } = SpriteBlend.AlphaBlend;
+
+        [DataMember(70)]
+        [DefaultValue(0f)]
+        public float AlphaCutoff { get; set; } = 0f;
 
         /// <summary>
         /// Indicates if this material requires a color field in the vertex stream
@@ -117,10 +98,7 @@ namespace Xenko.Particles.Materials
                 return;
             particleMaterialSimpleHasChanged = false;
 
-            // This is correct. We invert the value here to reduce calculations on the shader side later
-            Parameters.Set(ParticleBaseKeys.AlphaAdditive, 1f - AlphaAdditive);
-
-            Parameters.Set(ParticleBaseKeys.ZOffset, ZOffset);
+            Parameters.Set(ParticleBaseKeys.AlphaCutoff, AlphaCutoff);
 
             // This is correct. We invert the value here to reduce calculations on the shader side later
             Parameters.Set(ParticleBaseKeys.SoftEdgeInverseDistance, (SoftEdgeDistance > 0) ? (1f / SoftEdgeDistance) : 0f);
@@ -171,6 +149,10 @@ namespace Xenko.Particles.Materials
                     break;
                 case Xenko.Rendering.Sprites.RenderSprite.SpriteDepthMode.ReadWrite:
                     pipelineState.DepthStencilState.DepthBufferEnable = true;
+                    pipelineState.DepthStencilState.DepthBufferWriteEnable = true;
+                    break;
+                case RenderSprite.SpriteDepthMode.WriteOnly:
+                    pipelineState.DepthStencilState.DepthBufferEnable = false;
                     pipelineState.DepthStencilState.DepthBufferWriteEnable = true;
                     break;
             }

@@ -258,6 +258,10 @@ namespace Xenko.Rendering.UI
                             stencilState.DepthBufferWriteEnable = true;
                             stencilState.DepthBufferEnable = true;
                             break;
+                        case Sprites.RenderSprite.SpriteDepthMode.WriteOnly:
+                            stencilState.DepthBufferWriteEnable = true;
+                            stencilState.DepthBufferEnable = false;
+                            break;
                     }
 
                     // start the image draw session

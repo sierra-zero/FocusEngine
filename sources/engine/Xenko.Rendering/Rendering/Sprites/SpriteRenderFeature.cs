@@ -148,6 +148,9 @@ namespace Xenko.Rendering.Sprites
                         default:
                             depthStencilState = DepthStencilStates.Default;
                             break;
+                        case RenderSprite.SpriteDepthMode.WriteOnly:
+                            depthStencilState = new DepthStencilStateDescription(false, true);
+                            break;
                     }
 
                     var samplerState = context.GraphicsDevice.SamplerStates.LinearClamp;

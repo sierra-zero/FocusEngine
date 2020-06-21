@@ -51,7 +51,8 @@ namespace Xenko.Rendering.Sprites
         {
             ReadWrite = 0,
             ReadOnly = 1,
-            Ignore = 2
+            Ignore = 2,
+            WriteOnly = 3
         }
 
         // Cached states

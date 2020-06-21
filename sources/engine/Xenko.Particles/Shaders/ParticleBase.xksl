@@ -34,14 +34,11 @@ shader ParticleBase : DepthBase, ShaderBase, Texturing, ParticleUtilities
     {
         stage float4 ColorScale;
 
-        // When the value is 0 there is no occlusion (100% emissive), when it is 1 there is 100% occlusion (still limited by alpha)
-        stage float AlphaAdditive;
-
-        // Z offset is how much the depth should be adjusted when rendering
-        stage float ZOffset;
-
         // 0 if disabled, equal to 1/Distance otherwise
         stage float SoftEdgeInverseDistance;
+
+        // alpha cutoff
+        stage float AlphaCutoff;
     }
             
     // -------------------------------------
@@ -66,7 +63,6 @@ shader ParticleBase : DepthBase, ShaderBase, Texturing, ParticleUtilities
 
         // Z Offset
         viewPos.w = 1;
-        viewPos.z += ZOffset;
 
         streams.ZDepth = viewPos.z;
 
@@ -82,7 +78,9 @@ shader ParticleBase : DepthBase, ShaderBase, Texturing, ParticleUtilities
     // Override Pixel shader main method from the ShaderBase shader
     stage override void PSMain()
     {
-        float4 colorTarget = Shading();
+        float4 colorTarget = Shading() * streams.Color * ColorScale;
+
+        clip(colorTarget.a - AlphaCutoff);
 
         if (UsesSoftEdge > 0)
         {
@@ -114,19 +112,12 @@ shader ParticleBase : DepthBase, ShaderBase, Texturing, ParticleUtilities
             var softEdge = smoothstep(0, 1, depthDistance * SoftEdgeInverseDistance); 
             colorTarget.rgba *= softEdge;
         }
-        else
-        {
-            // Do nothing. The depth testing is enabled
-        }
-
-        colorTarget.a *= AlphaAdditive;
 
         streams.ColorTarget = colorTarget;
     }
     
     stage float4 Shading()
     {
-        return ColorScale * streams.Color;
+        return float(1, 1, 1, 1);
     }
-
 };
