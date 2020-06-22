@@ -260,11 +260,8 @@ namespace Xenko.Shaders.Compiler
                     break;
             }
 
-            if (effectParameters.OptimizationLevel > 0)
-            {
-                // Remove unused reflection data, as it is entirely resolved at compile time.
-                CleanupReflection(bytecode.Reflection);
-            }
+            // Remove unused reflection data, as it is entirely resolved at compile time.
+            CleanupReflection(bytecode.Reflection);
 
             bytecode.Stages = shaderStageBytecodes.ToArray();
 
