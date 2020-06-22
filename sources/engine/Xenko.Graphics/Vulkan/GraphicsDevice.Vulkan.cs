@@ -603,8 +603,11 @@ namespace Xenko.Graphics
             if (IsFenceCompleteInternal(fenceValue))
                 return;
 
-            lock (nativeFences)
+            bool lockTaken = false;
+            try
             {
+                spinLock.Enter(ref lockTaken);
+
                 while (nativeFences.Count > 0 && nativeFences.Peek().Key <= fenceValue)
                 {
                     var fence = nativeFences.Dequeue();
@@ -612,8 +615,14 @@ namespace Xenko.Graphics
 
                     vkWaitForFences(NativeDevice, 1, &fenceCopy, true, ulong.MaxValue);
                     vkDestroyFence(NativeDevice, fence.Value, null);
-                    lastCompletedFence = fenceValue;
+                    if (fenceValue > lastCompletedFence)
+                        lastCompletedFence = fenceValue;
                 }
+            }
+            finally
+            {
+                if (lockTaken)
+                    spinLock.Exit(false);
             }
         }
 
