@@ -138,7 +138,8 @@ namespace Xenko.Engine
         public float DistanceSortFudge { get; set; }
 
         [DataMember(100)]
-        public RenderSprite.SpriteDepthMode DepthMode { get; set; } = RenderSprite.SpriteDepthMode.ReadWrite;
+        [DefaultValue(RenderSprite.SpriteDepthMode.ReadOnly)]
+        public RenderSprite.SpriteDepthMode DepthMode { get; set; } = RenderSprite.SpriteDepthMode.ReadOnly;
 
         /// <summary>
         /// A fixed size UI component with height of 1 will be this much of the vertical resolution on screen
