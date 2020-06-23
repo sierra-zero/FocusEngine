@@ -122,7 +122,7 @@ namespace Xenko.Physics.Bepu
                     }
 
                     for (int i = 0; i < AllRigidbodies.Count; i++)
-                        AllRigidbodies[i].myBodyHandle.Value = -1;
+                        AllRigidbodies[i].InternalBody.Handle.Value = -1;
                     foreach (BepuStaticColliderComponent sc in StaticMappings.Values)
                         sc.myStaticHandle.Value = -1;
 
@@ -444,8 +444,8 @@ namespace Xenko.Physics.Bepu
                     {
                         rigidBody.bodyDescription.Collidable = rigidBody.ColliderShape.GenerateDescription(internalSimulation, rigidBody.SpeculativeMargin);
                         AllRigidbodies.Add(rigidBody);
-                        rigidBody.myBodyHandle = internalSimulation.Bodies.Add(rigidBody.bodyDescription);
-                        RigidMappings[rigidBody.myBodyHandle.Value] = rigidBody;
+                        rigidBody.InternalBody.Handle = internalSimulation.Bodies.Add(rigidBody.bodyDescription);
+                        RigidMappings[rigidBody.InternalBody.Handle.Value] = rigidBody;
                     }
                     component.Position = component.Entity.Transform.WorldPosition() - (rigidBody.LocalPhysicsOffset ?? Vector3.Zero);
                     component.Rotation = component.Entity.Transform.WorldRotation();
@@ -472,10 +472,10 @@ namespace Xenko.Physics.Bepu
                 } 
                 else if (component is BepuRigidbodyComponent rigidBody)
                 {
-                    BodyHandle bh = rigidBody.myBodyHandle;
+                    BodyHandle bh = rigidBody.InternalBody.Handle;
                     using(simulationLocker.WriteLock())
                     {
-                        rigidBody.myBodyHandle.Value = -1;
+                        rigidBody.InternalBody.Handle.Value = -1;
                         internalSimulation.Bodies.Remove(bh);
                         RigidMappings.Remove(bh.Value);
                         AllRigidbodies.Remove(rigidBody);

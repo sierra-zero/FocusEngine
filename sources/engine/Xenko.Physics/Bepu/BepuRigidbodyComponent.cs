@@ -34,33 +34,31 @@ namespace Xenko.Physics.Bepu
         public BodyDescription bodyDescription;
 
         [DataMemberIgnore]
-        private BodyReference _internalReference;
+        public BodyReference InternalBody;
 
-        [DataMemberIgnore]
-        public BodyHandle myBodyHandle;
-
-        public override int HandleIndex => myBodyHandle.Value;
-
-        /// <summary>
-        /// Reference to the body after being added to the scene
-        /// </summary>
-        public ref BodyReference InternalBody
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get
-            {
-                _internalReference.Bodies = BepuSimulation.instance.internalSimulation.Bodies;
-                _internalReference.Handle = myBodyHandle;
-
-                return ref _internalReference;
-            }
-        }
+        public override int HandleIndex => InternalBody.Handle.Value;
 
         /// <summary>
         /// Action to be called after simulation, but before transforms are set to new positions. Arguments are this and simulation time.
         /// </summary>
         [DataMemberIgnore]
         public Action<BepuRigidbodyComponent, float> ActionPerSimulationTick;
+
+        [DataMemberIgnore]
+        internal ConcurrentQueue<Action<BepuRigidbodyComponent>> queuedActions = new ConcurrentQueue<Action<BepuRigidbodyComponent>>();
+
+        internal bool wasAwake;
+
+        internal void SafeRun(Action<BepuRigidbodyComponent> a)
+        {
+            if (safeRun)
+                a(this);
+            else
+                queuedActions.Enqueue(a);
+        }
+
+        // are we safe to make changes to rigidbodies (e.g. not simulating)
+        internal static volatile bool safeRun;
 
         private enum ACTION_TYPE
         {
@@ -79,81 +77,140 @@ namespace Xenko.Physics.Bepu
             LinearVelocity
         }
 
-        internal bool[] NeedsAction = new bool[13];
-        internal object[] ActionObject = new object[13];
+        private static Action<BepuRigidbodyComponent>[] CachedDelegates;
 
-        internal void UpdateAsyncState()
+        private static void PrepareDelegates()
         {
-            for (int i=0; i<NeedsAction.Length; i++)
+            CachedDelegates[(int)ACTION_TYPE.IsActive] = (rb) =>
             {
-                if (NeedsAction[i])
+                if (rb.InternalBody.Awake != rb.wasAwake)
                 {
-                    NeedsAction[i] = false;
-                    switch ((ACTION_TYPE)i)
+                    using (BepuSimulation.instance.simulationLocker.WriteLock())
                     {
-                        case ACTION_TYPE.IsActive:
-                            InternalBody.Awake = (bool)ActionObject[i];
-                            break;
-                        case ACTION_TYPE.AngularVelocity:
-                            InternalBody.Velocity.Angular = (System.Numerics.Vector3)ActionObject[i];
-                            break;
-                        case ACTION_TYPE.ApplyImpulse:
-                            lock (ActionObject[i])
-                            {
-                                InternalBody.ApplyLinearImpulse((System.Numerics.Vector3)ActionObject[i]);
-                                ActionObject[i] = System.Numerics.Vector3.Zero;
-                            }
-                            break;
-                        case ACTION_TYPE.ApplyImpulseOffset:
-                            lock (impulsePairs)
-                            {
-                                while (impulsePairs.Count > 0)
-                                {
-                                    var pair = impulsePairs.Dequeue();
-                                    InternalBody.ApplyImpulse(pair[0], pair[1]);
-                                }
-                            }
-                            break;
-                        case ACTION_TYPE.ApplyTorqueImpulse:
-                            lock (ActionObject[i])
-                            {
-                                InternalBody.ApplyAngularImpulse((System.Numerics.Vector3)ActionObject[i]);
-                                ActionObject[i] = System.Numerics.Vector3.Zero;
-                            }
-                            break;
-                        case ACTION_TYPE.CcdMotionThreshold:
-                            InternalBody.Collidable.Continuity = (ContinuousDetectionSettings)ActionObject[i];
-                            break;
-                        case ACTION_TYPE.ColliderShape:
-                            ColliderShapeInternalSwitching();
-                            break;
-                        case ACTION_TYPE.LinearVelocity:
-                            InternalBody.Velocity.Linear = (System.Numerics.Vector3)ActionObject[i];
-                            break;
-                        case ACTION_TYPE.Position:
-                            InternalBody.Pose.Position = (System.Numerics.Vector3)ActionObject[i];
-                            break;
-                        case ACTION_TYPE.Rotation:
-                            InternalBody.Pose.Orientation = (System.Numerics.Quaternion)ActionObject[i];
-                            break;
-                        case ACTION_TYPE.SleepThreshold:
-                            InternalBody.Activity.SleepThreshold = (float)ActionObject[i];
-                            break;
-                        case ACTION_TYPE.SpeculativeMargin:
-                            InternalBody.Collidable.SpeculativeMargin = (float)ActionObject[i];
-                            break;
-                        case ACTION_TYPE.UpdateInertia:
-                            InternalBody.LocalInertia = (BodyInertia)ActionObject[i];
-                            break;
+                        rb.InternalBody.Awake = rb.wasAwake;
                     }
                 }
-            }
+            };
+
+            CachedDelegates[(int)ACTION_TYPE.CcdMotionThreshold] = (rb) =>
+            {
+                rb.InternalBody.Collidable.Continuity = rb.bodyDescription.Collidable.Continuity;
+            };
+
+            CachedDelegates[(int)ACTION_TYPE.SleepThreshold] = (rb) =>
+            {
+                rb.InternalBody.Activity.SleepThreshold = rb.bodyDescription.Activity.SleepThreshold;
+            };
+
+            CachedDelegates[(int)ACTION_TYPE.UpdateInertia] = (rb) =>
+            {
+                rb.InternalBody.LocalInertia = rb.bodyDescription.LocalInertia;
+            };
+
+            CachedDelegates[(int)ACTION_TYPE.SpeculativeMargin] = (rb) =>
+            {
+                rb.InternalBody.Collidable.SpeculativeMargin = rb.bodyDescription.Collidable.SpeculativeMargin;
+            };
+
+            CachedDelegates[(int)ACTION_TYPE.ColliderShape] = (rb) =>
+            {
+                BepuSimulation bs = BepuSimulation.instance;
+
+                // don't worry about switching if we are to be removed
+                if (bs.ToBeRemoved.Contains(rb))
+                    return;
+
+                using (bs.simulationLocker.WriteLock())
+                {
+                    // remove me with the old shape
+                    bs.internalSimulation.Bodies.Remove(rb.InternalBody.Handle);
+                    BepuSimulation.RigidMappings.Remove(rb.InternalBody.Handle.Value);
+
+                    // add me with the new shape
+                    rb.bodyDescription.Collidable = rb.ColliderShape.GenerateDescription(bs.internalSimulation, rb.SpeculativeMargin);
+                    rb.InternalBody.Handle = bs.internalSimulation.Bodies.Add(rb.bodyDescription);
+                    BepuSimulation.RigidMappings[rb.InternalBody.Handle.Value] = rb;
+                }
+            };
+
+            CachedDelegates[(int)ACTION_TYPE.ApplyImpulse] = (rb) =>
+            {
+                rb.IsActive = true;
+                lock (rb.impulsesToApply)
+                {
+                    while (rb.impulsesToApply.Count > 0)
+                        rb.InternalBody.ApplyLinearImpulse(BepuHelpers.ToBepu(rb.impulsesToApply.Dequeue()));
+
+                    // update changed velocity
+                    rb.bodyDescription.Velocity.Linear = rb.InternalBody.Velocity.Linear;
+                }
+            };
+
+            CachedDelegates[(int)ACTION_TYPE.ApplyImpulseOffset] = (rb) =>
+            {
+                rb.IsActive = true;
+                lock (rb.impulsesToApply)
+                {
+                    while (rb.impulsePairs.Count > 0)
+                    {
+                        Vector3[] pair = rb.impulsePairs.Dequeue();
+                        rb.InternalBody.ApplyImpulse(BepuHelpers.ToBepu(pair[0]), BepuHelpers.ToBepu(pair[1]));
+                    }
+
+                    // update changed velocities
+                    rb.bodyDescription.Velocity.Linear = rb.InternalBody.Velocity.Linear;
+                    rb.bodyDescription.Velocity.Angular = rb.InternalBody.Velocity.Angular;
+                }
+            };
+
+            CachedDelegates[(int)ACTION_TYPE.ApplyTorqueImpulse] = (rb) =>
+            {
+                rb.IsActive = true;
+                lock (rb.impulsesToApply)
+                {
+                    while (rb.torquesToApply.Count > 0)
+                        rb.InternalBody.ApplyAngularImpulse(BepuHelpers.ToBepu(rb.torquesToApply.Dequeue()));
+
+                    // update changed velocity
+                    rb.bodyDescription.Velocity.Angular = rb.InternalBody.Velocity.Angular;
+                }
+            };
+
+            CachedDelegates[(int)ACTION_TYPE.Position] = (rb) =>
+            {
+                rb.InternalBody.Pose.Position.X = rb.bodyDescription.Pose.Position.X;
+                rb.InternalBody.Pose.Position.Y = rb.bodyDescription.Pose.Position.Y;
+                rb.InternalBody.Pose.Position.Z = rb.bodyDescription.Pose.Position.Z;
+            };
+
+            CachedDelegates[(int)ACTION_TYPE.Rotation] = (rb) =>
+            {
+                rb.InternalBody.Pose.Orientation.X = rb.bodyDescription.Pose.Orientation.X;
+                rb.InternalBody.Pose.Orientation.Y = rb.bodyDescription.Pose.Orientation.Y;
+                rb.InternalBody.Pose.Orientation.Z = rb.bodyDescription.Pose.Orientation.Z;
+                rb.InternalBody.Pose.Orientation.W = rb.bodyDescription.Pose.Orientation.W;
+            };
+
+            CachedDelegates[(int)ACTION_TYPE.AngularVelocity] = rb =>
+            {
+                if (rb.bodyDescription.Velocity.Angular != System.Numerics.Vector3.Zero)
+                    rb.IsActive = true;
+
+                rb.InternalBody.Velocity.Angular.X = rb.bodyDescription.Velocity.Angular.X;
+                rb.InternalBody.Velocity.Angular.Y = rb.bodyDescription.Velocity.Angular.Y;
+                rb.InternalBody.Velocity.Angular.Z = rb.bodyDescription.Velocity.Angular.Z;
+            };
+
+            CachedDelegates[(int)ACTION_TYPE.LinearVelocity] = rb =>
+            {
+                if (rb.bodyDescription.Velocity.Linear != System.Numerics.Vector3.Zero)
+                    rb.IsActive = true;
+
+                rb.InternalBody.Velocity.Linear.X = rb.bodyDescription.Velocity.Linear.X;
+                rb.InternalBody.Velocity.Linear.Y = rb.bodyDescription.Velocity.Linear.Y;
+                rb.InternalBody.Velocity.Linear.Z = rb.bodyDescription.Velocity.Linear.Z;
+            };
         }
-
-        internal bool wasAwake;
-
-        // are we safe to make changes to rigidbodies (e.g. not simulating)
-        internal static volatile bool safeRun;
 
         /// <summary>
         /// Gets a value indicating whether this instance is active (awake).
@@ -166,7 +223,7 @@ namespace Xenko.Physics.Bepu
         {
             get
             {
-                return AddedToScene && (PhysicsSystem.IsSimulationThread(Thread.CurrentThread) ? InternalBody.Awake : wasAwake);
+                return AddedToScene && wasAwake;
             }
             set
             {
@@ -174,15 +231,7 @@ namespace Xenko.Physics.Bepu
 
                 wasAwake = value;
 
-                if (safeRun)
-                {
-                    InternalBody.Awake = value;
-                }
-                else
-                {
-                    ActionObject[(int)ACTION_TYPE.IsActive] = value;
-                    NeedsAction[(int)ACTION_TYPE.IsActive] = true;
-                }
+                SafeRun(CachedDelegates[(int)ACTION_TYPE.IsActive]);
             }
         }
 
@@ -206,15 +255,7 @@ namespace Xenko.Physics.Bepu
 
                 if (AddedToScene)
                 {
-                    if (safeRun)
-                    {
-                        InternalBody.Collidable.Continuity = bodyDescription.Collidable.Continuity;
-                    }
-                    else
-                    {
-                        ActionObject[(int)ACTION_TYPE.CcdMotionThreshold] = bodyDescription.Collidable.Continuity;
-                        NeedsAction[(int)ACTION_TYPE.CcdMotionThreshold] = true;
-                    }
+                    SafeRun(CachedDelegates[(int)ACTION_TYPE.CcdMotionThreshold]);
                 }
             }
         }
@@ -309,11 +350,17 @@ namespace Xenko.Physics.Bepu
 
         public BepuRigidbodyComponent() : base()
         {
+            if (CachedDelegates == null) {
+                CachedDelegates = new Action<BepuRigidbodyComponent>[13];
+                PrepareDelegates();
+            }
+
             bodyDescription.Pose.Orientation.W = 1f;
             bodyDescription.LocalInertia.InverseMass = 1f;
             bodyDescription.Activity.MinimumTimestepCountUnderThreshold = 32;
             bodyDescription.Activity.SleepThreshold = 0.01f;
-            myBodyHandle.Value = -1;
+            InternalBody.Bodies = BepuSimulation.instance.internalSimulation.Bodies;
+            InternalBody.Handle.Value = -1;
         }
 
         public override TypedIndex ShapeIndex { get => bodyDescription.Collidable.Shape; }
@@ -336,15 +383,7 @@ namespace Xenko.Physics.Bepu
 
                 if (AddedToScene)
                 {
-                    if (safeRun)
-                    {
-                        InternalBody.Activity.SleepThreshold = value;
-                    }
-                    else
-                    {
-                        ActionObject[(int)ACTION_TYPE.SleepThreshold] = bodyDescription.Activity.SleepThreshold;
-                        NeedsAction[(int)ACTION_TYPE.SleepThreshold] = true;
-                    }
+                    SafeRun(CachedDelegates[(int)ACTION_TYPE.SleepThreshold]);
                 }
             }
         }
@@ -426,15 +465,7 @@ namespace Xenko.Physics.Bepu
 
             if (skipset == false && AddedToScene)
             {
-                if (safeRun)
-                {
-                    InternalBody.LocalInertia = bodyDescription.LocalInertia;
-                }
-                else
-                {
-                    ActionObject[(int)ACTION_TYPE.UpdateInertia] = bodyDescription.LocalInertia;
-                    NeedsAction[(int)ACTION_TYPE.UpdateInertia] = true;
-                }
+                SafeRun(CachedDelegates[(int)ACTION_TYPE.UpdateInertia]);
             }
         }
 
@@ -450,37 +481,8 @@ namespace Xenko.Physics.Bepu
 
                 if (AddedToScene)
                 {
-                    if (safeRun)
-                    {
-                        InternalBody.Collidable.SpeculativeMargin = value;
-                    }
-                    else
-                    {
-                        ActionObject[(int)ACTION_TYPE.SpeculativeMargin] = bodyDescription.Collidable.SpeculativeMargin;
-                        NeedsAction[(int)ACTION_TYPE.SpeculativeMargin] = true;
-                    }
+                    SafeRun(CachedDelegates[(int)ACTION_TYPE.SpeculativeMargin]);
                 }
-            }
-        }
-
-        internal void ColliderShapeInternalSwitching()
-        {
-            BepuSimulation bs = BepuSimulation.instance;
-
-            // don't worry about switching if we are to be removed
-            if (bs.ToBeRemoved.Contains(this))
-                return;
-
-            using (bs.simulationLocker.WriteLock())
-            {
-                // remove me with the old shape
-                bs.internalSimulation.Bodies.Remove(myBodyHandle);
-                BepuSimulation.RigidMappings.Remove(myBodyHandle.Value);
-
-                // add me with the new shape
-                bodyDescription.Collidable = ColliderShape.GenerateDescription(bs.internalSimulation, SpeculativeMargin);
-                myBodyHandle = bs.internalSimulation.Bodies.Add(bodyDescription);
-                BepuSimulation.RigidMappings[myBodyHandle.Value] = this;
             }
         }
 
@@ -498,14 +500,7 @@ namespace Xenko.Physics.Bepu
 
                     UpdateInertia(true);
 
-                    if (safeRun)
-                    {
-                        ColliderShapeInternalSwitching();
-                    }
-                    else
-                    {
-                        NeedsAction[(int)ACTION_TYPE.ColliderShape] = true;
-                    }
+                    SafeRun(CachedDelegates[(int)ACTION_TYPE.ColliderShape]);
                 }
                 else
                 {
@@ -597,7 +592,7 @@ namespace Xenko.Physics.Bepu
         {
             get
             {
-                return myBodyHandle.Value != -1; 
+                return InternalBody.Handle.Value != -1; 
             }
             set
             {
@@ -626,6 +621,8 @@ namespace Xenko.Physics.Bepu
             }
         }
 
+        private Queue<Vector3> impulsesToApply = new Queue<Vector3>();
+
         /// <summary>
         /// Applies the impulse.
         /// </summary>
@@ -634,22 +631,16 @@ namespace Xenko.Physics.Bepu
         {
             if (AddedToScene)
             {
-                if (safeRun)
+                lock (impulsesToApply)
                 {
-                    InternalBody.ApplyLinearImpulse(BepuHelpers.ToBepu(impulse));
+                    impulsesToApply.Enqueue(impulse);
                 }
-                else
-                {
-                    lock (ActionObject[(int)ACTION_TYPE.ApplyImpulse])
-                    {
-                        ActionObject[(int)ACTION_TYPE.ApplyImpulse] = (System.Numerics.Vector3)ActionObject[(int)ACTION_TYPE.ApplyImpulse] + BepuHelpers.ToBepu(impulse);
-                        NeedsAction[(int)ACTION_TYPE.ApplyImpulse] = true;
-                    }
-                }
+
+                SafeRun(CachedDelegates[(int)ACTION_TYPE.ApplyImpulse]);
             }
         }
 
-        private Queue<System.Numerics.Vector3[]> impulsePairs = new Queue<System.Numerics.Vector3[]>();
+        private Queue<Vector3[]> impulsePairs;
 
         /// <summary>
         /// Applies the impulse.
@@ -660,20 +651,19 @@ namespace Xenko.Physics.Bepu
         {
             if (AddedToScene)
             {
-                if (safeRun)
+                if (impulsePairs == null)
+                    impulsePairs = new Queue<Vector3[]>();
+
+                lock (impulsesToApply)
                 {
-                    InternalBody.ApplyImpulse(BepuHelpers.ToBepu(impulse), BepuHelpers.ToBepu(localOffset));
+                    impulsePairs.Enqueue(new Vector3[] { impulse, localOffset });
                 }
-                else
-                {
-                    lock (impulsePairs)
-                    {
-                        impulsePairs.Enqueue(new System.Numerics.Vector3[] { BepuHelpers.ToBepu(impulse), BepuHelpers.ToBepu(localOffset) });
-                        NeedsAction[(int)ACTION_TYPE.ApplyImpulseOffset] = true;
-                    }
-                }
+
+                SafeRun(CachedDelegates[(int)ACTION_TYPE.ApplyImpulseOffset]);
             }
         }
+
+        private Queue<Vector3> torquesToApply;
 
         /// <summary>
         /// Applies the torque impulse.
@@ -683,18 +673,15 @@ namespace Xenko.Physics.Bepu
         {
             if (AddedToScene)
             {
-                if (safeRun)
+                if (torquesToApply == null)
+                    torquesToApply = new Queue<Vector3>();
+
+                lock (impulsesToApply)
                 {
-                    InternalBody.ApplyAngularImpulse(BepuHelpers.ToBepu(torque));
+                    torquesToApply.Enqueue(torque);
                 }
-                else
-                {
-                    lock (ActionObject[(int)ACTION_TYPE.ApplyTorqueImpulse])
-                    {
-                        ActionObject[(int)ACTION_TYPE.ApplyTorqueImpulse] = (System.Numerics.Vector3)ActionObject[(int)ACTION_TYPE.ApplyTorqueImpulse] + BepuHelpers.ToBepu(torque);
-                        NeedsAction[(int)ACTION_TYPE.ApplyTorqueImpulse] = true;
-                    }
-                }
+
+                SafeRun(CachedDelegates[(int)ACTION_TYPE.ApplyTorqueImpulse]);
             }
         }
 
@@ -703,7 +690,7 @@ namespace Xenko.Physics.Bepu
         {
             get
             {
-                return BepuHelpers.ToXenko(AddedToScene && PhysicsSystem.IsSimulationThread(Thread.CurrentThread) ? InternalBody.Pose.Position : bodyDescription.Pose.Position);
+                return BepuHelpers.ToXenko(bodyDescription.Pose.Position);
             }
             set
             {
@@ -715,17 +702,7 @@ namespace Xenko.Physics.Bepu
 
                 if (AddedToScene)
                 {
-                    if (safeRun)
-                    {
-                        InternalBody.Pose.Position.X = value.X;
-                        InternalBody.Pose.Position.Y = value.Y;
-                        InternalBody.Pose.Position.Z = value.Z;
-                    }
-                    else
-                    {
-                        ActionObject[(int)ACTION_TYPE.Position] = bodyDescription.Pose.Position;
-                        NeedsAction[(int)ACTION_TYPE.Position] = true;
-                    }
+                    SafeRun(CachedDelegates[(int)ACTION_TYPE.Position]);
                 }
             }
         }
@@ -735,7 +712,7 @@ namespace Xenko.Physics.Bepu
         {
             get
             {
-                return BepuHelpers.ToXenko(AddedToScene && PhysicsSystem.IsSimulationThread(Thread.CurrentThread) ? InternalBody.Pose.Orientation : bodyDescription.Pose.Orientation);
+                return BepuHelpers.ToXenko(bodyDescription.Pose.Orientation);
             }
             set
             {
@@ -751,18 +728,7 @@ namespace Xenko.Physics.Bepu
 
                 if (AddedToScene)
                 {
-                    if (safeRun)
-                    {
-                        InternalBody.Pose.Orientation.X = value.X;
-                        InternalBody.Pose.Orientation.Y = value.Y;
-                        InternalBody.Pose.Orientation.Z = value.Z;
-                        InternalBody.Pose.Orientation.W = value.W;
-                    }
-                    else
-                    {
-                        ActionObject[(int)ACTION_TYPE.Rotation] = bodyDescription.Pose.Orientation;
-                        NeedsAction[(int)ACTION_TYPE.Rotation] = true;
-                    }
+                    SafeRun(CachedDelegates[(int)ACTION_TYPE.Rotation]);
                 }
             }
         }
@@ -778,29 +744,25 @@ namespace Xenko.Physics.Bepu
         {
             get
             {
-                return BepuHelpers.ToXenko(AddedToScene && PhysicsSystem.IsSimulationThread(Thread.CurrentThread) ? InternalBody.Velocity.Angular : bodyDescription.Velocity.Angular);
+                return BepuHelpers.ToXenko(bodyDescription.Velocity.Angular);
             }
             set
             {
                 if (bodyDescription.Velocity.Angular == BepuHelpers.ToBepu(value)) return;
 
-                bodyDescription.Velocity.Angular.X = value.X;
-                bodyDescription.Velocity.Angular.Y = value.Y;
-                bodyDescription.Velocity.Angular.Z = value.Z;
+                lock (impulsesToApply)
+                {
+                    // since we are applying a velocity, get rid of previous impulses which would normally be overwritten
+                    torquesToApply?.Clear();
+
+                    bodyDescription.Velocity.Angular.X = value.X;
+                    bodyDescription.Velocity.Angular.Y = value.Y;
+                    bodyDescription.Velocity.Angular.Z = value.Z;
+                }
 
                 if (AddedToScene)
                 {
-                    if (safeRun)
-                    {
-                        InternalBody.Velocity.Angular.X = value.X;
-                        InternalBody.Velocity.Angular.Y = value.Y;
-                        InternalBody.Velocity.Angular.Z = value.Z;
-                    }
-                    else
-                    {
-                        ActionObject[(int)ACTION_TYPE.AngularVelocity] = bodyDescription.Velocity.Angular;
-                        NeedsAction[(int)ACTION_TYPE.AngularVelocity] = true;
-                    }
+                    SafeRun(CachedDelegates[(int)ACTION_TYPE.AngularVelocity]);
                 }
             }
         }
@@ -816,29 +778,26 @@ namespace Xenko.Physics.Bepu
         {
             get
             {
-                return BepuHelpers.ToXenko(AddedToScene && PhysicsSystem.IsSimulationThread(Thread.CurrentThread) ? InternalBody.Velocity.Linear : bodyDescription.Velocity.Linear);
+                return BepuHelpers.ToXenko(bodyDescription.Velocity.Linear);
             }
             set
             {
                 if (bodyDescription.Velocity.Linear == BepuHelpers.ToBepu(value)) return;
 
-                bodyDescription.Velocity.Linear.X = value.X;
-                bodyDescription.Velocity.Linear.Y = value.Y;
-                bodyDescription.Velocity.Linear.Z = value.Z;
+                lock (impulsesToApply)
+                {
+                    // since we are applying a velocity, get rid of previous impulses which would normally be overwritten
+                    impulsesToApply.Clear();
+                    impulsePairs?.Clear();
+
+                    bodyDescription.Velocity.Linear.X = value.X;
+                    bodyDescription.Velocity.Linear.Y = value.Y;
+                    bodyDescription.Velocity.Linear.Z = value.Z;
+                }
 
                 if (AddedToScene)
                 {
-                    if (safeRun)
-                    {
-                        InternalBody.Velocity.Linear.X = value.X;
-                        InternalBody.Velocity.Linear.Y = value.Y;
-                        InternalBody.Velocity.Linear.Z = value.Z;
-                    }
-                    else
-                    {
-                        ActionObject[(int)ACTION_TYPE.LinearVelocity] = bodyDescription.Velocity.Linear;
-                        NeedsAction[(int)ACTION_TYPE.LinearVelocity] = true;
-                    }
+                    SafeRun(CachedDelegates[(int)ACTION_TYPE.LinearVelocity]);
                 }
             }
         }
@@ -867,7 +826,6 @@ namespace Xenko.Physics.Bepu
             bodyDescription.Velocity = bv;
             bodyDescription.Pose = InternalBody.Pose;
             wasAwake = InternalBody.Awake;
-            UpdateAsyncState();
         }
 
         /// <summary>
