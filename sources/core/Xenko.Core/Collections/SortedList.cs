@@ -48,7 +48,7 @@ namespace Xenko.Core.Collections
     ///  and by index.
     /// </summary>
     [DebuggerDisplay("Count = {" + nameof(Count) + "}")]
-    public class SortedList<TKey, TValue> : IDictionary<TKey, TValue>, IDictionary
+    public class SortedList<TKey, TValue> : IDictionary<TKey, TValue>, IDictionary, IEquatable<SortedList<TKey, TValue>>
     {
         private static readonly int INITIAL_SIZE = 16;
 
@@ -66,6 +66,32 @@ namespace Xenko.Core.Collections
         public SortedList()
             : this(INITIAL_SIZE, null)
         {
+        }
+
+        public bool Equals(SortedList<TKey, TValue> other)
+        {
+            if (table.Length != other.table.Length)
+                return false;
+
+            if (comparer.Equals(other.comparer) == false)
+                return false;
+
+            for (int i=0; i<table.Length; i++)
+            {
+                if (object.Equals(table[i].Key, other.table[i].Key) == false ||
+                    object.Equals(table[i].Value, other.table[i].Value) == false)
+                    return false;
+            }
+
+            return true;
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (obj is SortedList<TKey, TValue> sl)
+                return sl.Equals(this);
+
+            return false;
         }
 
         public override int GetHashCode()

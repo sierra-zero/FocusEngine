@@ -662,18 +662,8 @@ namespace Xenko.Core
         {
             if (ReferenceEquals(first, second)) return true;
             if (ReferenceEquals(first, null) || ReferenceEquals(second, null)) return false;
-            if (first.Count != second.Count) return false;
 
-            var comparer = EqualityComparer<TValue>.Default;
-
-            foreach (var keyValue in first)
-            {
-                TValue secondValue;
-                if (!second.TryGetValue(keyValue.Key, out secondValue)) return false;
-                if (!comparer.Equals(keyValue.Value, secondValue)) return false;
-            }
-
-            return true;
+            return first.Equals(second);
         }
 
         public static bool Compare<T>(T[] left, T[] right)
