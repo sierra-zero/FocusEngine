@@ -115,10 +115,7 @@ namespace Xenko.Physics.Bepu
                     {
                         compoundBuilder.AddEasy(shape, new BepuPhysics.RigidPose(ToBepu(offset ?? Vector3.Zero), ToBepu(rotation ?? Quaternion.Identity)), 1f);
                     }
-                }
 
-                using (BepuSimulation.instance.simulationLocker.ReadLock())
-                {
                     return compoundBuilder.BuildCompleteCompoundShape(BepuSimulation.instance.internalSimulation.Shapes, BepuSimulation.safeBufferPool, kinematic);
                 }
             }
@@ -219,7 +216,7 @@ namespace Xenko.Physics.Bepu
                     }
                 }
 
-                using (BepuSimulation.instance.simulationLocker.ReadLock())
+                using (BepuSimulation.instance.simulationLocker.WriteLock())
                 {
                     return compoundBuilder.BuildCompleteCompoundShape(BepuSimulation.instance.internalSimulation.Shapes, BepuSimulation.safeBufferPool, isDynamic, allConvex ? bigThreshold : int.MaxValue);
                 }
