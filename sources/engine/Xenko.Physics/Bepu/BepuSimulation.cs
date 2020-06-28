@@ -41,6 +41,14 @@ namespace Xenko.Physics.Bepu
 
         public ConcurrentQueue<Action<float>> ActionsBeforeSimulationStep = new ConcurrentQueue<Action<float>>();
         public ConcurrentQueue<Action<float>> ActionsAfterSimulationStep = new ConcurrentQueue<Action<float>>();
+        internal ConcurrentQueue<RBCriticalAction> CriticalActions = new ConcurrentQueue<RBCriticalAction>();
+
+        internal struct RBCriticalAction
+        {
+            public BepuRigidbodyComponent.RB_ACTION Action;
+            public BepuRigidbodyComponent Body;
+            public object Argument;
+        }
 
         public static float TimeScale = 1f;
         public static int MaxSubSteps = 1;

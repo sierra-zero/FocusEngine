@@ -7,6 +7,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using Xenko.Core;
+using Xenko.Core.Threading;
 using Xenko.Engine;
 using Xenko.Games;
 using Xenko.Physics.Bepu;
@@ -176,6 +177,23 @@ namespace Xenko.Physics
                 {
                     // do anything before simulation (which might modify ToBeAdded or ToBeRemoved)
                     while (physicsScene.BepuSimulation.ActionsBeforeSimulationStep.TryDequeue(out Action<float> a)) a(time);
+
+                    // critical actions for rigidbodies
+                    while (physicsScene.BepuSimulation.CriticalActions.TryDequeue(out var a))
+                    {
+                        switch (a.Action)
+                        {
+                            case BepuRigidbodyComponent.RB_ACTION.IsActive:
+                                using (physicsScene.BepuSimulation.simulationLocker.WriteLock())
+                                {
+                                    a.Body.InternalBody.Awake = (bool)a.Argument;
+                                }
+                                break;
+                            case BepuRigidbodyComponent.RB_ACTION.ColliderShape:
+                                a.Body.InternalColliderShapeReadd();
+                                break;
+                        }
+                    }
 
                     lock (physicsScene.BepuSimulation.ToBeAdded)
                     {
