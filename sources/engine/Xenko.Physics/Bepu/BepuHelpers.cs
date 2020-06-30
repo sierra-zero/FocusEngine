@@ -373,11 +373,11 @@ namespace Xenko.Physics.Bepu
         /// Generate a mesh collider from all meshes in an entity. The meshes must have a readable buffer behind it to generate veriticies from.
         /// </summary>
         /// <returns>Returns false if no mesh could be made</returns>
-        public static unsafe bool GenerateMeshShape(Entity e, out BepuPhysics.Collidables.Mesh outMesh, out BepuUtilities.Memory.BufferPool poolUsed)
+        public static unsafe bool GenerateMeshShape(Entity e, out BepuPhysics.Collidables.Mesh outMesh, out BepuUtilities.Memory.BufferPool poolUsed, bool skipAlreadyHasCollider = false)
         {
             // get all meshes
             List<Xenko.Rendering.Mesh> meshes = new List<Xenko.Rendering.Mesh>();
-            CollectMeshes(e, meshes);
+            CollectMeshes(e, meshes, skipAlreadyHasCollider);
             List<Vector3> allPositions = new List<Vector3>();
             List<int> allIndicies = new List<int>();
             for (int i = 0; i < meshes.Count; i++)
@@ -400,8 +400,11 @@ namespace Xenko.Physics.Bepu
             return GenerateMeshShape(allPositions, allIndicies, out outMesh, out poolUsed, e.Transform.WorldScale());
         }
 
-        private static void CollectMeshes(Entity e, List<Xenko.Rendering.Mesh> meshes)
+        private static void CollectMeshes(Entity e, List<Xenko.Rendering.Mesh> meshes, bool skipAlreadyDone)
         {
+            // skip stuff that already has a component (so we don't double it up)
+            if (skipAlreadyDone && e.Get<BepuStaticColliderComponent>() != null) return;
+
             foreach(ModelComponent mc in e.GetAll<ModelComponent>())
             {
                 if (mc.Model == null) continue;
@@ -411,7 +414,7 @@ namespace Xenko.Physics.Bepu
                 }
             }
             foreach (Entity child in e.GetChildren())
-                CollectMeshes(child, meshes);
+                CollectMeshes(child, meshes, skipAlreadyDone);
         }
 
         public static void DisposeAllMeshes(Entity e)
@@ -422,16 +425,24 @@ namespace Xenko.Physics.Bepu
                 DisposeAllMeshes(child);
         }
 
+        public static void SetAllColliders(Entity e, bool enabled)
+        {
+            foreach (BepuPhysicsComponent pc in e.GetAll<BepuPhysicsComponent>())
+                pc.AddedToScene = enabled;
+            foreach (Entity child in e.GetChildren())
+                SetAllColliders(child, enabled);
+        }
+
         /// <summary>
         /// Generate a mesh collider from all meshes in an entity. The meshes must have a readable buffer behind it to generate veriticies from
         /// </summary>
         /// <returns>Returns false if no mesh could be made</returns>
         public static unsafe bool GenerateBigMeshStaticColliders(Entity e, CollisionFilterGroups group = CollisionFilterGroups.DefaultFilter, CollisionFilterGroupFlags collidesWith = CollisionFilterGroupFlags.AllFilter,
-                                                                 float friction = 0.5f, float maximumRecoverableVelocity = 1f, SpringSettings? springSettings = null, bool disposeOnDetach = false)
+                                                                 float friction = 0.5f, float maximumRecoverableVelocity = 1f, SpringSettings? springSettings = null, bool disposeOnDetach = false, bool skipAlreadyHasCollider = true)
         {
             // get all meshes
             List<Xenko.Rendering.Mesh> meshes = new List<Xenko.Rendering.Mesh>();
-            CollectMeshes(e, meshes);
+            CollectMeshes(e, meshes, skipAlreadyHasCollider);
             List<Vector3> allPositions = new List<Vector3>();
             List<int> allIndicies = new List<int>();
             for (int i=0; i<meshes.Count; i++)
