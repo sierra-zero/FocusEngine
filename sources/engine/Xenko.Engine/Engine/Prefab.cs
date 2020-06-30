@@ -29,8 +29,15 @@ namespace Xenko.Engine
         /// <returns>A collection of entities extracted from the prefab</returns>
         public List<Entity> Instantiate()
         {
-            var newPrefab = EntityCloner.Clone(this);
-            return newPrefab.Entities;
+            if (packed == null)
+            {
+                var newPrefab = EntityCloner.Clone(this);
+                return newPrefab.Entities;
+            }
+            else
+            {
+                return new List<Entity>() { EntityCloner.Clone(packed) };
+            }
         }
 
         private Entity packed;
@@ -53,6 +60,11 @@ namespace Xenko.Engine
         public Prefab(List<Entity> e)
         {
             Entities.AddRange(e);
+        }
+
+        public void Optimize()
+        {
+            ModelBatcher.BatchChildren(PackToEntity());
         }
 
         /// <summary>
