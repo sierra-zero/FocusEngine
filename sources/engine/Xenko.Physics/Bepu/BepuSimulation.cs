@@ -160,7 +160,7 @@ namespace Xenko.Physics.Bepu
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static BepuPhysicsComponent getFromReference(CollidableReference cref)
         {
-            return cref.Mobility == CollidableMobility.Static ? (BepuPhysicsComponent)StaticMappings[cref.BodyHandle.Value] : (BepuPhysicsComponent)RigidMappings[cref.BodyHandle.Value];
+            return cref.Mobility == CollidableMobility.Static ? (BepuPhysicsComponent)StaticMappings[cref.StaticHandle.Value] : (BepuPhysicsComponent)RigidMappings[cref.BodyHandle.Value];
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
