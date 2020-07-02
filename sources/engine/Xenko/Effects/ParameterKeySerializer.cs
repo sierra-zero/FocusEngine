@@ -21,7 +21,7 @@ namespace Xenko.Rendering
             {
                 var parameterName = stream.ReadString();
                 var parameterLength = stream.ReadInt32();
-                obj = (ValueParameterKey<T>)ParameterKeys.FindByName(parameterName);
+                obj = ParameterKeys.FindByName(parameterName) as ValueParameterKey<T>;
 
                 // If parameter could not be found, create one matching this type.
                 if (obj == null)
