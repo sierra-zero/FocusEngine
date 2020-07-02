@@ -395,7 +395,7 @@ namespace Xenko.Physics.Bepu
             poseCallbacks = new PoseIntegratorCallbacks(new System.Numerics.Vector3(0f, -9.81f, 0f));
 
             // we will give the simulation its own bufferpool
-            internalSimulation = BepuPhysics.Simulation.Create(new BufferPool(), new NarrowPhaseCallbacks(), poseCallbacks);
+            internalSimulation = BepuPhysics.Simulation.Create(new BufferPool(), new NarrowPhaseCallbacks(), poseCallbacks, new BepuPhysics.PositionLastTimestepper());
             instance = this;
         }
 
