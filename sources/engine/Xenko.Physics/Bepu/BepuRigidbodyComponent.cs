@@ -185,12 +185,15 @@ namespace Xenko.Physics.Bepu
         {
             BepuSimulation bs = BepuSimulation.instance;
 
-            // don't worry about switching if we are to be removed
-            if (bs.ToBeRemoved.Contains(this))
+            // don't worry about switching if we are to be removed (or have been removed)
+            if (InternalBody.Handle.Value == -1 || bs.ToBeRemoved.Contains(this))
                 return;
 
             using (bs.simulationLocker.WriteLock())
             {
+                // let's check handle again now that we are in the lock, just in case
+                if (InternalBody.Handle.Value == -1) return;
+
                 // remove me with the old shape
                 bs.internalSimulation.Bodies.Remove(InternalBody.Handle);
                 BepuSimulation.RigidMappings.Remove(InternalBody.Handle.Value);
@@ -200,7 +203,6 @@ namespace Xenko.Physics.Bepu
                 InternalBody.Handle = bs.internalSimulation.Bodies.Add(bodyDescription);
                 BepuSimulation.RigidMappings[InternalBody.Handle.Value] = this;
             }
-
         }
 
         /// <summary>
