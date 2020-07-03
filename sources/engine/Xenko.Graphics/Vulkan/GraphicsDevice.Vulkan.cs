@@ -31,6 +31,7 @@ namespace Xenko.Graphics
         private VkDevice nativeDevice;
         internal VkQueue NativeCommandQueue;
         internal ReaderWriterLockSlim QueueLock = new ReaderWriterLockSlim();
+        internal ReaderWriterLockSlim FenceLock = new ReaderWriterLockSlim();
 
         internal VkCommandPool NativeCopyCommandPool;
         internal VkCommandBuffer NativeCopyCommandBuffer;
@@ -198,7 +199,11 @@ namespace Xenko.Graphics
             // Create a fence
             var fenceCreateInfo = new VkFenceCreateInfo { sType = VkStructureType.FenceCreateInfo };
             vkCreateFence(nativeDevice, &fenceCreateInfo, null, out var fence);
-            nativeFences.Enqueue(new KeyValuePair<long, VkFence>(fenceValue, fence));
+
+            using (FenceLock.WriteLock())
+            {
+                nativeFences.Enqueue(new KeyValuePair<long, VkFence>(fenceValue, fence));
+            }
 
             // Collect resources
             var commandBuffers = stackalloc VkCommandBuffer[count];
@@ -509,7 +514,11 @@ namespace Xenko.Graphics
             // Create new fence
             var fenceCreateInfo = new VkFenceCreateInfo { sType = VkStructureType.FenceCreateInfo };
             vkCreateFence(nativeDevice, &fenceCreateInfo, null, out var fence);
-            nativeFences.Enqueue(new KeyValuePair<long, VkFence>(fenceValue, fence));
+
+            using (FenceLock.WriteLock())
+            {
+                nativeFences.Enqueue(new KeyValuePair<long, VkFence>(fenceValue, fence));
+            }
 
             // Collect resources
             RecycleCommandListResources(commandList, fenceValue);
@@ -572,29 +581,24 @@ namespace Xenko.Graphics
             return fenceValue <= lastCompletedFence;
         }
 
-        private SpinLock spinLock = new SpinLock();
-
         internal unsafe long GetCompletedValue()
         {
-            bool lockTaken = false;
-            try
+            using (FenceLock.UpgradableReadLock())
             {
-                spinLock.Enter(ref lockTaken);
-
                 while (nativeFences.Count > 0 && vkGetFenceStatus(NativeDevice, nativeFences.Peek().Value) == VkResult.Success)
                 {
-                    var fence = nativeFences.Dequeue();
+                    KeyValuePair<long, VkFence> fence;
+                    using (FenceLock.WriteLock())
+                    {
+                        fence = nativeFences.Dequeue();
+                    }
+
                     vkDestroyFence(NativeDevice, fence.Value, null);
                     if (fence.Key > lastCompletedFence)
                         lastCompletedFence = fence.Key;
                 }
 
                 return lastCompletedFence;
-            }
-            finally
-            {
-                if (lockTaken)
-                    spinLock.Exit(false);
             }
         }
 
@@ -603,14 +607,16 @@ namespace Xenko.Graphics
             if (IsFenceCompleteInternal(fenceValue))
                 return;
 
-            bool lockTaken = false;
-            try
+            using (FenceLock.UpgradableReadLock())
             {
-                spinLock.Enter(ref lockTaken);
-
                 while (nativeFences.Count > 0 && nativeFences.Peek().Key <= fenceValue)
                 {
-                    var fence = nativeFences.Dequeue();
+                    KeyValuePair<long, VkFence> fence;
+                    using (FenceLock.WriteLock())
+                    {
+                        fence = nativeFences.Dequeue();
+                    }
+
                     var fenceCopy = fence.Value;
 
                     vkWaitForFences(NativeDevice, 1, &fenceCopy, true, ulong.MaxValue);
@@ -618,11 +624,6 @@ namespace Xenko.Graphics
                     if (fenceValue > lastCompletedFence)
                         lastCompletedFence = fenceValue;
                 }
-            }
-            finally
-            {
-                if (lockTaken)
-                    spinLock.Exit(false);
             }
         }
 
