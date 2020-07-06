@@ -45,7 +45,7 @@ namespace Xenko.Graphics
         private int nativeUploadBufferOffset;
 
         private Queue<KeyValuePair<long, VkFence>> nativeFences = new Queue<KeyValuePair<long, VkFence>>();
-        private long lastCompletedFence;
+        internal long lastCompletedFence;
         internal long NextFenceValue = 1;
 
         internal HeapPool DescriptorPools;
@@ -583,20 +583,25 @@ namespace Xenko.Graphics
 
         internal unsafe long GetCompletedValue()
         {
-            using (FenceLock.UpgradableReadLock())
+            using (FenceLock.WriteLock())
             {
-                while (nativeFences.Count > 0 && vkGetFenceStatus(NativeDevice, nativeFences.Peek().Value) == VkResult.Success)
+                while (nativeFences.Count > 0)
                 {
-                    KeyValuePair<long, VkFence> fence;
-                    using (FenceLock.WriteLock())
+                    switch (vkGetFenceStatus(NativeDevice, nativeFences.Peek().Value))
                     {
-                        fence = nativeFences.Dequeue();
+                        default:
+                            return lastCompletedFence;
+                        case VkResult.ErrorDeviceLost:
+                            throw new Exception("Vulkan device lost while checking GetCompletedValue()!");
+                        case VkResult.Success:
+                            KeyValuePair<long, VkFence> fence;
+                            fence = nativeFences.Dequeue();
+                            vkDestroyFence(NativeDevice, fence.Value, null);
+                            if (fence.Key > lastCompletedFence)
+                                lastCompletedFence = fence.Key;
+                            break;
                     }
-
-                    vkDestroyFence(NativeDevice, fence.Value, null);
-                    if (fence.Key > lastCompletedFence)
-                        lastCompletedFence = fence.Key;
-                }
+                }                
 
                 return lastCompletedFence;
             }
@@ -607,15 +612,12 @@ namespace Xenko.Graphics
             if (IsFenceCompleteInternal(fenceValue))
                 return;
 
-            using (FenceLock.UpgradableReadLock())
+            using (FenceLock.WriteLock())
             {
                 while (nativeFences.Count > 0 && nativeFences.Peek().Key <= fenceValue)
                 {
                     KeyValuePair<long, VkFence> fence;
-                    using (FenceLock.WriteLock())
-                    {
-                        fence = nativeFences.Dequeue();
-                    }
+                    fence = nativeFences.Dequeue();
 
                     var fenceCopy = fence.Value;
 
@@ -667,7 +669,6 @@ namespace Xenko.Graphics
         private const int CHECK_COMPLETED_INTERVAL = 4;
 
         protected readonly GraphicsDevice GraphicsDevice;
-        private long completedValue;
         private int checkCompleted;
         private SpinLock spinLock = new SpinLock();
         private readonly Queue<KeyValuePair<long, T>> liveObjects = new Queue<KeyValuePair<long, T>>();
@@ -690,7 +691,7 @@ namespace Xenko.Graphics
                 // this check is slow, so only do it occassionally
                 // this may cause more objects to get created, but that is fine
                 // more things will come safely off the queue when this updates
-                newCompletedValue = GraphicsDevice.GetCompletedValue();
+                GraphicsDevice.GetCompletedValue();
             }
 
             bool lockTaken = false;
@@ -700,12 +701,9 @@ namespace Xenko.Graphics
 
                 if (liveObjects.Count > 0)
                 {
-                    if (newCompletedValue > completedValue)
-                        completedValue = newCompletedValue;
-
                     firstAllocator = liveObjects.Peek();
 
-                    if (firstAllocator.Value.Key <= completedValue)
+                    if (firstAllocator.Value.Key <= GraphicsDevice.lastCompletedFence)
                     {
                         liveObjects.Dequeue();
                     }
