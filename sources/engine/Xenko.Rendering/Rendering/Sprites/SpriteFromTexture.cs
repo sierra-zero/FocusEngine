@@ -62,6 +62,8 @@ namespace Xenko.Rendering.Sprites
             get { return texture; }
             set
             {
+                if (texture == value) return;
+
                 texture = value;
                 isSpriteDirty = true;
                 UpdateSprite();
@@ -81,6 +83,8 @@ namespace Xenko.Rendering.Sprites
             get { return pixelsPerUnit; }
             set
             {
+                if (pixelsPerUnit == value) return;
+
                 pixelsPerUnit = value;
                 isSpriteDirty = true;
                 UpdateSprite();
@@ -119,6 +123,8 @@ namespace Xenko.Rendering.Sprites
             get { return centerFromMiddle; }
             set
             {
+                if (centerFromMiddle == value) return;
+
                 centerFromMiddle = value;
                 isSpriteDirty = true;
                 UpdateSprite();
@@ -138,6 +144,8 @@ namespace Xenko.Rendering.Sprites
             get { return isTransparent; }
             set
             {
+                if (value == isTransparent) return;
+
                 isTransparent = value;
                 isSpriteDirty = true;
                 UpdateSprite();
