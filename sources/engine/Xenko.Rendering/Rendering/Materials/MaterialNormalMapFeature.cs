@@ -77,6 +77,11 @@ namespace Xenko.Rendering.Materials
         [Display("Reconstruct Z")]
         public bool IsXYNormal { get; set; }
 
+        [DataMember(40)]
+        [DefaultValue(false)]
+        [Display("Skip Tangents")]
+        public bool SkipTangents { get; set; }
+
         public override void GenerateShader(MaterialGeneratorContext context)
         {
             if (NormalMap != null)
@@ -84,6 +89,7 @@ namespace Xenko.Rendering.Materials
                 // Inform the context that we are using matNormal (from the MaterialSurfaceNormalMap shader)
                 context.UseStreamWithCustomBlend(MaterialShaderStage.Pixel, NormalStream.Stream, new ShaderClassSource("MaterialStreamNormalBlend"));
                 context.Parameters.Set(MaterialKeys.HasNormalMap, true);
+                context.Parameters.Set(MaterialKeys.SkipTangents, SkipTangents);
 
                 var normalMap = NormalMap;
                 // Workaround to make sure that normal map are setup 

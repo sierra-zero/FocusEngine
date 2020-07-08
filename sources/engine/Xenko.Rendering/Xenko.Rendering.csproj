@@ -28,6 +28,9 @@
     <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Update="Rendering\Core\NormalFromNormalMappingNoTangent.xksl.cs">
+      <DependentUpon>%(Filename)</DependentUpon>
+    </Compile>
     <Compile Update="Rendering\Skyboxes\SkyboxShaderTextureHorizon.xksl.cs">
       <DependentUpon>SkyboxShaderTextureHorizon.xksl</DependentUpon>
     </Compile>

@@ -44,7 +44,14 @@ namespace Xenko.Rendering
         // -----------------------------------------------
         if (MaterialKeys.HasNormalMap)
         {
-            mixin NormalFromNormalMapping;
+            if (MaterialKeys.SkipTangents)
+            {
+                mixin NormalFromNormalMappingNoTangent;            
+            }
+            else
+            {
+                mixin NormalFromNormalMapping;
+            }
         }
         else
         {

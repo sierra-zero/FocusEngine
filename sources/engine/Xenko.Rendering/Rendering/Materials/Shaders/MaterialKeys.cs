@@ -122,6 +122,8 @@ namespace Xenko.Rendering.Materials
 
         public static readonly PermutationParameterKey<bool> HasNormalMap = ParameterKeys.NewPermutation<bool>();
 
+        public static readonly PermutationParameterKey<bool> SkipTangents = ParameterKeys.NewPermutation<bool>();
+
         public static readonly PermutationParameterKey<bool> HasSkinningTangent = ParameterKeys.NewPermutation<bool>();
 
         public static readonly PermutationParameterKey<int> SkinningMaxBones = ParameterKeys.NewPermutation<int>(56);

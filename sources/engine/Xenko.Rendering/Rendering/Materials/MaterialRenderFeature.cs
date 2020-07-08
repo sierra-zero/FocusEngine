@@ -74,7 +74,7 @@ namespace Xenko.Rendering.Materials
             public ShaderSource PixelStageSurfaceShaders;
             public ShaderSource PixelStageStreamInitializer;
 
-            public bool HasNormalMap;
+            public bool HasNormalMap, SkipTangents;
 
             /// <summary>
             /// Indicates that material requries using pixel shader stage during depth-only pass (Z prepass or shadow map rendering).
@@ -225,6 +225,7 @@ namespace Xenko.Rendering.Materials
                                 materialInfo.PixelStageSurfaceShaders = material.Parameters.Get(MaterialKeys.PixelStageSurfaceShaders);
                                 materialInfo.PixelStageStreamInitializer = material.Parameters.Get(MaterialKeys.PixelStageStreamInitializer);
                                 materialInfo.HasNormalMap = material.Parameters.Get(MaterialKeys.HasNormalMap);
+                                materialInfo.SkipTangents = material.Parameters.Get(MaterialKeys.SkipTangents);
                                 materialInfo.UsePixelShaderWithDepthPass = material.Parameters.Get(MaterialKeys.UsePixelShaderWithDepthPass);
 
                                 materialInfo.MaterialParameters = material.Parameters;
@@ -257,6 +258,8 @@ namespace Xenko.Rendering.Materials
                         renderEffect.EffectValidator.ValidateParameterThreaded(MaterialKeys.PixelStageStreamInitializer, materialInfo.PixelStageStreamInitializer);
                     if (materialInfo.HasNormalMap)
                         renderEffect.EffectValidator.ValidateParameterThreaded(MaterialKeys.HasNormalMap, materialInfo.HasNormalMap);
+                    if (materialInfo.SkipTangents)
+                        renderEffect.EffectValidator.ValidateParameterThreaded(MaterialKeys.SkipTangents, materialInfo.SkipTangents);
                     if (materialInfo.UsePixelShaderWithDepthPass)
                         renderEffect.EffectValidator.ValidateParameterThreaded(MaterialKeys.UsePixelShaderWithDepthPass, materialInfo.UsePixelShaderWithDepthPass);
                 }
