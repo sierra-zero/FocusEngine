@@ -62,37 +62,32 @@ namespace Xenko.Core.Assets
             // Note: we perform nuget restore inside the assembly resolver rather than top level module ctor (otherwise it freezes)
             AppDomain.CurrentDomain.AssemblyResolve += (sender, eventArgs) =>
             {
-                if (!assembliesResolved)
+                lock (assembliesLock)
                 {
-                    lock (assembliesLock)
+                    if (!assembliesResolved)
                     {
                         // Note: using NuGet will try to recursively resolve NuGet.*.resources.dll, so set assembliesResolved right away so that it bypasses everything
                         assembliesResolved = true;
-                        CancellationTokenSource s_cts = new CancellationTokenSource();
                         var logger = new Logger();
-                        try
+                        var task = RestoreHelper.Restore(logger, Assembly.GetExecutingAssembly().GetName().Name, new VersionRange(new NuGetVersion(XenkoVersion.NuGetVersion)));
+                        var timeouttask = RestoreHelper.TimeoutAfter(task, new TimeSpan(0, 0, 20));
+                        var (request, result) = timeouttask.Result;
+                        assemblies = RestoreHelper.ListAssemblies(request, result);
+                    }
+
+                    if (assemblies != null)
+                    {
+                        var aname = new AssemblyName(eventArgs.Name);
+                        if (aname.Name.StartsWith("Microsoft.Build") && aname.Name != "Microsoft.Build.Locator")
+                            return null;
+                        var assemblyPath = assemblies.FirstOrDefault(x => Path.GetFileNameWithoutExtension(x) == aname.Name);
+                        if (assemblyPath != null)
                         {
-                            s_cts.CancelAfter(5000);
-                            var (request, result) = RestoreHelper.Restore(logger, Assembly.GetExecutingAssembly().GetName().Name, new VersionRange(new NuGetVersion(XenkoVersion.NuGetVersion))).Result;
-                            assemblies = RestoreHelper.ListAssemblies(request, result);
-                        }
-                        catch (Exception e)
-                        {
+                            return Assembly.LoadFrom(assemblyPath);
                         }
                     }
                 }
 
-                if (assemblies != null)
-                {
-                    var aname = new AssemblyName(eventArgs.Name);
-                    if (aname.Name.StartsWith("Microsoft.Build") && aname.Name != "Microsoft.Build.Locator")
-                        return null;
-                    var assemblyPath = assemblies.FirstOrDefault(x => Path.GetFileNameWithoutExtension(x) == aname.Name);
-                    if (assemblyPath != null)
-                    {
-                        return Assembly.LoadFrom(assemblyPath);
-                    }
-                }
                 return null;
             };
         }

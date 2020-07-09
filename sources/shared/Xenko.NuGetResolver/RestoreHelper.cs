@@ -88,6 +88,25 @@ namespace Xenko.Core.Assets
             return assemblies;
         }
 
+        internal static async Task<TResult> TimeoutAfter<TResult>(this Task<TResult> task, TimeSpan timeout)
+        {
+
+            using (var timeoutCancellationTokenSource = new CancellationTokenSource())
+            {
+
+                var completedTask = await Task.WhenAny(task, Task.Delay(timeout, timeoutCancellationTokenSource.Token));
+                if (completedTask == task)
+                {
+                    timeoutCancellationTokenSource.Cancel();
+                    return await task;  // Very important in order to propagate exceptions
+                }
+                else
+                {
+                    throw new TimeoutException("The operation has timed out.");
+                }
+            }
+        }
+
         static int ComputeFilePriority(string filename)
         {
             var libPosition = 0;
@@ -118,22 +137,13 @@ namespace Xenko.Core.Assets
         public static async Task<(RestoreRequest, RestoreResult)> Restore(ILogger logger, string packageName, VersionRange versionRange)
         {
             var settings = NuGet.Configuration.Settings.LoadDefaultSettings(null);
-
             var packageSourceProvider = new PackageSourceProvider(settings);
-
-            // not sure what these do, but it was in the NuGet command line.
-            var resourceProviders = new List<Lazy<INuGetResourceProvider>>();
-            resourceProviders.AddRange(Repository.Provider.GetCoreV3());
-
-            // Setup source provider as a V3 only.
-            var sourceRepositoryProvider = new SourceRepositoryProvider(settings, resourceProviders);
-
             var installPath = SettingsUtility.GetGlobalPackagesFolder(settings);
             var assemblies = new List<string>();
 
             var projectPath = Path.Combine("XenkoNugetResolver.json");
             var spec = new PackageSpec()
-            {
+            {       
                 Name = Path.GetFileNameWithoutExtension(projectPath), // make sure this package never collides with a dependency
                 FilePath = projectPath,
                 Dependencies = new List<LibraryDependency>()
@@ -164,6 +174,18 @@ namespace Xenko.Core.Assets
                     FallbackFolders = SettingsUtility.GetFallbackPackageFolders(settings).ToList()
                 },
             };
+
+            // remove all remote sources, so we don't have to worry about connectivity issues
+            // we are only restoring local dev packages anyway
+            for (int i=0; i<spec.RestoreMetadata.Sources.Count; i++)
+            {
+                var s = spec.RestoreMetadata.Sources[i];
+                if (s.IsLocal == false)
+                {
+                    spec.RestoreMetadata.Sources.RemoveAt(i);
+                    i--;
+                }
+            }
 
             using (var context = new SourceCacheContext())
             {
