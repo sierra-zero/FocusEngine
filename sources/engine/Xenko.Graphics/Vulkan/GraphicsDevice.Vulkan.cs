@@ -44,7 +44,7 @@ namespace Xenko.Graphics
         private int nativeUploadBufferSize;
         private int nativeUploadBufferOffset;
 
-        private Queue<KeyValuePair<long, VkFence>> nativeFences = new Queue<KeyValuePair<long, VkFence>>();
+        private List<KeyValuePair<long, VkFence>> nativeFences = new List<KeyValuePair<long, VkFence>>();
         internal long lastCompletedFence;
         internal long NextFenceValue = 1;
 
@@ -173,6 +173,7 @@ namespace Xenko.Graphics
         /// </summary>
         public void End()
         {
+            CleanupFences();
         }
 
         /// <summary>
@@ -202,7 +203,7 @@ namespace Xenko.Graphics
 
             using (FenceLock.WriteLock())
             {
-                nativeFences.Enqueue(new KeyValuePair<long, VkFence>(fenceValue, fence));
+                nativeFences.Add(new KeyValuePair<long, VkFence>(fenceValue, fence));
             }
 
             // Collect resources
@@ -517,7 +518,7 @@ namespace Xenko.Graphics
 
             using (FenceLock.WriteLock())
             {
-                nativeFences.Enqueue(new KeyValuePair<long, VkFence>(fenceValue, fence));
+                nativeFences.Add(new KeyValuePair<long, VkFence>(fenceValue, fence));
             }
 
             // Collect resources
@@ -581,27 +582,47 @@ namespace Xenko.Graphics
             return fenceValue <= lastCompletedFence;
         }
 
-        internal unsafe long GetCompletedValue()
+        internal Queue<VkFence> fencesToDestroy = new Queue<VkFence>();
+        internal unsafe void CleanupFences()
         {
             using (FenceLock.WriteLock())
             {
-                while (nativeFences.Count > 0)
+                for (int i=0; i<nativeFences.Count; i++)
                 {
-                    switch (vkGetFenceStatus(NativeDevice, nativeFences.Peek().Value))
+                    if (nativeFences[i].Key <= lastCompletedFence)
+                    {
+                        fencesToDestroy.Enqueue(nativeFences[i].Value);
+                        nativeFences.RemoveAt(i);
+                        i--;
+                    }
+                }
+            }
+
+            while (fencesToDestroy.Count > 0)
+                vkDestroyFence(NativeDevice, fencesToDestroy.Dequeue(), null);
+        }
+
+        internal unsafe long GetCompletedValue()
+        {
+            using (FenceLock.ReadLock())
+            {
+                for (int i=0; i<nativeFences.Count; i++)
+                {
+                    if (nativeFences[i].Key <= lastCompletedFence)
+                        continue;
+
+                    switch (vkGetFenceStatus(NativeDevice, nativeFences[i].Value))
                     {
                         default:
                             return lastCompletedFence;
                         case VkResult.ErrorDeviceLost:
                             throw new Exception("Vulkan device lost while checking GetCompletedValue()!");
                         case VkResult.Success:
-                            KeyValuePair<long, VkFence> fence;
-                            fence = nativeFences.Dequeue();
-                            vkDestroyFence(NativeDevice, fence.Value, null);
-                            if (fence.Key > lastCompletedFence)
-                                lastCompletedFence = fence.Key;
+                            if (nativeFences[i].Key > lastCompletedFence)
+                                lastCompletedFence = nativeFences[i].Key;
                             break;
-                    }
-                }                
+                    }                    
+                }
 
                 return lastCompletedFence;
             }
@@ -612,20 +633,21 @@ namespace Xenko.Graphics
             if (IsFenceCompleteInternal(fenceValue))
                 return;
 
-            using (FenceLock.WriteLock())
+            using (FenceLock.ReadLock())
             {
-                while (nativeFences.Count > 0 && nativeFences.Peek().Key <= fenceValue)
+                for (int i=0; i<nativeFences.Count; i++)
                 {
-                    KeyValuePair<long, VkFence> fence;
-                    fence = nativeFences.Dequeue();
+                    if (nativeFences[i].Key <= fenceValue)
+                    {
+                        var fenceCopy = nativeFences[i].Value;
 
-                    var fenceCopy = fence.Value;
+                        vkWaitForFences(NativeDevice, 1, &fenceCopy, true, ulong.MaxValue);
 
-                    vkWaitForFences(NativeDevice, 1, &fenceCopy, true, ulong.MaxValue);
-                    vkDestroyFence(NativeDevice, fence.Value, null);
-                    if (fenceValue > lastCompletedFence)
-                        lastCompletedFence = fenceValue;
+                        if (fenceValue > lastCompletedFence)
+                            lastCompletedFence = fenceValue;
+                    }
                 }
+
             }
         }
 
@@ -666,7 +688,7 @@ namespace Xenko.Graphics
 
    internal abstract class ResourcePool<T> : ComponentBase
     {
-        private const int CHECK_COMPLETED_INTERVAL = 4;
+        private const int CHECK_COMPLETED_INTERVAL = 8;
 
         protected readonly GraphicsDevice GraphicsDevice;
         private int checkCompleted;
@@ -682,7 +704,6 @@ namespace Xenko.Graphics
         public T GetObject()
         {
             KeyValuePair<long, T>? firstAllocator = null;
-            long newCompletedValue = -1;
 
             if (Interlocked.Increment(ref checkCompleted) >= CHECK_COMPLETED_INTERVAL)
             {
