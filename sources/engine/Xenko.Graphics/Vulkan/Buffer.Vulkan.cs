@@ -212,11 +212,7 @@ namespace Xenko.Graphics
                         var sizeInBytes = bufferDescription.SizeInBytes;
                         VkBuffer uploadResource;
                         int uploadOffset;
-                        IntPtr uploadMemory;
-                        lock (GraphicsDevice.AllocateUploadLocker)
-                        {
-                            uploadMemory = GraphicsDevice.AllocateUploadBuffer(sizeInBytes, out uploadResource, out uploadOffset);
-                        }
+                        IntPtr uploadMemory = GraphicsDevice.AllocateUploadBuffer(sizeInBytes, out uploadResource, out uploadOffset);
 
                         Utilities.CopyMemory(uploadMemory, dataPointer, sizeInBytes);
 

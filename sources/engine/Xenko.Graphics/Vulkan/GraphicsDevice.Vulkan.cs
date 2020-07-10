@@ -378,43 +378,53 @@ namespace Xenko.Graphics
             EmptyTexture = Texture.New2D(this, 1, 1, PixelFormat.R8G8B8A8_UNorm_SRgb, TextureFlags.ShaderResource);
         }
 
-        internal object AllocateUploadLocker = new object();
+        private SpinLock AllocateUploadLocker = new SpinLock();
         internal unsafe IntPtr AllocateUploadBuffer(int size, out VkBuffer resource, out int offset)
         {
-            if (nativeUploadBuffer == VkBuffer.Null || nativeUploadBufferOffset + size > nativeUploadBufferSize)
+            var lockTaken = false;
+            try
             {
-                if (nativeUploadBuffer != VkBuffer.Null)
+                AllocateUploadLocker.Enter(ref lockTaken);
+
+                if (nativeUploadBuffer == VkBuffer.Null || nativeUploadBufferOffset + size > nativeUploadBufferSize)
                 {
-                    vkUnmapMemory(NativeDevice, nativeUploadBufferMemory);
-                    Collect(nativeUploadBuffer);
-                    Collect(nativeUploadBufferMemory);
+                    // Allocate new buffer
+                    nativeUploadBufferSize = Math.Max(16 * 1024 * 1024, size);
+
+                    var bufferCreateInfo = new VkBufferCreateInfo
+                    {
+                        sType = VkStructureType.BufferCreateInfo,
+                        size = (ulong)nativeUploadBufferSize,
+                        flags = VkBufferCreateFlags.None,
+                        usage = VkBufferUsageFlags.TransferSrc,
+                    };
+
+                    if (nativeUploadBuffer != VkBuffer.Null)
+                    {
+                        vkUnmapMemory(NativeDevice, nativeUploadBufferMemory);
+                        Collect(nativeUploadBuffer);
+                        Collect(nativeUploadBufferMemory);
+                    }
+
+                    vkCreateBuffer(NativeDevice, &bufferCreateInfo, null, out nativeUploadBuffer);
+                    AllocateMemory(VkMemoryPropertyFlags.HostVisible | VkMemoryPropertyFlags.HostCoherent);
+
+                    fixed (IntPtr* nativeUploadBufferStartPtr = &nativeUploadBufferStart)
+                        vkMapMemory(NativeDevice, nativeUploadBufferMemory, 0, (ulong)nativeUploadBufferSize, VkMemoryMapFlags.None, (void**)nativeUploadBufferStartPtr);
+                    nativeUploadBufferOffset = 0;
                 }
 
-                // Allocate new buffer
-                // TODO D3D12 recycle old ones (using fences to know when GPU is done with them)
-                // TODO D3D12 ResourceStates.CopySource not working?
-                nativeUploadBufferSize = Math.Max(4 * 1024 * 1024, size);
-
-                var bufferCreateInfo = new VkBufferCreateInfo
-                {
-                    sType = VkStructureType.BufferCreateInfo,
-                    size = (ulong)nativeUploadBufferSize,
-                    flags = VkBufferCreateFlags.None,
-                    usage = VkBufferUsageFlags.TransferSrc,
-                };
-                vkCreateBuffer(NativeDevice, &bufferCreateInfo, null, out nativeUploadBuffer);
-                AllocateMemory(VkMemoryPropertyFlags.HostVisible | VkMemoryPropertyFlags.HostCoherent);
-
-                fixed (IntPtr* nativeUploadBufferStartPtr = &nativeUploadBufferStart)
-                    vkMapMemory(NativeDevice, nativeUploadBufferMemory, 0, (ulong)nativeUploadBufferSize, VkMemoryMapFlags.None, (void**)nativeUploadBufferStartPtr);
-                nativeUploadBufferOffset = 0;
+                // Bump allocate
+                resource = nativeUploadBuffer;
+                offset = nativeUploadBufferOffset;
+                nativeUploadBufferOffset += size;
+                return nativeUploadBufferStart + offset;
             }
-
-            // Bump allocate
-            resource = nativeUploadBuffer;
-            offset = nativeUploadBufferOffset;
-            nativeUploadBufferOffset += size;
-            return nativeUploadBufferStart + offset;
+            finally
+            {
+                if (lockTaken)
+                    AllocateUploadLocker.Exit(true);
+            }
         }
 
         protected unsafe void AllocateMemory(VkMemoryPropertyFlags memoryProperties)

@@ -316,11 +316,7 @@ namespace Xenko.Graphics
 
                 VkBuffer uploadResource;
                 int uploadOffset;
-                IntPtr uploadMemory;
-                lock (GraphicsDevice.AllocateUploadLocker)
-                {
-                    uploadMemory = GraphicsDevice.AllocateUploadBuffer(totalSize, out uploadResource, out uploadOffset);
-                }
+                IntPtr uploadMemory = GraphicsDevice.AllocateUploadBuffer(totalSize, out uploadResource, out uploadOffset);
 
                 // Upload buffer barrier
                 var bufferMemoryBarrier = new VkBufferMemoryBarrier(uploadResource, VkAccessFlags.HostWrite, VkAccessFlags.TransferRead, (ulong)uploadOffset, (ulong)totalSize);
