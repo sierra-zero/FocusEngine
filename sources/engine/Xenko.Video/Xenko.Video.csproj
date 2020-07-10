@@ -49,7 +49,7 @@
     </When>
   </Choose>
   <ItemGroup>
-    <PackageReference Include="FFmpeg.AutoGen" Version="4.3.0.1" Condition="'$(XenkoPlatform)' == 'Windows'" />
+    <PackageReference Include="FFmpeg.AutoGen" Version="3.4.0.2" Condition="'$(XenkoPlatform)' == 'Windows'" />
   </ItemGroup>
   <Import Project="$(XenkoPostSettingsTargets)" />
   <Import Project="Sdk.targets" Sdk="MSBuild.Sdk.Extras" Version="2.0.54" />
