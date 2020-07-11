@@ -194,6 +194,8 @@ namespace Xenko.Graphics
                 var beginInfo = new VkCommandBufferBeginInfo { sType = VkStructureType.CommandBufferBeginInfo, flags = VkCommandBufferUsageFlags.OneTimeSubmit };
                 vkBeginCommandBuffer(commandBuffer, &beginInfo);
 
+                GraphicsDevice.UploadBuffer? uploadBuffer = null;
+
                 // Copy to upload buffer
                 if (dataPointer != IntPtr.Zero)
                 {
@@ -210,29 +212,25 @@ namespace Xenko.Graphics
                     else
                     {
                         var sizeInBytes = bufferDescription.SizeInBytes;
-                        VkBuffer uploadResource;
                         int uploadOffset;
-                        IntPtr uploadMemory;
-                        lock (GraphicsDevice.AllocateUploadLocker)
-                        {
-                            uploadMemory = GraphicsDevice.AllocateUploadBuffer(sizeInBytes, out uploadResource, out uploadOffset);
-                        }
+                        GraphicsDevice.AllocateOneTimeUploadBuffer(sizeInBytes, out var upBuf);
+                        uploadBuffer = upBuf;
 
-                        Utilities.CopyMemory(uploadMemory, dataPointer, sizeInBytes);
+                        Utilities.CopyMemory(uploadBuffer.Value.address, dataPointer, sizeInBytes);
 
                         // Barrier
-                        var memoryBarrier = new VkBufferMemoryBarrier(uploadResource, VkAccessFlags.HostWrite, VkAccessFlags.TransferRead, (ulong)uploadOffset, (ulong)sizeInBytes);
+                        var memoryBarrier = new VkBufferMemoryBarrier(uploadBuffer.Value.buffer, VkAccessFlags.HostWrite, VkAccessFlags.TransferRead, 0, (ulong)sizeInBytes);
                         vkCmdPipelineBarrier(commandBuffer, VkPipelineStageFlags.Host, VkPipelineStageFlags.Transfer, VkDependencyFlags.None, 0, null, 1, &memoryBarrier, 0, null);
 
                         // Copy
                         var bufferCopy = new VkBufferCopy
                         {
-                            srcOffset = (uint)uploadOffset,
+                            srcOffset = 0,
                             dstOffset = 0,
                             size = (uint)sizeInBytes
                         };
 
-                        vkCmdCopyBuffer(commandBuffer, uploadResource, NativeBuffer, 1, &bufferCopy);
+                        vkCmdCopyBuffer(commandBuffer, uploadBuffer.Value.buffer, NativeBuffer, 1, &bufferCopy);
                     }
                 }
                 else
@@ -266,6 +264,9 @@ namespace Xenko.Graphics
 
                 vkFreeCommandBuffers(GraphicsDevice.NativeDevice, GraphicsDevice.NativeCopyCommandPool, 1, &commandBuffer);
                 vkDestroyFence(GraphicsDevice.NativeDevice, fence, null);
+
+                if (uploadBuffer.HasValue)
+                    GraphicsDevice.FreeOneTimeUploadBuffer(uploadBuffer.Value);
 
                 InitializeViews();
             }

@@ -302,6 +302,8 @@ namespace Xenko.Graphics
 
             vkBeginCommandBuffer(commandBuffer, &beginInfo);
 
+            GraphicsDevice.UploadBuffer? uploadBuffer = null;
+
             if (dataBoxes != null && dataBoxes.Length > 0)
             {
                 // Buffer-to-image copies need to be aligned to the pixel size and 4 (always a power of 2)
@@ -314,16 +316,11 @@ namespace Xenko.Graphics
                     totalSize += dataBoxes[i].SlicePitch;
                 }
 
-                VkBuffer uploadResource;
-                int uploadOffset;
-                IntPtr uploadMemory;
-                lock (GraphicsDevice.AllocateUploadLocker)
-                {
-                    uploadMemory = GraphicsDevice.AllocateUploadBuffer(totalSize, out uploadResource, out uploadOffset);
-                }
+                int uploadOffset = 0;
+                GraphicsDevice.AllocateOneTimeUploadBuffer(totalSize, out var upBuf);
 
                 // Upload buffer barrier
-                var bufferMemoryBarrier = new VkBufferMemoryBarrier(uploadResource, VkAccessFlags.HostWrite, VkAccessFlags.TransferRead, (ulong)uploadOffset, (ulong)totalSize);
+                var bufferMemoryBarrier = new VkBufferMemoryBarrier(upBuf.buffer, VkAccessFlags.HostWrite, VkAccessFlags.TransferRead, 0, (ulong)totalSize);
 
                 // Image barrier
                 NativeLayout = VkImageLayout.TransferDstOptimal;
@@ -341,10 +338,10 @@ namespace Xenko.Graphics
                     var mipMapDescription = GetMipMapDescription(mipSlice);
 
                     var alignment = ((uploadOffset + alignmentMask) & ~alignmentMask) - uploadOffset;
-                    uploadMemory += alignment;
+                    upBuf.address += alignment;
                     uploadOffset += alignment;
 
-                    Utilities.CopyMemory(uploadMemory, dataBoxes[i].DataPointer, slicePitch);
+                    Utilities.CopyMemory(upBuf.address, dataBoxes[i].DataPointer, slicePitch);
 
                     // TODO VULKAN: Check if pitches are valid
                     copies[i] = new VkBufferImageCopy
@@ -357,7 +354,7 @@ namespace Xenko.Graphics
                         imageExtent = new Vortice.Mathematics.Size3(mipMapDescription.Width, mipMapDescription.Height, mipMapDescription.Depth)
                     };
 
-                    uploadMemory += slicePitch;
+                    upBuf.address += slicePitch;
                     uploadOffset += slicePitch;
                 }
 
@@ -366,9 +363,11 @@ namespace Xenko.Graphics
                 {
                     fixed (VkBufferImageCopy* copiesPointer = copies)
                     {
-                        vkCmdCopyBufferToImage(commandBuffer, uploadResource, NativeImage, VkImageLayout.TransferDstOptimal, (uint)copies.Length, copiesPointer);
+                        vkCmdCopyBufferToImage(commandBuffer, upBuf.buffer, NativeImage, VkImageLayout.TransferDstOptimal, (uint)copies.Length, copiesPointer);
                     }
                 }
+
+                uploadBuffer = upBuf;
 
                 IsInitialized = true;
             }
@@ -392,6 +391,9 @@ namespace Xenko.Graphics
 
             vkFreeCommandBuffers(GraphicsDevice.NativeDevice, GraphicsDevice.NativeCopyCommandPool, 1, &commandBuffer);
             vkDestroyFence(GraphicsDevice.NativeDevice, fence, null);
+            
+            if (uploadBuffer.HasValue)
+                GraphicsDevice.FreeOneTimeUploadBuffer(uploadBuffer.Value);
         }
 
         /// <inheritdoc/>

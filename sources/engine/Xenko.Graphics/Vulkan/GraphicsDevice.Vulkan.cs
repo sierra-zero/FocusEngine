@@ -378,7 +378,78 @@ namespace Xenko.Graphics
             EmptyTexture = Texture.New2D(this, 1, 1, PixelFormat.R8G8B8A8_UNorm_SRgb, TextureFlags.ShaderResource);
         }
 
-        internal object AllocateUploadLocker = new object();
+        public struct UploadBuffer
+        {
+            public IntPtr address;
+            public VkDeviceMemory memory;
+            public VkBuffer buffer;
+            public int size;
+        }
+
+        internal uint properType = uint.MaxValue;
+        internal unsafe void AllocateOneTimeUploadBuffer(int size, out UploadBuffer uploadBuffer)
+        {
+            var bufferCreateInfo = new VkBufferCreateInfo
+            {
+                sType = VkStructureType.BufferCreateInfo,
+                size = (ulong)size,
+                flags = VkBufferCreateFlags.None,
+                usage = VkBufferUsageFlags.TransferSrc,
+            };
+
+            uploadBuffer = new UploadBuffer
+            {
+                size = size
+            };
+
+            vkCreateBuffer(NativeDevice, &bufferCreateInfo, null, out uploadBuffer.buffer);
+
+            // figure out the memory type
+            if (properType == uint.MaxValue)
+            {
+                VkMemoryPropertyFlags memoryProperties = VkMemoryPropertyFlags.HostVisible | VkMemoryPropertyFlags.HostCoherent;
+                vkGetBufferMemoryRequirements(nativeDevice, uploadBuffer.buffer, out var memoryRequirements);
+                vkGetPhysicalDeviceMemoryProperties(NativePhysicalDevice, out var physicalDeviceMemoryProperties);
+                var typeBits = memoryRequirements.memoryTypeBits;
+                for (uint i = 0; i < physicalDeviceMemoryProperties.memoryTypeCount; i++)
+                {
+                    if ((typeBits & 1) == 1)
+                    {
+                        // Type is available, does it match user properties?
+                        var memoryType = *(&physicalDeviceMemoryProperties.memoryTypes_0 + i);
+                        if ((memoryType.propertyFlags & memoryProperties) == memoryProperties)
+                        {
+                            properType = i;
+                            break;
+                        }
+                    }
+                    typeBits >>= 1;
+                }
+            }
+
+            var allocateInfo = new VkMemoryAllocateInfo
+            {
+                sType = VkStructureType.MemoryAllocateInfo,
+                allocationSize = (ulong)size,
+                memoryTypeIndex = properType
+            };
+
+            fixed (VkDeviceMemory* nativeUploadBufferMemoryPtr = &uploadBuffer.memory)
+                vkAllocateMemory(NativeDevice, &allocateInfo, null, nativeUploadBufferMemoryPtr);
+
+            vkBindBufferMemory(NativeDevice, uploadBuffer.buffer, uploadBuffer.memory, 0);
+
+            fixed (IntPtr* nativeUploadBufferStartPtr = &uploadBuffer.address)
+                vkMapMemory(NativeDevice, uploadBuffer.memory, 0, (ulong)size, VkMemoryMapFlags.None, (void**)nativeUploadBufferStartPtr);
+        }
+
+        internal unsafe void FreeOneTimeUploadBuffer(UploadBuffer uploadBuffer)
+        {
+            vkUnmapMemory(NativeDevice, uploadBuffer.memory);
+            vkFreeMemory(NativeDevice, uploadBuffer.memory, null);
+            vkDestroyBuffer(NativeDevice, uploadBuffer.buffer, null);
+        }
+
         internal unsafe IntPtr AllocateUploadBuffer(int size, out VkBuffer resource, out int offset)
         {
             if (nativeUploadBuffer == VkBuffer.Null || nativeUploadBufferOffset + size > nativeUploadBufferSize)
