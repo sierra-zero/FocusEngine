@@ -39,7 +39,19 @@ namespace Xenko.Physics
 
         CustomFilter10 = 0x8000,
 
-        AllFilter = 0xFFFF,
+        ProjectileFilter = 0x10000,
+
+        StaticFeaturesFilter = 0x20000,
+
+        HazardFilter = 0x40000,
+
+        PlayerFilter = 0x80000,
+
+        EnemyFilter = 0x100000,
+
+        CheckpointFilter = 0x200000,
+
+        AllFilter = 0xFFFFFFF,
     }
 
     [Flags]
@@ -77,6 +89,18 @@ namespace Xenko.Physics
 
         CustomFilter10 = 0x8000,
 
-        AllFilter = 0xFFFF,
+        ProjectileFilter = 0x10000,
+
+        StaticFeaturesFilter = 0x20000,
+
+        HazardFilter = 0x40000,
+
+        PlayerFilter = 0x80000,
+
+        EnemyFilter = 0x100000,
+
+        CheckpointFilter = 0x200000,
+
+        AllFilter = 0xFFFFFFF,
     }
 }
