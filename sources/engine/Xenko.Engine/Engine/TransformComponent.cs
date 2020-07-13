@@ -331,6 +331,127 @@ namespace Xenko.Engine
         }
 
         /// <summary>
+        /// Make this transform look at the target position
+        /// </summary>
+        /// <param name="target"></param>
+        public void LookAt(Vector3 target)
+        {
+            // get difference of my position to target
+            target -= WorldPosition();
+
+            // inline normalize (also flip for handedness)
+            float length = target.X * target.X + target.Y * target.Y + target.Z * target.Z;
+            if (length != 1f && length != 0f)
+            {
+                length = 1.0f / (float)Math.Sqrt(length);
+                target.X *= -length;
+                target.Y *= -length;
+                target.Z *= -length;
+            }
+            else
+            {
+                target.X = -target.X;
+                target.Y = -target.Y;
+                target.Z = -target.Z;
+            }
+            Vector3 fla_vect1;
+            fla_vect1.X = 0;
+            fla_vect1.Y = 1;
+            fla_vect1.Z = 0;
+            float tempx = (fla_vect1.Y * target.Z) - (fla_vect1.Z * target.Y);
+            float tempy = (fla_vect1.Z * target.X) - (fla_vect1.X * target.Z);
+            fla_vect1.Z = (fla_vect1.X * target.Y) - (fla_vect1.Y * target.X);
+            fla_vect1.X = tempx;
+            fla_vect1.Y = tempy;
+            // inline normalize
+            length = fla_vect1.X * fla_vect1.X + fla_vect1.Y * fla_vect1.Y + fla_vect1.Z * fla_vect1.Z;
+            if (length != 1f && length != 0f)
+            {
+                length = 1.0f / (float)Math.Sqrt(length);
+                fla_vect1.X *= length;
+                fla_vect1.Y *= length;
+                fla_vect1.Z *= length;
+            }
+            Vector3 fla_vect2;
+            fla_vect2.X = target.X;
+            fla_vect2.Y = target.Y;
+            fla_vect2.Z = target.Z;
+            //vect2.crossLocal(vect1);
+            tempx = (fla_vect2.Y * fla_vect1.Z) - (fla_vect2.Z * fla_vect1.Y);
+            tempy = (fla_vect2.Z * fla_vect1.X) - (fla_vect2.X * fla_vect1.Z);
+            fla_vect2.Z = (fla_vect2.X * fla_vect1.Y) - (fla_vect2.Y * fla_vect1.X);
+            fla_vect2.X = tempx;
+            fla_vect2.Y = tempy;
+            // inline normalize
+            length = fla_vect2.X * fla_vect2.X + fla_vect2.Y * fla_vect2.Y + fla_vect2.Z * fla_vect2.Z;
+            if (length != 1f && length != 0f)
+            {
+                length = 1.0f / (float)Math.Sqrt(length);
+                fla_vect2.X *= length;
+                fla_vect2.Y *= length;
+                fla_vect2.Z *= length;
+            }
+
+            float t = fla_vect1.X + fla_vect2.Y + target.Z, w, x, y, z;
+            // we protect the division by s by ensuring that s>=1
+            if (t >= 0)
+            { // |w| >= .5
+                float s = (float)Math.Sqrt(t + 1); // |s|>=1 ...
+                w = 0.5f * s;
+                s = 0.5f / s;                 // so this division isn't bad
+                x = (fla_vect2.Z - target.Y) * s;
+                y = (target.X - fla_vect1.Z) * s;
+                z = (fla_vect1.Y - fla_vect2.X) * s;
+            }
+            else if ((fla_vect1.X > fla_vect2.Y) && (fla_vect1.X > target.Z))
+            {
+                float s = (float)Math.Sqrt(1.0f + fla_vect1.X - fla_vect2.Y - target.Z); // |s|>=1
+                x = s * 0.5f; // |x| >= .5
+                s = 0.5f / s;
+                y = (fla_vect1.Y + fla_vect2.X) * s;
+                z = (target.X + fla_vect1.Z) * s;
+                w = (fla_vect2.Z - target.Y) * s;
+            }
+            else if (fla_vect2.Y > target.Z)
+            {
+                float s = (float)Math.Sqrt(1.0f + fla_vect2.Y - fla_vect1.X - target.Z); // |s|>=1
+                y = s * 0.5f; // |y| >= .5
+                s = 0.5f / s;
+                x = (fla_vect1.Y + fla_vect2.X) * s;
+                z = (fla_vect2.Z + target.Y) * s;
+                w = (target.X - fla_vect1.Z) * s;
+            }
+            else
+            {
+                float s = (float)Math.Sqrt(1.0f + target.Z - fla_vect1.X - fla_vect2.Y); // |s|>=1
+                z = s * 0.5f; // |z| >= .5
+                s = 0.5f / s;
+                x = (target.X + fla_vect1.Z) * s;
+                y = (fla_vect2.Z + target.Y) * s;
+                w = (fla_vect1.Y - fla_vect2.X) * s;
+            }
+            float norm = w * w + x * x + y * y + z * z;
+            float n = (float)(1.0f / Math.Sqrt(norm));
+            w *= n;
+            x *= n;
+            y *= n;
+            z *= n;
+
+            // negate the worldtransform rotation?
+            if (parent != null)
+            {
+                Rotation = new Quaternion(x, y, z, w) * Quaternion.Invert(parent.WorldRotation());
+            }
+            else
+            {
+                Rotation.X = x;
+                Rotation.Y = y;
+                Rotation.Z = z;
+                Rotation.W = w;
+            }
+        }
+
+        /// <summary>
         /// Gets the world position.
         /// Default call does not recalcuate the position. It just gets the last frame's position quickly.
         /// If you pass true to this function, it will update the world position (which is a costly procedure) to get the most up-to-date position.
