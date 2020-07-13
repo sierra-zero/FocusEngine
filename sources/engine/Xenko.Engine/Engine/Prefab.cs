@@ -4,9 +4,11 @@
 using System.Collections.Generic;
 using Xenko.Core;
 using Xenko.Core.Collections;
+using Xenko.Core.Mathematics;
 using Xenko.Core.Serialization;
 using Xenko.Core.Serialization.Contents;
 using Xenko.Engine.Design;
+using Xenko.Rendering;
 
 namespace Xenko.Engine
 {
@@ -51,6 +53,34 @@ namespace Xenko.Engine
         public Prefab(Entity e)
         {
             Entities.Add(e);
+            packed = e;
+        }
+
+        /// <summary>
+        /// Shortcut for making an easy prefab from a model
+        /// </summary>
+        public Prefab(Model m, string name = null, Vector3? scale = null, Vector3? position = null)
+        {
+            packed = new Entity(name);
+            packed.GetOrCreate<ModelComponent>().Model = m;
+            packed.Transform.Scale = scale ?? Vector3.One;
+            packed.Transform.Position = position ?? Vector3.Zero;
+            Entities.Add(packed);
+        }
+
+        /// <summary>
+        /// Shortcut for making an easy prefab from a mesh
+        /// </summary>
+        public Prefab(Mesh m, Material mat = null, string name = null, Vector3? scale = null, Vector3? position = null)
+        {
+            packed = new Entity(name);
+            Model model = new Model();
+            model.Add(m);
+            model.Add(mat);
+            packed.GetOrCreate<ModelComponent>().Model = model;
+            packed.Transform.Scale = scale ?? Vector3.One;
+            packed.Transform.Position = position ?? Vector3.Zero;
+            Entities.Add(packed);
         }
 
         /// <summary>
@@ -62,6 +92,9 @@ namespace Xenko.Engine
             Entities.AddRange(e);
         }
 
+        /// <summary>
+        /// Batches this prefab into a single model
+        /// </summary>
         public void Optimize()
         {
             ModelBatcher.BatchChildren(PackToEntity());
@@ -89,6 +122,14 @@ namespace Xenko.Engine
                 }
             }
             return packed;
+        }
+
+        /// <summary>
+        /// Shortcut to spawning prefab from a pool
+        /// </summary>
+        public Entity InstantiateFromPool(Vector3? position = null, Quaternion? rotation = null)
+        {
+            return EntityPool.Spawn(PackToEntity(), position, rotation);
         }
     }
 }
