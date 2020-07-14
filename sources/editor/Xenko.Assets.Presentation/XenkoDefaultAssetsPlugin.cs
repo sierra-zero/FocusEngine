@@ -54,8 +54,6 @@ namespace Xenko.Assets.Presentation
             }
         }
 
-        private EffectCompilerServerSession effectCompilerServerSession;
-
         private static ResourceDictionary imageDictionary;
         private static ResourceDictionary animationPropertyTemplateDictionary;
         private static ResourceDictionary entityPropertyTemplateDictionary;
@@ -80,7 +78,6 @@ namespace Xenko.Assets.Presentation
         public XenkoDefaultAssetsPlugin()
         {
             ProfileSettings.Add(new PackageSettingsEntry(GameUserSettings.Effect.EffectCompilation, TargetPackage.Executable));
-            ProfileSettings.Add(new PackageSettingsEntry(GameUserSettings.Effect.RecordUsedEffects, TargetPackage.Executable));
 
             LoadDefaultTemplates();
         }
@@ -206,12 +203,6 @@ namespace Xenko.Assets.Presentation
             session.AssetViewProperties.RegisterNodePresenterUpdater(new VisualScriptNodeUpdater());
             session.AssetViewProperties.RegisterNodePresenterUpdater(new NavigationNodeUpdater(session));
 
-            // Connects to effect compiler (to import new effect permutations discovered by running the game)
-            if (Xenko.Core.Assets.Editor.Settings.EditorSettings.UseEffectCompilerServer.GetValue())
-            {
-                effectCompilerServerSession = new EffectCompilerServerSession(session);
-            }
-
             // Extra packages to display in "add reference" dialog
             session.SuggestedPackages.Add(new PackageName(typeof(Xenko.Engine.EntityComponent).Assembly.GetName().Name, new PackageVersion(XenkoVersion.NuGetVersion)));
             session.SuggestedPackages.Add(new PackageName(typeof(Xenko.UI.UIElement).Assembly.GetName().Name, new PackageVersion(XenkoVersion.NuGetVersion)));
@@ -252,11 +243,6 @@ namespace Xenko.Assets.Presentation
         /// <inheritdoc />
         protected override void SessionDisposed(SessionViewModel session)
         {
-            if (effectCompilerServerSession != null)
-            {
-                effectCompilerServerSession.Dispose();
-                effectCompilerServerSession = null;
-            }
             base.SessionDisposed(session);
         }
 

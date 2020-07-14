@@ -518,20 +518,17 @@ namespace Xenko.Engine
                 if (ForceReleaseEffects) Settings.CompilationMode = CompilationMode.Release;
                 if (ForceCollectEffects) {
                     // we want to collect effects. make sure they are release versions
-                    Settings.EffectCompilation = EffectCompilationMode.LocalOrRemote;
+                    Settings.EffectCompilation = EffectCompilationMode.Local;
                     Settings.CompilationMode = CompilationMode.Release;
-                    Settings.RecordUsedEffects = true;
                 } else if (Settings.CompilationMode == CompilationMode.Testing || Settings.CompilationMode == CompilationMode.Debug) {
                     // don't collect debug shaders, we won't want to distribute them!
                     Settings.EffectCompilation = EffectCompilationMode.Local;
-                    Settings.RecordUsedEffects = false;
                 }
             }
 
             // If requested in game settings, compile effects remotely and/or notify new shader requests
             EffectSystem.Compiler = EffectCompilerFactory.CreateEffectCompiler(Content.FileProvider, EffectSystem, Settings?.PackageName,
-                                                                               ForceCollectEffects ? EffectCompilationMode.LocalOrRemote : (Settings?.EffectCompilation ?? EffectCompilationMode.Local),
-                                                                               ForceCollectEffects ? true : (Settings?.RecordUsedEffects ?? false));
+                                                                               ForceCollectEffects ? EffectCompilationMode.Local : (Settings?.EffectCompilation ?? EffectCompilationMode.Local));
 
             // Setup shader compiler settings from a compilation mode. 
             EffectSystem.SetCompilationMode(ForceReleaseEffects || ForceCollectEffects ? CompilationMode.Release : (Settings?.CompilationMode ?? CompilationMode.Release));

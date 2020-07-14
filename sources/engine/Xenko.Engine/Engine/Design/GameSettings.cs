@@ -47,11 +47,6 @@ namespace Xenko.Engine.Design
         public EffectCompilationMode EffectCompilation { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether effect compile (local or remote) should be recorded and sent to effect compile server for GameStudio notification.
-        /// </summary>
-        public bool RecordUsedEffects { get; set; }
-
-        /// <summary>
         /// Gets or sets configuration for the actual running platform as compiled during build
         /// </summary>
         public PlatformConfigurations Configurations { get; set; }

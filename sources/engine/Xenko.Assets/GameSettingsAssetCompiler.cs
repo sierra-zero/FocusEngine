@@ -62,7 +62,6 @@ namespace Xenko.Assets
                 // Hash used parameters from package
                 writer.Write(package.Meta.Name);
                 writer.Write(entryPackage.UserSettings.GetValue(GameUserSettings.Effect.EffectCompilation));
-                writer.Write(entryPackage.UserSettings.GetValue(GameUserSettings.Effect.RecordUsedEffects));
                 writer.Write(compilationMode);
 
                 // Hash platform
@@ -80,7 +79,6 @@ namespace Xenko.Assets
                     SplashScreenColor = Parameters.SplashScreenColor,
                     DoubleViewSplashScreen = Parameters.DoubleViewSplashScreen,
                     EffectCompilation = entryPackage.UserSettings.GetValue(GameUserSettings.Effect.EffectCompilation),
-                    RecordUsedEffects = entryPackage.UserSettings.GetValue(GameUserSettings.Effect.RecordUsedEffects),
                     Configurations = new PlatformConfigurations(),
                     CompilationMode = compilationMode
                 };

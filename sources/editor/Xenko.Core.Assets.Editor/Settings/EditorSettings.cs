@@ -83,10 +83,6 @@ namespace Xenko.Core.Assets.Editor.Settings
             };
             FallbackBuildCacheDirectory = new UDirectory(Path.Combine(EditorPath.DefaultTempPath, "BuildCache"));
 
-            UseEffectCompilerServer = new SettingsKey<bool>("Tools/UseEffectCompilerServer", SettingsContainer, true)
-            {
-                DisplayName = $"{Tools}/{Tr._p("Settings", "Use effect compiler server for mobile platforms")}",
-            };
             ReloadLastSession = new SettingsKey<bool>("Interface/ReloadLastSession", SettingsContainer, false)
             {
                 DisplayName = $"{Interface}/{Tr._p("Settings", "Automatically reload last session at startup")}",
@@ -115,8 +111,6 @@ namespace Xenko.Core.Assets.Editor.Settings
 
         public static UDirectory FallbackBuildCacheDirectory { get; }
 
-        public static SettingsKey<bool> UseEffectCompilerServer { get; }
-
         public static SettingsKey<bool> ReloadLastSession { get; }
 
         public static bool NeedRestart { get; set; }
@@ -127,7 +121,6 @@ namespace Xenko.Core.Assets.Editor.Settings
             Presentation.Themes.ThemesSettings.Initialize();
 
             // Settings that requires a restart must register here:
-            UseEffectCompilerServer.ChangesValidated += (s, e) => NeedRestart = true;
             Language.ChangesValidated += (s, e) => NeedRestart = true;
 
             Presentation.Themes.ThemesSettings.ThemeName.ChangesValidated += (s, e) => NeedRestart = true;

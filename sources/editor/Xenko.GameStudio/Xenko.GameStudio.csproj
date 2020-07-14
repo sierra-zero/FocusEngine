@@ -87,9 +87,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\engine\Xenko.Debugger\Xenko.Debugger.csproj" />
-    <ProjectReference Include="..\..\tools\Xenko.ConnectionRouter\Xenko.ConnectionRouter.csproj" />
     <ProjectReference Include="..\Xenko.Assets.Presentation\Xenko.Assets.Presentation.csproj" />
-    <ProjectReference Include="..\..\tools\Xenko.EffectCompilerServer\Xenko.EffectCompilerServer.csproj" IncludeAssets="Build" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="..\..\..\BACKERS.md" Link="BACKERS.md">

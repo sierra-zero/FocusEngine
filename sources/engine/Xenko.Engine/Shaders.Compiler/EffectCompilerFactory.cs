@@ -12,7 +12,7 @@ namespace Xenko.Shaders.Compiler
 {
     public static class EffectCompilerFactory
     {
-        public static IEffectCompiler CreateEffectCompiler(IVirtualFileProvider fileProvider, EffectSystem effectSystem = null, string packageName = null, EffectCompilationMode effectCompilationMode = EffectCompilationMode.Local, bool recordEffectRequested = false, TaskSchedulerSelector taskSchedulerSelector = null)
+        public static IEffectCompiler CreateEffectCompiler(IVirtualFileProvider fileProvider, EffectSystem effectSystem = null, string packageName = null, EffectCompilationMode effectCompilationMode = EffectCompilationMode.Local, TaskSchedulerSelector taskSchedulerSelector = null)
         {
             EffectCompilerBase compiler = null;
 
@@ -26,32 +26,6 @@ namespace Xenko.Shaders.Compiler
                 };
             }
 #endif
-
-            // Nothing to do remotely
-            bool needRemoteCompiler = (compiler == null && (effectCompilationMode & EffectCompilationMode.Remote) != 0);
-            if (needRemoteCompiler || recordEffectRequested)
-            {
-                // Create the object that handles the connection
-                var shaderCompilerTarget = new RemoteEffectCompilerClient(packageName);
-
-                if (recordEffectRequested)
-                {
-                    // Let's notify effect compiler server for each new effect requested
-                    effectSystem.EffectUsed += shaderCompilerTarget.NotifyEffectUsed;
-                }
-
-                // Use remote only if nothing else was found before (i.e. a local compiler)
-                if (needRemoteCompiler)
-                {
-                    // Create a remote compiler
-                    compiler = new RemoteEffectCompiler(fileProvider, shaderCompilerTarget);
-                }
-                else
-                {
-                    // Otherwise, EffectSystem takes ownership of shaderCompilerTarget
-                    shaderCompilerTarget.DisposeBy(effectSystem);
-                }
-            }
 
             // Local not possible or allowed, and remote not allowed either => switch back to null compiler
             if (compiler == null)

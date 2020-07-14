@@ -77,7 +77,6 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Xenko.GameStudio", "..\sources\editor\Xenko.GameStudio\Xenko.GameStudio.csproj", "{2FCA2D8B-B10F-4DCA-9847-4221F74BA586}"
 	ProjectSection(ProjectDependencies) = postProject
 		{BD176B28-49CD-4FAD-A430-CDBCF1C2E514} = {BD176B28-49CD-4FAD-A430-CDBCF1C2E514}
-		{E25E7778-0B2F-4A0B-BCD6-1DE95320B531} = {E25E7778-0B2F-4A0B-BCD6-1DE95320B531}
 		{550C1B7C-B7AD-46DF-ACF3-C36AEF35D5FF} = {550C1B7C-B7AD-46DF-ACF3-C36AEF35D5FF}
 		{50D1A3BB-4B41-4EF5-8D2F-3618A3B6C698} = {50D1A3BB-4B41-4EF5-8D2F-3618A3B6C698}
 	EndProjectSection
@@ -203,10 +202,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Xenko.Graphics.RenderDocPlu
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Xenko.Debugger", "..\sources\engine\Xenko.Debugger\Xenko.Debugger.csproj", "{73AA8A18-15C4-405B-BBF4-5D41C1CE44AD}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Xenko.ConnectionRouter", "..\sources\tools\Xenko.ConnectionRouter\Xenko.ConnectionRouter.csproj", "{77E2FCC0-4CA6-436C-BE6F-9418CB807D45}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Xenko.EffectCompilerServer", "..\sources\tools\Xenko.EffectCompilerServer\Xenko.EffectCompilerServer.csproj", "{E25E7778-0B2F-4A0B-BCD6-1DE95320B531}"
-EndProject
 Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "Xenko.PrivacyPolicy", "..\sources\editor\Xenko.PrivacyPolicy\Xenko.PrivacyPolicy.shproj", "{950BADD0-AD5A-4F58-87EC-4ADAECBEA89B}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Xenko.ExecServer", "..\sources\tools\Xenko.ExecServer\Xenko.ExecServer.csproj", "{5E241BE1-FFB6-49F2-98B4-7869BA7D9F5A}"
@@ -323,15 +318,12 @@ Global
 		..\sources\tools\Xenko.Core.VisualStudio\Xenko.Core.VisualStudio.projitems*{50d1a3bb-4b41-4ef5-8d2f-3618a3b6c698}*SharedItemsImports = 5
 		..\sources\editor\Xenko.Core.MostRecentlyUsedFiles\Xenko.Core.MostRecentlyUsedFiles.projitems*{5863574d-7a55-49bc-8e65-babb74d8e66e}*SharedItemsImports = 5
 		..\sources\tools\Xenko.Core.VisualStudio\Xenko.Core.VisualStudio.projitems*{5e241be1-ffb6-49f2-98b4-7869ba7d9f5a}*SharedItemsImports = 5
-		..\sources\shared\Xenko.Core.ShellHelper\Xenko.Core.ShellHelper.projitems*{77e2fcc0-4ca6-436c-be6f-9418cb807d45}*SharedItemsImports = 5
-		..\sources\shared\Xenko.NuGetResolver\Xenko.NuGetResolver.projitems*{77e2fcc0-4ca6-436c-be6f-9418cb807d45}*SharedItemsImports = 5
 		..\sources\editor\Xenko.PrivacyPolicy\Xenko.PrivacyPolicy.projitems*{950badd0-ad5a-4f58-87ec-4adaecbea89b}*SharedItemsImports = 13
 		..\sources\tools\Xenko.Core.VisualStudio\Xenko.Core.VisualStudio.projitems*{991e796a-d1d1-48b8-b9aa-95c2744fe112}*SharedItemsImports = 13
 		..\sources\editor\Xenko.Core.MostRecentlyUsedFiles\Xenko.Core.MostRecentlyUsedFiles.projitems*{9ac6d791-811e-4d6a-b08e-93f0093ef268}*SharedItemsImports = 13
 		..\sources\editor\Xenko.Editor.CrashReport\Xenko.Editor.CrashReport.projitems*{ab574f65-1402-4476-9314-74dcdaf19097}*SharedItemsImports = 13
 		..\sources\engine\Xenko.Shared\Refactor\Xenko.Refactor.projitems*{b33e576f-2279-4bfc-a438-d9b84343b56b}*SharedItemsImports = 13
 		..\sources\engine\Xenko.Shared\Refactor\Xenko.Refactor.projitems*{c121a566-555e-42b9-9b0a-1696529a9088}*SharedItemsImports = 5
-		..\sources\shared\Xenko.NuGetResolver\Xenko.NuGetResolver.projitems*{e25e7778-0b2f-4a0b-bcd6-1de95320b531}*SharedItemsImports = 5
 		..\sources\shared\Xenko.Core.ShellHelper\Xenko.Core.ShellHelper.projitems*{e8b3553f-a79f-4e50-b75b-acee771c320c}*SharedItemsImports = 5
 		..\sources\engine\Xenko.Shared\Refactor\Xenko.Refactor.projitems*{fb06c76a-6bb7-40be-9afa-fec13b045fb5}*SharedItemsImports = 5
 		..\sources\assets\Xenko.Core.Assets.Yaml\Xenko.Core.Assets.Yaml.projitems*{fb9ed2c4-94a0-4004-a498-3f29a9d5bb5d}*SharedItemsImports = 13
@@ -819,26 +811,6 @@ Global
 		{73AA8A18-15C4-405B-BBF4-5D41C1CE44AD}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{73AA8A18-15C4-405B-BBF4-5D41C1CE44AD}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{73AA8A18-15C4-405B-BBF4-5D41C1CE44AD}.Release|Win32.ActiveCfg = Release|Any CPU
-		{77E2FCC0-4CA6-436C-BE6F-9418CB807D45}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{77E2FCC0-4CA6-436C-BE6F-9418CB807D45}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{77E2FCC0-4CA6-436C-BE6F-9418CB807D45}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
-		{77E2FCC0-4CA6-436C-BE6F-9418CB807D45}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
-		{77E2FCC0-4CA6-436C-BE6F-9418CB807D45}.Debug|Win32.ActiveCfg = Debug|Any CPU
-		{77E2FCC0-4CA6-436C-BE6F-9418CB807D45}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{77E2FCC0-4CA6-436C-BE6F-9418CB807D45}.Release|Any CPU.Build.0 = Release|Any CPU
-		{77E2FCC0-4CA6-436C-BE6F-9418CB807D45}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
-		{77E2FCC0-4CA6-436C-BE6F-9418CB807D45}.Release|Mixed Platforms.Build.0 = Release|Any CPU
-		{77E2FCC0-4CA6-436C-BE6F-9418CB807D45}.Release|Win32.ActiveCfg = Release|Any CPU
-		{E25E7778-0B2F-4A0B-BCD6-1DE95320B531}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{E25E7778-0B2F-4A0B-BCD6-1DE95320B531}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{E25E7778-0B2F-4A0B-BCD6-1DE95320B531}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
-		{E25E7778-0B2F-4A0B-BCD6-1DE95320B531}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
-		{E25E7778-0B2F-4A0B-BCD6-1DE95320B531}.Debug|Win32.ActiveCfg = Debug|Any CPU
-		{E25E7778-0B2F-4A0B-BCD6-1DE95320B531}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{E25E7778-0B2F-4A0B-BCD6-1DE95320B531}.Release|Any CPU.Build.0 = Release|Any CPU
-		{E25E7778-0B2F-4A0B-BCD6-1DE95320B531}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
-		{E25E7778-0B2F-4A0B-BCD6-1DE95320B531}.Release|Mixed Platforms.Build.0 = Release|Any CPU
-		{E25E7778-0B2F-4A0B-BCD6-1DE95320B531}.Release|Win32.ActiveCfg = Release|Any CPU
 		{5E241BE1-FFB6-49F2-98B4-7869BA7D9F5A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{5E241BE1-FFB6-49F2-98B4-7869BA7D9F5A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5E241BE1-FFB6-49F2-98B4-7869BA7D9F5A}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
@@ -1191,8 +1163,6 @@ Global
 		{4FAC003A-2532-42F3-AED7-A296D1A1615E} = {75A820AB-0F21-40F2-9448-5D7F495B97A0}
 		{FDF801D9-90CC-4CBD-9F53-7F32F7EDF4F1} = {860946E4-CC77-4FDA-A4FD-3DB2A502A696}
 		{73AA8A18-15C4-405B-BBF4-5D41C1CE44AD} = {4C142567-C42B-40F5-B092-798882190209}
-		{77E2FCC0-4CA6-436C-BE6F-9418CB807D45} = {1AE1AC60-5D2F-4CA7-AE20-888F44551185}
-		{E25E7778-0B2F-4A0B-BCD6-1DE95320B531} = {1AE1AC60-5D2F-4CA7-AE20-888F44551185}
 		{950BADD0-AD5A-4F58-87EC-4ADAECBEA89B} = {5D2D3BE8-9910-45CA-8E45-95660DA4C563}
 		{5E241BE1-FFB6-49F2-98B4-7869BA7D9F5A} = {1AE1AC60-5D2F-4CA7-AE20-888F44551185}
 		{8D783A73-0BE3-423E-8FF6-984125C07BFE} = {A2A4342E-024B-4063-B10C-1DA96CA3046D}

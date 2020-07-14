@@ -16,7 +16,6 @@ namespace Xenko.GameStudio.Debugging
     /// </summary>
     class DebugHost : IDisposable
     {
-        private AttachedChildProcessJob attachedChildProcessJob;
         public ServiceHost ServiceHost { get; private set; }
         public GameDebuggerHost GameHost { get; private set; }
 
@@ -55,9 +54,6 @@ namespace Xenko.GameStudio.Debugging
                 process.BeginOutputReadLine();
                 process.BeginErrorReadLine();
 
-                // Make sure proces will be killed if our process is finished unexpectedly
-                attachedChildProcessJob = new AttachedChildProcessJob(process);
-
                 // Attach debugger
                 debugger?.AttachToProcess(process.Id);
 
@@ -67,11 +63,6 @@ namespace Xenko.GameStudio.Debugging
 
         public void Stop()
         {
-            if (attachedChildProcessJob != null)
-            {
-                attachedChildProcessJob.Dispose();
-                attachedChildProcessJob = null;
-            }
             if (ServiceHost != null)
             {
                 ServiceHost.Abort();

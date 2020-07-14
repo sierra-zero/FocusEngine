@@ -78,7 +78,6 @@
     <ProjectReference Include="..\..\presentation\Xenko.Core.Presentation.Dialogs\Xenko.Core.Presentation.Dialogs.csproj" />
     <ProjectReference Include="..\..\presentation\Xenko.Core.Presentation.Graph\Xenko.Core.Presentation.Graph.csproj" />
     <ProjectReference Include="..\..\presentation\Xenko.Core.Translation.Presentation\Xenko.Core.Translation.Presentation.csproj" />
-    <ProjectReference Include="..\..\tools\Xenko.ConnectionRouter\Xenko.ConnectionRouter.csproj" />
     <ProjectReference Include="..\..\tools\Xenko.Graphics.RenderDocPlugin\Xenko.Graphics.RenderDocPlugin.csproj" />
     <ProjectReference Include="..\..\tools\Xenko.Core.ProjectTemplating\Xenko.Core.ProjectTemplating.csproj" />
     <ProjectReference Include="..\Xenko.Core.Assets.Editor\Xenko.Core.Assets.Editor.csproj" />
