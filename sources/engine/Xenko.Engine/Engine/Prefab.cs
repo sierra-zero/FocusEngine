@@ -69,6 +69,21 @@ namespace Xenko.Engine
         }
 
         /// <summary>
+        /// Creates a prefab from a list of models
+        /// </summary>
+        public Prefab(List<Model> m, string name = null, Vector3? scale = null, Vector3? position = null)
+        {
+            for (int i=0; i<m.Count; i++)
+            {
+                Entity e = new Entity(name);
+                e.GetOrCreate<ModelComponent>().Model = m[i];
+                e.Transform.Scale = scale ?? Vector3.One;
+                e.Transform.Position = position ?? Vector3.Zero;
+                Entities.Add(e);
+            }
+        }
+
+        /// <summary>
         /// Shortcut for making an easy prefab from a mesh
         /// </summary>
         public Prefab(Mesh m, Material mat = null, string name = null, Vector3? scale = null, Vector3? position = null)
