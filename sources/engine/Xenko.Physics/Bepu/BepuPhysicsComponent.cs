@@ -2,9 +2,11 @@
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using BepuPhysics;
 using BepuPhysics.Collidables;
 using BepuPhysics.Constraints;
@@ -34,6 +36,9 @@ namespace Xenko.Engine
     public abstract class BepuPhysicsComponent : ActivableEntityComponent
     {
         protected static Logger logger = GlobalLogger.GetLogger("BepuPhysicsComponent");
+
+        private static int GlobalStoredShapeIndex;
+        private static ConcurrentDictionary<int, IShape> StoredShapes;
 
         /// <summary>
         /// Allow the physics system to automatically add, based on changes to the entity in the scene?
@@ -95,6 +100,12 @@ namespace Xenko.Engine
         public string Tag { get; set; }
 
         /// <summary>
+        /// Store what index we are using for BepuHelpers.StoredShapes
+        /// </summary>
+        [DataMember]
+        public int StoredShapeIndex { get; internal set; } = -1;
+
+        /// <summary>
         /// Object useful for storing more information regarding this physics body
         /// </summary>
         [DataMemberIgnore]
@@ -110,10 +121,55 @@ namespace Xenko.Engine
         public SpringSettings SpringSettings = new SpringSettings(30f, 20f);
 
         [DataMemberIgnore]
-        virtual public IShape ColliderShape { get; set; }
+        private IShape internalShape;
+
+        [DataMemberIgnore]
+        virtual public IShape ColliderShape
+        {
+            get
+            {
+                if (internalShape != null)
+                    return internalShape;
+
+                if (StoredShapeIndex >= 0 && StoredShapes.TryGetValue(StoredShapeIndex, out internalShape))
+                    return internalShape;
+
+                return null;
+            }
+            set
+            {
+                internalShape = value;
+            }
+        }
 
         [DataMemberIgnore]
         virtual public TypedIndex ShapeIndex { get; }
+
+        /// <summary>
+        /// Stores my current ColliderShape, so if I get cloned, I will use this shape again by default
+        /// </summary>
+        public void StoreMyShapeForCloning()
+        {
+            if (ColliderShape == null)
+                throw new Exception("This physics component has no ColliderShape to store!");
+
+            if (StoredShapes == null) StoredShapes = new ConcurrentDictionary<int, IShape>();
+            int myindex = Interlocked.Increment(ref GlobalStoredShapeIndex);
+            StoredShapes[myindex] = ColliderShape;
+            StoredShapeIndex = myindex;
+        }
+
+        /// <summary>
+        /// Removes the shared stored shape from storage
+        /// </summary>
+        public IShape RemoveStoredShape()
+        {
+            if (StoredShapeIndex == -1) return null;
+            int oldIndex = StoredShapeIndex;
+            StoredShapeIndex = -1;
+            StoredShapes.TryRemove(oldIndex, out var oldShape);
+            return oldShape;
+        }
 
         /// <summary>
         /// Computes the physics transformation from the TransformComponent values
