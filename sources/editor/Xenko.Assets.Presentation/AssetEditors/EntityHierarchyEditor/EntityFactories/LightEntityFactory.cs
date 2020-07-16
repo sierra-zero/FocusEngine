@@ -9,6 +9,8 @@ using Xenko.Assets.Skyboxes;
 using Xenko.Engine;
 using Xenko.Rendering.Lights;
 using Xenko.Rendering.Skyboxes;
+using Xenko.Rendering.Voxels.VoxelGI;
+using Xenko.Rendering.Voxels;
 
 namespace Xenko.Assets.Presentation.AssetEditors.EntityHierarchyEditor.EntityFactories
 {
@@ -87,7 +89,29 @@ namespace Xenko.Assets.Presentation.AssetEditors.EntityHierarchyEditor.EntityFac
         }
     }
 
-    [Display(60, "Light probe", "Light")]
+    [Display(60, "Voxel light", "Light")]
+    public class VoxelLightEntityFactory : EntityFactory
+    {
+        public override Task<Entity> CreateEntity(EntityHierarchyItemViewModel parent)
+        {
+            var name = ComputeNewName(parent, "Voxel light");
+            var component = new LightComponent { Type = new LightVoxel() };
+            return CreateEntityWithComponent(name, component);
+        }
+    }
+
+    [Display(65, "Voxel volume", "Light")]
+    public class VoxelVolumeEntityFactory : EntityFactory
+    {
+        public override Task<Entity> CreateEntity(EntityHierarchyItemViewModel parent)
+        {
+            var name = ComputeNewName(parent, "Voxel volume");
+            var component = new VoxelVolumeComponent { Attributes = { new VoxelAttributeEmissionOpacity() } };
+            return CreateEntityWithComponent(name, component);
+        }
+    }
+
+    [Display(70, "Light probe", "Light")]
     public class LightProbeEntityFactory : EntityFactory
     {
         public override async Task<Entity> CreateEntity(EntityHierarchyItemViewModel parent)
