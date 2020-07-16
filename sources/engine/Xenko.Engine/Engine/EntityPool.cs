@@ -75,8 +75,8 @@ public static class EntityPool {
 
                 obj.UsingPool.active = true;
             }
-            if (pos.HasValue) obj.Transform.Position = pos.Value;
-            if (rot.HasValue) obj.Transform.Rotation = rot.Value;
+            obj.Transform.Position = pos ?? Vector3.Zero;
+            obj.Transform.Rotation = rot ?? Quaternion.Identity;
             return obj;
         }
 
