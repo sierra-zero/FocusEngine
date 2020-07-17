@@ -130,7 +130,11 @@ namespace Xenko.Engine
             {
                 BatchingChunk chunk = chunks[i];
                 if (unbatched != null && unbatched.Contains(chunk.Entity)) continue; // don't try batching other things in this entity if some failed
-                if (chunk.Entity != null) chunk.Entity.Transform.UpdateWorldMatrix();
+                if (chunk.Entity != null)
+                {
+                    chunk.Entity.Transform.UpdateLocalMatrix();
+                    chunk.Entity.Transform.SlimUpdateWorldMatrix();
+                }
                 Matrix worldMatrix = chunk.Entity == null ? (chunk.Transform ?? Matrix.Identity) : chunk.Entity.Transform.WorldMatrix;
                 Matrix rot;
                 if (worldMatrix != Matrix.Identity)

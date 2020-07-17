@@ -98,8 +98,15 @@ namespace Xenko.Physics.Bepu
 
         internal void preparePose()
         {
-            staticDescription.Pose.Position = BepuHelpers.ToBepu(Position);
-            staticDescription.Pose.Orientation = BepuHelpers.ToBepu(Rotation);
+            TransformComponent et = Entity.Transform;
+            et.UpdateLocalMatrix();
+            et.SlimUpdateWorldMatrix();
+            Xenko.Core.Mathematics.Vector3 usepos = et.WorldPosition();
+            Xenko.Core.Mathematics.Quaternion q = et.WorldRotation();
+            if (usePosition.HasValue) usepos += usePosition.Value;
+            if (useRotation.HasValue) q *= useRotation.Value;
+            staticDescription.Pose.Position = BepuHelpers.ToBepu(usepos);
+            staticDescription.Pose.Orientation = BepuHelpers.ToBepu(q);
         }
 
         [DataMember]

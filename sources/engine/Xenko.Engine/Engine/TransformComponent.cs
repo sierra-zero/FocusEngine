@@ -522,6 +522,37 @@ namespace Xenko.Engine
             return Matrix.RotationQuaternion(world ? WorldRotation() : Rotation);
         }
 
+        /// <summary>
+        /// Doesn't do any post operations
+        /// </summary>
+        internal void SlimUpdateWorldMatrix()
+        {
+            if (TransformLink != null)
+            {
+                Matrix linkMatrix;
+                TransformLink.ComputeMatrix(true, out linkMatrix);
+                Matrix.Multiply(ref LocalMatrix, ref linkMatrix, out WorldMatrix);
+            }
+            else if (Parent != null)
+            {
+                Parent.SlimUpdateWorldMatrix();
+                Matrix.Multiply(ref LocalMatrix, ref Parent.WorldMatrix, out WorldMatrix);
+            }
+            else
+            {
+                var scene = Entity?.Scene;
+                if (scene != null)
+                {
+                    scene.UpdateWorldMatrix();
+                    Matrix.Multiply(ref LocalMatrix, ref scene.WorldMatrix, out WorldMatrix);
+                }
+                else
+                {
+                    WorldMatrix = LocalMatrix;
+                }
+            }
+        }
+
         internal void UpdateWorldMatrixInternal(bool recursive)
         {
             if (TransformLink != null)
