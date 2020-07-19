@@ -24,7 +24,7 @@ namespace Xenko.Graphics
 
         public GraphicsResourceAllocator Allocator { get; private set; }
 
-        public static int PrepareAllocatorCount = 32;
+        public static int PrepareVulkanAllocatorCount = 32;
         private static Queue<ResourceGroupAllocator> AvailableAllocators;
 
         public GraphicsContext(GraphicsDevice graphicsDevice, GraphicsResourceAllocator allocator = null, CommandList commandList = null)
@@ -33,10 +33,11 @@ namespace Xenko.Graphics
             Allocator = allocator ?? new GraphicsResourceAllocator(graphicsDevice).DisposeBy(graphicsDevice);
 
             // prepare some resources now, so we don't need to do it during runtime (which can cause lag spikes or worse)
-            if (AvailableAllocators == null && PrepareAllocatorCount > 0)
+            // DirectX doesn't seem to like this very much, though
+            if (GraphicsDevice.Platform == GraphicsPlatform.Vulkan && AvailableAllocators == null && PrepareVulkanAllocatorCount > 0)
             {
                 AvailableAllocators = new Queue<ResourceGroupAllocator>();
-                while (AvailableAllocators.Count < PrepareAllocatorCount)
+                while (AvailableAllocators.Count < PrepareVulkanAllocatorCount)
                     AvailableAllocators.Enqueue(new ResourceGroupAllocator(Allocator, CommandList, 2).DisposeBy(graphicsDevice));
             }
 
