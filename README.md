@@ -15,6 +15,10 @@ To learn more about Stride3D, visit [stride3d.net](https://stride3d.net/).
 
 My games require the engine to be developed at a faster pace than Stride. I'm in need of fixes, new features and better performance. These changes will not be supported by the core team, and the absolute most recent changes may not be fully stable. However, you may find them very helpful, and in some cases, essential to projects.
 
+## Any games made with this engine?
+
+Yes, and it is free for you to try! Works on all operating systems and supports VR in Windows: https://store.steampowered.com/app/1256380/FPS_Infinite/
+
 ## What is different?
 
 Most of Focus is similar to Stride and there shouldn't be any loss of functionality over the original. Changes are focused on fixes, performance improvements and new features. However, I do not maintain different languages, Android support or the Launcher. The following is a rough list of "major" changes, but might not accurately reflect the current state of differences (since both githubs are moving targets which are hopefully improving):
@@ -23,7 +27,7 @@ Most of Focus is similar to Stride and there shouldn't be any loss of functional
 * Vulkan: Focus primarily uses Vulkan, which has been significantly overhauled to provide more performance you'd expect from the newer API. Vulkan works on MacOSX using MoltenVK and Linux. DirectX is deprecated and unsupported on this fork.
 * BepuPhysics2 and Physics: Focus has an additional physics library integrated, which is much faster, has an easier API, multithreaded and pure C#. It isn't integrated with GameStudio though, like Bullet physics is. See https://github.com/phr00t/FocusEngine/tree/master/sources/engine/Xenko.Physics/Bepu. If you decide to still use Bullet, this fork can handle Bullet running in another thread with interpolation.
 * API Ease: TransformComponents have nice shortcuts like WorldPosition and WorldRotation. There are also other very useful shortcuts, like Material.Clone to easily clone materials.
-* Lots of bugfixes: Lots of issues, and even GameStudio crashes and project corruption, have been fixed/improved in this fork. Some specific examples is crashes when entering invalid data into a color field, particle colors, importing multiple audio files at once, or rendering 3D text from multiple cameras.
+* Lots of bugfixes: Lots of issues, and even GameStudio crashes and project corruption, have been fixed/improved in this fork. Some specific examples is crashes when particle colors or rendering 3D text from multiple cameras.
 * GlobalSoundManager: easily play all sound effects for your whole project from a single object, which handles loading and pooling sound instances automatically (even asynchronously). If you use positional sounds, make sure you call UpdatePlayingSoundPositions every frame! See https://github.com/phr00t/FocusEngine/blob/master/sources/engine/Xenko.Engine/Engine/GlobalSoundManager.cs
 * CinematicAction: Simple system for performing cinematic actions on objects and calling functions at certain times. Can build a simple timeline for things to move, rotate and execute. See https://github.com/phr00t/FocusEngine/blob/master/sources/engine/Xenko.Engine/Cinematics/CinematicAnimation.cs
 * EntityPool: Makes it really easy to reuse entities and prefabs. This can save lots of memory and processing, instead of recreating things that come and go (like enemies or projectiles). See https://github.com/phr00t/FocusEngine/blob/master/sources/engine/Xenko.Engine/Engine/EntityPool.cs
@@ -32,6 +36,8 @@ Most of Focus is similar to Stride and there shouldn't be any loss of functional
 * Better UI Editor: Selecting things in the editor works more intuitively, like hidden things are skipped and smaller things are easier to click.
 * UI Text features: vertically align text or use \<color> tags to dynamically change text colors. Use \<br> tags to have multiline text set straight from GameStudio. Need text shadows, outlines or bevels? Precompile a font (right click it in the asset view) that has a Glyph Margin > 0, which will generate a PNG with room to edit in effects right into the glyphs.
 * ModelBatcher: Easily make batched models using lots of individual models (think grass and rocks for your whole terrain batched into one draw call and entity). See https://github.com/phr00t/FocusEngine/blob/master/sources/engine/Xenko.Engine/Engine/ModelBatcher.cs
+* Level of detail system: in GameSettings -> Rendering, you can set a value for things to cull when they are really small on the screen. Separate value can be used for culling shadows, too. Individual models can have "Small Factor Adjustment" values that make them more important (or less important) to make them cull easier/harder.
+* Much more control over the depth buffer: objects, even transparent ones and UI components, provide options for how they interacts with the depth buffer.
 * More Post Processing Effects: Fog and Outline post processing shaders work, out of the box.
 * Easy setting game resolution: Game.SetDefaultSettings(width, height, fullscreen) and Game.OverrideDefaultSettings to set and save resolution of your game.
 * Easy generating procedural meshes: StagedMeshDraw takes a list of verticies and indicies, no "buffer binding" or "GraphicsDevice" needed. Also will actually upload the mesh when it tries to get rendered automatically, saving time and resources if the mesh doesn't actually ever get viewed.
