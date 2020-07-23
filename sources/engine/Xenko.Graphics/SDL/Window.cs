@@ -91,62 +91,64 @@ namespace Xenko.Graphics.SDL
             return modeList;
         }
 
+        internal void GenerateCreationError(Exception e = null)
+        {
+            string error = "There was an error making the game window. Does your video card support Vulkan?\nMake sure your video drivers are up to date and check Vulkan compatibility.\n\nError: " + SDL.SDL_GetError();
+            if (e != null) error += "\n\nException: " + e.ToString();
+            SDL.SDL_ShowSimpleMessageBox(SDL.SDL_MessageBoxFlags.SDL_MESSAGEBOX_ERROR, "Failed to make Game Window", error, IntPtr.Zero);
+            Console.Error.WriteLine(error);
+            throw new Exception(error);
+        }
+
         /// <summary>
         /// Initializes a new instance of the <see cref="Window"/> class with <paramref name="title"/> as the title of the Window.
         /// </summary>
         /// <param name="title">Title of the window, see Text property.</param>
         public Window(string title)
         {
-#if XENKO_GRAPHICS_API_OPENGL
-            var flags = SDL.SDL_WindowFlags.SDL_WINDOW_HIDDEN | SDL.SDL_WindowFlags.SDL_WINDOW_OPENGL;
-#elif XENKO_GRAPHICS_API_VULKAN
+#if XENKO_GRAPHICS_API_VULKAN
             var flags = SDL.SDL_WindowFlags.SDL_WINDOW_HIDDEN | SDL.SDL_WindowFlags.SDL_WINDOW_VULKAN;
 #else
             var flags = SDL.SDL_WindowFlags.SDL_WINDOW_HIDDEN;
 #endif
-            // Create the SDL window and then extract the native handle.
-            SdlHandle = SDL.SDL_CreateWindow(title, SDL.SDL_WINDOWPOS_UNDEFINED, SDL.SDL_WINDOWPOS_UNDEFINED, 640, 480, flags);
+            try
+            {
+                // Create the SDL window and then extract the native handle.
+                SdlHandle = SDL.SDL_CreateWindow(title, SDL.SDL_WINDOWPOS_UNDEFINED, SDL.SDL_WINDOWPOS_UNDEFINED, 640, 480, flags);
+            }
+            catch(Exception e)
+            {
+                GenerateCreationError(e);
+            }
 
             if (SdlHandle == IntPtr.Zero)
             {
-                throw new Exception("Cannot allocate SDL Window: " + SDL.SDL_GetError()); 
+                GenerateCreationError();
             }
             else
             {
                 SDL.SDL_SysWMinfo info = default(SDL.SDL_SysWMinfo);
-                SDL.SDL_VERSION(out info.version);
-                if (SDL.SDL_GetWindowWMInfo(SdlHandle, ref info) == SDL.SDL_bool.SDL_FALSE)
+
+                try
                 {
-                    throw new Exception("Cannot get Window information: " + SDL.SDL_GetError());
+                    SDL.SDL_VERSION(out info.version);
+                    if (SDL.SDL_GetWindowWMInfo(SdlHandle, ref info) == SDL.SDL_bool.SDL_FALSE)
+                        GenerateCreationError();
+                } catch (Exception e)
+                {
+                    GenerateCreationError(e);
                 }
-                else
-                {
+
 #if XENKO_PLATFORM_WINDOWS_DESKTOP
-                    Handle = info.info.win.window;
+                Handle = info.info.win.window;
 #elif XENKO_PLATFORM_LINUX
-                    Handle = info.info.x11.window;
-                    Display = info.info.x11.display;
+                Handle = info.info.x11.window;
+                Display = info.info.x11.display;
 #elif XENKO_PLATFORM_MACOS
-                    Handle = info.info.cocoa.window;
+                Handle = info.info.cocoa.window;
 #endif
-                }
                 Application.RegisterWindow(this);
                 Application.ProcessEvents();
-
-#if XENKO_GRAPHICS_API_OPENGL
-                glContext = SDL.SDL_GL_CreateContext(SdlHandle);
-                if (glContext == IntPtr.Zero)
-                {
-                    throw new Exception("Cannot create OpenGL context: " + SDL.SDL_GetError());
-                }
-
-                // The external context must be made current to initialize OpenGL
-                SDL.SDL_GL_MakeCurrent(SdlHandle, glContext);
-
-                // Create a dummy OpenTK context, that will be used to call some OpenGL features
-                // we need to later create the various context in GraphicsDevice.OpenGL.
-                DummyGLContext = new OpenTK.Graphics.GraphicsContext(new OpenTK.ContextHandle(glContext), SDL.SDL_GL_GetProcAddress, () => new OpenTK.ContextHandle(SDL.SDL_GL_GetCurrentContext()));
-#endif
             }
         }
         #endregion

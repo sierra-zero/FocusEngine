@@ -321,7 +321,7 @@ namespace Xenko.Graphics
             var control = Description.DeviceWindowHandle.NativeWindow as SDL.Window;
 
             if (SDL2.SDL.SDL_Vulkan_CreateSurface(control.SdlHandle, GraphicsDevice.NativeInstance.Handle, out ulong surfacePtr) == SDL2.SDL.SDL_bool.SDL_FALSE)
-                throw new NotSupportedException("Couldn't create an SDL2 Vulkan surface! SdlHandle:" + control.SdlHandle + ", NativeHandle:" + GraphicsDevice.NativeInstance.Handle);
+                control.GenerateCreationError();
 
             surface = new VkSurfaceKHR(surfacePtr);
 #elif XENKO_PLATFORM_WINDOWS
