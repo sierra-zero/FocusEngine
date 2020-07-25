@@ -152,7 +152,8 @@ namespace Xenko.Particles.Materials
                     pipelineState.DepthStencilState.DepthBufferWriteEnable = true;
                     break;
                 case RenderSprite.SpriteDepthMode.WriteOnly:
-                    pipelineState.DepthStencilState.DepthBufferEnable = false;
+                    pipelineState.DepthStencilState.DepthBufferFunction = CompareFunction.Always;
+                    pipelineState.DepthStencilState.DepthBufferEnable = true;
                     pipelineState.DepthStencilState.DepthBufferWriteEnable = true;
                     break;
             }

@@ -260,7 +260,8 @@ namespace Xenko.Rendering.UI
                             break;
                         case Sprites.RenderSprite.SpriteDepthMode.WriteOnly:
                             stencilState.DepthBufferWriteEnable = true;
-                            stencilState.DepthBufferEnable = false;
+                            stencilState.DepthBufferEnable = true;
+                            stencilState.DepthBufferFunction = CompareFunction.Always;
                             break;
                     }
 
