@@ -103,13 +103,30 @@ namespace Xenko.Graphics
         {
             presentFrame = currentBufferIndex;
 
-            // Get next image
+            VkResult result;
+            
+            // Get next image without waiting
             using (GraphicsDevice.QueueLock.ReadLock())
             {
-                vkAcquireNextImageKHR(GraphicsDevice.NativeDevice, swapChain, ulong.MaxValue, VkSemaphore.Null, presentFence, out currentBufferIndex);
+                result = vkAcquireNextImageKHR(GraphicsDevice.NativeDevice, swapChain, 0, VkSemaphore.Null, presentFence, out currentBufferIndex);
             }
 
+            // say we can present
             presentWaiter.Set();
+
+            // did we get another image?
+            if (result != VkResult.Success)
+            {
+                // let's try again with a longer timeout (0.5 second)
+                using (GraphicsDevice.QueueLock.ReadLock())
+                {
+                    result = vkAcquireNextImageKHR(GraphicsDevice.NativeDevice, swapChain, (ulong)500000000, VkSemaphore.Null, presentFence, out currentBufferIndex);
+                }
+
+                // still couldn't get a good image, just use the next one... may cause flickering
+                if (result != VkResult.Success)
+                    currentBufferIndex = (presentFrame + 1) % (uint)swapchainImages.Length;
+            }
 
             // reset dummy fence
             fixed (VkFence* fences = &presentFence)
@@ -235,7 +252,7 @@ namespace Xenko.Graphics
             vkGetPhysicalDeviceSurfaceCapabilitiesKHR(GraphicsDevice.NativePhysicalDevice, surface, out var surfaceCapabilities);
 
             // Buffer count
-            uint desiredImageCount = Math.Max(surfaceCapabilities.minImageCount, 4);
+            uint desiredImageCount = Math.Max(surfaceCapabilities.minImageCount, 6);
             if (surfaceCapabilities.maxImageCount > 0 && desiredImageCount > surfaceCapabilities.maxImageCount)
             {
                 desiredImageCount = surfaceCapabilities.maxImageCount;
