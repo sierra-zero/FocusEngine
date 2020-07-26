@@ -410,7 +410,8 @@ namespace Xenko.Physics.Bepu
                 if (mc.Model == null) continue;
                 for (int i=0;i<mc.Model.Meshes.Count; i++)
                 {
-                    meshes.Add(mc.Model.Meshes[i]);
+                    var m = mc.Model.Meshes[i];
+                    if (m != null) meshes.Add(m);
                 }
             }
             foreach (Entity child in e.GetChildren())
