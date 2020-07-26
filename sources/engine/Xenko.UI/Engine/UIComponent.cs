@@ -141,6 +141,10 @@ namespace Xenko.Engine
         [DefaultValue(RenderSprite.SpriteDepthMode.ReadOnly)]
         public RenderSprite.SpriteDepthMode DepthMode { get; set; } = RenderSprite.SpriteDepthMode.ReadOnly;
 
+        [DataMember(110)]
+        [DefaultValue(1f)]
+        public float SmallFactorMultiplier { get; set; } = 1f;
+
         /// <summary>
         /// A fixed size UI component with height of 1 will be this much of the vertical resolution on screen
         /// </summary>

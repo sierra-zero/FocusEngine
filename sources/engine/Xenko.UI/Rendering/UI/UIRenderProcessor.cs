@@ -46,6 +46,7 @@ namespace Xenko.Rendering.UI
                     renderUIElement.RenderGroup = uiComponent.RenderGroup;
                     renderUIElement.DistanceSortFudge = uiComponent.IsFullScreen ? -10000f : uiComponent.DistanceSortFudge;
                     renderUIElement.depthMode = uiComponent.DepthMode;
+                    renderUIElement.SmallFactorMultiplier = uiComponent.SmallFactorMultiplier;
                     renderUIElement.Page = uiComponent.Page;
                     renderUIElement.IsFullScreen = uiComponent.IsFullScreen;
                     renderUIElement.Resolution = uiComponent.Resolution;
