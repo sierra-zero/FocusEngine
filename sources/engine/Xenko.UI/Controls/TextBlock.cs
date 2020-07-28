@@ -254,7 +254,7 @@ namespace Xenko.UI.Controls
             if (Font == null)
                 return Vector2.Zero;
 
-            var sizeRatio = LayoutingContext.RealVirtualResolutionRatio;
+            var sizeRatio = LayoutingContext?.RealVirtualResolutionRatio ?? Vector2.One;
             var measureFontSize = new Vector2(sizeRatio.Y * ActualTextSize); // we don't want letters non-uniform ratio
             var realSize = Font.MeasureString(ref textToMeasure, ref measureFontSize);
 
