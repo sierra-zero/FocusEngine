@@ -111,6 +111,50 @@ namespace Xenko.UI.Panels
         }
 
         /// <summary>
+        /// Safe and fast way to add a child UIElement
+        /// </summary>
+        /// <returns>true if child is already set or added</returns>
+        public bool AddChild(UIElement child)
+        {
+            if (child == null)
+                return false;
+
+            if (child.Parent != null)
+            {
+                if (child.Parent == this)
+                    return true;
+
+                if (child.Parent is Panel p)
+                    p.Children.Remove(child);
+                else
+                    throw new Exception(child.Name + " UIElement has non-Panel parent " + child.Parent.Name + " already. Can't move!");
+            }
+
+            Children.Add(child);
+
+            return true;
+        }
+
+        /// <summary>
+        /// Safe and quick removal of child
+        /// </summary>
+        /// <param name="child"></param>
+        /// <returns></returns>
+        public bool RemoveChild(UIElement child)
+        {
+            if (child == null)
+                return false;
+
+            if (child.Parent == this)
+            {
+                Children.Remove(child);
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
         /// Action to take when the Children collection is modified.
         /// </summary>
         /// <param name="sender">Sender of the event</param>

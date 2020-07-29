@@ -11,6 +11,7 @@ using Xenko.Core.Annotations;
 using Xenko.Core.Collections;
 using Xenko.Core.Mathematics;
 using Xenko.Games;
+using Xenko.UI.Panels;
 
 namespace Xenko.UI
 {
@@ -994,6 +995,21 @@ namespace Xenko.UI
         protected virtual Vector3 MeasureOverride(Vector3 availableSizeWithoutMargins)
         {
             return Vector3.Zero;
+        }
+
+        /// <summary>
+        /// Easy method for detaching this UIElement from its parent
+        /// </summary>
+        /// <returns>true if it was detached</returns>
+        public bool RemoveFromParent()
+        {
+            if (Parent is Panel p)
+            {
+                p.Children.Remove(this);
+                return true;
+            }
+
+            return false;
         }
 
         /// <summary>
