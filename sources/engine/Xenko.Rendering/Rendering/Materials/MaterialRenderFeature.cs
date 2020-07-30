@@ -214,23 +214,31 @@ namespace Xenko.Rendering.Materials
                             if (isMaterialParametersChanged // parameter fast reload?
                                 || materialInfo.PermutationCounter != material.Parameters.PermutationCounter)
                             {
-                                materialInfo.VertexStageSurfaceShaders = material.Parameters.Get(MaterialKeys.VertexStageSurfaceShaders);
-                                materialInfo.VertexStageStreamInitializer = material.Parameters.Get(MaterialKeys.VertexStageStreamInitializer);
+                                try
+                                {
+                                    materialInfo.VertexStageSurfaceShaders = material.Parameters.Get(MaterialKeys.VertexStageSurfaceShaders);
+                                    materialInfo.VertexStageStreamInitializer = material.Parameters.Get(MaterialKeys.VertexStageStreamInitializer);
 
-                                materialInfo.DomainStageSurfaceShaders = material.Parameters.Get(MaterialKeys.DomainStageSurfaceShaders);
-                                materialInfo.DomainStageStreamInitializer = material.Parameters.Get(MaterialKeys.DomainStageStreamInitializer);
+                                    materialInfo.DomainStageSurfaceShaders = material.Parameters.Get(MaterialKeys.DomainStageSurfaceShaders);
+                                    materialInfo.DomainStageStreamInitializer = material.Parameters.Get(MaterialKeys.DomainStageStreamInitializer);
 
-                                materialInfo.TessellationShader = material.Parameters.Get(MaterialKeys.TessellationShader);
+                                    materialInfo.TessellationShader = material.Parameters.Get(MaterialKeys.TessellationShader);
 
-                                materialInfo.PixelStageSurfaceShaders = material.Parameters.Get(MaterialKeys.PixelStageSurfaceShaders);
-                                materialInfo.PixelStageStreamInitializer = material.Parameters.Get(MaterialKeys.PixelStageStreamInitializer);
-                                materialInfo.HasNormalMap = material.Parameters.Get(MaterialKeys.HasNormalMap);
-                                materialInfo.SkipTangents = material.Parameters.Get(MaterialKeys.SkipTangents);
-                                materialInfo.UsePixelShaderWithDepthPass = material.Parameters.Get(MaterialKeys.UsePixelShaderWithDepthPass);
+                                    materialInfo.PixelStageSurfaceShaders = material.Parameters.Get(MaterialKeys.PixelStageSurfaceShaders);
+                                    materialInfo.PixelStageStreamInitializer = material.Parameters.Get(MaterialKeys.PixelStageStreamInitializer);
+                                    materialInfo.HasNormalMap = material.Parameters.Get(MaterialKeys.HasNormalMap);
+                                    materialInfo.SkipTangents = material.Parameters.Get(MaterialKeys.SkipTangents);
+                                    materialInfo.UsePixelShaderWithDepthPass = material.Parameters.Get(MaterialKeys.UsePixelShaderWithDepthPass);
 
-                                materialInfo.MaterialParameters = material.Parameters;
-                                materialInfo.ParametersChanged = isMaterialParametersChanged;
-                                materialInfo.PermutationCounter = material.Parameters.PermutationCounter;
+                                    materialInfo.MaterialParameters = material.Parameters;
+                                    materialInfo.ParametersChanged = isMaterialParametersChanged;
+                                    materialInfo.PermutationCounter = material.Parameters.PermutationCounter;
+                                }
+                                catch (Exception)
+                                {
+                                    // material not ready yet
+                                    continue;
+                                }
                             }
                         }
                     }
