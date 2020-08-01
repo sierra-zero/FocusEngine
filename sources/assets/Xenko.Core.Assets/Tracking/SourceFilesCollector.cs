@@ -44,7 +44,7 @@ namespace Xenko.Core.Assets.Tracking
 
         public override void VisitArray(Array array, ArrayDescriptor descriptor)
         {
-            if (!IsArrayOfPrimitveType(descriptor))
+            if (!IsArrayOfPrimitiveType(descriptor))
             {
                 base.VisitArray(array, descriptor);
             }

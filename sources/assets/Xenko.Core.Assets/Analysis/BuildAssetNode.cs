@@ -264,7 +264,7 @@ namespace Xenko.Core.Assets.Analysis
 
             public override void VisitArray(Array array, ArrayDescriptor descriptor)
             {
-                if (!IsArrayOfPrimitveType(descriptor))
+                if (!IsArrayOfPrimitiveType(descriptor))
                 {
                     base.VisitArray(array, descriptor);
                 }
