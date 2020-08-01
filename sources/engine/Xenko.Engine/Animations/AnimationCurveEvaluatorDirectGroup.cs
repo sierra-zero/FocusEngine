@@ -2,6 +2,7 @@
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 #pragma warning disable SA1402 // File may only contain a single class
 using System;
+using Xenko.Core;
 using Xenko.Core.Collections;
 using Xenko.Core.Mathematics;
 using Xenko.Updater;

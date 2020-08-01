@@ -3,6 +3,7 @@
 using System;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using Xenko.Core;
 
 namespace Xenko.Updater
 {
