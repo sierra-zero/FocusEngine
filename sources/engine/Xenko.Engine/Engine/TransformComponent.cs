@@ -535,6 +535,7 @@ namespace Xenko.Engine
             }
             else if (Parent != null)
             {
+                Parent.UpdateLocalMatrix();
                 Parent.SlimUpdateWorldMatrix();
                 Matrix.Multiply(ref LocalMatrix, ref Parent.WorldMatrix, out WorldMatrix);
             }
