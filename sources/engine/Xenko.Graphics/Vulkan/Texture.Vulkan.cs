@@ -382,16 +382,16 @@ namespace Xenko.Graphics
                 dataBoxes == null || dataBoxes.Length == 0 ? VkImageLayout.Undefined : VkImageLayout.TransferDstOptimal, NativeLayout);
 
             submitInfo.pCommandBuffers = &commandBuffer;
+            vkCmdPipelineBarrier(commandBuffer, VkPipelineStageFlags.Transfer, VkPipelineStageFlags.AllCommands, VkDependencyFlags.None, 0, null, 0, null, 1, &imageMemoryBarrier);
+            vkEndCommandBuffer(commandBuffer);
 
             // Close and submit
             using (GraphicsDevice.QueueLock.WriteLock())
             {
-                vkCmdPipelineBarrier(commandBuffer, VkPipelineStageFlags.Transfer, VkPipelineStageFlags.AllCommands, VkDependencyFlags.None, 0, null, 0, null, 1, &imageMemoryBarrier);
-                vkEndCommandBuffer(commandBuffer);
                 vkQueueSubmit(GraphicsDevice.NativeCommandQueue, 1, &submitInfo, fence);
-                vkWaitForFences(GraphicsDevice.NativeDevice, 1, &fence, true, ulong.MaxValue);
             }
 
+            vkWaitForFences(GraphicsDevice.NativeDevice, 1, &fence, true, ulong.MaxValue);
             vkFreeCommandBuffers(GraphicsDevice.NativeDevice, GraphicsDevice.NativeCopyCommandPool, 1, &commandBuffer);
             vkDestroyFence(GraphicsDevice.NativeDevice, fence, null);
             
