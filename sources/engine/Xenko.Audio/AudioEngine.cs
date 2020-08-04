@@ -155,7 +155,7 @@ namespace Xenko.Audio
                 {
                     foreach (var instance in sound.Instances)
                     {
-                        if (instance.PlayState == PlayState.Playing)
+                        if (instance?.PlayState == PlayState.Playing)
                         {
                             instance.Pause();
                             pausedSounds.Add(instance);
