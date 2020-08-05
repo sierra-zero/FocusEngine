@@ -355,7 +355,7 @@ namespace Xenko.Physics.Bepu
             public void IntegrateVelocity(int bodyIndex, in RigidPose pose, in BodyInertia localInertia, int workerIndex, ref BodyVelocity velocity)
             {
                 //Note that we avoid accelerating kinematics. Kinematics are any body with an inverse mass of zero (so a mass of ~infinity). No force can move them.
-                if (localInertia.InverseMass > 0)
+                if (localInertia.InverseMass > 0f)
                 {
                     BepuRigidbodyComponent rb = BepuSimulation.getRigidFromIndex(bodyIndex) as BepuRigidbodyComponent;
 

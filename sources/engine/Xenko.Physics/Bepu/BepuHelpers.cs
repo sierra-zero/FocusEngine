@@ -418,6 +418,14 @@ namespace Xenko.Physics.Bepu
                 CollectMeshes(child, meshes, skipAlreadyDone);
         }
 
+        public static void RepositionAllStatics(Entity e)
+        {
+            foreach (BepuStaticColliderComponent scc in e.GetAll<BepuStaticColliderComponent>())
+                scc.UpdatePhysicalTransform();
+            foreach (Entity child in e.GetChildren())
+                RepositionAllStatics(child);
+        }
+
         public static void DisposeAllMeshes(Entity e)
         {
             foreach (BepuStaticColliderComponent scc in e.GetAll<BepuStaticColliderComponent>())

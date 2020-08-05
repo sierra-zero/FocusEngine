@@ -178,6 +178,16 @@ namespace Xenko.Physics
                     // do anything before simulation (which might modify ToBeAdded or ToBeRemoved)
                     while (physicsScene.BepuSimulation.ActionsBeforeSimulationStep.TryDequeue(out Action<float> a)) a(time);
 
+                    // any static objects need to be moved?
+                    while (BepuStaticColliderComponent.NeedsRepositioning.TryDequeue(out var scc))
+                    {
+                        // might need a writelock here because ApplyDescription can wake bodies (which can move them around)
+                        using (physicsScene.BepuSimulation.simulationLocker.WriteLock())
+                        {
+                            scc.InternalStatic.ApplyDescription(scc.staticDescription);
+                        }
+                    }
+
                     // critical actions for rigidbodies
                     while (physicsScene.BepuSimulation.CriticalActions.TryDequeue(out var a))
                     {

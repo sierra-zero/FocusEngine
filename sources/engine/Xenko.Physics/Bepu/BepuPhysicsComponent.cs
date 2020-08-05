@@ -51,6 +51,9 @@ namespace Xenko.Engine
 
         public virtual int HandleIndex { get => -1; }
 
+        // are we safe to make changes to bodies (e.g. not simulating)
+        internal static volatile bool safeRun;
+
         public BepuPhysicsComponent()
         {
             BepuHelpers.AssureBepuSystemCreated();

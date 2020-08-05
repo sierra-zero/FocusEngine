@@ -58,9 +58,6 @@ namespace Xenko.Physics.Bepu
                 queuedActions.Enqueue(a);
         }
 
-        // are we safe to make changes to rigidbodies (e.g. not simulating)
-        internal static volatile bool safeRun;
-
         internal enum RB_ACTION
         {
             IsActive,

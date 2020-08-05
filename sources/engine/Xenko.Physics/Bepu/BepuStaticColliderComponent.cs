@@ -2,10 +2,12 @@
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
+using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
 using BepuPhysics;
 using BepuPhysics.Collidables;
 using Xenko.Core;
+using Xenko.Core.Threading;
 using Xenko.Engine;
 
 namespace Xenko.Physics.Bepu
@@ -20,6 +22,8 @@ namespace Xenko.Physics.Bepu
         public StaticHandle myStaticHandle;
 
         public override int HandleIndex => myStaticHandle.Value;
+
+        internal static ConcurrentQueue<BepuStaticColliderComponent> NeedsRepositioning = new ConcurrentQueue<BepuStaticColliderComponent>();
 
         public StaticReference InternalStatic
         {
@@ -94,6 +98,26 @@ namespace Xenko.Physics.Bepu
                 return true;
             }
             return false;
+        }
+
+        /// <summary>
+        /// Let the physics engine know this static collider moved
+        /// </summary>
+        public void UpdatePhysicalTransform()
+        {
+            if (AddedToScene == false || ColliderShape == null)
+                return;
+
+            preparePose();
+
+            if (safeRun)
+            {
+                using (BepuSimulation.instance.simulationLocker.WriteLock())
+                {
+                    InternalStatic.ApplyDescription(staticDescription);
+                }
+            }
+            else NeedsRepositioning.Enqueue(this);
         }
 
         internal void preparePose()
