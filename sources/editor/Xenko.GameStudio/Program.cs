@@ -42,7 +42,6 @@ using Xenko.Editor.Engine;
 using Xenko.Editor.Preview;
 using Xenko.GameStudio.View;
 using Xenko.Graphics;
-using Xenko.Metrics;
 using Xenko.PrivacyPolicy;
 using EditorSettings = Xenko.Core.Assets.Editor.Settings.EditorSettings;
 using MessageBox = System.Windows.MessageBox;
@@ -97,89 +96,76 @@ namespace Xenko.GameStudio
             EditorSettings.Initialize();
             Thread.CurrentThread.Name = "Main thread";
 
-            // Install Metrics for the editor
-            using (XenkoGameStudio.MetricsClient = new MetricsClient(CommonApps.XenkoEditorAppId))
+            try
             {
-                try
+                // Environment.GetCommandLineArgs correctly process arguments regarding the presence of '\' and '"'
+                var args = Environment.GetCommandLineArgs().Skip(1).ToList();
+                var startupSessionPath = XenkoEditorSettings.StartupSession.GetValue();
+                var lastSessionPath = EditorSettings.ReloadLastSession.GetValue() ? mru.MostRecentlyUsedFiles.FirstOrDefault() : null;
+                var initialSessionPath = !UPath.IsNullOrEmpty(startupSessionPath) ? startupSessionPath : lastSessionPath?.FilePath;
+
+                // Handle arguments
+                for (var i = 0; i < args.Count; i++)
                 {
-                    // Environment.GetCommandLineArgs correctly process arguments regarding the presence of '\' and '"'
-                    var args = Environment.GetCommandLineArgs().Skip(1).ToList();
-                    var startupSessionPath = XenkoEditorSettings.StartupSession.GetValue();
-                    var lastSessionPath = EditorSettings.ReloadLastSession.GetValue() ? mru.MostRecentlyUsedFiles.FirstOrDefault() : null;
-                    var initialSessionPath = !UPath.IsNullOrEmpty(startupSessionPath) ? startupSessionPath : lastSessionPath?.FilePath;
-
-                    // Handle arguments
-                    for (var i = 0; i < args.Count; i++)
+                    if (args[i] == "/LauncherWindowHandle")
                     {
-                        if (args[i] == "/LauncherWindowHandle")
-                        {
-                            windowHandle = new IntPtr(long.Parse(args[++i]));
-                        }
-                        else if (args[i] == "/NewProject")
-                        {
-                            initialSessionPath = null;
-                        }
-                        else if (args[i] == "/DebugEditorGraphics")
-                        {
-                            EmbeddedGame.DebugMode = true;
-                        }
-                        else if (args[i] == "/RenderDoc")
-                        {
-                            // TODO: RenderDoc is not working here (when not in debug)
-                            GameStudioPreviewService.DisablePreview = true;
-                            renderDocManager = new RenderDocManager();
-                        }
-                        else if (args[i] == "/Reattach")
-                        {
-                            var debuggerProcessId = int.Parse(args[++i]);
+                        windowHandle = new IntPtr(long.Parse(args[++i]));
+                    }
+                    else if (args[i] == "/NewProject")
+                    {
+                        initialSessionPath = null;
+                    }
+                    else if (args[i] == "/DebugEditorGraphics")
+                    {
+                        EmbeddedGame.DebugMode = true;
+                    }
+                    else if (args[i] == "/RenderDoc")
+                    {
+                        // TODO: RenderDoc is not working here (when not in debug)
+                        GameStudioPreviewService.DisablePreview = true;
+                        renderDocManager = new RenderDocManager();
+                    }
+                    else if (args[i] == "/Reattach")
+                    {
+                        var debuggerProcessId = int.Parse(args[++i]);
 
-                            if (!System.Diagnostics.Debugger.IsAttached)
+                        if (!System.Diagnostics.Debugger.IsAttached)
+                        {
+                            using (var debugger = VisualStudioDebugger.GetByProcess(debuggerProcessId))
                             {
-                                using (var debugger = VisualStudioDebugger.GetByProcess(debuggerProcessId))
-                                {
-                                    debugger?.Attach();
-                                }
+                                debugger?.Attach();
                             }
                         }
-                        else if (args[i] == "/RecordEffects")
-                        {
-                            GameStudioBuilderService.GlobalEffectLogPath = args[++i];
-                        }
-                        else
-                        {
-                            initialSessionPath = args[i];
-                        }
                     }
-                    RuntimeHelpers.RunModuleConstructor(typeof(Asset).Module.ModuleHandle);
-
-                    //listen to logger for crash report
-                    GlobalLogger.GlobalMessageLogged += GlobalLoggerOnGlobalMessageLogged;
-
-                    mainDispatcher = Dispatcher.CurrentDispatcher;
-                    mainDispatcher.InvokeAsync(() => Startup(initialSessionPath));
-
-                    using (new WindowManager(mainDispatcher))
+                    else if (args[i] == "/RecordEffects")
                     {
-                        app = new App { ShutdownMode = ShutdownMode.OnExplicitShutdown };
-                        app.Activated += (sender, eventArgs) =>
-                        {
-                            XenkoGameStudio.MetricsClient?.SetActiveState(true);
-                        };
-                        app.Deactivated += (sender, eventArgs) =>
-                        {
-                            XenkoGameStudio.MetricsClient?.SetActiveState(false);
-                        };
-
-                        app.InitializeComponent();
-                        app.Run();
+                        GameStudioBuilderService.GlobalEffectLogPath = args[++i];
                     }
+                    else
+                    {
+                        initialSessionPath = args[i];
+                    }
+                }
+                RuntimeHelpers.RunModuleConstructor(typeof(Asset).Module.ModuleHandle);
 
-                    renderDocManager?.Shutdown();
-                }
-                catch (Exception e)
+                //listen to logger for crash report
+                GlobalLogger.GlobalMessageLogged += GlobalLoggerOnGlobalMessageLogged;
+
+                mainDispatcher = Dispatcher.CurrentDispatcher;
+                mainDispatcher.InvokeAsync(() => Startup(initialSessionPath));
+
+                using (new WindowManager(mainDispatcher))
                 {
-                    HandleException(e, 0);
+                    app = new App { ShutdownMode = ShutdownMode.OnExplicitShutdown };
+                    app.InitializeComponent();
+                    app.Run();
                 }
+
+                renderDocManager?.Shutdown();
+            }
+            catch (Exception e)
+            {
+                HandleException(e, 0);
             }
         }
 

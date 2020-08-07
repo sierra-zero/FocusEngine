@@ -66,8 +66,6 @@ namespace Xenko.GameStudio
             InitializeComponent();
             Application.Current.Activated += (s, e) => editor.ServiceProvider.Get<IEditorDialogService>().ShowDelayedNotifications();
             Loaded += GameStudioLoaded;
-
-            OpenMetricsProjectSession(editor);
         }
 
         private async Task ResetAllLayouts()
@@ -96,46 +94,9 @@ namespace Xenko.GameStudio
             await ReopenAssetEditors(assets);
         }
 
-        private static void OpenMetricsProjectSession(EditorViewModel editor)
-        {
-            var projectUid = editor.Session.CurrentProject?.Project.Id ?? Guid.Empty;
-
-            var execProfiles = editor.Session.LocalPackages.OfType<ProjectViewModel>().Where(x => x.Type == ProjectType.Executable);
-            var sessionPlatforms = new HashSet<PlatformType>();
-            foreach (var execProfile in execProfiles)
-            {
-                if (execProfile.Platform != PlatformType.Shared)
-                {
-                    sessionPlatforms.Add(execProfile.Platform);
-                }
-            }
-            if (sessionPlatforms.Count > 0)
-            {
-                var metricData = new StringBuilder();
-                foreach (var sessionPlatform in sessionPlatforms)
-                {
-                    metricData.Append($"#platform:{sessionPlatform}|");
-                }
-                metricData.Remove(metricData.Length - 1, 1);
-
-                XenkoGameStudio.MetricsClient?.OpenProjectSession($"#projectUid:{projectUid}|{metricData}");
-            }
-            else
-            {
-                XenkoGameStudio.MetricsClient?.OpenProjectSession($"#projectUid:{projectUid}|#platform:None");
-            }
-        }
-
         protected override void OnClosed(EventArgs e)
         {
             base.OnClosed(e);
-
-            CloseMetricsProjectSession();
-        }
-
-        private static void CloseMetricsProjectSession()
-        {
-            XenkoGameStudio.MetricsClient?.CloseProjectSession();
         }
 
         public EditorViewModel Editor => (EditorViewModel)DataContext;

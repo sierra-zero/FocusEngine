@@ -3,7 +3,6 @@
 #pragma warning disable 436 // The type 'type' in 'assembly' conflicts with the imported type 'type2' in 'assembly' (due to XenkoVersion being duplicated)
 
 using Xenko.Core.Annotations;
-using Xenko.Metrics;
 
 namespace Xenko.GameStudio
 {
@@ -37,7 +36,5 @@ namespace Xenko.GameStudio
 
         [NotNull]
         public static string ReportIssueUrl => "https://github.com/xenko3d/xenko/issues/";
-
-        public static MetricsClient MetricsClient;
     }
 }

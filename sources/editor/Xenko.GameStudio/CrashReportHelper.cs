@@ -186,7 +186,6 @@ namespace Xenko.GameStudio
 
             var reporter = new CrashReportForm(crashReport, new ReportSettings());
             var result = reporter.ShowDialog();
-            XenkoGameStudio.MetricsClient?.CrashedSession(result == DialogResult.Yes);
         }
 
         private static void ExpandAction(TransactionViewModel actionItem, StringBuilder sb, int increment)
