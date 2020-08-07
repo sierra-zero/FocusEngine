@@ -5,13 +5,13 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.InteropServices;
 
-namespace Xenko.Updater
+namespace Xenko.Core
 {
     /// <summary>
     /// Various helpers for blittable types.
     /// </summary>
     // TODO: We should switch to something determined at compile time with assembly processor?
-    internal static class BlittableHelper
+    public static class BlittableHelper
     {
         private static Dictionary<Type, bool> blittableTypesCache = new Dictionary<Type, bool>();
 
