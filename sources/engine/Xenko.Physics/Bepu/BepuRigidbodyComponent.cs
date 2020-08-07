@@ -193,12 +193,12 @@ namespace Xenko.Physics.Bepu
 
                 // remove me with the old shape
                 bs.internalSimulation.Bodies.Remove(InternalBody.Handle);
-                BepuSimulation.RigidMappings.Remove(InternalBody.Handle.Value);
+                BepuSimulation.RigidMappings[InternalBody.Handle.Value] = null;
 
                 // add me with the new shape
                 bodyDescription.Collidable = ColliderShape.GenerateDescription(bs.internalSimulation, SpeculativeMargin);
                 InternalBody.Handle = bs.internalSimulation.Bodies.Add(bodyDescription);
-                BepuSimulation.RigidMappings[InternalBody.Handle.Value] = this;
+                BepuSimulation.AddBodyReference(this);
             }
         }
 

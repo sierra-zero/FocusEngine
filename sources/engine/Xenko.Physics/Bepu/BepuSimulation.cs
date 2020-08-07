@@ -103,8 +103,8 @@ namespace Xenko.Physics.Bepu
         /// </summary>
         public static bool DisableSimulation = false;
 
-        internal static Dictionary<int, BepuStaticColliderComponent> StaticMappings = new Dictionary<int, BepuStaticColliderComponent>();
-        internal static Dictionary<int, BepuRigidbodyComponent> RigidMappings = new Dictionary<int, BepuRigidbodyComponent>();
+        internal static BepuStaticColliderComponent[] StaticMappings = new BepuStaticColliderComponent[64];
+        internal static BepuRigidbodyComponent[] RigidMappings = new BepuRigidbodyComponent[64];
 
         internal List<BepuRigidbodyComponent> AllRigidbodies = new List<BepuRigidbodyComponent>();
 
@@ -129,13 +129,11 @@ namespace Xenko.Physics.Bepu
                             pool.Clear();
                     }
 
-                    for (int i = 0; i < AllRigidbodies.Count; i++)
-                        AllRigidbodies[i].InternalBody.Handle.Value = -1;
-                    foreach (BepuStaticColliderComponent sc in StaticMappings.Values)
-                        sc.myStaticHandle.Value = -1;
+                    for (int i = 0; i < RigidMappings.Length; i++)
+                        RigidMappings[i] = null;
+                    for (int i = 0; i < StaticMappings.Length; i++)
+                        StaticMappings[i] = null;
 
-                    StaticMappings.Clear();
-                    RigidMappings.Clear();
                     AllRigidbodies.Clear();
                 }
 
@@ -227,7 +225,7 @@ namespace Xenko.Physics.Bepu
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public void RecordContact<TManifold>(BepuPhysicsComponent A, BepuPhysicsComponent B, TManifold manifold) where TManifold : struct, IContactManifold<TManifold>
+            public void RecordContact<TManifold>(BepuPhysicsComponent A, BepuPhysicsComponent B, ref TManifold manifold) where TManifold : struct, IContactManifold<TManifold>
             {
                 // sanity checking
                 if (A == null || B == null || manifold.Count == 0) return;
@@ -278,7 +276,7 @@ namespace Xenko.Physics.Bepu
                 pairMaterial.SpringSettings.TwiceDampingRatio = (a.SpringSettings.TwiceDampingRatio + b.SpringSettings.TwiceDampingRatio) * 0.5f;
                 if (((uint)a.CanCollideWith & (uint)b.CollisionGroup) != 0)
                 {
-                    RecordContact(a, b, manifold);
+                    RecordContact(a, b, ref manifold);
                     return !a.GhostBody && !b.GhostBody;
                 }
                 return false;
@@ -301,7 +299,7 @@ namespace Xenko.Physics.Bepu
                 BepuPhysicsComponent B = getFromReference(pair.B);
                 if (((uint)A.CanCollideWith & (uint)B.CollisionGroup) != 0)
                 {
-                    RecordContact(A, B, manifold);
+                    RecordContact(A, B, ref manifold);
                     return !A.GhostBody && !B.GhostBody;
                 }
                 return false;
@@ -430,6 +428,24 @@ namespace Xenko.Physics.Bepu
 
         public RenderGroup ColliderShapesRenderGroup { get; set; } = RenderGroup.Group0;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static void AddBodyReference(BepuStaticColliderComponent component)
+        {
+            if (component.HandleIndex >= StaticMappings.Length)
+                Array.Resize(ref StaticMappings, StaticMappings.Length * 2);
+
+            StaticMappings[component.HandleIndex] = component;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static void AddBodyReference(BepuRigidbodyComponent component)
+        {
+            if (component.HandleIndex >= RigidMappings.Length)
+                Array.Resize(ref RigidMappings, RigidMappings.Length * 2);
+
+            RigidMappings[component.HandleIndex] = component;
+        }
+
         internal void ProcessAdds()
         {
             foreach (BepuPhysicsComponent component in ToBeAdded)
@@ -443,7 +459,7 @@ namespace Xenko.Physics.Bepu
                     {
                         scc.staticDescription.Collidable = scc.ColliderShape.GenerateDescription(internalSimulation, scc.SpeculativeMargin);
                         scc.myStaticHandle = internalSimulation.Statics.Add(scc.staticDescription);
-                        StaticMappings[scc.myStaticHandle.Value] = scc;
+                        AddBodyReference(scc);
                     }
                 }
                 else if (component is BepuRigidbodyComponent rigidBody)
@@ -453,7 +469,7 @@ namespace Xenko.Physics.Bepu
                         rigidBody.bodyDescription.Collidable = rigidBody.ColliderShape.GenerateDescription(internalSimulation, rigidBody.SpeculativeMargin);
                         AllRigidbodies.Add(rigidBody);
                         rigidBody.InternalBody.Handle = internalSimulation.Bodies.Add(rigidBody.bodyDescription);
-                        RigidMappings[rigidBody.InternalBody.Handle.Value] = rigidBody;
+                        AddBodyReference(rigidBody);
                     }
                     component.Position = component.Entity.Transform.WorldPosition() - (rigidBody.LocalPhysicsOffset ?? Vector3.Zero);
                     component.Rotation = component.Entity.Transform.WorldRotation();
@@ -474,7 +490,7 @@ namespace Xenko.Physics.Bepu
                     {
                         scc.myStaticHandle.Value = -1;
                         internalSimulation.Statics.Remove(sh);
-                        StaticMappings.Remove(sh.Value);
+                        StaticMappings[sh.Value] = null;
                     }
                     if (scc.DisposeMeshOnDetach) scc.DisposeMesh();
                 } 
@@ -485,7 +501,7 @@ namespace Xenko.Physics.Bepu
                     {
                         rigidBody.InternalBody.Handle.Value = -1;
                         internalSimulation.Bodies.Remove(bh);
-                        RigidMappings.Remove(bh.Value);
+                        RigidMappings[bh.Value] = null;
                         AllRigidbodies.Remove(rigidBody);
                     }
 
