@@ -168,7 +168,7 @@ namespace Xenko.Rendering.UI
                     CameraComponent cameraComponent = renderView.Camera as CameraComponent;
                     if (cameraComponent != null)
                         uiElementState.Update(renderObject, cameraComponent.VerticalFieldOfView,
-                                              ref renderView.View, ref renderView.Projection, cameraComponent.Entity.Transform.WorldPosition());
+                                              ref renderView.View, ref renderView.Projection);
                 }
 
                 if (renderObject.Source is UIComponent uic)
@@ -383,7 +383,7 @@ namespace Xenko.Rendering.UI
                 WorldViewProjectionMatrix = Matrix.Identity;
             }
 
-            public void Update(RenderUIElement renderObject, float vFoV, ref Matrix viewMatrix, ref Matrix projMatrix, Vector3 camPosition)
+            public void Update(RenderUIElement renderObject, float vFoV, ref Matrix viewMatrix, ref Matrix projMatrix)
             {
                 var worldMatrix = renderObject.WorldMatrix;
 
@@ -419,18 +419,11 @@ namespace Xenko.Rendering.UI
 
                     if (renderObject.IsFixedSize)
                     {
-                        forwardVector.Normalize();
-                        var distVec = (worldMatrix.TranslationVector - camPosition);
-                        float distScalar;
-                        Vector3.Dot(ref forwardVector, ref distVec, out distScalar);
-                        distScalar = Math.Abs(distScalar);
+                        var distVec = (worldMatrix.TranslationVector - viewInverse.TranslationVector).Length();
 
-                        var frustumHeight = 2 * (float)Math.Tan(MathUtil.DegreesToRadians(vFoV) / 2);
-                        var worldScale = frustumHeight * distScalar * UIComponent.FixedSizeVerticalUnit; // FrustumHeight already is 2*Tan(FOV/2)
-
-                        worldMatrix.Row1 *= worldScale;
-                        worldMatrix.Row2 *= worldScale;
-                        worldMatrix.Row3 *= worldScale;
+                        worldMatrix.Row1 *= distVec;
+                        worldMatrix.Row2 *= distVec;
+                        worldMatrix.Row3 *= distVec;
                     }
 
                     // If the UI component is not drawn fullscreen it should be drawn as a quad with world sizes corresponding to its actual size
@@ -460,7 +453,7 @@ namespace Xenko.Rendering.UI
                 Matrix vm = Matrix.LookAtRH(new Vector3(0, 0, zOffset), Vector3.Zero, Vector3.UnitY);
                 Matrix pm = Matrix.PerspectiveFovRH(verticalFov, aspectRatio, nearPlane, farPlane);
 
-                Update(renderObject, MathUtil.RadiansToDegrees(verticalFov), ref vm, ref pm, Vector3.Zero);
+                Update(renderObject, MathUtil.RadiansToDegrees(verticalFov), ref vm, ref pm);
             }
         }
     }

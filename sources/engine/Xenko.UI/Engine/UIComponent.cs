@@ -144,11 +144,5 @@ namespace Xenko.Engine
         [DataMember(110)]
         [DefaultValue(1f)]
         public float SmallFactorMultiplier { get; set; } = 1f;
-
-        /// <summary>
-        /// A fixed size UI component with height of 1 will be this much of the vertical resolution on screen
-        /// </summary>
-        [DataMemberIgnore]
-        public const float FixedSizeVerticalUnit = 1;   // 100% of the vertical resolution
     }
 }
