@@ -138,7 +138,8 @@ namespace Xenko.Rendering
             // Note sure this is really a good mechanism long term (it forces to recreate multiple time the same view, instead of using RenderStage + selectors or a similar mechanism)
             // This is still supported so that existing gizmo code kept working with new graphics refactor. Might be reconsidered at some point.
             var cullingMask = view.CullingMask;
-            var sqrtCameraFov = view.CameraFOV > 0 ? Math.Sqrt(view.CameraFOV) : 0f;
+            var sqrtCameraFov = view.CameraFOV > 0f ? Math.Sqrt(view.CameraFOV) : 0f;
+            var doingSmallCulling = view.CameraFOV > 0f && (CullShadowsSmallFactor > 0f || CullSmallFactor > 0f);
 
             // Process objects
             //foreach (var renderObject in RenderObjects)
@@ -189,7 +190,7 @@ namespace Xenko.Rendering
                     }
 
                     // automatically cull really small stuff?
-                    if (view.CameraFOV > 0 && (CullShadowsSmallFactor > 0f || CullSmallFactor > 0f))
+                    if (doingSmallCulling && renderObject.SmallFactorMultiplier > 0f)
                     {
                         ref var bb = ref renderObject.BoundingBox;
                         double dist = (bb.Center - pointOnPlane).Length() * sqrtCameraFov;
