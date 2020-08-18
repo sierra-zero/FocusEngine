@@ -24,7 +24,7 @@ namespace Xenko.UI.Renderers
 
             var textBlock = (TextBlock)element;
 
-            if (textBlock.Font == null || textBlock.TextToDisplay == null)
+            if (textBlock.Font == null || (textBlock.TextToDisplay?.Length ?? 0) == 0)
                 return;
 
             var drawCommand = new SpriteFont.InternalUIDrawCommand {
