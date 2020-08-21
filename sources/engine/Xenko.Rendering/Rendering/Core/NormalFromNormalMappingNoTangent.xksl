@@ -5,12 +5,6 @@
 /// </summary>
 shader NormalFromNormalMappingNoTangent : NormalBase, Transformation
 {
-    override stage void GenerateNormal_VS()
-    {
-        // Perform normal generation at the end in case meshNormal is modified
-        streams.meshNormalWS = mul(streams.meshNormal, (float3x3)WorldInverseTranspose);    // TODO: PERFORMANCE: Normalization required?
-    }
-
     override stage void GenerateNormal_PS()
     {
         // Normalize just once the normal coming from the vertex shader
@@ -21,6 +15,6 @@ shader NormalFromNormalMappingNoTangent : NormalBase, Transformation
     
     stage override void UpdateNormalFromTangentSpace(float3 normalInTangentSpace)
     {
-        streams.normalWS = normalInTangentSpace;
+        streams.normalWS = mul(normalInTangentSpace, (float3x3)WorldInverseTranspose);
     }
 };
