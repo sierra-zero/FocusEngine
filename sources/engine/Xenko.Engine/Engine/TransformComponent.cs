@@ -14,6 +14,13 @@ using Xenko.VirtualReality;
 
 namespace Xenko.Engine
 {
+    public enum IMMOBILITY
+    {
+        FullMotion = 0,
+        EverythingImmobile = 1,
+        JustMeImmobile = 2
+    }
+
     /// <summary>
     /// Defines Position, Rotation and Scale of its <see cref="Entity"/>.
     /// </summary>
@@ -104,6 +111,21 @@ namespace Xenko.Engine
         /// </summary>
         static public TransformComponent LastRightHandTracked { get; private set; }
 
+        /// <summary>
+        /// Does this transform component (and its children) not move? If so, we can do some performance improvements
+        /// </summary>
+        [DataMember(50)]
+        [DefaultValue(IMMOBILITY.FullMotion)]
+        public IMMOBILITY Immobile { get; set; } = IMMOBILITY.FullMotion;
+
+        /// <summary>
+        /// If we are immobile, do one transform update to set initial (or just moved) position
+        /// </summary>
+        [DataMemberIgnore]
+        [DefaultValue(true)]
+        public bool UpdateImmobilePosition { get; set; } = true;
+
+
         [DataMemberIgnore]
         public TransformLink TransformLink;
 
@@ -131,20 +153,6 @@ namespace Xenko.Engine
             get { return useTRS; }
             set { useTRS = value; }
         }
-
-        /// <summary>
-        /// Does this transform component (and its children) not move? If so, we can do some performance improvements
-        /// </summary>
-        [DataMember]
-        [DefaultValue(false)]
-        public bool Immobile { get; set; }
-
-        /// <summary>
-        /// If we are immobile, do one transform update to set initial (or just moved) position
-        /// </summary>
-        [DataMemberIgnore]
-        [DefaultValue(true)]
-        public bool UpdateImmobilePosition { get; set; } = true;
 
         /// <summary>
         /// Gets the children of this <see cref="TransformComponent"/>.

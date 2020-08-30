@@ -112,15 +112,26 @@ namespace Xenko.Engine.Processors
         private static void UpdateTransformationAndChildren(TransformComponent transformation)
         {
             // if we are an immobile transform, skip doing math/recusion on this
-            if (transformation.Immobile)
+            switch (transformation.Immobile)
             {
-                if (transformation.UpdateImmobilePosition == false)
-                    return;
+                case IMMOBILITY.EverythingImmobile:
+                    if (transformation.UpdateImmobilePosition == false)
+                        return;
 
-                transformation.UpdateImmobilePosition = false;
+                    transformation.UpdateImmobilePosition = false;
+
+                    UpdateTransformation(transformation);
+                    break;
+                case IMMOBILITY.JustMeImmobile:
+                    if (transformation.UpdateImmobilePosition)
+                        UpdateTransformation(transformation);
+
+                    transformation.UpdateImmobilePosition = false;
+                    break;
+                case IMMOBILITY.FullMotion:
+                    UpdateTransformation(transformation);
+                    break;
             }
-
-            UpdateTransformation(transformation);
 
             // Recurse
             if (transformation.Children.Count > 0)
@@ -157,7 +168,7 @@ namespace Xenko.Engine.Processors
             notSpecialRootComponents.Clear();
             foreach (var t in TransformationRoots)
             {
-                if (t.Immobile == false || t.UpdateImmobilePosition)
+                if (t.UpdateImmobilePosition || t.Immobile != IMMOBILITY.EverythingImmobile)
                     notSpecialRootComponents.Add(t);
             }
 
