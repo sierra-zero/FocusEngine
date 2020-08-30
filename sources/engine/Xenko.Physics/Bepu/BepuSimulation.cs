@@ -613,10 +613,29 @@ namespace Xenko.Physics.Bepu
         }
 
         /// <summary>
-        /// Raycasts and returns the closest hit
+        /// Raycasts and returns the closest hit, if possible without locking the broadphase
         /// </summary>
         /// <param name="from">From.</param>
         /// <param name="to">To.</param>
+        /// <param name="filterGroup">The collision group of this raycast</param>
+        /// <param name="hitGroups">The collision group that this raycast can collide with</param>
+        /// <returns>true if result was successfully updated, false otherwise</returns>
+        public bool TryFastRaycast(out BepuHitResult result, Vector3 from, Vector3 to, CollisionFilterGroupFlags hitGroups = DefaultFlags, BepuPhysicsComponent skipComponent = null)
+        {
+            Vector3 diff = to - from;
+            float length = diff.Length();
+            float inv = 1.0f / length;
+            diff.X *= inv;
+            diff.Y *= inv;
+            diff.Z *= inv;
+            return TryFastRaycast(out result, from, diff, length, hitGroups, skipComponent);
+        }
+
+        /// <summary>
+        /// Raycasts and returns the closest hit
+        /// </summary>
+        /// <param name="from">From.</param>
+        /// <param name="direction">normalized direction<param>
         /// <param name="filterGroup">The collision group of this raycast</param>
         /// <param name="hitGroups">The collision group that this raycast can collide with</param>
         /// <returns>The list with hit results.</returns>
@@ -631,9 +650,43 @@ namespace Xenko.Physics.Bepu
             };
             using(simulationLocker.ReadLock())
             {
-                internalSimulation.RayCast(new System.Numerics.Vector3(from.X, from.Y, from.Z), new System.Numerics.Vector3(direction.X, direction.Y, direction.Z), length, ref rhch);
+                lock (internalSimulation.BroadphaseLocker)
+                {
+                    internalSimulation.RayCast(new System.Numerics.Vector3(from.X, from.Y, from.Z), new System.Numerics.Vector3(direction.X, direction.Y, direction.Z), length, ref rhch);
+                }
             }
             return rhch.HitCollidable;
+        }
+
+        /// <summary>
+        /// Tries to do a raycast right now without locking the broadphase
+        /// </summary>
+        /// <param name="from">From.</param>
+        /// <param name="direction">normalized direction</param>
+        /// <param name="filterGroup">The collision group of this raycast</param>
+        /// <param name="hitGroups">The collision group that this raycast can collide with</param>
+        /// <returns>true if a successful raycast was done, false if result is left untouched</returns>
+        public bool TryFastRaycast(out BepuHitResult result, Vector3 from, Vector3 direction, float length, CollisionFilterGroupFlags hitGroups = DefaultFlags, BepuPhysicsComponent skipComponent = null)
+        {
+            RayHitClosestHandler rhch = new RayHitClosestHandler()
+            {
+                findGroups = hitGroups,
+                startLength = length,
+                furthestHitSoFar = float.MaxValue,
+                skipComponent = skipComponent
+            };
+            using (simulationLocker.ReadLock())
+            {
+                if (Monitor.TryEnter(internalSimulation.BroadphaseLocker))
+                {
+                    internalSimulation.RayCast(new System.Numerics.Vector3(from.X, from.Y, from.Z), new System.Numerics.Vector3(direction.X, direction.Y, direction.Z), length, ref rhch);
+                    Monitor.Exit(internalSimulation.BroadphaseLocker);
+                    result = rhch.HitCollidable;
+                    return true;
+                }
+            }
+            result = default;
+            return false;
         }
 
         /// <summary>
@@ -675,7 +728,10 @@ namespace Xenko.Physics.Bepu
             };
             using (simulationLocker.ReadLock())
             {
-                internalSimulation.RayCast(new System.Numerics.Vector3(from.X, from.Y, from.Z), new System.Numerics.Vector3(direction.X, direction.Y, direction.Z), length, ref rhch);
+                lock (internalSimulation.BroadphaseLocker)
+                {
+                    internalSimulation.RayCast(new System.Numerics.Vector3(from.X, from.Y, from.Z), new System.Numerics.Vector3(direction.X, direction.Y, direction.Z), length, ref rhch);
+                }
             }
         }
 
@@ -831,7 +887,10 @@ namespace Xenko.Physics.Bepu
             rp.Orientation.W = rotation.W;
             using (simulationLocker.ReadLock())
             {
-                internalSimulation.Sweep(shape, rp, new BodyVelocity(new System.Numerics.Vector3(direction.X, direction.Y, direction.Z)), length, safeBufferPool, ref sshh);
+                lock (internalSimulation.BroadphaseLocker)
+                {
+                    internalSimulation.Sweep(shape, rp, new BodyVelocity(new System.Numerics.Vector3(direction.X, direction.Y, direction.Z)), length, safeBufferPool, ref sshh);
+                }
             }
             return sshh.result;
         }
@@ -885,7 +944,10 @@ namespace Xenko.Physics.Bepu
             rp.Orientation.W = rotation.W;
             using (simulationLocker.ReadLock())
             {
-                internalSimulation.Sweep(shape, rp, new BodyVelocity(new System.Numerics.Vector3(direction.X, direction.Y, direction.Z)), length, safeBufferPool, ref sshh);
+                lock (internalSimulation.BroadphaseLocker)
+                {
+                    internalSimulation.Sweep(shape, rp, new BodyVelocity(new System.Numerics.Vector3(direction.X, direction.Y, direction.Z)), length, safeBufferPool, ref sshh);
+                }
             }
         }
 
