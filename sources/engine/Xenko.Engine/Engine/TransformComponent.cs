@@ -133,6 +133,20 @@ namespace Xenko.Engine
         }
 
         /// <summary>
+        /// Does this transform component (and its children) not move? If so, we can do some performance improvements
+        /// </summary>
+        [DataMember]
+        [DefaultValue(false)]
+        public bool Immobile { get; set; }
+
+        /// <summary>
+        /// If we are immobile, do one transform update to set initial (or just moved) position
+        /// </summary>
+        [DataMemberIgnore]
+        [DefaultValue(true)]
+        public bool UpdateImmobilePosition { get; set; } = true;
+
+        /// <summary>
         /// Gets the children of this <see cref="TransformComponent"/>.
         /// </summary>
         public FastCollection<TransformComponent> Children => children;

@@ -111,6 +111,15 @@ namespace Xenko.Engine.Processors
 
         private static void UpdateTransformationAndChildren(TransformComponent transformation)
         {
+            // if we are an immobile transform, skip doing math/recusion on this
+            if (transformation.Immobile)
+            {
+                if (transformation.UpdateImmobilePosition == false)
+                    return;
+
+                transformation.UpdateImmobilePosition = false;
+            }
+
             UpdateTransformation(transformation);
 
             // Recurse
@@ -147,7 +156,10 @@ namespace Xenko.Engine.Processors
         {
             notSpecialRootComponents.Clear();
             foreach (var t in TransformationRoots)
-                notSpecialRootComponents.Add(t);
+            {
+                if (t.Immobile == false || t.UpdateImmobilePosition)
+                    notSpecialRootComponents.Add(t);
+            }
 
             // Update scene transforms
             // TODO: Entity processors should not be aware of scenes

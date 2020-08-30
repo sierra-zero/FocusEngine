@@ -77,6 +77,7 @@ public static class EntityPool {
             }
             obj.Transform.Position = pos ?? Vector3.Zero;
             obj.Transform.Rotation = rot ?? Quaternion.Identity;
+            obj.Transform.UpdateImmobilePosition = true;
             return obj;
         }
 
