@@ -119,14 +119,14 @@ namespace Xenko.Engine.Processors
                         return;
 
                     transformation.UpdateImmobilePosition = false;
-
                     UpdateTransformation(transformation);
                     break;
                 case IMMOBILITY.JustMeImmobile:
                     if (transformation.UpdateImmobilePosition)
+                    {
+                        transformation.UpdateImmobilePosition = false;
                         UpdateTransformation(transformation);
-
-                    transformation.UpdateImmobilePosition = false;
+                    }
                     break;
                 case IMMOBILITY.FullMotion:
                     UpdateTransformation(transformation);
