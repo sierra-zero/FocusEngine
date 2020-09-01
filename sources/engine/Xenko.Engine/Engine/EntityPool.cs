@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using Xenko.Core.Mathematics;
 using Xenko.Engine;
@@ -100,7 +101,7 @@ public static class EntityPool {
     }
 
     // All of our pools
-    static Dictionary<Entity, Pool> pools = new Dictionary<Entity, Pool>();
+    static ConcurrentDictionary<Entity, Pool> pools = new ConcurrentDictionary<Entity, Pool>();
 
     /// <summary>
     /// Init our dictionary.
