@@ -101,37 +101,40 @@ namespace Xenko.Graphics
 
         public override unsafe void Present()
         {
+            // remember which frame we need to present (for presenting thread)
             presentFrame = currentBufferIndex;
 
             VkResult result;
             
-            // Get next image without waiting
+            // try to get the next frame
             using (GraphicsDevice.QueueLock.ReadLock())
             {
-                result = vkAcquireNextImageKHR(GraphicsDevice.NativeDevice, swapChain, 0, VkSemaphore.Null, presentFence, out currentBufferIndex);
+                result = vkAcquireNextImageKHR(GraphicsDevice.NativeDevice, swapChain, (ulong)0, VkSemaphore.Null, presentFence, out currentBufferIndex);
             }
 
             // say we can present
             presentWaiter.Set();
 
-            // did we get another image?
-            if (result != VkResult.Success)
-            {
-                // let's try again with a longer timeout (0.5 second)
-                using (GraphicsDevice.QueueLock.ReadLock())
-                {
-                    result = vkAcquireNextImageKHR(GraphicsDevice.NativeDevice, swapChain, (ulong)500000000, VkSemaphore.Null, presentFence, out currentBufferIndex);
-                }
-
-                // still couldn't get a good image, just use the next one... may cause flickering
-                if (result != VkResult.Success)
-                    currentBufferIndex = (presentFrame + 1) % (uint)swapchainImages.Length;
-            }
-
-            // reset dummy fence
+            // make sure fence is reset
             fixed (VkFence* fences = &presentFence)
             {
                 vkResetFences(GraphicsDevice.NativeDevice, 1, fences);
+            }
+
+            // did we get another image?
+            while (result != VkResult.Success)
+            {
+                // try to get the next frame (again)
+                using (GraphicsDevice.QueueLock.ReadLock())
+                {
+                    result = vkAcquireNextImageKHR(GraphicsDevice.NativeDevice, swapChain, (ulong)0, VkSemaphore.Null, presentFence, out currentBufferIndex);
+                }
+
+                // make sure fence is reset
+                fixed (VkFence* fences = &presentFence)
+                {
+                    vkResetFences(GraphicsDevice.NativeDevice, 1, fences);
+                }
             }
 
             // Flip render targets
