@@ -98,8 +98,8 @@ namespace Xenko.Audio
         /// </summary>
         internal void StopAllInstances()
         {
-            foreach (var instance in Instances)
-                instance.Stop();
+            for (int i = 0; i < Instances.Count; i++)
+                Instances[i].Stop();
         }
 
         /// <summary>
@@ -108,10 +108,11 @@ namespace Xenko.Audio
         /// <param name="mainInstance">The main instance of the sound effect</param>
         internal void StopConcurrentInstances(SoundInstance mainInstance)
         {
-            foreach (var instance in Instances)
+            for (int i=0; i<Instances.Count; i++)
             {
-                if (instance != mainInstance)
-                    instance.Stop();
+                SoundInstance si = Instances[i];
+                if (si != mainInstance)
+                    si.Stop();
             }
         }
 
@@ -121,8 +122,11 @@ namespace Xenko.Audio
         /// <param name="instance"></param>
         internal void UnregisterInstance(SoundInstance instance)
         {
-            if (!Instances.Remove(instance))
-                throw new AudioSystemInternalException("Tried to unregister soundEffectInstance while not contained in the instance list.");
+            lock (Instances)
+            {
+                if (!Instances.Remove(instance))
+                    throw new AudioSystemInternalException("Tried to unregister soundEffectInstance while not contained in the instance list.");
+            }
         }
 
         /// <summary>
@@ -131,7 +135,10 @@ namespace Xenko.Audio
         /// <param name="instance">new instance to register.</param>
         protected void RegisterInstance(SoundInstance instance)
         {
-            Instances.Add(instance);
+            lock (Instances)
+            {
+                Instances.Add(instance);
+            }
             intancesCreationCount++;
         }
 

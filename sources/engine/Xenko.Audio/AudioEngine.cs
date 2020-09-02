@@ -153,12 +153,13 @@ namespace Xenko.Audio
             {
                 foreach (var sound in notDisposedSounds)
                 {
-                    foreach (var instance in sound.Instances)
+                    for (int i=0; i<sound.Instances.Count; i++)
                     {
-                        if (instance?.PlayState == PlayState.Playing)
+                        SoundInstance si = sound.Instances[i];
+                        if (si?.PlayState == PlayState.Playing)
                         {
-                            instance.Pause();
-                            pausedSounds.Add(instance);
+                            si.Pause();
+                            pausedSounds.Add(si);
                         }
                     }
                 }
