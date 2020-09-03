@@ -26,7 +26,6 @@ namespace Xenko.Rendering
 
         private EffectCompilerParameters effectCompilerParameters = EffectCompilerParameters.Default;
 
-        private IGraphicsDeviceService graphicsDeviceService;
         private EffectCompilerBase compiler;
         private readonly Dictionary<string, List<CompilerResults>> earlyCompilerCache = new Dictionary<string, List<CompilerResults>>();
         private Dictionary<EffectBytecode, Effect> cachedEffects = new Dictionary<EffectBytecode, Effect>();
@@ -65,10 +64,9 @@ namespace Xenko.Rendering
         {
             base.Initialize();
 
-            isInitialized = true;
 
             // Get graphics device service
-            graphicsDeviceService = Services.GetSafeServiceAs<IGraphicsDeviceService>();
+            base.InitGraphicsDeviceService();
 
 #if XENKO_PLATFORM_WINDOWS_DESKTOP
             Enabled = true;
@@ -76,6 +74,8 @@ namespace Xenko.Rendering
             directoryWatcher.Modified += FileModifiedEvent;
             // TODO: xkfx too
 #endif
+
+            isInitialized = true;
         }
 
         public void SetCompilationMode(CompilationMode compilationMode)
@@ -210,7 +210,7 @@ namespace Xenko.Rendering
 
                 if (!cachedEffects.TryGetValue(bytecode, out effect))
                 {
-                    effect = new Effect(graphicsDeviceService.GraphicsDevice, bytecode) { Name = effectName };
+                    effect = new Effect(GraphicsDevice, bytecode) { Name = effectName };
                     cachedEffects.Add(bytecode, effect);
 
 #if XENKO_PLATFORM_WINDOWS_DESKTOP

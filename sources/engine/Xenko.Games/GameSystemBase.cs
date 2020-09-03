@@ -137,7 +137,7 @@ namespace Xenko.Games
         {
         }
 
-        private void InitGraphicsDeviceService()
+        protected void InitGraphicsDeviceService()
         {
             if (graphicsDeviceService == null)
             {
