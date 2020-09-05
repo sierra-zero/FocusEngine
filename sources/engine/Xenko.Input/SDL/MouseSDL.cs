@@ -64,9 +64,22 @@ namespace Xenko.Input
                     relativeCapturedPosition = uiControl.RelativeCursorPosition;
                 }
 
-                uiControl.SetRelativeMouseMode(true);
-
                 isMousePositionLocked = true;
+                needsRelativeSync = true;
+            }
+        }
+
+        /// <summary>
+        /// Setting relative mode for SDL is NOT thread safe (like during events), this makes sure it happens on the main thread ONLY
+        /// </summary>
+        internal bool needsRelativeSync;
+
+        internal void SyncRelativeMode()
+        {
+            if (needsRelativeSync)
+            {
+                needsRelativeSync = false;
+                uiControl.SetRelativeMouseMode(isMousePositionLocked);
             }
         }
 
@@ -74,9 +87,9 @@ namespace Xenko.Input
         {
             if (IsPositionLocked)
             {
-                uiControl.SetRelativeMouseMode(false);
                 uiControl.RelativeCursorPosition = relativeCapturedPosition;
                 isMousePositionLocked = false;
+                needsRelativeSync = true;
                 relativeCapturedPosition = Point.Zero;
             }
         }

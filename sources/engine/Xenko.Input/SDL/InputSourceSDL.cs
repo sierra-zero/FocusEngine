@@ -68,14 +68,20 @@ namespace Xenko.Input
 
         public override void Update()
         {
-            // Notify event listeners of device removals
-            foreach (var deviceIdToRemove in devicesToRemove)
+            if (devicesToRemove.Count > 0)
             {
-                var gameController = Devices[deviceIdToRemove];
-                (gameController as IDisposable)?.Dispose();
-                UnregisterDevice(gameController);
+                // Notify event listeners of device removals
+                foreach (var deviceIdToRemove in devicesToRemove)
+                {
+                    var gameController = Devices[deviceIdToRemove];
+                    (gameController as IDisposable)?.Dispose();
+                    UnregisterDevice(gameController);
+                }
+                devicesToRemove.Clear();
             }
-            devicesToRemove.Clear();
+
+            // do we need to make sure relative mode is set correctly?
+            mouse.SyncRelativeMode();
         }
 
         public override void Scan()
