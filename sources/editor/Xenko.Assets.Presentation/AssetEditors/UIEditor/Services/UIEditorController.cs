@@ -75,24 +75,20 @@ namespace Xenko.Assets.Presentation.AssetEditors.UIEditor.Services
             resolution = Vector3.Max((Vector3)e.NewValue, Vector3.One);
             await InvokeAsync(() =>
             {
-                var size = resolution / DesignDensity;
                 var uiComponent = GetEntityByName(DesignAreaEntityName)?.Get<UIComponent>();
                 if (uiComponent != null)
                 {
                     uiComponent.Resolution = resolution;
-                    uiComponent.Size = size;
                 }
                 uiComponent = GetEntityByName(UIEntityName)?.Get<UIComponent>();
                 if (uiComponent != null)
                 {
                     uiComponent.Resolution = resolution;
-                    uiComponent.Size = size;
                 }
                 uiComponent = GetEntityByName(AdornerEntityName)?.Get<UIComponent>();
                 if (uiComponent != null)
                 {
                     uiComponent.Resolution = resolution*2;
-                    uiComponent.Size = size*2;
                 }
                 AdornerService.Refresh().Forget();
             });
@@ -128,7 +124,6 @@ namespace Xenko.Assets.Presentation.AssetEditors.UIEditor.Services
                     IsFullScreen = false,
                     Resolution = resolution,
                     ResolutionStretch = ResolutionStretch.FixedWidthFixedHeight,
-                    Size = size,
                 }
             };
             var designArea = new Entity(DesignAreaEntityName)
@@ -149,7 +144,6 @@ namespace Xenko.Assets.Presentation.AssetEditors.UIEditor.Services
                     IsFullScreen = false,
                     Resolution = resolution,
                     ResolutionStretch = ResolutionStretch.FixedWidthFixedHeight,
-                    Size = size,
                 }
             };
             designArea.Transform.Position.Z = -10;
@@ -170,7 +164,6 @@ namespace Xenko.Assets.Presentation.AssetEditors.UIEditor.Services
                     IsFullScreen = false,
                     Resolution = resolution*2,
                     ResolutionStretch = ResolutionStretch.FixedWidthFixedHeight,
-                    Size = size*2,
                 }
             };
             uiAdorners.Transform.Position.Z = 10;
@@ -399,7 +392,7 @@ namespace Xenko.Assets.Presentation.AssetEditors.UIEditor.Services
 
             var uiEntity = GetEntityByName(AdornerEntityName);
             var uiComponent = uiEntity.Get<UIComponent>();
-            var worldMatrix = Matrix.Scaling(uiComponent.Size / uiComponent.Resolution) * uiEntity.Transform.WorldMatrix;
+            var worldMatrix = Matrix.Scaling(1f / uiComponent.Resolution) * uiEntity.Transform.WorldMatrix;
             // Rotation of Pi along 0x to go from UI space to world space
             worldMatrix.Row2 = -worldMatrix.Row2;
             worldMatrix.Row3 = -worldMatrix.Row3;

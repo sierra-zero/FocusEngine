@@ -73,7 +73,6 @@ namespace Xenko.Assets.Presentation.Thumbnails
                 {
                     Page = LoadedAsset,
                     Resolution = designResolution,
-                    Size = designResolution / UIEditorController.DesignDensity,
                     IsFullScreen = false,
                 });
 

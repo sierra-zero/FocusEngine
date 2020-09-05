@@ -28,7 +28,6 @@ namespace Xenko.Engine
         public UIComponent()
         {
             Resolution = new Vector3(DefaultWidth, DefaultHeight, DefaultDepth);
-            Size = Vector3.One;
         }
 
         /// <summary>
@@ -72,14 +71,6 @@ namespace Xenko.Engine
         /// </summary>
         [DataMemberIgnore]
         public Vector3 RenderedResolution { get; internal set; }
-
-        /// <summary>
-        /// Gets or sets the actual size of the UI component in world units. This value is ignored in fullscreen mode.
-        /// </summary>
-        /// <userdoc>The actual size of the UI component in world units. This value is ignored in fullscreen mode.</userdoc>
-        [DataMember(35)]
-        [Display("Size")]
-        public Vector3 Size { get; set; }
 
         /// <summary>
         /// Gets or sets the camera.

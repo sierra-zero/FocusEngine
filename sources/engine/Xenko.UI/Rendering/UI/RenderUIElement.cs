@@ -19,7 +19,6 @@ namespace Xenko.Rendering.UI
         public UIPage Page;
         public bool IsFullScreen;
         public Vector3 Resolution;
-        public Vector3 Size;
         public ResolutionStretch ResolutionStretch;
         public bool IsBillboard;
         public bool SnapText;

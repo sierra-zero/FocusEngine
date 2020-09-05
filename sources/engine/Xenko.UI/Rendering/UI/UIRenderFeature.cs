@@ -427,7 +427,7 @@ namespace Xenko.Rendering.UI
                     }
 
                     // If the UI component is not drawn fullscreen it should be drawn as a quad with world sizes corresponding to its actual size
-                    worldMatrix = Matrix.Scaling(renderObject.Size / renderObject.Resolution) * worldMatrix;
+                    worldMatrix = Matrix.Scaling(1f / renderObject.Resolution) * worldMatrix;
 
                     // capture 3D world matrix for picking against things in 3D space
                     renderObject.WorldMatrix3D = worldMatrix;

@@ -36,9 +36,9 @@ namespace Xenko.Rendering.UI
                     if (uiComponent.IsFullScreen == false) {
                         renderUIElement.BoundingBox.Center = uiComponent.Entity.Transform.WorldPosition();
                         renderUIElement.WorldMatrix3D.GetScale(out renderUIElement.BoundingBox.Extent);
-                        renderUIElement.BoundingBox.Extent.X *= uiComponent.Size.X * 0.5f * uiComponent.Resolution.X;
-                        renderUIElement.BoundingBox.Extent.Y *= uiComponent.Size.Y * 0.5f * uiComponent.Resolution.Y;
-                        renderUIElement.BoundingBox.Extent.Z *= uiComponent.Size.Z * 0.5f * uiComponent.Resolution.Z;
+                        renderUIElement.BoundingBox.Extent.X *= 0.5f * uiComponent.Resolution.X;
+                        renderUIElement.BoundingBox.Extent.Y *= 0.5f * uiComponent.Resolution.Y;
+                        renderUIElement.BoundingBox.Extent.Z *= 0.5f * uiComponent.Resolution.Z;
                     }
                     else {
                         renderUIElement.BoundingBox.Extent = Vector3.Zero; // always draw this
@@ -54,7 +54,6 @@ namespace Xenko.Rendering.UI
                     renderUIElement.Page = uiComponent.Page;
                     renderUIElement.IsFullScreen = uiComponent.IsFullScreen;
                     renderUIElement.Resolution = uiComponent.Resolution;
-                    renderUIElement.Size = uiComponent.Size;
                     renderUIElement.ResolutionStretch = uiComponent.ResolutionStretch;
                     renderUIElement.IsBillboard = uiComponent.IsBillboard;
                     renderUIElement.SnapText = uiComponent.SnapText;
