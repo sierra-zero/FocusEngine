@@ -199,6 +199,16 @@ namespace Xenko.Core.Mathematics
         }
 
         /// <summary>
+        /// Returns the volume of the Vector3
+        /// </summary>
+        /// <returns>X * Y * Z</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public float Volume()
+        {
+            return X * Y * Z;
+        }
+
+        /// <summary>
         /// Calculates the squared length of the vector.
         /// </summary>
         /// <returns>The squared length of the vector.</returns>

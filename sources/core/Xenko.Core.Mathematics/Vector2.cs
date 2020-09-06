@@ -170,6 +170,16 @@ namespace Xenko.Core.Mathematics
         }
 
         /// <summary>
+        /// Calculates the area of the Vector2
+        /// </summary>
+        /// <returns>X * Y</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public float Area()
+        {
+            return X * Y;
+        }
+
+        /// <summary>
         /// Calculates the squared length of the vector.
         /// </summary>
         /// <returns>The squared length of the vector.</returns>
