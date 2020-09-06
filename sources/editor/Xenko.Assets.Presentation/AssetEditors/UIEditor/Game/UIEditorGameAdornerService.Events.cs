@@ -15,6 +15,7 @@ using Xenko.Rendering.UI;
 using Xenko.UI;
 using Xenko.Assets.Presentation.AssetEditors.UIEditor.ViewModels;
 using Xenko.Core;
+using Xenko.UI.Controls;
 
 namespace Xenko.Assets.Presentation.AssetEditors.UIEditor.Game
 {
@@ -323,6 +324,11 @@ namespace Xenko.Assets.Presentation.AssetEditors.UIEditor.Game
                         do {
                             mysize = lookat.Width * lookat.Height;
                             if (float.IsNaN(mysize) == false) break;
+                            if (uielement is TextBlock tb)
+                            {
+                                mysize = tb.CalculateTextSize().Area();
+                                break;
+                            }
                             if (lookat.Parent == null)
                             {
                                 mysize = uiComponent.Resolution.X * uiComponent.Resolution.Y;

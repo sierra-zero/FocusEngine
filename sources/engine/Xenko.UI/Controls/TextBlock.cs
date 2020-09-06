@@ -268,7 +268,7 @@ namespace Xenko.UI.Controls
                 realSize.X /= sizeRatio.X;
                 realSize.Y /= sizeRatio.Y;
             }
-            else
+            else if (Font.Size > 0f)
             {
                 var scaleRatio = ActualTextSize / Font.Size;
                 realSize.X *= scaleRatio;

@@ -158,6 +158,7 @@ namespace Xenko.Graphics
         /// <returns>The value of the character spacing</returns>
         public virtual float GetExtraSpacing(float fontSize)
         {
+            if (Size == 0f) return ExtraSpacing == 0f ? 1f : ExtraSpacing;
             return fontSize / Size * ExtraSpacing;
         }
 
@@ -168,6 +169,7 @@ namespace Xenko.Graphics
         /// <returns>The value of the character spacing</returns>
         public virtual float GetExtraLineSpacing(float fontSize)
         {
+            if (Size == 0f) return ExtraLineSpacing == 0f ? 1f : ExtraLineSpacing;
             return fontSize / Size * ExtraLineSpacing;
         }
 
@@ -178,6 +180,7 @@ namespace Xenko.Graphics
         /// <returns>The value of the default line spacing</returns>
         public virtual float GetFontDefaultLineSpacing(float fontSize)
         {
+            if (Size == 0f) return DefaultLineSpacing == 0f ? 1f : DefaultLineSpacing;
             return fontSize / Size * DefaultLineSpacing;
         }
 
@@ -188,6 +191,7 @@ namespace Xenko.Graphics
         /// <returns>The value of the base offset</returns>
         protected virtual float GetBaseOffsetY(float fontSize)
         {
+            if (Size == 0f) return BaseOffsetY;
             return fontSize / Size * BaseOffsetY;
         }
 
