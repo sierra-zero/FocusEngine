@@ -38,7 +38,7 @@ namespace Xenko.Assets.Presentation.AssetEditors.UIEditor.Services
     /// <seealso cref="UIEditorBaseViewModel"/>
     public abstract class UIEditorController : AssetCompositeHierarchyEditorController<PrefabEditorGame, UIElementDesign, UIElement, UIHierarchyItemViewModel>
     {
-        internal const float DesignDensity = 100.0f;
+        internal const float DesignDensity = 100f;
 
         internal const string AdornerEntityName = "AdornerEntity";
         internal const string AdornerRootElementName = "AdornerRoot";
@@ -75,20 +75,27 @@ namespace Xenko.Assets.Presentation.AssetEditors.UIEditor.Services
             resolution = Vector3.Max((Vector3)e.NewValue, Vector3.One);
             await InvokeAsync(() =>
             {
-                var uiComponent = GetEntityByName(DesignAreaEntityName)?.Get<UIComponent>();
+                var entity = GetEntityByName(DesignAreaEntityName);
+                var scale = resolution / DesignDensity;
+                var uiComponent = entity?.Get<UIComponent>();
                 if (uiComponent != null)
                 {
+                    entity.Transform.Scale = scale;
                     uiComponent.Resolution = resolution;
                 }
-                uiComponent = GetEntityByName(UIEntityName)?.Get<UIComponent>();
+                entity = GetEntityByName(UIEntityName);
+                uiComponent = entity?.Get<UIComponent>();
                 if (uiComponent != null)
                 {
+                    entity.Transform.Scale = scale;
                     uiComponent.Resolution = resolution;
                 }
-                uiComponent = GetEntityByName(AdornerEntityName)?.Get<UIComponent>();
+                entity = GetEntityByName(AdornerEntityName);
+                uiComponent = entity?.Get<UIComponent>();
                 if (uiComponent != null)
                 {
-                    uiComponent.Resolution = resolution*2;
+                    entity.Transform.Scale = scale * 2f;
+                    uiComponent.Resolution = resolution;
                 }
                 AdornerService.Refresh().Forget();
             });
@@ -114,7 +121,7 @@ namespace Xenko.Assets.Presentation.AssetEditors.UIEditor.Services
             rootElements.ForEach(r => RootElements[r.Id] = r);
 
             var resolution = uiDesign.Resolution;
-            var size = resolution / DesignDensity;
+            var scale = resolution / DesignDensity;
             var rootEntity = new Entity(UIEntityName)
             {
                 new UIComponent
@@ -126,6 +133,7 @@ namespace Xenko.Assets.Presentation.AssetEditors.UIEditor.Services
                     ResolutionStretch = ResolutionStretch.FixedWidthFixedHeight,
                 }
             };
+            rootEntity.Transform.Scale = scale;
             var designArea = new Entity(DesignAreaEntityName)
             {
                 new UIComponent
@@ -146,6 +154,7 @@ namespace Xenko.Assets.Presentation.AssetEditors.UIEditor.Services
                     ResolutionStretch = ResolutionStretch.FixedWidthFixedHeight,
                 }
             };
+            designArea.Transform.Scale = scale;
             designArea.Transform.Position.Z = -10;
             var uiAdorners = new Entity(AdornerEntityName)
             {
@@ -162,10 +171,11 @@ namespace Xenko.Assets.Presentation.AssetEditors.UIEditor.Services
                     },
                     IsBillboard = false,
                     IsFullScreen = false,
-                    Resolution = resolution*2,
+                    Resolution = resolution * 2f,
                     ResolutionStretch = ResolutionStretch.FixedWidthFixedHeight,
                 }
             };
+            uiAdorners.Transform.Scale = scale * 2f;
             uiAdorners.Transform.Position.Z = 10;
 
             var entities = new[] { designArea, rootEntity, uiAdorners };
@@ -392,7 +402,7 @@ namespace Xenko.Assets.Presentation.AssetEditors.UIEditor.Services
 
             var uiEntity = GetEntityByName(AdornerEntityName);
             var uiComponent = uiEntity.Get<UIComponent>();
-            var worldMatrix = Matrix.Scaling(1f / uiComponent.Resolution) * uiEntity.Transform.WorldMatrix;
+            var worldMatrix = Matrix.Scaling(uiEntity.Transform.Scale / uiComponent.Resolution) * uiEntity.Transform.WorldMatrix;
             // Rotation of Pi along 0x to go from UI space to world space
             worldMatrix.Row2 = -worldMatrix.Row2;
             worldMatrix.Row3 = -worldMatrix.Row3;

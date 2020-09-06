@@ -304,6 +304,7 @@ namespace Xenko.Assets.Presentation.AssetEditors.UIEditor.Game
             var hitResults = GetAdornerVisualsAtPosition(ref worldPosition) as List<UIRenderFeature.HitTestResult>;
             float smallestArea = float.MaxValue;
             elementId = default;
+            var uiComponent = Controller.GetEntityByName(UIEditorController.AdornerEntityName).Get<UIComponent>();
             for (int i=0; i<hitResults.Count; i++)
             {
                 UIRenderFeature.HitTestResult hr = hitResults[i];
@@ -316,7 +317,20 @@ namespace Xenko.Assets.Presentation.AssetEditors.UIEditor.Game
 
                     if (uielement?.IsVisibleInTree ?? false)
                     {
-                        float mysize = uielement.Width * uielement.Height;
+                        // make sure we get a size that isn't NaN
+                        float mysize;
+                        UIElement lookat = uielement;
+                        do {
+                            mysize = lookat.Width * lookat.Height;
+                            if (float.IsNaN(mysize) == false) break;
+                            if (lookat.Parent == null)
+                            {
+                                mysize = uiComponent.Resolution.X * uiComponent.Resolution.Y;
+                                break;
+                            }
+                            lookat = lookat.Parent;
+                        } while (true);
+                        // ok, use this size info to select the smallest element
                         if (mysize < smallestArea)
                         {
                             smallestArea = mysize;
