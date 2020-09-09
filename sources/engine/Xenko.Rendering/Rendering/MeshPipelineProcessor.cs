@@ -23,7 +23,7 @@ namespace Xenko.Rendering
                 pipelineState.BlendState = renderMesh.MaterialPass.BlendState ?? BlendStates.AlphaBlend;
                 pipelineState.DepthStencilState = renderMesh.TransparentWriteDepth ? DepthStencilStates.Default : DepthStencilStates.DepthRead;
                 if (isMultisample)
-                    pipelineState.BlendState.AlphaToCoverageEnable = renderMesh.MaterialPass.AlphaToCoverage ?? true;
+                    pipelineState.BlendState.AlphaToCoverageEnable = true;
             }
 
             var cullMode = pipelineState.RasterizerState.CullMode;

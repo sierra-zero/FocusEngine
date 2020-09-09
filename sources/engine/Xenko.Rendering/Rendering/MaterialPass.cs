@@ -60,11 +60,6 @@ namespace Xenko.Rendering
         public bool HasTransparency { get; set; }
 
         /// <summary>
-        /// Whether or not to use the alpha-to-coverage multisampling technique.
-        /// </summary>
-        public bool? AlphaToCoverage { get; set; }
-
-        /// <summary>
         /// Determines if this material is affected by lighting.
         /// </summary>
         /// <value><c>true</c> if this instance affects lighting; otherwise, <c>false</c>.</value>
