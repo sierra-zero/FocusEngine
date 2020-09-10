@@ -124,7 +124,7 @@ namespace Xenko.Physics.Bepu
         {
             TransformComponent et = Entity.Transform;
             et.UpdateLocalMatrix();
-            et.SlimUpdateWorldMatrix();
+            et.UpdateWorldMatrixInternal(true, false);
             Xenko.Core.Mathematics.Vector3 usepos = et.WorldPosition();
             Xenko.Core.Mathematics.Quaternion q = et.WorldRotation();
             if (usePosition.HasValue) usepos += usePosition.Value;

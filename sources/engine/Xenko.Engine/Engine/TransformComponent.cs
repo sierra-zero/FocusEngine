@@ -346,10 +346,10 @@ namespace Xenko.Engine
         /// It will first call <see cref="UpdateLocalMatrix"/> on self, and <see cref="UpdateWorldMatrix"/> on <see cref="Parent"/> if not null.
         /// Then <see cref="WorldMatrix"/> will be updated by multiplying <see cref="LocalMatrix"/> and parent <see cref="WorldMatrix"/> (if any).
         /// </summary>
-        public void UpdateWorldMatrix()
+        public void UpdateWorldMatrix(bool recurseToRoot = true, bool doPostProcessing = true)
         {
             UpdateLocalMatrix();
-            UpdateWorldMatrixInternal(true);
+            UpdateWorldMatrixInternal(recurseToRoot, doPostProcessing);
         }
 
         /// <summary>
@@ -544,39 +544,7 @@ namespace Xenko.Engine
             return Matrix.RotationQuaternion(world ? WorldRotation() : Rotation);
         }
 
-        /// <summary>
-        /// Doesn't do any post operations
-        /// </summary>
-        internal void SlimUpdateWorldMatrix()
-        {
-            if (TransformLink != null)
-            {
-                Matrix linkMatrix;
-                TransformLink.ComputeMatrix(true, out linkMatrix);
-                Matrix.Multiply(ref LocalMatrix, ref linkMatrix, out WorldMatrix);
-            }
-            else if (Parent != null)
-            {
-                Parent.UpdateLocalMatrix();
-                Parent.SlimUpdateWorldMatrix();
-                Matrix.Multiply(ref LocalMatrix, ref Parent.WorldMatrix, out WorldMatrix);
-            }
-            else
-            {
-                var scene = Entity?.Scene;
-                if (scene != null)
-                {
-                    scene.UpdateWorldMatrix();
-                    Matrix.Multiply(ref LocalMatrix, ref scene.WorldMatrix, out WorldMatrix);
-                }
-                else
-                {
-                    WorldMatrix = LocalMatrix;
-                }
-            }
-        }
-
-        internal void UpdateWorldMatrixInternal(bool recursive)
+        internal void UpdateWorldMatrixInternal(bool recursive, bool postProcess = true)
         {
             if (TransformLink != null)
             {
@@ -587,7 +555,7 @@ namespace Xenko.Engine
             else if (Parent != null)
             {
                 if (recursive)
-                    Parent.UpdateWorldMatrix();
+                    Parent.UpdateWorldMatrix(true, postProcess);
                 Matrix.Multiply(ref LocalMatrix, ref Parent.WorldMatrix, out WorldMatrix);
             }
             else
@@ -596,9 +564,7 @@ namespace Xenko.Engine
                 if (scene != null)
                 {
                     if (recursive)
-                    {
                         scene.UpdateWorldMatrix();
-                    }
 
                     Matrix.Multiply(ref LocalMatrix, ref scene.WorldMatrix, out WorldMatrix);
                 }
@@ -608,9 +574,12 @@ namespace Xenko.Engine
                 }
             }
 
-            for (int i=0; i<PostOperations.Count; i++)
+            if (postProcess)
             {
-                PostOperations[i].Process(this);
+                for (int i = 0; i < PostOperations.Count; i++)
+                {
+                    PostOperations[i].Process(this);
+                }
             }
         }
 

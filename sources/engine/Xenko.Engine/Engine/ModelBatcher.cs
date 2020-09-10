@@ -133,7 +133,7 @@ namespace Xenko.Engine
                 if (chunk.Entity != null)
                 {
                     chunk.Entity.Transform.UpdateLocalMatrix();
-                    chunk.Entity.Transform.SlimUpdateWorldMatrix();
+                    chunk.Entity.Transform.UpdateWorldMatrixInternal(true, false);
                 }
                 Matrix worldMatrix = chunk.Entity == null ? (chunk.Transform ?? Matrix.Identity) : chunk.Entity.Transform.WorldMatrix;
                 Matrix rot;

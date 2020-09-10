@@ -119,17 +119,20 @@ namespace Xenko.Engine.Processors
                         return;
 
                     transformation.UpdateImmobilePosition = false;
-                    UpdateTransformation(transformation);
+                    transformation.UpdateLocalMatrix();
+                    transformation.UpdateWorldMatrixInternal(false);
                     break;
                 case IMMOBILITY.JustMeImmobile:
                     if (transformation.UpdateImmobilePosition)
                     {
                         transformation.UpdateImmobilePosition = false;
-                        UpdateTransformation(transformation);
+                        transformation.UpdateLocalMatrix();
+                        transformation.UpdateWorldMatrixInternal(false);
                     }
                     break;
                 case IMMOBILITY.FullMotion:
-                    UpdateTransformation(transformation);
+                    transformation.UpdateLocalMatrix();
+                    transformation.UpdateWorldMatrixInternal(false);
                     break;
             }
 
@@ -144,19 +147,13 @@ namespace Xenko.Engine.Processors
             {
                 TransformComponent transformation = transformationComponents[i];
 
-                UpdateTransformation(transformation);
+                transformation.UpdateLocalMatrix();
+                transformation.UpdateWorldMatrixInternal(false);
 
                 // Recurse
                 if (transformation.Children.Count > 0)
                     UpdateTransformationsRecursive(transformation.Children);
             }
-        }
-
-        private static void UpdateTransformation(TransformComponent transform)
-        {
-            // Update transform
-            transform.UpdateLocalMatrix();
-            transform.UpdateWorldMatrixInternal(false);
         }
 
         /// <summary>
