@@ -1,4 +1,4 @@
-// Copyright (c) Xenko contributors (https://xenko.com) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Collections.Generic;
@@ -8,13 +8,13 @@ using Xenko.Core.Presentation.Quantum.ViewModels;
 
 namespace Xenko.Core.Assets.Editor.View.TemplateProviders
 {
-    public class DictionaryStringKeyTemplateProvider : DictionaryTemplateProvider
+    public class DictionaryEnumKeyTemplateProvider : DictionaryTemplateProvider
     {
-        public override string Name => "DictionaryStringKey";
+        public override string Name => "DictionaryEnumKey";
 
         /// <summary>
-        /// If set to true, this provider will accept nodes representing entries of a string-keyed dictionary.
-        /// Otherwise, it will accept nodes representing the string-keyed dictionary itself.
+        /// If set to true, this provider will accept nodes representing entries of a enum-keyed dictionary.
+        /// Otherwise, it will accept nodes representing the enum-keyed dictionary itself.
         /// </summary>
         public bool ApplyForItems { get; set; }
 
@@ -30,10 +30,10 @@ namespace Xenko.Core.Assets.Editor.View.TemplateProviders
             if (!base.MatchNode(node))
                 return false;
 
-            if (node.AssociatedData.TryGetValue(DictionaryNodeUpdater.DictionaryNodeKeyType.Name, out var value))
+            if(node.AssociatedData.TryGetValue(DictionaryNodeUpdater.DictionaryNodeKeyType.Name, out var value))
             {
                 var type = (Type)value;
-                return type == typeof(string);
+                return type.IsEnum;
             }
 
             return false;
