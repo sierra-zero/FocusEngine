@@ -71,7 +71,7 @@ namespace Xenko.Rendering
         public static Material New(GraphicsDevice device, MaterialDescriptor descriptor)
         {
             if (descriptor == null) throw new ArgumentNullException("descriptor");
-            var context = new MaterialGeneratorContext(new Material())
+            var context = new MaterialGeneratorContext(new Material(), device)
             {
                 GraphicsProfile = device.Features.RequestedProfile,
             };
