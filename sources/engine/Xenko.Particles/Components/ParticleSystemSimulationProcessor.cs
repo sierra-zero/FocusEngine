@@ -94,7 +94,7 @@ namespace Xenko.Particles.Components
         /// <inheritdoc />
         public override void Draw(RenderContext context)
         {
-            float deltaTime = (float) context.Time.Elapsed.TotalSeconds;
+            float deltaTime = (float) context.Time.WarpElapsed.TotalSeconds;
 
             ParticleSystems.Clear();
             for (int i=0; i<ComponentDataValues.Count; i++)

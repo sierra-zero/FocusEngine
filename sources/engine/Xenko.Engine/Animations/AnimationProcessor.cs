@@ -7,6 +7,7 @@ using Xenko.Core.Collections;
 using Xenko.Core.Threading;
 using Xenko.Engine;
 using Xenko.Rendering;
+using Xenko.Games;
 
 namespace Xenko.Animations
 {
@@ -81,7 +82,7 @@ namespace Xenko.Animations
                         {
                             case AnimationRepeatMode.PlayOnceHold:
                             case AnimationRepeatMode.PlayOnce:
-                                playingAnimation.CurrentTime = TimeSpan.FromTicks(playingAnimation.CurrentTime.Ticks + (long)(time.Elapsed.Ticks * (double)playingAnimation.TimeFactor));
+                                playingAnimation.CurrentTime = TimeSpan.FromTicks(playingAnimation.CurrentTime.Ticks + (long)(time.WarpElapsed.Ticks * (double)playingAnimation.TimeFactor));
                                 if (playingAnimation.CurrentTime > playingAnimation.Clip.Duration)
                                     playingAnimation.CurrentTime = playingAnimation.Clip.Duration;
                                 else if (playingAnimation.CurrentTime < TimeSpan.Zero)
@@ -91,7 +92,7 @@ namespace Xenko.Animations
                                 playingAnimation.CurrentTime = playingAnimation.Clip.Duration == TimeSpan.Zero
                                     ? TimeSpan.Zero
                                     : TimeSpan.FromTicks((playingAnimation.CurrentTime.Ticks + playingAnimation.Clip.Duration.Ticks
-                                        + (long)(time.Elapsed.Ticks * (double)playingAnimation.TimeFactor)) % playingAnimation.Clip.Duration.Ticks);
+                                        + (long)(time.WarpElapsed.Ticks * (double)playingAnimation.TimeFactor)) % playingAnimation.Clip.Duration.Ticks);
                                 break;
                             default:
                                 throw new ArgumentOutOfRangeException();
@@ -155,8 +156,8 @@ namespace Xenko.Animations
                         if (playingAnimation.CrossfadeRemainingTime > TimeSpan.Zero)
                         {
                             playingAnimation.Weight += (playingAnimation.WeightTarget - playingAnimation.Weight)
-                                                       * ((float)time.Elapsed.Ticks / playingAnimation.CrossfadeRemainingTime.Ticks);
-                            playingAnimation.CrossfadeRemainingTime -= time.Elapsed;
+                                                       * ((float)time.WarpElapsed.Ticks / playingAnimation.CrossfadeRemainingTime.Ticks);
+                            playingAnimation.CrossfadeRemainingTime -= time.WarpElapsed;
                             if (playingAnimation.CrossfadeRemainingTime <= TimeSpan.Zero)
                             {
                                 playingAnimation.Weight = playingAnimation.WeightTarget;
