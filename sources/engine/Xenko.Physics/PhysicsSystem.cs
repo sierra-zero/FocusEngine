@@ -282,7 +282,7 @@ namespace Xenko.Physics
         {
             if (isMultithreaded)
             {
-                float gt = (float)gameTime.Elapsed.TotalSeconds;
+                float gt = (float)gameTime.WarpElapsed.TotalSeconds;
                 float totalTimeCap = MaximumSimulationTime * MaxSubSteps;
                 if (timeToSimulate + gt > totalTimeCap)
                 {
@@ -297,7 +297,7 @@ namespace Xenko.Physics
             } 
             else
             {
-                RunPhysicsSimulation((float)Math.Min(MaximumSimulationTime * MaxSubSteps, gameTime.Elapsed.TotalSeconds));
+                RunPhysicsSimulation((float)Math.Min(MaximumSimulationTime * MaxSubSteps, gameTime.WarpElapsed.TotalSeconds));
             }
         }
     }

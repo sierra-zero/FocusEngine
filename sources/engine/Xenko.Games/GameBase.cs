@@ -47,7 +47,6 @@ namespace Xenko.Games
         private readonly int[] lastUpdateCount;
         private readonly float updateCountAverageSlowLimit;
         private readonly GamePlatform gamePlatform;
-        private TimeSpan singleFrameUpdateTime;
         private IGraphicsDeviceService graphicsDeviceService;
         protected IGraphicsDeviceManager graphicsDeviceManager;
         private ResumeManager resumeManager;
@@ -63,7 +62,6 @@ namespace Xenko.Games
         private TimeSpan accumulatedElapsedGameTime;
         private TimeSpan lastFrameElapsedGameTime;
         private int nextLastUpdateCountIndex;
-        private bool drawRunningSlowly;
         private bool forceElapsedTimeToZero;
 
         private readonly TimerTick timer;
@@ -379,7 +377,6 @@ namespace Xenko.Games
         public void ResetElapsedTime()
         {
             forceElapsedTimeToZero = true;
-            drawRunningSlowly = false;
             Array.Clear(lastUpdateCount, 0, lastUpdateCount.Length);
             nextLastUpdateCountIndex = 0;
         }
@@ -431,7 +428,6 @@ namespace Xenko.Games
                         Update(updateTime);
                     }
                     updateTimer.Tick();
-                    singleFrameUpdateTime += updateTimer.ElapsedTime;
 
                     // Reset PlayTime
                     playTimer.Reset();
@@ -615,9 +611,6 @@ namespace Xenko.Games
                     updateCountMean /= lastUpdateCount.Length;
                     nextLastUpdateCountIndex = (nextLastUpdateCountIndex + 1) % lastUpdateCount.Length;
 
-                    // Test when we are running slowly
-                    drawRunningSlowly = updateCountMean > updateCountAverageSlowLimit;
-
                     // We are going to call Update updateCount times, so we can substract this from accumulated elapsed game time
                     accumulatedElapsedGameTime = new TimeSpan(accumulatedElapsedGameTime.Ticks - (updateCount * TargetElapsedTime.Ticks));
                     singleFrameElapsedTime = TargetElapsedTime;
@@ -626,7 +619,6 @@ namespace Xenko.Games
                 {
                     Array.Clear(lastUpdateCount, 0, lastUpdateCount.Length);
                     nextLastUpdateCountIndex = 0;
-                    drawRunningSlowly = false;
                 }
 
                 bool beginDrawSuccessful = false;
@@ -637,7 +629,7 @@ namespace Xenko.Games
                     // Reset the time of the next frame
                     for (lastFrameElapsedGameTime = TimeSpan.Zero; updateCount > 0 && !isExiting; updateCount--)
                     {
-                        updateTime.Update(totalUpdateTime, singleFrameElapsedTime, singleFrameUpdateTime, drawRunningSlowly, true);
+                        updateTime.Update(totalUpdateTime, singleFrameElapsedTime, true);
                         try
                         {
                             UpdateAndProfile(updateTime);
@@ -657,7 +649,6 @@ namespace Xenko.Games
 
                     // End measuring update time
                     updateTimer.Tick();
-                    singleFrameUpdateTime += updateTimer.ElapsedTime;
 
                     // Update game time just before calling draw
                     //updateTime.Update(totalUpdateTime, singleFrameElapsedTime, singleFrameUpdateTime, drawRunningSlowly, true);
@@ -668,8 +659,6 @@ namespace Xenko.Games
                         DrawInterpolationFactor = drawLag / (float)TargetElapsedTime.Ticks;
                         DrawFrame();
                     }
-
-                    singleFrameUpdateTime = TimeSpan.Zero;
                 }
                 finally
                 {
@@ -961,7 +950,6 @@ namespace Xenko.Games
                 Update(gameTime);
             }
             updateTimer.Tick();
-            singleFrameUpdateTime += updateTimer.ElapsedTime;
         }
 
         private void GamePlatform_Activated(object sender, EventArgs e)
@@ -996,7 +984,8 @@ namespace Xenko.Games
             {
                 if (!isExiting && GameSystems.IsFirstUpdateDone && !Window.IsMinimized)
                 {
-                    drawTime.Update(totalDrawTime, lastFrameElapsedGameTime, singleFrameUpdateTime, drawRunningSlowly, true);
+                    DrawTime.Factor = UpdateTime.Factor;
+                    drawTime.Update(totalDrawTime, lastFrameElapsedGameTime, true);
 
                     var profilingDraw = Profiler.Begin(GameProfilingKeys.GameDrawFPS);
                     var profiler = Profiler.Begin(GameProfilingKeys.GameDraw);

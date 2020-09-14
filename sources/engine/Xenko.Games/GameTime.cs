@@ -60,20 +60,6 @@ namespace Xenko.Games
             factor = 1;
         }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="GameTime" /> class.
-        /// </summary>
-        /// <param name="totalTime">The total game time since the start of the game.</param>
-        /// <param name="elapsedTime">The elapsed game time since the last update.</param>
-        /// <param name="isRunningSlowly">True if the game is running unexpectedly slowly.</param>
-        public GameTime(TimeSpan totalTime, TimeSpan elapsedTime, bool isRunningSlowly)
-        {
-            Total = totalTime;
-            Elapsed = elapsedTime;
-            IsRunningSlowly = isRunningSlowly;
-            accumulatedElapsedTime = TimeSpan.Zero;
-        }
-
         #endregion
 
         #region Public Properties
@@ -83,12 +69,6 @@ namespace Xenko.Games
         /// </summary>
         /// <value>The elapsed game time.</value>
         public TimeSpan Elapsed { get; private set; }
-
-        /// <summary>
-        /// Gets a value indicating whether the game is running slowly than its TargetElapsedTime. This can be used for example to render less details...etc.
-        /// </summary>
-        /// <value><c>true</c> if this instance is running slowly; otherwise, <c>false</c>.</value>
-        public bool IsRunningSlowly { get; private set; }
 
         /// <summary>
         /// Gets the amount of game time since the start of the game.
@@ -125,10 +105,7 @@ namespace Xenko.Games
         /// Gets the amount of time elapsed multiplied by the time factor.
         /// </summary>
         /// <value>The warped elapsed time</value>
-        public TimeSpan WarpElapsed 
-        {
-            get => TimeSpan.FromTicks((long)(Elapsed.Ticks * Factor));
-        }
+        public TimeSpan WarpElapsed { get; private set; }
 
 
         /// <summary>
@@ -147,7 +124,8 @@ namespace Xenko.Games
         internal void Update(TimeSpan totalGameTime, TimeSpan elapsedGameTime, bool incrementFrameCount)
         {
             Total = totalGameTime;
-            Elapsed = elapsedGameTime;            
+            Elapsed = elapsedGameTime;
+            WarpElapsed = TimeSpan.FromTicks((long)(Elapsed.Ticks * Factor));
 
             FramePerSecondUpdated = false;
 
@@ -171,7 +149,7 @@ namespace Xenko.Games
 
         internal void Reset(TimeSpan totalGameTime)
         {
-            Update(totalGameTime, TimeSpan.Zero, TimeSpan.Zero, false, false);
+            Update(totalGameTime, TimeSpan.Zero, false);
             accumulatedElapsedTime = TimeSpan.Zero;
             accumulatedFrameCountPerSecond = 0;
             FrameCount = 0;
