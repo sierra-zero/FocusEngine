@@ -168,11 +168,6 @@ namespace Xenko.UI.Controls
         {
             if (string.IsNullOrEmpty(Text))
                 return;
-            // todo: better handling of while loop below,
-            // if for any reason CalculateTextToDisplayWidth() returns 0, its endlessLoop
-            // making entire gamestudio unresponsible
-            if (Font is null)
-                return;
 
             var elapsedSeconds = time != null ? (float)time.Elapsed.TotalSeconds : 0f;
 
@@ -195,10 +190,6 @@ namespace Xenko.UI.Controls
                     nextLetterIndex = 0;
 
                 textToDisplayWidth += addedCharacterWidth;
-
-                // workaround to avoid endless loop
-                if (addedCharacterWidth <= 0.0f)
-                    break;
             }
 
             // Check if all the string has finished to scroll, if clear the message
