@@ -1,0 +1,20 @@
+// Copyright (c) Xenko contributors (https://xenko.com) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
+namespace Xenko.Rendering.Materials
+{
+    shader FogFeature : IMaterialSurfacePixel, MaterialPixelShadingStream, ShaderBaseStream
+    {
+        cbuffer PerView.GlobalFog {
+            stage float4 FogColor;
+            stage float FogStart;
+        };
+
+        override void Compute()
+        {
+            float fogAmount = clamp(exp((streams.ShadingPosition.w - FogStart) * -FogColor.a), 0.0, 1.0);
+
+            streams.shadingColor = lerp(FogColor, streams.shadingColor, fogAmount);
+        }
+    };
+}
+

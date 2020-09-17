@@ -5,6 +5,7 @@ using System.ComponentModel;
 using Xenko.Core;
 using Xenko.Core.Annotations;
 using Xenko.Graphics;
+using Xenko.Rendering.Rendering.Materials;
 
 namespace Xenko.Rendering.Materials
 {
@@ -155,6 +156,16 @@ namespace Xenko.Rendering.Materials
         public IMaterialTransparencyFeature Transparency { get; set; }
 
         /// <summary>
+        /// Gets or sets fog.
+        /// </summary>
+        /// <value>The fog.</value>
+        /// <userdoc>The method used to determine the fog</userdoc>
+        [Display("Fog", "Misc")]
+        [DefaultValue(null)]
+        [DataMember(115)]
+        public IMaterialFogFeature FogFeature { get; set; }
+
+        /// <summary>
         /// Gets or sets the overrides.
         /// </summary>
         /// <value>The overrides.</value>
@@ -224,6 +235,7 @@ namespace Xenko.Rendering.Materials
             context.Visit(Occlusion);
             context.Visit(Emissive);
             context.Visit(SubsurfaceScattering);
+            context.Visit(FogFeature);
 
             // If hair shading is enabled, ignore the transparency feature to avoid errors during shader compilation.
             // Allowing the transparency feature while hair shading is on makes no sense anyway.

@@ -34,6 +34,11 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <AutoGen>True</AutoGen>
     </Compile>
+    <Compile Update="Rendering\Materials\Shaders\FogFeature.xksl.cs">
+      <DesignTime>True</DesignTime>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <AutoGen>True</AutoGen>
+    </Compile>
     <Compile Update="Rendering\Skyboxes\SkyboxShaderTextureHorizon.xksl.cs">
       <DependentUpon>SkyboxShaderTextureHorizon.xksl</DependentUpon>
     </Compile>
@@ -41,6 +46,9 @@
   <ItemGroup>
     <None Update="Rendering\Core\NormalFromNormalMappingNoTangent.xksl">
       <LastGenOutput>NormalFromNormalMappingNoTangent.xksl.cs</LastGenOutput>
+    </None>
+    <None Update="Rendering\Materials\Shaders\FogFeature.xksl">
+      <LastGenOutput>FogFeature.xksl.cs</LastGenOutput>
     </None>
   </ItemGroup>
   <Import Project="$(XenkoPostSettingsTargets)" />

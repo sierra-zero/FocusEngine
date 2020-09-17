@@ -14,6 +14,7 @@ using Xenko.Core.Storage;
 using Xenko.Graphics;
 using Xenko.Rendering.Images;
 using Xenko.Rendering.Lights;
+using Xenko.Rendering.Rendering.Materials;
 using Xenko.Rendering.Shadows;
 using Xenko.Rendering.SubsurfaceScattering;
 using Xenko.VirtualReality;
@@ -538,7 +539,11 @@ namespace Xenko.Rendering.Compositing
         {
             var renderSystem = context.RenderSystem;
 
-            PrepareVRConstantBuffer(context, eyeIndex, eyeCount);
+            if (GlobalFog.usingGlobalFog)
+                GlobalFog.PrepareFogConstantBuffer(context);
+
+            if (eyeCount == 2)
+                PrepareVRConstantBuffer(context, eyeIndex, eyeCount);
 
             // Z Prepass
             var lightProbes = LightProbes && GBufferRenderStage != null;
