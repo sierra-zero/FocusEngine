@@ -6,6 +6,7 @@ using System.Text;
 using Xenko.Core;
 using Xenko.Core.Mathematics;
 using Xenko.Core.Storage;
+using Xenko.Graphics;
 using Xenko.Rendering.Compositing;
 using Xenko.Rendering.Materials;
 using Xenko.Rendering.Materials.ComputeColors;
@@ -99,6 +100,11 @@ namespace Xenko.Rendering.Rendering.Materials
 
         internal static unsafe void PrepareFogConstantBuffer(RenderContext context)
         {
+            // adjust for differences in DirectX and Vulkan
+            Vector4 usecolor = GlobalFogParameters.FogColor;
+            if (GraphicsDevice.Platform == GraphicsPlatform.Vulkan) usecolor.W = 1f / Math.Max(0.000001f, usecolor.W);
+            usecolor.W = -usecolor.W; // flip this here so we don't need to do it in the shader
+
             foreach (var renderFeature in context.RenderSystem.RenderFeatures)
             {
                 if (!(renderFeature is RootEffectRenderFeature))
@@ -117,7 +123,7 @@ namespace Xenko.Rendering.Rendering.Materials
                         continue;
 
                     var mappedCB = (FogData*)(resourceGroup.ConstantBuffer.Data + logicalGroup.ConstantBufferOffset);
-                    mappedCB->FogColor = GlobalFogParameters.FogColor;
+                    mappedCB->FogColor = usecolor;
                     mappedCB->FogStart = GlobalFogParameters.FogStart;
                 }
             }
@@ -126,10 +132,7 @@ namespace Xenko.Rendering.Rendering.Materials
         public override void GenerateShader(MaterialGeneratorContext context)
         {
             usingGlobalFog = true;
-
-            var mixin = new ShaderMixinSource();
-            mixin.Mixins.Add(new ShaderClassSource("FogFeature"));
-
+            
             var shaderBuilder = context.AddShading(this);
             shaderBuilder.ShaderSources.Add(new ShaderClassSource("FogFeature"));
         }
