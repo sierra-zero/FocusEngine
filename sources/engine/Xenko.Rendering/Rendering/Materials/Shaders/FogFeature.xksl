@@ -12,10 +12,11 @@ namespace Xenko.Rendering.Materials
         override void Compute()
         {
             float fogAmount = clamp(exp((streams.ShadingPosition.w - FogStart) * FogColor.a), 0.0, 1.0);
+            streams.shadingColorAlpha = streams.matDiffuse.a;
 #if XENKO_GRAPHICS_API_DIRECT3D
-            streams.shadingColor = lerp(FogColor, streams.shadingColor, fogAmount);
+            streams.shadingColor = lerp(FogColor, streams.shadingColor, fogAmount) * streams.matDiffuse.a;
 #else
-            streams.shadingColor = lerp(streams.shadingColor, FogColor, fogAmount);
+            streams.shadingColor = lerp(streams.shadingColor, FogColor, fogAmount) * streams.matDiffuse.a;
 #endif
         }
     };
