@@ -527,7 +527,7 @@ namespace Xenko.Engine
                 mc.Materials[index] == null)
                 return mc.Model.Materials[index];
 
-            return new MaterialInstance() { IsShadowCaster = mc.IsShadowCaster, Material = mc.Materials[index] };
+            return new MaterialInstance() { Material = mc.Materials[index] };
         }
 
         /// <summary>

@@ -174,22 +174,6 @@ namespace Xenko.Assets.Models
         }
         
         /// <summary>
-        /// Compares the shadow options between the two meshes.
-        /// </summary>
-        /// <param name="baseMesh">The base mesh.</param>
-        /// <param name="newMesh">The mesh to compare.</param>
-        /// <param name="extra">Unused parameter.</param>
-        /// <returns>True if the options are the same, false otherwise.</returns>
-        private static bool CompareShadowOptions(Model model, Mesh baseMesh, Mesh newMesh)
-        {
-            // TODO: Check is Model the same for the two mesh?
-            var material1 = model.Materials.GetItemOrNull(baseMesh.MaterialIndex);
-            var material2 = model.Materials.GetItemOrNull(newMesh.MaterialIndex);
-
-            return material1 == material2 || (material1 != null && material2 != null && material1.IsShadowCaster == material2.IsShadowCaster);
-        }
-
-        /// <summary>
         /// Test if two ParameterCollection are equal
         /// </summary>
         /// <param name="parameters0">The first ParameterCollection.</param>

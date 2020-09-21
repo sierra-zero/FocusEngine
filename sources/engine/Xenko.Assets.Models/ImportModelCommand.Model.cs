@@ -208,8 +208,7 @@ namespace Xenko.Assets.Models
                     new AnonymousEqualityComparer<Mesh>((x, y) =>
                     x.MaterialIndex == y.MaterialIndex // Same material
                     && ArrayExtensions.ArraysEqual(x.Skinning?.Bones, y.Skinning?.Bones) // Same bones
-                    && CompareParameters(model, x, y) // Same parameters
-                    && CompareShadowOptions(model, x, y), // Same shadow parameters
+                    && CompareParameters(model, x, y), // Same parameters
                     x => 0)).ToList())
                 {
                     if (meshesPerDrawCall.Count() == 1)

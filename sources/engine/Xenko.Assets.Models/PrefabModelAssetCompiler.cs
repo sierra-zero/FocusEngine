@@ -285,13 +285,7 @@ namespace Xenko.Assets.Models
                 var instance = new MaterialInstance
                 {
                     Material = modelComponent.Materials.SafeGet(index) ?? baseInstance.Material ?? fallbackMaterial,
-                    IsShadowCaster = modelComponent.IsShadowCaster,
                 };
-
-                if (baseInstance != null)
-                {
-                    instance.IsShadowCaster = instance.IsShadowCaster && baseInstance.IsShadowCaster;
-                }
 
                 return instance;
             }

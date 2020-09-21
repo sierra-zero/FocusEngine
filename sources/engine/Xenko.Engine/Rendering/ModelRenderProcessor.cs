@@ -128,16 +128,12 @@ namespace Xenko.Rendering
             }
         }
 
-        private void UpdateMaterial(RenderMesh renderMesh, MaterialPass materialPass, MaterialInstance modelMaterialInstance, ModelComponent modelComponent)
+        private void UpdateMaterial(RenderMesh renderMesh, MaterialPass materialPass, ModelComponent modelComponent)
         {
             renderMesh.MaterialPass = materialPass;
 
             renderMesh.IsShadowCaster = modelComponent.IsShadowCaster;
             renderMesh.TransparentWriteDepth = modelComponent.AlwaysDepthWrite;
-            if (modelMaterialInstance != null)
-            {
-                renderMesh.IsShadowCaster = renderMesh.IsShadowCaster && modelMaterialInstance.IsShadowCaster;
-            }
         }
 
         private Material FindMaterial(Material materialOverride, MaterialInstance modelMaterialInstance)
@@ -178,7 +174,7 @@ namespace Xenko.Rendering
                             int meshIndex = material.MeshStartIndex;
                             for (int pass = 0; pass < material.MeshCount; ++pass, ++meshIndex)
                             {
-                                UpdateMaterial(renderModel.Meshes[meshIndex], newMaterial?.Passes[pass], model.Materials.GetItemOrNull(materialIndex), modelComponent);
+                                UpdateMaterial(renderModel.Meshes[meshIndex], newMaterial?.Passes[pass], modelComponent);
                             }
                         }
                     }
@@ -238,7 +234,7 @@ namespace Xenko.Rendering
                     };
 
                     // Update material
-                    UpdateMaterial(renderMeshes[meshIndex], material.Material?.Passes[pass], model.Materials.GetItemOrNull(materialIndex), modelComponent);
+                    UpdateMaterial(renderMeshes[meshIndex], material.Material?.Passes[pass], modelComponent);
                 }
             }
 

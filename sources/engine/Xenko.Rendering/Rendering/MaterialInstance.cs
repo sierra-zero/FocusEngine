@@ -30,7 +30,6 @@ namespace Xenko.Rendering
         public MaterialInstance(Material material)
         {
             Material = material;
-            IsShadowCaster = true;
         }
 
         /// <summary>
@@ -43,16 +42,6 @@ namespace Xenko.Rendering
         public Material Material { get; set; }
 
         /// <summary>
-        /// Gets or sets if this instance is casting shadows.
-        /// </summary>
-        /// <value>A boolean indicating whether this instance is casting shadows. Default is <c>true</c>.</value>
-        /// <userdoc>Generate a shadow (when shadow maps are enabled)</userdoc>
-        [DataMember(20)]
-        [Display("Cast Shadows?")]
-        [DefaultValue(true)]
-        public bool IsShadowCaster { get; set; }
-
-        /// <summary>
         /// Performs an explicit conversion from <see cref="Material"/> to <see cref="MaterialInstance"/>.
         /// </summary>
         /// <param name="material">The material.</param>
@@ -62,13 +51,15 @@ namespace Xenko.Rendering
             return material == null ? null : new MaterialInstance(material);
         }
 
+        public static implicit operator Material(MaterialInstance mi) => mi.Material;
+
         public override bool Equals(object obj)
         {
             if (obj == null)
                 return false;
 
             var instance = (MaterialInstance)obj;
-            return Material == instance.Material && IsShadowCaster == instance.IsShadowCaster;
+            return Material == instance.Material;
         }
 
         public bool Equals(MaterialInstance other)
@@ -77,7 +68,7 @@ namespace Xenko.Rendering
                 return false;
             if (ReferenceEquals(this, other))
                 return true;
-            return Equals(Material, other.Material) && IsShadowCaster == other.IsShadowCaster;
+            return Equals(Material, other.Material);
         }
 
         public override int GetHashCode()
@@ -85,7 +76,6 @@ namespace Xenko.Rendering
             unchecked
             {
                 var hashCode = Material?.GetHashCode() ?? 0;
-                hashCode = (hashCode * 397) ^ IsShadowCaster.GetHashCode();
                 return hashCode;
             }
         }
