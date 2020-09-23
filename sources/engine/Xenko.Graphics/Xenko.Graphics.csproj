@@ -71,11 +71,23 @@
     <PackageReference Include="Vortice.Vulkan" Version="1.2.141-alpha-002" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Update="Shaders\ShaderBaseStream.xksl.cs">
+      <DesignTime>True</DesignTime>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <AutoGen>True</AutoGen>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
     <EmbeddedResource Update="FrameworkResources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>FrameworkResources.Designer.cs</LastGenOutput>
       <SubType>Designer</SubType>
     </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <None Update="Shaders\ShaderBaseStream.xksl">
+      <LastGenOutput>ShaderBaseStream.xksl.cs</LastGenOutput>
+    </None>
   </ItemGroup>
   <Import Project="..\Xenko.Shared\Refactor\Xenko.Refactor.projitems" Label="Shared" />
   <Import Project="$(XenkoPostSettingsTargets)" />

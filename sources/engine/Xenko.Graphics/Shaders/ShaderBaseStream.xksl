@@ -31,5 +31,9 @@ shader ShaderBaseStream
     stage stream float DepthLessEqual : SV_DepthLessEqual; // Special output after PS
 
     // Default InstanceId for VS/GS shaders
+#if XENKO_GRAPHICS_API_DIRECT3D
     stage stream uint InstanceID : SV_InstanceID;
+#else
+    stage stream uint InstanceID : gl_InstanceIndex; // Vulkan term
+#endif
 };
