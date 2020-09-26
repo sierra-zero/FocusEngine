@@ -115,6 +115,32 @@ namespace Xenko.Rendering.Compositing
         }
 
         /// <summary>
+        /// Get the main camera component used for game rendering
+        /// </summary>
+        [DataMemberIgnore]
+        public CameraComponent MainCamera
+        {
+            get
+            {
+                if (Game is SceneCameraRenderer scr)
+                {
+                    return scr.Camera?.Camera;
+                }
+                else if (Game is SceneRendererCollection src)
+                {
+                    foreach (ISceneRenderer isr in src.Children)
+                    {
+                        if (isr is SceneCameraRenderer iscr &&
+                            iscr.Camera?.Camera != null)
+                            return iscr.Camera.Camera;
+                    }
+                }
+
+                return null;
+            }
+        }
+
+        /// <summary>
         /// Shortcut to setting VR settings on renderers to enable or disable. Only renderers with Required APIs set will be enabled via this method.
         /// </summary>
         /// <param name="enable">Whether to enable or disable VR settings on renderers</param>
