@@ -1,7 +1,9 @@
 // Copyright (c) Xenko contributors (https://xenko.com) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
+using System.Collections.Generic;
 using Xenko.Core;
+using Xenko.Core.Collections;
 using Xenko.Core.Diagnostics;
 using Xenko.Core.Mathematics;
 using Xenko.Engine;
@@ -71,6 +73,31 @@ namespace Xenko.Rendering.Compositing
             }
         }
 
+        // find and set a camera if one wasn't already set
+        private CameraComponent SetFirstCamera(ref SceneCameraSlotId id, IEnumerable<Entity> es)
+        {
+            if (es == null) return null;
+
+            foreach (Entity e in es)
+            {
+                // do we have a camera?
+                CameraComponent cam = e.Get<CameraComponent>();
+
+                // do we need to check children?
+                if (cam == null)
+                    cam = SetFirstCamera(ref id, e.GetChildren());
+
+                // did we get a camera?
+                if (cam != null && cam.Enabled)
+                {
+                    cam.Slot = id;
+                    return cam;
+                }
+            }
+
+            return null;
+        }
+
         /// <summary>
         /// Resolves camera to the one contained in slot <see cref="Camera"/>.
         /// </summary>
@@ -91,16 +118,8 @@ namespace Xenko.Rendering.Compositing
                 GraphicsCompositor gc = ss?.GraphicsCompositor;
                 if (gc != null)
                 {
-                    foreach (Entity e in ss.SceneInstance.RootScene.Entities)
-                    {
-                        CameraComponent cam = e.Get<CameraComponent>();
-                        if (cam != null)
-                        {
-                            cam.Slot = gc.Cameras[0].ToSlotId();
-                            camera = cam;
-                            break;
-                        }
-                    }
+                    var id = gc.Cameras[0].ToSlotId();
+                    camera = SetFirstCamera(ref id, ss.SceneInstance.RootScene.Entities);
                 }
 
                 if (camera == null)
