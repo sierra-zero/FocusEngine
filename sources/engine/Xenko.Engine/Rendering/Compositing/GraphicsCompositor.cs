@@ -124,7 +124,7 @@ namespace Xenko.Rendering.Compositing
             {
                 if (Game is SceneCameraRenderer scr)
                 {
-                    return scr.Camera?.Camera;
+                    return scr.ResolveCamera();
                 }
                 else if (Game is SceneRendererCollection src)
                 {
@@ -132,7 +132,7 @@ namespace Xenko.Rendering.Compositing
                     {
                         if (isr is SceneCameraRenderer iscr &&
                             iscr.Camera?.Camera != null)
-                            return iscr.Camera.Camera;
+                            return iscr.ResolveCamera();
                     }
                 }
 

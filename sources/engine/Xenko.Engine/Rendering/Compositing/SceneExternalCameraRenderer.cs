@@ -1,4 +1,4 @@
-﻿using Xenko.Core.Annotations;
+using Xenko.Core.Annotations;
 using Xenko.Engine;
 
 namespace Xenko.Rendering.Compositing
@@ -14,7 +14,7 @@ namespace Xenko.Rendering.Compositing
         /// <summary>
         /// Resolves camera to <see cref="ExternalCamera"/> rather than the default behavior.
         /// </summary>
-        protected override CameraComponent ResolveCamera(RenderContext renderContext)
+        internal override CameraComponent ResolveCamera()
         {
             return ExternalCamera;
         }

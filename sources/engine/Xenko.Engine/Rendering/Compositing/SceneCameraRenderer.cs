@@ -44,7 +44,7 @@ namespace Xenko.Rendering.Compositing
             base.CollectCore(context);
 
             // Find camera
-            var camera = ResolveCamera(context);
+            var camera = ResolveCamera();
             if (camera == null)
                 return;
 
@@ -62,7 +62,7 @@ namespace Xenko.Rendering.Compositing
         protected override void DrawCore(RenderContext context, RenderDrawContext drawContext)
         {
             // Find camera
-            var camera = ResolveCamera(context);
+            var camera = ResolveCamera();
             if (camera == null)
                 return;
 
@@ -101,7 +101,7 @@ namespace Xenko.Rendering.Compositing
         /// <summary>
         /// Resolves camera to the one contained in slot <see cref="Camera"/>.
         /// </summary>
-        protected virtual CameraComponent ResolveCamera(RenderContext renderContext)
+        internal virtual CameraComponent ResolveCamera()
         {
             if (Camera == null && !cameraSlotResolutionFailed)
                 Logger.Warning($"{nameof(SceneCameraRenderer)} [{Id}] has no camera set. Make sure to set camera to the renderer via the Graphic Compositor Editor.");
@@ -114,7 +114,7 @@ namespace Xenko.Rendering.Compositing
             if (camera == null && !cameraResolutionFailed)
             {
                 // no slot set, try to set one automatically
-                SceneSystem ss = renderContext.Services.GetService<SceneSystem>();
+                SceneSystem ss = ServiceRegistry.instance?.GetService<SceneSystem>();
                 GraphicsCompositor gc = ss?.GraphicsCompositor;
                 if (gc != null)
                 {
