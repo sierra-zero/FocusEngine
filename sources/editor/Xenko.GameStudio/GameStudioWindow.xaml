@@ -201,8 +201,8 @@
       </MenuItem>
       <!-- Project Menu -->
       <MenuItem Header="{xk:Localize Project, Context=Menu}" IsEnabled="{Binding Session, Converter={xk:ObjectToBool}}">
-        <MenuItem Header="{xk:Localize Build project, Context=Menu}" Command="{Binding Debugging.BuildProjectCommand}" Icon="{xk:Image {StaticResource ImageBuildProject}}" InputGestureText="{x:Static strings:KeyGestures.BuildProject}"/>
-        <MenuItem Header="{xk:Localize Start project, Context=Menu}" Command="{Binding Debugging.StartProjectCommand}" Icon="{xk:Image {StaticResource ImageStartProject}}" InputGestureText="{x:Static strings:KeyGestures.StartProject}"/>
+        <MenuItem Header="{xk:Localize Preview build (use IDE for full build), Context=Menu}" Command="{Binding Debugging.BuildProjectCommand}" Icon="{xk:Image {StaticResource ImageBuildProject}}" InputGestureText="{x:Static strings:KeyGestures.BuildProject}"/>
+        <!--MenuItem Header="{xk:Localize Start project, Context=Menu}" Command="{Binding Debugging.StartProjectCommand}" Icon="{xk:Image {StaticResource ImageStartProject}}" InputGestureText="{x:Static strings:KeyGestures.StartProject}"/-->
         <!-- Disable live-scripting commands until it is working -->
         <MenuItem Header="{xk:Localize Start live-scripting, Context=Menu}" Command="{Binding Debugging.LivePlayProjectCommand}" Icon="{xk:Image {StaticResource ImageLiveScripting}}" Visibility="Collapsed"/>
         <MenuItem Header="{xk:Localize Cancel build, Context=Menu}" Command="{Binding Debugging.CancelBuildCommand}" Icon="{xk:Image {StaticResource ImageStopBuild}}" InputGestureText="{x:Static strings:KeyGestures.CancelBuild}"/>
@@ -393,7 +393,7 @@
           </Button>
           <Separator/>
           <Button Command="{Binding Debugging.BuildProjectCommand}"
-                  ToolTip="{xk:ToolTip {xk:Localize Build the project, Context=ToolTip}, {x:Static strings:KeyGestures.BuildProject}}" xk:ToolTipHelper.Status="{Binding Status}" ToolTipService.ShowOnDisabled="True">
+                  ToolTip="{xk:ToolTip {xk:Localize Preview build (use IDE for full build), Context=ToolTip}, {x:Static strings:KeyGestures.BuildProject}}" xk:ToolTipHelper.Status="{Binding Status}" ToolTipService.ShowOnDisabled="True">
             <Image Source="{StaticResource ImageBuildProject}"/>
           </Button>
           <!-- Live Scripting -->

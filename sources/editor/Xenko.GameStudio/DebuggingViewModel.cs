@@ -395,7 +395,8 @@ namespace Xenko.GameStudio
                     ["XenkoBuildEngineLogVerbose"] = "true",
                 };
 
-                var projectViewModel = Session.CurrentProject.Type == ProjectType.Executable ? Session.CurrentProject : null;
+                // pick a non-shared package to preview a build for
+                ProjectViewModel projectViewModel = Session.LocalPackages.OfType<ProjectViewModel>().FirstOrDefault(x => x.Platform != PlatformType.Shared) ?? Session.LocalPackages.FirstOrDefault() as ProjectViewModel;
 
                 if (Session.CurrentProject.Platform != PlatformType.Shared)
                 {
