@@ -23,6 +23,7 @@
 
 using System;
 using System.Reflection;
+using System.Threading;
 using Xenko.Core;
 using Xenko.Core.Annotations;
 using Xenko.Core.Diagnostics;
@@ -844,9 +845,16 @@ namespace Xenko.Games
         {
         }
 
+        /// <summary>
+        /// Stores a reference to the main GameBase thread
+        /// </summary>
+        public static Thread RenderingThread { get; private set; }
+
         /// <summary>Called after the Game is created, but before GraphicsDevice is available and before LoadContent(). Reference page contains code sample.</summary>
         protected virtual void Initialize()
         {
+            RenderingThread = Thread.CurrentThread;
+
             GameSystems.Initialize();
         }
 

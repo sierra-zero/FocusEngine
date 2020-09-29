@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using Xenko.Core;
 using Xenko.Core.Collections;
 using Xenko.Core.Diagnostics;
@@ -220,10 +221,8 @@ namespace Xenko.Engine
             if (entities.Contains(entity))
                 return;
 
-            if (entity.EntityManager != null && entity.EntityManager != this)
-            {
-                throw new InvalidOperationException("Cannot add an entity to this entity manager when it is already used by another entity manager");
-            }
+            if (Thread.CurrentThread != GameBase.RenderingThread && Thread.CurrentThread.Name.StartsWith("EditorGameThread ") == false)
+                throw new InvalidOperationException("Trying to add '" + entity.Name + "' to the scene in a non-rendering thread.");
 
             // Add this entity to our internal hashset
             entity.EntityManager = this;
@@ -272,6 +271,9 @@ namespace Xenko.Engine
             // Entity wasn't already added
             if (!entities.Contains(entity))
                 return;
+
+            if (Thread.CurrentThread != GameBase.RenderingThread && Thread.CurrentThread.Name.StartsWith("EditorGameThread ") == false)
+                throw new InvalidOperationException("Trying to remove '" + entity.Name + "' from the scene in a non-rendering thread.");
 
             entities.Remove(entity);
 

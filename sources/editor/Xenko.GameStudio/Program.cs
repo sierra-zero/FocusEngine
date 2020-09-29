@@ -94,7 +94,7 @@ namespace Xenko.GameStudio
             mru.LoadFromSettings();
 
             EditorSettings.Initialize();
-            Thread.CurrentThread.Name = "Main thread";
+            Thread.CurrentThread.Name = "EditorGameThread (GameStudio)";
 
             try
             {
