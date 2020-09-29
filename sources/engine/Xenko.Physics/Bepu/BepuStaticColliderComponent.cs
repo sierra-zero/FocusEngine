@@ -159,14 +159,14 @@ namespace Xenko.Physics.Bepu
             }
             set
             {
-                if (ColliderShape == null)
-                    throw new InvalidOperationException(Entity.Name + " has no ColliderShape, can't be added!");
-
-                if (BepuHelpers.SanityCheckShape(ColliderShape) == false)
-                    throw new InvalidOperationException(Entity.Name + " has a broken ColliderShape! Check sizes and/or children count.");
-
                 if (value)
                 {
+                    if (ColliderShape == null)
+                        throw new InvalidOperationException(Entity.Name + " has no ColliderShape, can't be added!");
+
+                    if (BepuHelpers.SanityCheckShape(ColliderShape) == false)
+                        throw new InvalidOperationException(Entity.Name + " has a broken ColliderShape! Check sizes and/or children count.");
+
                     lock (BepuSimulation.instance.ToBeAdded)
                     {
                         BepuSimulation.instance.ToBeAdded.Add(this);
