@@ -32,6 +32,14 @@ namespace Xenko.Core.Assets
                 || Assembly.GetEntryAssembly() == Assembly.GetCallingAssembly())) // .NET Core: check against calling assembly
                 return;
 
+            // delete old temp files
+            var dirs = Directory.GetDirectories(Path.GetTempPath(), "Xenko*");
+            if (dirs != null)
+            {
+                foreach (string s in dirs)
+                    Directory.Delete(s, true);
+            }
+
             // Make sure our nuget local store is added to nuget config
             var folder = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             string xenkoFolder = null;
@@ -64,36 +72,10 @@ namespace Xenko.Core.Assets
                         try
                         {
                             var (request, result) = RestoreHelper.Restore(logger, Assembly.GetExecutingAssembly().GetName().Name, new VersionRange(new NuGetVersion(XenkoVersion.NuGetVersion))).Result;
-                            if (!result.Success)
-                            {
-                                throw new InvalidOperationException($"Could not restore NuGet packages");
-                            }
-
                             assemblies = RestoreHelper.ListAssemblies(request, result);
                         }
                         catch (Exception e)
                         {
-                            var logFile = Path.GetTempPath() + Guid.NewGuid().ToString() + ".txt";
-                            var logText = $@"Error restoring NuGet packages!
-
-==== Exception details ====
-
-{e}
-
-==== Log ====
-
-{string.Join(Environment.NewLine, logger.Logs.Select(x => $"[{x.Level}] {x.Message}"))}
-";
-                            File.WriteAllText(logFile, logText);
-#if XENKO_NUGET_RESOLVER_UX
-                            // Write log to file
-                            System.Windows.Forms.MessageBox.Show($"{e.Message}{Environment.NewLine}{Environment.NewLine}Please see details in {logFile} (which will be automatically opened)", "Error restoring NuGet packages");
-                            Process.Start(logFile);
-#else
-                            // Display log in console
-                            Console.WriteLine(logText);
-#endif
-                            Environment.Exit(1);
                         }
                     }
                 }
