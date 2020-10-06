@@ -37,7 +37,7 @@ namespace Xenko.Rendering.Images {
         public float Density { get; set; } = 0.1f;
 
         [DataMember(20)]
-        public Color4 Color { get; set; } = new Color4(1.0f);
+        public Color3 Color { get; set; } = new Color3(1.0f);
 
         [DataMember(30)]
         public float FogStart { get; set; } = 0f;
@@ -63,7 +63,7 @@ namespace Xenko.Rendering.Images {
         }
 
         protected override void SetDefaultParameters() {
-            Color = new Color4(1.0f);
+            Color = new Color3(1.0f);
             Density = 0.1f;
             base.SetDefaultParameters();
         }

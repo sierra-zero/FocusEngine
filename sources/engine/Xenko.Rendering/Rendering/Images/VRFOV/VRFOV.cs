@@ -30,14 +30,13 @@ namespace Xenko.Rendering.Images {
         public VRFOV(string ShaderName) : base(ShaderName) {
             if (ShaderName == null) throw new ArgumentNullException("vrfovFilterName");
             vrfovFilter = new ImageEffectShader(ShaderName);
-            Enabled = false; // disable by default
         }
 
         [DataMember(10)]
         public float Intensity { get; set; } = 1f;
 
         [DataMember(20)]
-        public Color4 Color { get; set; } = new Color4(0f, 0f, 0f, 1f);
+        public Color3 Color { get; set; } = new Color3(0f, 0f, 0f);
 
         [DataMember(30)]
         public float Radius { get; set; } = 0.5f;
@@ -60,7 +59,7 @@ namespace Xenko.Rendering.Images {
         }
 
         protected override void SetDefaultParameters() {
-            Color = new Color4(0f, 0f, 0f, 1f);
+            Color = new Color3(0f, 0f, 0f);
             Intensity = 1f;
             Radius = 0.5f;
             base.SetDefaultParameters();

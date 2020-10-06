@@ -18,7 +18,7 @@ namespace Xenko.Rendering
 {
     internal static partial class FogEffectKeys
     {
-        public static readonly ValueParameterKey<Color4> FogColor = ParameterKeys.NewValue<Color4>(new Color4(1,1,1,1));
+        public static readonly ValueParameterKey<Color3> FogColor = ParameterKeys.NewValue<Color3>(new Color3(1,1,1));
         public static readonly ValueParameterKey<float> Density = ParameterKeys.NewValue<float>(1.0f);
         public static readonly ValueParameterKey<float> FogStart = ParameterKeys.NewValue<float>(0f);
         public static readonly ValueParameterKey<bool> skipBG = ParameterKeys.NewValue<bool>(false);

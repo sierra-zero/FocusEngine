@@ -18,7 +18,7 @@ namespace Xenko.Rendering
 {
     internal static partial class VRFOVEffectKeys
     {
-        public static readonly ValueParameterKey<Color4> Color = ParameterKeys.NewValue<Color4>(new Color4(0f,0f,0f,1f));
+        public static readonly ValueParameterKey<Color3> Color = ParameterKeys.NewValue<Color3>(new Color3(0f,0f,0f));
         public static readonly ValueParameterKey<float> Radius = ParameterKeys.NewValue<float>(0.5f);
         public static readonly ValueParameterKey<float> Intensity = ParameterKeys.NewValue<float>(1f);
         public static readonly ValueParameterKey<float> VerticalScale = ParameterKeys.NewValue<float>(1f);

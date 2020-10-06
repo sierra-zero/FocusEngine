@@ -11,7 +11,7 @@ namespace Xenko.Rendering.Images
         stage float zNear;
         stage bool skipBG;
 
-        stage float4 FogColor;
+        stage float3 FogColor;
         stage Texture2D DepthTexture;
 
         stage override float4 Shading() 
@@ -26,7 +26,7 @@ namespace Xenko.Rendering.Images
             
                 float fogAmount = clamp(exp(dist * -Density), 0.0, 1.0);
             
-                color.xyz = lerp(FogColor.xyz, color.xyz, fogAmount);
+                color.xyz = lerp(FogColor, color.xyz, fogAmount);
             }
 
             return color;

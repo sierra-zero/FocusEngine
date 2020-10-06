@@ -8,7 +8,7 @@ namespace Xenko.Rendering.Images
         stage float Intensity;
         stage float Radius;
         stage float VerticalScale;
-        stage float4 Color;
+        stage float3 Color;
 
         stage override float4 Shading() 
         {
@@ -22,7 +22,7 @@ namespace Xenko.Rendering.Images
             float distanceToCenter = sqrt(min(squareDistanceToCenterLeft, squareDistanceToCenterRight));
 
             float vignette = smoothstep(Radius, 1.0, distanceToCenter / 0.707);
-            vignette *= Intensity;
+            vignette = clamp(Intensity * vignette, 0.0, 1.0);
             color.rgb = color.rgb * (1.0 - vignette) + vignette * Color;
 
             return color;
