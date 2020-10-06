@@ -47,6 +47,7 @@ using EditorSettings = Xenko.Core.Assets.Editor.Settings.EditorSettings;
 using MessageBox = System.Windows.MessageBox;
 using MessageBoxButton = System.Windows.MessageBoxButton;
 using MessageBoxImage = System.Windows.MessageBoxImage;
+using Xenko.Engine;
 
 namespace Xenko.GameStudio
 {
@@ -95,6 +96,7 @@ namespace Xenko.GameStudio
 
             EditorSettings.Initialize();
             Thread.CurrentThread.Name = "EditorGameThread (GameStudio)";
+            EntityManager.EnforceThreads = false;
 
             try
             {

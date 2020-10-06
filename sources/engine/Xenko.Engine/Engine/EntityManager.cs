@@ -224,7 +224,7 @@ namespace Xenko.Engine
             if (entities.Contains(entity))
                 return;
 
-            if (EnforceThreads && Thread.CurrentThread != GameBase.RenderingThread && Thread.CurrentThread.Name.StartsWith("EditorGameThread ") == false)
+            if (EnforceThreads && Thread.CurrentThread != GameBase.RenderingThread)
                 throw new InvalidOperationException("Trying to add '" + entity.Name + "' to the scene in a non-rendering thread. Set EntityManager.EnforceThreads to disable this check.");
 
             // Add this entity to our internal hashset
@@ -275,7 +275,7 @@ namespace Xenko.Engine
             if (!entities.Contains(entity))
                 return;
 
-            if (EnforceThreads && Thread.CurrentThread != GameBase.RenderingThread && Thread.CurrentThread.Name.StartsWith("EditorGameThread ") == false)
+            if (EnforceThreads && Thread.CurrentThread != GameBase.RenderingThread)
                 throw new InvalidOperationException("Trying to remove '" + entity.Name + "' from the scene in a non-rendering thread. Set EntityManager.EnforceThreads to disable this check.");
 
             entities.Remove(entity);
