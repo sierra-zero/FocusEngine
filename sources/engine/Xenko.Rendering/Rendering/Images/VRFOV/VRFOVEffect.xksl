@@ -1,0 +1,31 @@
+namespace Xenko.Rendering.Images
+{
+    /// <summary>
+    /// Simple fog
+    /// </summary>
+    internal shader VRFOVEffect : ImageEffectShader
+    {
+        stage float Intensity;
+        stage float Radius;
+        stage float VerticalScale;
+        stage float4 Color;
+
+        stage override float4 Shading() 
+        {
+            float4 color = Texture0.Sample(PointSampler, streams.TexCoord);
+
+            float centerDown = VerticalScale * (streams.TexCoord.y - 0.5);
+            float2 fromCenterVectorLeft = float2(streams.TexCoord.x - 0.25, centerDown);
+            float2 fromCenterVectorRight = float2(streams.TexCoord.x - 0.75, centerDown);
+            float squareDistanceToCenterLeft = dot(fromCenterVectorLeft, fromCenterVectorLeft);
+            float squareDistanceToCenterRight = dot(fromCenterVectorRight, fromCenterVectorRight);
+            float distanceToCenter = sqrt(min(squareDistanceToCenterLeft, squareDistanceToCenterRight));
+
+            float vignette = smoothstep(Radius, 1.0, distanceToCenter / 0.707);
+            vignette *= Intensity;
+            color.rgb = color.rgb * (1.0 - vignette) + vignette * Color;
+
+            return color;
+        }
+    };
+}

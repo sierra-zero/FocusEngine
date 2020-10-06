@@ -639,20 +639,17 @@ namespace Xenko.Rendering.Compositing
                     }
                 }
 
-                if (PostEffects != null)
+                if (PostEffects != null && PostEffects.Enabled)
                 {
                     // Run post effects
                     // Note: OpaqueRenderStage can't be null otherwise colorTargetIndex would be -1
                     if (eyeCount == 1) PostEffects.Draw(drawContext, OpaqueRenderStage.OutputValidator, renderTargets.Items, depthStencil, viewOutputTarget);
                 }
-                else
+                else if (actualMultisampleCount != MultisampleCount.None)
                 {
-                    if (actualMultisampleCount != MultisampleCount.None)
+                    using (drawContext.QueryManager.BeginProfile(Color.Green, CompositingProfilingKeys.MsaaResolve))
                     {
-                        using (drawContext.QueryManager.BeginProfile(Color.Green, CompositingProfilingKeys.MsaaResolve))
-                        {
-                            drawContext.CommandList.Copy(renderTargets[colorTargetIndex], viewOutputTarget);
-                        }
+                        drawContext.CommandList.Copy(renderTargets[colorTargetIndex], viewOutputTarget);
                     }
                 }
 
@@ -681,7 +678,7 @@ namespace Xenko.Rendering.Compositing
                     if (!isFullViewport)
                         return;
 
-                    bool hasPostEffects = PostEffects != null, presentingVR = this == VRRenderers[VRRenderers.Count - 1];
+                    bool hasPostEffects = PostEffects != null && PostEffects.Enabled, presentingVR = this == VRRenderers[VRRenderers.Count - 1];
 
                     Texture vrFullSurface;
                     using (drawContext.PushRenderTargetsAndRestore())

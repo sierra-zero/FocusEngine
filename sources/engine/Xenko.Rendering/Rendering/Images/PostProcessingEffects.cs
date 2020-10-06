@@ -41,6 +41,7 @@ namespace Xenko.Rendering.Images
         {
             OutlineEffect = new Outline();
             FogEffect = new Fog();
+            VRFOVFilter = new VRFOV();
             AmbientOcclusion = new AmbientOcclusion();
             LocalReflections = new LocalReflections();
             DepthOfField = new DepthOfField();
@@ -113,6 +114,14 @@ namespace Xenko.Rendering.Images
         public DepthOfField DepthOfField { get; private set; }
 
         /// <summary>
+        /// Gets the VR FOV effect.
+        /// </summary>
+        [DataMember(15)]
+        [Category]
+        [Display("VR FOV Reduction")]
+        public VRFOV VRFOVFilter { get; private set; }
+
+        /// <summary>
         /// Gets the bright pass-filter.
         /// </summary>
         /// <value>The bright filter.</value>
@@ -174,6 +183,7 @@ namespace Xenko.Rendering.Images
         {
             OutlineEffect.Enabled = false;
             FogEffect.Enabled = false;
+            VRFOVFilter.Enabled = false;
             AmbientOcclusion.Enabled = false;
             LocalReflections.Enabled = false;
             DepthOfField.Enabled = false;
@@ -200,6 +210,7 @@ namespace Xenko.Rendering.Images
             base.InitializeCore();
             OutlineEffect = ToLoadAndUnload(OutlineEffect);
             FogEffect = ToLoadAndUnload(FogEffect);
+            VRFOVFilter = ToLoadAndUnload(VRFOVFilter);
             AmbientOcclusion = ToLoadAndUnload(AmbientOcclusion);
             LocalReflections = ToLoadAndUnload(LocalReflections);
             DepthOfField = ToLoadAndUnload(DepthOfField);
@@ -496,7 +507,17 @@ namespace Xenko.Rendering.Images
             {
                 luminanceToChannelTransform.Enabled = false;
             }
-            
+
+            // fov filter
+            if (VRFOVFilter.Enabled && VRFOVFilter.Radius < 1f && VRFOVFilter.Intensity > 0f)
+            {
+                var vrOutput = NewScopedRenderTarget2D(currentInput.Width, currentInput.Height, currentInput.Format, 1);
+                VRFOVFilter.SetColorInput(currentInput);
+                VRFOVFilter.SetOutput(vrOutput);
+                VRFOVFilter.Draw(context);
+                currentInput = vrOutput;
+            }
+
             // Color transform group pass (tonemap, color grading)
             var lastEffect = colorTransformsGroup.Enabled ? (ImageEffect)colorTransformsGroup : Scaler;
             lastEffect.SetInput(currentInput);
