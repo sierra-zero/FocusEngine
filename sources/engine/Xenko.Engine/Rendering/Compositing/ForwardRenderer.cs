@@ -251,7 +251,7 @@ namespace Xenko.Rendering.Compositing
         {
             renderOutputValidator.Add<ColorTargetSemantic>(renderContext.RenderOutput.RenderTargetFormat0);
 
-            if (PostEffects != null)
+            if (PostEffects != null && PostEffects.Enabled)
             {
                 if (PostEffects.RequiresNormalBuffer)
                 {
@@ -313,7 +313,7 @@ namespace Xenko.Rendering.Compositing
                 // Mark this view as requiring shadows
                 shadowMapRenderer?.RenderViewsWithShadows.Add(context.RenderView);
 
-                context.RenderOutput = new RenderOutputDescription(PostEffects != null ? PixelFormat.R16G16B16A16_Float : context.RenderOutput.RenderTargetFormat0, DepthBufferFormat, MSAALevel);
+                context.RenderOutput = new RenderOutputDescription(PostEffects != null && PostEffects.Enabled ? PixelFormat.R16G16B16A16_Float : context.RenderOutput.RenderTargetFormat0, DepthBufferFormat, MSAALevel);
 
                 CollectStages(context);
 
@@ -841,7 +841,7 @@ namespace Xenko.Rendering.Compositing
 
             for (int index = 0; index < renderTargets.Count; index++)
             {
-                if (renderTargets[index].Semantic is ColorTargetSemantic && (PostEffects == null || PostEffects.RequiresRenderTargetChange == false) && actualMultisampleCount == MultisampleCount.None)
+                if (renderTargets[index].Semantic is ColorTargetSemantic && (PostEffects == null || PostEffects.Enabled == false || PostEffects.RequiresRenderTargetChange == false) && actualMultisampleCount == MultisampleCount.None)
                 {
                     currentRenderTargets[index] = outputRenderTarget;
                 }

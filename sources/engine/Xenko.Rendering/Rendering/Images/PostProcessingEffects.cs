@@ -72,6 +72,14 @@ namespace Xenko.Rendering.Images
         public Guid Id { get; set; } = Guid.NewGuid();
 
         /// <summary>
+        /// Is this enabled?
+        /// </summary>
+        [DataMember(0)]
+        [DefaultValue(true)]
+        [Display("Enable", "Enable Post Processing")]
+        public override bool Enabled { get => base.Enabled; set => base.Enabled = value; }
+
+        /// <summary>
         /// Gets the outline effect.
         /// </summary>
         [DataMember(6)]
