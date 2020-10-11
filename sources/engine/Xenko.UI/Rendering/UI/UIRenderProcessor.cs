@@ -64,6 +64,15 @@ namespace Xenko.Rendering.UI
 
         protected override void OnEntityComponentAdding(Entity entity, UIComponent uiComponent, RenderUIElement renderUIElement)
         {
+            if (uiComponent.IsFullScreen == false &&
+                uiComponent.Page?.RootElement != null &&
+                uiComponent.Page.RootElement.lastResolution.HasValue == false)
+            {
+                // this fixes UIElements being rendered incorrectly for the first frame they are added
+                uiComponent.Page.RootElement.lastResolution = uiComponent.Resolution;
+                uiComponent.Page.RootElement.RearrangeNow();
+            }
+
             VisibilityGroup.RenderObjects.Add(renderUIElement);
         }
 

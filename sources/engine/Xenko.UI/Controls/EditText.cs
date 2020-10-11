@@ -1,4 +1,4 @@
-﻿// Copyright (c) Xenko contributors (https://xenko.com) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) Xenko contributors (https://xenko.com) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
@@ -772,7 +772,7 @@ namespace Xenko.UI.Controls
             if (textToMeasure == null || Font == null)
                 return Vector2.Zero;
 
-            var sizeRatio = LayoutingContext.RealVirtualResolutionRatio;
+            var sizeRatio = LayoutingContext?.RealVirtualResolutionRatio ?? Vector2.One;
             var measureFontSize = new Vector2(ActualTextSize * sizeRatio.Y); // we don't want letters non-uniform ratio
             var realSize = Font.MeasureString(textToMeasure, measureFontSize);
 

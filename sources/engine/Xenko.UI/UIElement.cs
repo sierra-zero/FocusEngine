@@ -887,15 +887,18 @@ namespace Xenko.UI
             }
         }
 
-        private Vector3 lastResolution;
+        internal Vector3? lastResolution;
 
         /// <summary>
         /// Rearrange the UIElement now, perhaps right after changes to its position, so it will be ready for the next frame.
         /// </summary>
         public void RearrangeNow()
         {
-            Measure(lastResolution);
-            Arrange(lastResolution, false);
+            if (lastResolution.HasValue)
+            {
+                Measure(lastResolution.Value);
+                Arrange(lastResolution.Value, false);
+            }
         }
 
         /// <summary>
