@@ -370,7 +370,7 @@ namespace Xenko.Rendering.UI
             rendererManager.RegisterRenderer(element, renderer);
         }
 
-        private static Matrix ReallyCloseUI = Matrix.Transformation(new Vector3(0.531f), Quaternion.Identity, new Vector3(0f, 0f, 60f));
+        private static Matrix ReallyCloseUI = Matrix.Transformation(new Vector3(0.505f), Quaternion.Identity, new Vector3(0f, 0f, 63.5f));
 
         private class UIElementState
         {
