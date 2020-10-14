@@ -542,7 +542,7 @@ namespace Xenko.LauncherApp.ViewModels
         {
             try
             {
-                Process.Start(url);
+                Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
             }
             // FIXME: catch only specific exceptions?
             catch (Exception)
