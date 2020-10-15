@@ -212,6 +212,17 @@ namespace Xenko.Engine
         public virtual Quaternion Rotation { get; set; }
 
         /// <summary>
+        /// transfer from one entity to another, preserving transform information
+        /// </summary>
+        internal override void PrepareForTransfer(Entity toEntity)
+        {
+            Position = Entity.Transform.WorldPosition(true) - toEntity.Transform.WorldPosition(true);
+            Core.Mathematics.Quaternion inverted = toEntity.Transform.WorldRotation();
+            inverted.Invert();
+            Rotation = Entity.Transform.WorldRotation() * inverted;
+        }
+
+        /// <summary>
         /// Is this a "ghost"? Useful for triggers that detect collisions, but don't cause them
         /// </summary>
         [DataMember]

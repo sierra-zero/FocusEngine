@@ -382,22 +382,32 @@ namespace Xenko.Engine
             prefabModel.Add(material);
         }
 
-        private static void Gather(Entity e, List<Entity> into)
+        private static void Gather(Entity e, List<Entity> into, List<Entity> motion)
         {
-            into.Add(e);
-            foreach (Entity ec in e.GetChildren()) Gather(ec, into);
+            if (motion == null || e.Transform.Immobile != IMMOBILITY.FullMotion)
+            {
+                into.Add(e);
+                foreach (Entity ec in e.GetChildren()) Gather(ec, into, motion);
+            }
+            else
+            {
+                motion.Add(e);
+                foreach (Entity ec in e.GetChildren()) Gather(ec, into, motion);
+            }
         }
 
         /// <summary>
-        /// Takes an Entity tree and does its best to batch itself and children into one entity. Automatically removes batched entities.
+        /// Takes an Entity tree and does its best to batch itself and children into one entity. Automatically removes batched entities. Can try and mix and match immobile and non-immobile, but it may not work perfectly.
         /// </summary>
         /// <param name="root">The root entity to batch from and merge into</param>
+        /// <param name="preserveAndTransferComponents">Try to move components from batched entities to the main consolidated entity</param>
+        /// <param name="onlyImmobile">Try to batch only things immobile and keep motion things</param>
         /// <returns>Returns the number of successfully batched and removed entities</returns>
-        public static int BatchChildren(Entity root)
+        public static int BatchChildren(Entity root, bool preserveAndTransferComponents = false, bool onlyImmobile = false)
         {
             // gather all of the children (and root)
-            List<Entity> allEs = new List<Entity>();
-            Gather(root, allEs);
+            List<Entity> allEs = new List<Entity>(), motion = onlyImmobile ? new List<Entity>() : null;
+            Gather(root, allEs, motion);
             // capture the original transform of the root, then clear it
             // so it isn't included in individual verticies
             Vector3 originalPosition = root.Transform.Position;
@@ -417,10 +427,53 @@ namespace Xenko.Engine
             // we will want to remove entities from the scene that were batched,
             // so convert allEs into a list of things we want to remove
             foreach (Entity skipped in unbatched) allEs.Remove(skipped);
+            // attach mobile entities to root, if any, with position offset
+            if (motion != null)
+            {
+                for (int i = 0; i < motion.Count; i++)
+                {
+                    Entity mt = motion[i];
+                    mt.Transform.Position = mt.Transform.WorldPosition(true) - root.Transform.Position;
+                    mt.Transform.Parent = root.Transform.Parent;
+                }
+            }
             // remove now batched entities from the scene, skipping root
             for (int i = 0; i < allEs.Count; i++)
             {
-                if (allEs[i] != root) allEs[i].Scene = null;
+                Entity e = allEs[i];
+                bool keepE = false;
+                if (e != root)
+                {
+                    if (preserveAndTransferComponents)
+                    {
+                        // transfer all non-transform/non-modelcomponents over
+                        for (int j=0; j<e.Components.Count; j++)
+                        {
+                            EntityComponent ec = e.Components[j];
+                            if (ec is ModelComponent == false &&
+                                ec is TransformComponent == false)
+                            {
+                                if (EntityComponentAttributes.Get(ec.GetType()).AllowMultipleComponents)
+                                {
+                                    ec.PrepareForTransfer(root);
+                                    e.Remove(ec);
+                                    root.Add(ec);
+                                    j--;
+                                }
+                                else
+                                {
+                                    // wait, we have components that can't stack... keep this entity but without the modelcomponent
+                                    keepE = true;
+                                    e.RemoveAll<ModelComponent>();
+                                    e.Transform.Position = e.Transform.WorldPosition(true) - root.Transform.WorldPosition(true);
+                                    e.Transform.Parent = root.Transform;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    if (keepE == false) e.Scene = null;
+                }
             }
             // return how many things we were able to batch
             return allEs.Count;

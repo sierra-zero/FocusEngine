@@ -49,6 +49,11 @@ namespace Xenko.Engine
             }
         }
 
+        /// <summary>
+        /// for ModelBatcher, transferring component to a batched entity
+        /// </summary>
+        internal virtual void PrepareForTransfer(Entity toEntity) { }
+
         internal class Serializer : DataSerializer<EntityComponent>
         {
             private DataSerializer<Guid> guidSerializer;
