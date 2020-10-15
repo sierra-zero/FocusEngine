@@ -121,8 +121,13 @@ namespace Xenko.Graphics
                 vkResetFences(GraphicsDevice.NativeDevice, 1, fences);
             }
 
+            if ((int)result < 0)
+            {
+                Xenko.Graphics.SDL.Window.GenerateSwapchainError("vkAcquireNextImageKHR result: " + (int)result);
+            }
+
             // did we get another image?
-            while (result != VkResult.Success)
+            while ((int)result > 0)
             {
                 // try to get the next frame (again)
                 using (GraphicsDevice.QueueLock.ReadLock())
@@ -341,7 +346,7 @@ namespace Xenko.Graphics
             var control = Description.DeviceWindowHandle.NativeWindow as SDL.Window;
 
             if (SDL2.SDL.SDL_Vulkan_CreateSurface(control.SdlHandle, GraphicsDevice.NativeInstance.Handle, out ulong surfacePtr) == SDL2.SDL.SDL_bool.SDL_FALSE)
-                control.GenerateCreationError();
+                Xenko.Graphics.SDL.Window.GenerateCreationError();
 
             surface = new VkSurfaceKHR(surfacePtr);
 #elif XENKO_PLATFORM_WINDOWS

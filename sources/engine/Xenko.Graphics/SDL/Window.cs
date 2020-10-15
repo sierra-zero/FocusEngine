@@ -7,6 +7,8 @@ using Xenko.Core.Mathematics;
 namespace Xenko.Graphics.SDL
 {
     using System.Collections.Generic;
+    using System.IO;
+    using System.Reflection;
 #pragma warning disable SA1200 // Using directives must be placed correctly
     // Using is here otherwise it would conflict with the current namespace that also defines SDL.
     using SDL2;
@@ -91,11 +93,28 @@ namespace Xenko.Graphics.SDL
             return modeList;
         }
 
-        internal void GenerateCreationError(Exception e = null)
+        internal static void GenerateCreationError(Exception e = null)
         {
             string error = "There was an error making the game window. Does your video card support Vulkan?\nMake sure your video drivers are up to date and check Vulkan compatibility.\n\nError: " + SDL.SDL_GetError();
             if (e != null) error += "\n\nException: " + e.ToString();
             SDL.SDL_ShowSimpleMessageBox(SDL.SDL_MessageBoxFlags.SDL_MESSAGEBOX_ERROR, "Failed to make Game Window", error, IntPtr.Zero);
+            Console.Error.WriteLine(error);
+            throw new Exception(error);
+        }
+
+        internal static void GenerateSwapchainError(string err)
+        {
+            string error = "There was an error rendering to the screen, which is sometimes caused by driver issues,\nmonitor configurations or resolution settings. Resolution settings have been set to default for the next run.\nPerhaps try a lower resolution setting?";
+            if (err != null) error += "\n\nDetails: " + err;
+            try
+            {
+                System.IO.File.WriteAllText(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location) + "/DefaultResolution.txt",
+                                            "1280\n" +
+                                            "720\n" +
+                                            "window\n" +
+                                            "-1");
+            } catch (Exception e2) { }
+            SDL.SDL_ShowSimpleMessageBox(SDL.SDL_MessageBoxFlags.SDL_MESSAGEBOX_ERROR, "Failed to Render To Screen", error, IntPtr.Zero);
             Console.Error.WriteLine(error);
             throw new Exception(error);
         }
@@ -247,15 +266,14 @@ namespace Xenko.Graphics.SDL
             {
                 if (IsFullScreen == value) return;
                 int displayIndex = SDL.SDL_GetWindowDisplayIndex(SdlHandle);
-                SDL.SDL_GetCurrentDisplayMode(displayIndex, out SDL.SDL_DisplayMode mode);
+                SDL.SDL_GetDesktopDisplayMode(displayIndex, out SDL.SDL_DisplayMode nativemode);
                 if (value) {
-                    SDL.SDL_GetDesktopDisplayMode(displayIndex, out SDL.SDL_DisplayMode nativemode);
                     SDL.SDL_SetWindowFullscreen(SdlHandle, nativemode.w <= ClientSize.Width && nativemode.h <= ClientSize.Height ? (uint)SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN_DESKTOP : (uint)SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN);
                     Location = Point.Zero;
                 }
                 else {
                     SDL.SDL_SetWindowFullscreen(SdlHandle, 0);
-                    Location = new Point((int)((mode.w - ClientSize.Width) * 0.5f), (int)((mode.h - ClientSize.Height) * 0.5));
+                    Location = new Point((int)((nativemode.w - ClientSize.Width) * 0.5f), (int)((nativemode.h - ClientSize.Height) * 0.5));
                 }
             }
         }
