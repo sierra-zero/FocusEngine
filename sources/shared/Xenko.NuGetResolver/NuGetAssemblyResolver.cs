@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using NuGet.Common;
 using NuGet.Configuration;
@@ -67,10 +68,11 @@ namespace Xenko.Core.Assets
                     {
                         // Note: using NuGet will try to recursively resolve NuGet.*.resources.dll, so set assembliesResolved right away so that it bypasses everything
                         assembliesResolved = true;
-
+                        CancellationTokenSource s_cts = new CancellationTokenSource();
                         var logger = new Logger();
                         try
                         {
+                            s_cts.CancelAfter(5000);
                             var (request, result) = RestoreHelper.Restore(logger, Assembly.GetExecutingAssembly().GetName().Name, new VersionRange(new NuGetVersion(XenkoVersion.NuGetVersion))).Result;
                             assemblies = RestoreHelper.ListAssemblies(request, result);
                         }
