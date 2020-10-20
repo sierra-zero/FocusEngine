@@ -306,7 +306,7 @@ namespace Xenko.VirtualReality
 
         public static void Recenter()
         {
-            Valve.VR.OpenVR.System.ResetSeatedZeroPose();
+            Valve.VR.OpenVR.Chaperone.ResetZeroPose(Valve.VR.OpenVR.Compositor.GetTrackingSpace());
         }
 
         public static void SetTrackingSpace(ETrackingUniverseOrigin space)
