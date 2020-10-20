@@ -10,7 +10,7 @@ namespace Xenko.Games
     /// </summary>
     public static class GameContextFactory
     {
-        internal static GameContext NewDefaultGameContext()
+        internal static GameContext NewDefaultGameContext(int width = 1280, int height = 720, bool fullscreen = false)
         {
             // Default context is Desktop
             AppContextType type = AppContextType.Desktop;
@@ -35,14 +35,14 @@ namespace Xenko.Games
 #elif XENKO_PLATFORM_IOS
             type = AppContextType.iOS;
 #endif
-            return NewGameContext(type);
+            return NewGameContext(type, width, height, fullscreen);
         }
 
         /// <summary>
         /// Given a <paramref name="type"/> create the appropriate game Context for the current executing platform.
         /// </summary>
         /// <returns></returns>
-        public static GameContext NewGameContext(AppContextType type)
+        public static GameContext NewGameContext(AppContextType type, int width, int height, bool fullscreen)
         {
             GameContext res = null;
             switch (type)
@@ -54,7 +54,7 @@ namespace Xenko.Games
                     res = NewGameContextDesktop();
                     break;
                 case AppContextType.DesktopSDL:
-                    res = NewGameContextSDL();
+                    res = NewGameContextSDL(width, height, fullscreen);
                     break;
                 case AppContextType.DesktopWpf:
                     res = NewGameContextWpf();
@@ -142,10 +142,10 @@ namespace Xenko.Games
 #endif
         }
 
-        public static GameContext NewGameContextSDL()
+        public static GameContext NewGameContextSDL(int width, int height, bool fullscreen)
         {
 #if XENKO_UI_SDL
-            return new GameContextSDL(null);
+            return new GameContextSDL(null, width, height, fullscreen);
 #else
             return null;
 #endif

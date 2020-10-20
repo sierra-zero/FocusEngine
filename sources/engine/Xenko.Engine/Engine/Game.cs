@@ -204,101 +204,6 @@ namespace Xenko.Engine
         public bool AutoLoadDefaultSettings { get; set; }
 
         /// <summary>
-        /// If AutoLoadDefaultSettings is true, these values will be set on game start. Set width & height to int.MaxValue to use highest native values.
-        /// </summary>
-        /// <returns>true if default settings changed</returns>
-        public bool SetDefaultSettings(int width, int height, bool fullscreen, float? fov = null) {
-            GetDefaultSettings(out int current_width, out int current_height, out bool current_fullscreen, out float outfov);
-            if (width == current_width && height == current_height && current_fullscreen == fullscreen && (fov.HasValue == false || fov == outfov)) return false;
-            try {
-                System.IO.File.WriteAllText(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location) + "/DefaultResolution.txt",
-                                            width.ToString() + "\n" +
-                                            height.ToString() + "\n" +
-                                            (fullscreen ? "fullscreen" : "window") + "\n" +
-                                            (fov ?? outfov).ToString());
-                return true;
-            } catch(Exception e) {
-                return false;
-            }
-        }
-
-        private bool settingsOverride = false, settingsOverrideFS;
-        private int settingsOverrideW, settingsOverrideH;
-
-        /// <summary>
-        /// Temporarily uses different settings this run, without changing the saved default settings. Set width & height to int.MaxValue to use highest native values.
-        /// </summary>
-        public void OverrideDefaultSettings(int width, int height, bool fullscreen) {
-            settingsOverride = true;
-            settingsOverrideW = width;
-            settingsOverrideH = height;
-            settingsOverrideFS = fullscreen;
-        }
-
-        /// <summary>
-        /// Gets default settings that will be used on game startup, if AutoLoadDefaultSettings is true. Caps resolution to native display resolution.
-        /// </summary>
-        public void GetDefaultSettings(out int width, out int height, out bool fullscreen, out float fov, Window useSDLWindow = null) {
-            string defaultFile = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location) + "/DefaultResolution.txt";
-            // default settings are maximum native resolution
-            bool gotCustomWH = false;
-            width = int.MaxValue;
-            height = int.MaxValue;
-            fullscreen = true;
-            fov = -1f;
-            // wait, are we overriding settings?
-            if (settingsOverride) {
-                width = settingsOverrideW;
-                height = settingsOverrideH;
-                fullscreen = settingsOverrideFS;
-                gotCustomWH = true;
-            } else if (File.Exists(defaultFile)) {
-                try {
-                    string[] vals = File.ReadAllLines(defaultFile);
-                    if (vals.Length >= 2)
-                        gotCustomWH = int.TryParse(vals[0].Trim(), out width) && int.TryParse(vals[1].Trim(), out height);
-                    if (vals.Length >= 3)
-                        fullscreen = vals[2].Trim().ToLower().StartsWith("full");
-                    if (vals.Length >= 4)
-                        float.TryParse(vals[3].Trim(), out fov);
-                } catch (Exception e) { }
-            }
-            try
-            {
-                // cap values to native resolution (try to use display window)
-                int native_width, native_height, refresh_rate, index = 0;
-                if (useSDLWindow is Window gwsdl) index = gwsdl.GetWindowDisplay();
-                Graphics.SDL.Window.GetDisplayInformation(out native_width, out native_height, out refresh_rate, index);
-                if (width >= native_width &&
-                    height >= native_height)
-                {
-                    // force fullscreen if using native or higher,
-                    // as crashes can happen on some hardware if using this big of a window
-                    width = native_width;
-                    height = native_height;
-                    fullscreen = true;
-                    fov = -1f;
-                }
-                else
-                {
-                    // smaller than native, lets make sure we are still within each bound though
-                    if (width > native_width) width = native_width;
-                    if (height > native_height) height = native_height;
-                }
-                gotCustomWH = true;
-            }
-            catch (Exception e) { }
-            // make sure we got something valid
-            if (gotCustomWH == false)
-            {
-                width = 1280;
-                height = 720;
-                fullscreen = false;
-                fov = -1f;
-            }
-        }
-
-        /// <summary>
         /// Initializes a new instance of the <see cref="Game"/> class.
         /// </summary>
         public Game()
@@ -364,9 +269,9 @@ namespace Xenko.Engine
         }
 
         /// <inheritdoc/>
-        protected override void PrepareContext()
+        protected override void PrepareContext(float overridefov = -1f)
         {
-            base.PrepareContext();
+            base.PrepareContext(overridefov);
 
             // Init assets
             if (Context.InitializeDatabase)
@@ -401,15 +306,11 @@ namespace Xenko.Engine
                         deviceManager.PreferredGraphicsProfile = new[] { renderingSettings.DefaultGraphicsProfile };
                     }
 
-                    GetDefaultSettings(out renderingSettings.DefaultBackBufferWidth, out renderingSettings.DefaultBackBufferHeight, out bool fullScreen, out float fov, (Context as GameContextSDL)?.Control ?? null);
-                    deviceManager.IsFullScreen = fullScreen;
-
-                    if (renderingSettings.DefaultBackBufferWidth > 0) deviceManager.PreferredBackBufferWidth = renderingSettings.DefaultBackBufferWidth;
-                    if (renderingSettings.DefaultBackBufferHeight > 0) deviceManager.PreferredBackBufferHeight = renderingSettings.DefaultBackBufferHeight;
-
                     deviceManager.PreferredColorSpace = renderingSettings.ColorSpace;
-                    SceneSystem.OverrideFOV = fov;
+                    renderingSettings.DefaultBackBufferWidth = deviceManager.preferredBackBufferWidth;
+                    renderingSettings.DefaultBackBufferHeight = deviceManager.PreferredBackBufferHeight;
                     SceneSystem.InitialSceneUrl = Settings?.DefaultSceneUrl;
+                    SceneSystem.OverrideFOV = overridefov;
                     SceneSystem.InitialGraphicsCompositorUrl = Settings?.DefaultGraphicsCompositorUrl;
                     SceneSystem.SplashScreenUrl = Settings?.SplashScreenUrl;
                     SceneSystem.SplashScreenColor = Settings?.SplashScreenColor ?? Color4.Black;
@@ -449,13 +350,9 @@ namespace Xenko.Engine
             if (gameCreation)
             {
                 //execute the following steps only when the game is still at creation stage
-
                 deviceManager.PreferredGraphicsProfile = Context.RequestedGraphicsProfile = new[] { renderingSettings.DefaultGraphicsProfile };
-
-                //if our device height is actually smaller then requested we use the device one
-                deviceManager.PreferredBackBufferHeight = Context.RequestedHeight = Math.Min(renderingSettings.DefaultBackBufferHeight, Window.ClientBounds.Height);
-                //if our device width is actually smaller then requested we use the device one
-                deviceManager.PreferredBackBufferWidth = Context.RequestedWidth = Math.Min(renderingSettings.DefaultBackBufferWidth, Window.ClientBounds.Width);
+                Context.RequestedHeight = renderingSettings.DefaultBackBufferHeight;
+                Context.RequestedWidth = renderingSettings.DefaultBackBufferWidth;
             }
 
             //these might get triggered even during game runtime, resize, orientation change

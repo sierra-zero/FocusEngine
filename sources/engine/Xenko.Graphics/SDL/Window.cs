@@ -29,6 +29,9 @@ namespace Xenko.Graphics.SDL
         /// </summary>
         static Window()
         {
+            // Preload proper SDL native library (depending on CPU type)
+            Core.NativeLibrary.PreloadLibrary("SDL2.dll", typeof(Window));
+
             SDL.SDL_Init(SDL.SDL_INIT_EVERYTHING);
 #if XENKO_GRAPHICS_API_OPENGL
             // Set our OpenGL version. It has to be done before any SDL window creation
@@ -104,7 +107,7 @@ namespace Xenko.Graphics.SDL
 
         internal static void GenerateSwapchainError(string err)
         {
-            string error = "There was an error rendering to the screen, which is sometimes caused by driver issues,\nmonitor configurations or resolution settings. Resolution settings have been set to default for the next run.\nPerhaps try a lower resolution setting?";
+            string error = "There was an error rendering to the screen. Try disabling display scaling, setting a normal DPI or using a lower resolution.\nDrivers, monitor configurations or invalid resolution settings may also be to blame.\nResolution settings have been set to default for the next run.";
             if (err != null) error += "\n\nDetails: " + err;
             try
             {
@@ -123,17 +126,21 @@ namespace Xenko.Graphics.SDL
         /// Initializes a new instance of the <see cref="Window"/> class with <paramref name="title"/> as the title of the Window.
         /// </summary>
         /// <param name="title">Title of the window, see Text property.</param>
-        public Window(string title)
+        public Window(string title, int width, int height, bool fullscreen)
         {
-#if XENKO_GRAPHICS_API_VULKAN
-            var flags = SDL.SDL_WindowFlags.SDL_WINDOW_HIDDEN | SDL.SDL_WindowFlags.SDL_WINDOW_VULKAN;
-#else
-            var flags = SDL.SDL_WindowFlags.SDL_WINDOW_HIDDEN;
-#endif
+            var flags = SDL.SDL_WindowFlags.SDL_WINDOW_VULKAN | SDL.SDL_WindowFlags.SDL_WINDOW_ALLOW_HIGHDPI;
+
+            // don't try using a resolution too large
+            SDL.SDL_GetDesktopDisplayMode(0, out SDL.SDL_DisplayMode mode);
+            if (mode.w <= width || mode.h <= height)
+                flags |= SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN_DESKTOP;
+            else if (fullscreen)
+                flags |= SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN;
+
             try
             {
                 // Create the SDL window and then extract the native handle.
-                SdlHandle = SDL.SDL_CreateWindow(title, SDL.SDL_WINDOWPOS_UNDEFINED, SDL.SDL_WINDOWPOS_UNDEFINED, 640, 480, flags);
+                SdlHandle = SDL.SDL_CreateWindow(title, SDL.SDL_WINDOWPOS_CENTERED, SDL.SDL_WINDOWPOS_CENTERED, width, height, flags);
             }
             catch(Exception e)
             {
@@ -268,7 +275,7 @@ namespace Xenko.Graphics.SDL
                 int displayIndex = SDL.SDL_GetWindowDisplayIndex(SdlHandle);
                 SDL.SDL_GetDesktopDisplayMode(displayIndex, out SDL.SDL_DisplayMode nativemode);
                 if (value) {
-                    SDL.SDL_SetWindowFullscreen(SdlHandle, nativemode.w <= ClientSize.Width && nativemode.h <= ClientSize.Height ? (uint)SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN_DESKTOP : (uint)SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN);
+                    SDL.SDL_SetWindowFullscreen(SdlHandle, nativemode.w <= ClientSize.Width || nativemode.h <= ClientSize.Height ? (uint)SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN_DESKTOP : (uint)SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN);
                     Location = Point.Zero;
                 }
                 else {
@@ -387,7 +394,11 @@ namespace Xenko.Graphics.SDL
                 SDL.SDL_GetWindowSize(SdlHandle, out w, out h);
                 return new Size2(w, h);
             }
-            set { SDL.SDL_SetWindowSize(SdlHandle, value.Width, value.Height); }
+            set 
+            {
+                if (Size != value)
+                    SDL.SDL_SetWindowSize(SdlHandle, value.Width, value.Height);
+            }
         }
 
         /// <summary>
@@ -397,20 +408,11 @@ namespace Xenko.Graphics.SDL
         {
             get
             {
-#if XENKO_GRAPHICS_API_OPENGL || XENKO_GRAPHICS_API_VULKAN
-                int w, h;
-                SDL.SDL_GL_GetDrawableSize(SdlHandle, out w, out h);
-                return new Size2(w, h);
-#else
-                SDL.SDL_Surface *surfPtr = (SDL.SDL_Surface*)SDL.SDL_GetWindowSurface(SdlHandle);
-                return new Size2(surfPtr->w, surfPtr->h);
-#endif
+                return Size;
             }
             set
             {
-                    // FIXME: We need to adapt the ClientSize to an actual Size to take into account borders.
-                    // FIXME: On Windows you do this by using AdjustWindowRect.
-                SDL.SDL_SetWindowSize(SdlHandle, value.Width, value.Height);
+                Size = value;
             }
         }
 

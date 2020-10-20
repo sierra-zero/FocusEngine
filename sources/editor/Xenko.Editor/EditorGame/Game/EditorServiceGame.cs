@@ -93,7 +93,7 @@ namespace Xenko.Editor.EditorGame.Game
             }
         }
 
-        protected override void PrepareContext()
+        protected override void PrepareContext(float overridefov = -1f)
         {
             Services.RemoveService<IDatabaseFileProviderService>();
             Services.AddService(MicrothreadLocalDatabases.ProviderService);

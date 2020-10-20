@@ -118,59 +118,16 @@ namespace Xenko.Games
             gameWindow.Activated += OnActivated;
             gameWindow.Deactivated += OnDeactivated;
             gameWindow.InitCallback = OnInitCallback;
-            gameWindow.RunCallback = OnRunCallback;
+            gameWindow.RunCallback = Tick;
 
             WindowCreated?.Invoke(this, EventArgs.Empty);
 
             gameWindow.Run();
         }
 
-        private void OnRunCallback()
-        {
-            // If/else outside of try-catch to separate user-unhandled exceptions properly
-            var unhandledException = game.UnhandledExceptionInternal;
-            if (unhandledException != null)
-            {
-                // Catch exceptions and transmit them to UnhandledException event
-                try
-                {
-                    Tick();
-                }
-                catch (Exception e)
-                {
-                    // Some system was listening for exceptions
-                    unhandledException(this, new GameUnhandledExceptionEventArgs(e, false));
-                    game.Exit();
-                }
-            }
-            else
-            {
-                Tick();
-            }
-        }
-
         private void OnInitCallback()
         {
-            // If/else outside of try-catch to separate user-unhandled exceptions properly
-            var unhandledException = game.UnhandledExceptionInternal;
-            if (unhandledException != null)
-            {
-                // Catch exceptions and transmit them to UnhandledException event
-                try
-                {
-                    game.InitializeBeforeRun();
-                }
-                catch (Exception e)
-                {
-                    // Some system was listening for exceptions
-                    unhandledException(this, new GameUnhandledExceptionEventArgs(e, false));
-                    game.Exit();
-                }
-            }
-            else
-            {
-                game.InitializeBeforeRun();
-            }
+            game.InitializeBeforeRun();
         }
 
         private void Tick()

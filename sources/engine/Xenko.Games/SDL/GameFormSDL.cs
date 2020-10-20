@@ -18,7 +18,7 @@ namespace Xenko.Games
         /// <summary>
         /// Initializes a new instance of the <see cref="GameForm"/> class.
         /// </summary>
-        public GameFormSDL() : this(GameContext.ProductName)
+        public GameFormSDL(int width, int height, bool fullscreen) : this(GameContext.ProductName, width, height, fullscreen)
         {
         }
 
@@ -26,9 +26,8 @@ namespace Xenko.Games
         /// Initializes a new instance of the <see cref="GameForm"/> class.
         /// </summary>
         /// <param name="text">The text.</param>
-        public GameFormSDL(string text) : base(text)
+        public GameFormSDL(string text, int width, int height, bool fullscreen) : base(text, width, height, fullscreen)
         {
-            Size = new Size2(800, 600);
             ResizeBeginActions += GameForm_ResizeBeginActions;
             ResizeEndActions += GameForm_ResizeEndActions;
             ActivateActions += GameForm_ActivateActions;

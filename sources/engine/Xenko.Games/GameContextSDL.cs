@@ -10,15 +10,9 @@ namespace Xenko.Games
     /// </summary>
     public class GameContextSDL : GameContextWindows<Window>
     {
-        static GameContextSDL()
-        {
-            // Preload proper SDL native library (depending on CPU type)
-            Core.NativeLibrary.PreloadLibrary("SDL2.dll", typeof(Window));
-        }
-
         /// <inheritDoc/>
-        public GameContextSDL(Window control, int requestedWidth = 0, int requestedHeight = 0)
-            : base(control ?? new GameFormSDL(), requestedWidth, requestedHeight) 
+        public GameContextSDL(Window control, int requestedWidth = 1280, int requestedHeight = 720, bool fullscreen = false)
+            : base(control ?? new GameFormSDL(requestedWidth, requestedHeight, fullscreen), requestedWidth, requestedHeight, fullscreen) 
         {
             ContextType = AppContextType.DesktopSDL;
         }

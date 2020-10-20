@@ -11,8 +11,8 @@ namespace Xenko.Games
     public abstract class GameContextWindows<TK> : GameContext<TK>
     {
         /// <inheritDoc/>
-        protected GameContextWindows(TK control, int requestedWidth = 0, int requestedHeight = 0)
-            : base(control, requestedWidth, requestedHeight)
+        protected GameContextWindows(TK control, int requestedWidth = 1280, int requestedHeight = 720, bool fullscreen = false)
+            : base(control, requestedWidth, requestedHeight, fullscreen)
         {
         }
     }

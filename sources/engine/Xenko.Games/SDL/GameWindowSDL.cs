@@ -60,24 +60,7 @@ namespace Xenko.Games
         protected override void Initialize(GameContext<Window> gameContext)
         {
             window = gameContext.Control;
-
-            // Setup the initial size of the window
-            var width = gameContext.RequestedWidth;
-            if (width == 0)
-            {
-                width = window.ClientSize.Width;
-            }
-
-            var height = gameContext.RequestedHeight;
-            if (height == 0)
-            {
-                height = window.ClientSize.Height;
-            }
-
             windowHandle = new WindowHandle(AppContextType.Desktop, window, window.Handle);
-
-            window.ClientSize = new Size2(width, height);
-
             window.MouseEnterActions += WindowOnMouseEnterActions;   
             window.MouseLeaveActions += WindowOnMouseLeaveActions;
 
@@ -247,7 +230,6 @@ namespace Xenko.Games
                     isFullScreenMaximized = value;
                     UpdateFormBorder();
                     window.IsFullScreen = value;
-                    OnClientSizeChanged(this, new EventArgs());
                     Visible = true;
                 }
             }

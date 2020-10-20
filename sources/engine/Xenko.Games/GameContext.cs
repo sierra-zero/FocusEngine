@@ -56,6 +56,11 @@ namespace Xenko.Games
         internal int RequestedHeight;
 
         /// <summary>
+        /// Fullscreen?
+        /// </summary>
+        internal bool RequestedFullscreen;
+
+        /// <summary>
         /// The requested back buffer format.
         /// </summary>
         internal PixelFormat RequestedBackBufferFormat;
@@ -163,11 +168,12 @@ namespace Xenko.Games
         /// <param name="control">The control.</param>
         /// <param name="requestedWidth">Width of the requested.</param>
         /// <param name="requestedHeight">Height of the requested.</param>
-        protected GameContext(TK control, int requestedWidth = 0, int requestedHeight = 0)
+        protected GameContext(TK control, int requestedWidth = 1280, int requestedHeight = 720, bool fullscreen = false)
         {
             Control = control;
             RequestedWidth = requestedWidth;
             RequestedHeight = requestedHeight;
+            RequestedFullscreen = fullscreen;
         }
     }
 }

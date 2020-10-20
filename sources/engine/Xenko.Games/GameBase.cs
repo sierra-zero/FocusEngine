@@ -22,6 +22,7 @@
 // THE SOFTWARE.
 
 using System;
+using System.IO;
 using System.Reflection;
 using System.Threading;
 using Xenko.Core;
@@ -31,6 +32,7 @@ using Xenko.Core.IO;
 using Xenko.Core.Serialization.Contents;
 using Xenko.Games.Time;
 using Xenko.Graphics;
+using Xenko.Graphics.SDL;
 
 namespace Xenko.Games
 {
@@ -157,8 +159,6 @@ namespace Xenko.Games
         /// Occurs when [window created].
         /// </summary>
         public event EventHandler<EventArgs> WindowCreated;
-
-        public event EventHandler<GameUnhandledExceptionEventArgs> UnhandledException;
 
         #endregion
 
@@ -356,11 +356,6 @@ namespace Xenko.Games
 
         #endregion
 
-        internal EventHandler<GameUnhandledExceptionEventArgs> UnhandledExceptionInternal
-        {
-            get { return UnhandledException; }
-        }
-
         #region Public Methods and Operators
 
         /// <summary>
@@ -445,6 +440,105 @@ namespace Xenko.Games
         }
 
         /// <summary>
+        /// If AutoLoadDefaultSettings is true, these values will be set on game start. Set width & height to int.MaxValue to use highest native values.
+        /// </summary>
+        /// <returns>true if default settings changed</returns>
+        public bool SetDefaultSettings(int width, int height, bool fullscreen, float? fov = null)
+        {
+            GetDefaultSettings(out int current_width, out int current_height, out bool current_fullscreen, out float outfov);
+            if (width == current_width && height == current_height && current_fullscreen == fullscreen && (fov.HasValue == false || fov == outfov)) return false;
+            try
+            {
+                System.IO.File.WriteAllText(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location) + "/DefaultResolution.txt",
+                                            width.ToString() + "\n" +
+                                            height.ToString() + "\n" +
+                                            (fullscreen ? "fullscreen" : "window") + "\n" +
+                                            (fov ?? outfov).ToString());
+                return true;
+            }
+            catch (Exception e)
+            {
+                return false;
+            }
+        }
+
+        private bool settingsOverride = false, settingsOverrideFS;
+        private int settingsOverrideW, settingsOverrideH;
+
+        /// <summary>
+        /// Temporarily uses different settings this run, without changing the saved default settings. Set width & height to int.MaxValue to use highest native values.
+        /// </summary>
+        public void OverrideDefaultSettings(int width, int height, bool fullscreen)
+        {
+            settingsOverride = true;
+            settingsOverrideW = width;
+            settingsOverrideH = height;
+            settingsOverrideFS = fullscreen;
+        }
+
+        /// <summary>
+        /// Gets default settings that will be used on game startup, if AutoLoadDefaultSettings is true. Caps resolution to native display resolution.
+        /// </summary>
+        public void GetDefaultSettings(out int width, out int height, out bool fullscreen, out float fov, Window useSDLWindow = null)
+        {
+            string defaultFile = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location) + "/DefaultResolution.txt";
+            // default settings are maximum native resolution
+            bool gotCustomWH = false;
+            width = int.MaxValue;
+            height = int.MaxValue;
+            fullscreen = true;
+            fov = -1f;
+            // wait, are we overriding settings?
+            if (settingsOverride)
+            {
+                width = settingsOverrideW;
+                height = settingsOverrideH;
+                fullscreen = settingsOverrideFS;
+                gotCustomWH = true;
+            }
+            else if (File.Exists(defaultFile))
+            {
+                try
+                {
+                    string[] vals = File.ReadAllLines(defaultFile);
+                    if (vals.Length >= 2)
+                        gotCustomWH = int.TryParse(vals[0].Trim(), out width) && int.TryParse(vals[1].Trim(), out height);
+                    if (vals.Length >= 3)
+                        fullscreen = vals[2].Trim().ToLower().StartsWith("full");
+                    if (vals.Length >= 4)
+                        float.TryParse(vals[3].Trim(), out fov);
+                }
+                catch (Exception e) { }
+            }
+            try
+            {
+                // cap values to native resolution (try to use display window)
+                int native_width, native_height, refresh_rate, index = 0;
+                if (useSDLWindow is Window gwsdl) index = gwsdl.GetWindowDisplay();
+                Graphics.SDL.Window.GetDisplayInformation(out native_width, out native_height, out refresh_rate, index);
+                if (width >= native_width || height >= native_height)
+                {
+                    // force fullscreen if using native or higher,
+                    // as crashes can happen on some hardware if using this big of a window
+                    width = native_width;
+                    height = native_height;
+                    fullscreen = true;
+                    fov = -1f;
+                }
+                gotCustomWH = true;
+            }
+            catch (Exception e) { }
+            // make sure we got something valid
+            if (gotCustomWH == false)
+            {
+                width = 1280;
+                height = 720;
+                fullscreen = false;
+                fov = -1f;
+            }
+        }
+
+        /// <summary>
         /// Call this method to initialize the game, begin running the game loop, and start processing events for the game.
         /// </summary>
         /// <param name="gameContext">The window Context for this game.</param>
@@ -463,10 +557,18 @@ namespace Xenko.Games
                 throw new InvalidOperationException("No GraphicsDeviceManager found");
             }
 
+#if XENKO_GRAPHICS_API_VULKAN
+            // get the resolution now, so we can create our window with the right settings right from the start
+            GraphicsDeviceManager gdm = graphicsDeviceManager as GraphicsDeviceManager;
+            GetDefaultSettings(out gdm.preferredBackBufferWidth, out gdm.preferredBackBufferHeight, out bool fullScreen, out float fov, (gameContext as GameContextSDL)?.Control ?? null);
+            gdm.IsFullScreen = fullScreen;
             // Gets the GameWindow Context
+            Context = gameContext ?? GameContextFactory.NewDefaultGameContext(gdm.preferredBackBufferWidth, gdm.preferredBackBufferHeight, fullScreen);
+            PrepareContext(fov);
+#else
             Context = gameContext ?? GameContextFactory.NewDefaultGameContext();
-
-            PrepareContext();
+            PrepareContext();            
+#endif
 
             try
             {
@@ -504,7 +606,7 @@ namespace Xenko.Games
         /// <summary>
         /// Creates or updates <see cref="Context"/> before window and device are created.
         /// </summary>
-        protected virtual void PrepareContext()
+        protected virtual void PrepareContext(float overridefov = -1f)
         {
             // Content manager
             Content = new ContentManager(Services);

@@ -58,9 +58,9 @@ namespace Xenko.Games
 
         private PixelFormat preferredBackBufferFormat;
 
-        private int preferredBackBufferHeight;
+        internal int preferredBackBufferHeight;
 
-        private int preferredBackBufferWidth;
+        internal int preferredBackBufferWidth;
 
         private Rational preferredRefreshRate;
 
@@ -933,7 +933,7 @@ namespace Xenko.Games
             ApplyChanges();
         }
 
-        private void CreateDevice(GraphicsDeviceInformation newInfo)
+        internal void CreateDevice(GraphicsDeviceInformation newInfo)
         {
             newInfo.PresentationParameters.IsFullScreen = isFullScreen;
             newInfo.PresentationParameters.PresentationInterval = SynchronizeWithVerticalRetrace ? PresentInterval.One : PresentInterval.Immediate;
