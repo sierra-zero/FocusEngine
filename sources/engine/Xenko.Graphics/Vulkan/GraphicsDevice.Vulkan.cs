@@ -314,6 +314,13 @@ namespace Xenko.Graphics
             }
 
             desiredExtensionNames.Add("VK_KHR_swapchain");
+            desiredExtensionNames.Add("VK_KHR_external_memory");
+            desiredExtensionNames.Add("VK_KHR_external_semaphore");
+            desiredExtensionNames.Add("VK_KHR_dedicated_allocation");
+            desiredExtensionNames.Add("VK_KHR_get_memory_requirements2");
+            desiredExtensionNames.Add("VK_KHR_external_memory_win32");
+            desiredExtensionNames.Add("VK_KHR_win32_keyed_mutex");
+
             if (!availableExtensionNames.Contains("VK_KHR_swapchain"))
                 throw new InvalidOperationException();
 
@@ -321,6 +328,16 @@ namespace Xenko.Graphics
             {
                 desiredExtensionNames.Add("VK_EXT_debug_marker");
                 IsProfilingSupported = true;
+            }
+
+            // take out any extensions not supported
+            for (int i=0; i<desiredExtensionNames.Count; i++)
+            {
+                if (availableExtensionNames.Contains(desiredExtensionNames[i]) == false)
+                {
+                    desiredExtensionNames.RemoveAt(i);
+                    i--;
+                }
             }
 
             var enabledExtensionNames = desiredExtensionNames.Select(Marshal.StringToHGlobalAnsi).ToArray();

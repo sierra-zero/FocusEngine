@@ -12,10 +12,12 @@ using Vortice.Vulkan;
 using static Vortice.Vulkan.Vulkan;
 #endif
 using Valve.VR;
+using Xenko.Core.Threading;
 using Xenko.Core;
 using Xenko.Core.Mathematics;
 using Xenko.Games;
 using Xenko.Graphics;
+using System.Runtime.InteropServices;
 
 namespace Xenko.VirtualReality
 {
@@ -243,8 +245,7 @@ namespace Xenko.VirtualReality
             InitDone = false;
         }
 
-        [HandleProcessCorruptedStateExceptions]
-        public static bool Submit(int eyeIndex, Texture texture, ref RectangleF viewport)
+        public static unsafe bool Submit(int eyeIndex, Texture texture, ref RectangleF viewport)
         {
             var bounds = new VRTextureBounds_t {
                 uMin = viewport.X,
@@ -253,30 +254,24 @@ namespace Xenko.VirtualReality
                 vMax = viewport.Height,
             };
 #if XENKO_GRAPHICS_API_VULKAN
-            vkTexData.m_nHeight = (uint)texture.Height;
-            vkTexData.m_nWidth = (uint)texture.Width;
-            vkTexData.m_nImage = (ulong)texture.NativeImage.Handle;
-            vkTexData.m_nSampleCount = texture.IsMultisample ? (uint)texture.MultisampleCount : 1;
-            vkTexData.m_nFormat = (uint)texture.NativeFormat;
-            unsafe {
-                fixed(VRVulkanTextureData_t* vkAddress = &vkTexData) {
-                    var tex = new Texture_t {
-                        eType = ETextureType.Vulkan,
-                        handle = (IntPtr)vkAddress,
-                        eColorSpace = EColorSpace.Auto,
-                    };
-
-                    Valve.VR.OpenVR.Compositor.SubmitExplicitTimingData();
-                    try
-                    {
-                        return Valve.VR.OpenVR.Compositor.Submit(eyeIndex == 0 ? EVREye.Eye_Left : EVREye.Eye_Right, ref tex, ref bounds, EVRSubmitFlags.Submit_Default) == EVRCompositorError.None;
-                    }
-                    catch (AccessViolationException e)
-                    {
-                        throw new Exception("OpenVR submit access violation! TextureAddress: " + (IntPtr)vkAddress + ", Texture: " + texture?.ToString());
-                    }
-                }
-            }
+            var vkTexDataCopy = new VRVulkanTextureData_t {
+                m_pDevice = vkTexData.m_pDevice,
+                m_pPhysicalDevice = vkTexData.m_pPhysicalDevice,
+                m_pInstance = vkTexData.m_pInstance, 
+                m_pQueue = vkTexData.m_pQueue, 
+                m_nHeight = (uint)texture.Height,
+                m_nWidth = (uint)texture.Width,
+                m_nImage = (ulong)texture.NativeImage.Handle,
+                m_nSampleCount = texture.IsMultisample ? (uint)texture.MultisampleCount : 1,
+                m_nFormat = (uint)texture.NativeFormat
+            };
+            var tex = new Texture_t {
+                eType = ETextureType.Vulkan,
+                handle = (IntPtr)(&vkTexDataCopy),
+                eColorSpace = EColorSpace.Auto
+            };
+            Valve.VR.OpenVR.Compositor.SubmitExplicitTimingData();
+            return Valve.VR.OpenVR.Compositor.Submit(eyeIndex == 0 ? EVREye.Eye_Left : EVREye.Eye_Right, ref tex, ref bounds, EVRSubmitFlags.Submit_Default) == EVRCompositorError.None;
 #elif XENKO_GRAPHICS_API_DIRECT3D11
             var tex = new Texture_t {
                     eType = ETextureType.DirectX,

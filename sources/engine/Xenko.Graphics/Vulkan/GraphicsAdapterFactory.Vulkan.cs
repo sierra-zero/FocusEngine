@@ -99,8 +99,12 @@ namespace Xenko.Graphics
                 //EngineVersion = new SharpVulkan.Version()
             };
 
-            var desiredLayerNames = new[]
+            IntPtr[] enabledLayerNames = new IntPtr[0];
+
+            if (enableValidation)
             {
+                var desiredLayerNames = new[]
+                {
                     //"VK_LAYER_LUNARG_standard_validation",
                     "VK_LAYER_GOOGLE_threading",
                     "VK_LAYER_LUNARG_parameter_validation",
@@ -114,10 +118,6 @@ namespace Xenko.Graphics
                     //"VK_LAYER_LUNARG_vktrace"
                 };
 
-            IntPtr[] enabledLayerNames = new IntPtr[0];
-
-            if (enableValidation)
-            {
                 var layers = vkEnumerateInstanceLayerProperties();
                 var availableLayerNames = new HashSet<string>();
 
@@ -146,6 +146,7 @@ namespace Xenko.Graphics
                 availableExtensionNames.Add(name);
             }
 
+            desiredExtensionNames.Add("VK_KHR_get_physical_device_properties2");
             desiredExtensionNames.Add("VK_KHR_surface");
             desiredExtensionNames.Add("VK_KHR_win32_surface"); // windows
             desiredExtensionNames.Add("VK_KHR_android_surface"); // android
