@@ -633,6 +633,7 @@ namespace Xenko.Games
             }
         }
 
+        internal static bool ShouldPresent = false;
         private void TickInternal()
         {
             try
@@ -773,7 +774,7 @@ namespace Xenko.Games
                             bool minimized = gamePlatform.MainWindow.IsMinimized;
                             bool focusMinimized = focused == false && TreatNotFocusedLikeMinimized;
                             bool visible = minimized == false && gamePlatform.MainWindow.Visible && (gamePlatform.MainWindow.IsFullscreen == false || focused);
-                            EndDraw(visible);
+                            EndDraw(visible && ShouldPresent);
                             if (gamePlatform.IsBlockingRun)
                             {
 	                            if (visible == false || minimized || focusMinimized)

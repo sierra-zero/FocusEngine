@@ -11,6 +11,7 @@ using Xenko.Core.Collections;
 using Xenko.Core.Diagnostics;
 using Xenko.Core.Mathematics;
 using Xenko.Core.Storage;
+using Xenko.Games;
 using Xenko.Graphics;
 using Xenko.Rendering.Images;
 using Xenko.Rendering.Lights;
@@ -748,10 +749,15 @@ namespace Xenko.Rendering.Compositing
 
                     //draw mirror if desired
                     if (VRSettings.CopyMirror)
+                    {
+                        GameBase.ShouldPresent = true;
                         CopyOrScaleTexture(drawContext, vrFullSurface, drawContext.CommandList.RenderTarget);
+                    }
                 }
                 else
                 {
+                    GameBase.ShouldPresent = true;
+
                     PrepareRenderTargets(drawContext, new Size2((int)viewport.Width, (int)viewport.Height));
 
                     ViewCount = 1;
