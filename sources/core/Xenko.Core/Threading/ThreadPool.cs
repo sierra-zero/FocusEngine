@@ -22,11 +22,16 @@ namespace Xenko.Core.Threading
 
         private SpinLock spinLock = new SpinLock();
 
+        // have a few more available threads than the engine can consume in a single dispatch
+        // this should hopefully reduce thread pool exaustion which can happen with many
+        // heavy multithreaded subsystems (e.g. bepu physics)
+        private const int EXTRA_THREADS = 3;
+
         public ThreadPool()
         {
             // fire up worker threads
             ThreadStart ts = new ThreadStart(ProcessWorkItems);
-            for (int i = 0; i < Dispatcher.MaxDegreeOfParallelism; i++)
+            for (int i = 0; i < Dispatcher.MaxDegreeOfParallelism + EXTRA_THREADS; i++)
             {
                 Thread t = new Thread(ts);
                 t.Name = "ThreadPool #" + i;
