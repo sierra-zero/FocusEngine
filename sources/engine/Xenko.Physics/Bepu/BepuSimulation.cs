@@ -375,6 +375,8 @@ namespace Xenko.Physics.Bepu
                     }
                 }
             }
+
+            public void Initialize(BepuPhysics.Simulation simulation) { }
         }
 
         /// <summary>
