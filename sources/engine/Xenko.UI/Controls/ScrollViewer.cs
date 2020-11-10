@@ -864,7 +864,7 @@ namespace Xenko.UI.Controls
             accumulatedTranslation.Y = -amount * MouseWheelScrollSensitivity;
             CurrentScrollingSpeed.Y = accumulatedTranslation.Y;
             lastFrameTranslation = accumulatedTranslation;
-            IsUserScrollingViewer = true;
+            userManuallyScrolled = true;
         }
 
         protected override void OnPreviewTouchMove(TouchEventArgs args)
