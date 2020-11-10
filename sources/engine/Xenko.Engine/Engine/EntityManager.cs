@@ -294,6 +294,10 @@ namespace Xenko.Engine
             entity.EntityManager = null;
 
             OnEntityRemoved(entity);
+
+            // last thing is check is returning to pool
+            if (entity.UsingPool != null && entity.PreventReturnToPoolOnDetach == false)
+                entity.UsingPool.myPool.ReturnToPool(entity, ref entity.UsingPool.active);
         }
 
         private void CollectNewProcessorsByComponentType(TypeInfo componentType)
@@ -581,10 +585,6 @@ namespace Xenko.Engine
 
         protected virtual void OnEntityRemoved(Entity e)
         {
-            if (e.UsingPool != null &&
-                e.PreventReturnToPoolOnDetach == false)
-                e.UsingPool.myPool.ReturnToPool(e, ref e.UsingPool.active);
-
             EntityRemoved?.Invoke(this, e);
         }
 
