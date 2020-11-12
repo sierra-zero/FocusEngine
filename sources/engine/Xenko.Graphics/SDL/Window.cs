@@ -122,6 +122,14 @@ namespace Xenko.Graphics.SDL
             throw new Exception(error);
         }
 
+        internal static void GeneratePresentError()
+        {
+            string error = "There was an error drawing to the screen. This is very likely due to old video drivers.\n\nPlease visit NVIDIA's, AMD's or Intel's website to update to the latest video drivers available.\nIf that doesn't help, report this issue in a forum or Discord server.";
+            SDL.SDL_ShowSimpleMessageBox(SDL.SDL_MessageBoxFlags.SDL_MESSAGEBOX_ERROR, "Present Error! Try updating Video Drivers", error, IntPtr.Zero);
+            Console.Error.WriteLine(error);
+            throw new Exception(error);
+        }
+
         /// <summary>
         /// Initializes a new instance of the <see cref="Window"/> class with <paramref name="title"/> as the title of the Window.
         /// </summary>

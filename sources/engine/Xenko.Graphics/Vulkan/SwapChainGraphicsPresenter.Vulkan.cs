@@ -12,6 +12,7 @@ using static Vortice.Vulkan.Vulkan;
 using System.Threading;
 using Xenko.Core;
 using Xenko.Core.Threading;
+using System.Runtime.ExceptionServices;
 
 namespace Xenko.Graphics
 {
@@ -70,6 +71,7 @@ namespace Xenko.Graphics
         private bool runPresenter;
         private volatile uint presentFrame;
 
+        [HandleProcessCorruptedStateExceptionsAttribute]
         private unsafe void PresenterThread() {
             VkSwapchainKHR swapChainCopy = swapChain;
             uint currentBufferIndexCopy = 0;
@@ -79,23 +81,27 @@ namespace Xenko.Graphics
                 pSwapchains = &swapChainCopy,
                 pImageIndices = &currentBufferIndexCopy,
             };
-            while (runPresenter) {
-                // wait until we have a frame to present
-                presentWaiter.Wait();
+            try {
+                while (runPresenter) {
+                    // wait until we have a frame to present
+                    presentWaiter.Wait();
 
-                // set the frame
-                currentBufferIndexCopy = presentFrame; 
+                    // set the frame
+                    currentBufferIndexCopy = presentFrame; 
 
-                // prepare for next frame
-                presentWaiter.Reset();
+                    // prepare for next frame
+                    presentWaiter.Reset();
 
-                // are we still OK to present?
-                if (runPresenter == false) return;
+                    // are we still OK to present?
+                    if (runPresenter == false) return;
 
-                using (GraphicsDevice.QueueLock.WriteLock())
-                {
-                    vkQueuePresentKHR(GraphicsDevice.NativeCommandQueue, &presentInfo);
-                }                
+                    using (GraphicsDevice.QueueLock.WriteLock())
+                    {
+                        vkQueuePresentKHR(GraphicsDevice.NativeCommandQueue, &presentInfo);
+                    }                
+                }
+            } catch (AccessViolationException ave) {
+                Xenko.Graphics.SDL.Window.GeneratePresentError();                
             }
         }
 
