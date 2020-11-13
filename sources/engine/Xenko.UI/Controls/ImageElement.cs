@@ -50,7 +50,23 @@ namespace Xenko.UI.Controls
         /// <userdoc>The color used to tint the image. The default value is white.</userdoc>
         [DataMember]
         [Display(category: AppearanceCategory)]
-        public Color Color { get; set; } = Color.White;
+        public Color4 Tint { get; set; } = Color4.White;
+
+        /// <summary>
+        /// For backwards compatibility
+        /// </summary>
+        [DataMemberIgnore]
+        public Color Color
+        {
+            get
+            {
+                return Tint.ToColor();
+            }
+            set
+            {
+                Tint = value.ToColor4();
+            }
+        }
 
         /// <summary>
         /// Gets or sets a value that describes how the image should be stretched to fill the destination rectangle.

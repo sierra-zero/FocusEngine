@@ -2,6 +2,7 @@
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using Xenko.Core;
+using Xenko.Core.Mathematics;
 using Xenko.Graphics;
 using Xenko.UI.Controls;
 
@@ -26,7 +27,8 @@ namespace Xenko.UI.Renderers
             if (sprite?.Texture == null)
                 return;
 
-            var color = element.RenderOpacity * image.Color;
+            float finalOpacity = element.RenderOpacity * image.Tint.A;
+            var color = new Color4(image.Tint.R * finalOpacity, image.Tint.B * finalOpacity, image.Tint.G * finalOpacity, finalOpacity);
             Batch.DrawImage(sprite.Texture, ref element.WorldMatrixInternal, ref sprite.RegionInternal, ref element.RenderSizeInternal, ref sprite.BordersInternal, ref color, context.DepthBias, sprite.Orientation);
         }
     }

@@ -229,7 +229,6 @@ namespace Xenko.Graphics
             {
                 DepthBias = depthBias,
                 ColorScale = color,
-                ColorAdd = Color.Zero,
                 Primitive = PrimitiveType.Rectangle,
             };
 
@@ -291,7 +290,6 @@ namespace Xenko.Graphics
             {
                 DepthBias = depthBias,
                 ColorScale = color,
-                ColorAdd = Color.Zero,
                 Primitive = isReverse ? PrimitiveType.ReverseCube : PrimitiveType.Cube,
             };
 
@@ -332,7 +330,7 @@ namespace Xenko.Graphics
         /// <param name="swizzle">Swizzle mode indicating the swizzle use when sampling the texture in the shader</param>
         /// <param name="snapImage">Indicate if the image needs to be snapped or not</param>
         public void DrawImage(Texture texture, ref Matrix worldMatrix, ref RectangleF sourceRectangle, ref Vector3 elementSize, ref Vector4 borderSize, 
-            ref Color color, int depthBias, ImageOrientation imageOrientation = ImageOrientation.AsIs, SwizzleMode swizzle = SwizzleMode.None, bool snapImage = false)
+            ref Color4 color, int depthBias, ImageOrientation imageOrientation = ImageOrientation.AsIs, SwizzleMode swizzle = SwizzleMode.None, bool snapImage = false)
         {
             if (texture == null) throw new ArgumentNullException(nameof(texture));
 
@@ -352,7 +350,6 @@ namespace Xenko.Graphics
                 },
                 DepthBias = depthBias,
                 ColorScale = color,
-                ColorAdd = Color.Zero,
                 Swizzle = swizzle,
                 SnapImage = snapImage,
                 Primitive = borderSize == Vector4.Zero ? PrimitiveType.Rectangle : PrimitiveType.BorderRectangle,
@@ -418,7 +415,6 @@ namespace Xenko.Graphics
                 },
                 DepthBias = depthBias,
                 ColorScale = color,
-                ColorAdd = Color.Zero,
                 Swizzle = swizzle,
                 Primitive = PrimitiveType.Rectangle,
                 VertexShift = Vector4.Zero,
@@ -506,8 +502,7 @@ namespace Xenko.Graphics
             var currentPosition = drawInfo->LeftTopCornerWorld;
 
             // convert colors here instead of in the loop
-            Color4 colorScale = drawInfo->ColorScale.ToColor4();
-            Color4 colorAdd = drawInfo->ColorAdd.ToColor4();
+            Color4 colorScale = drawInfo->ColorScale;
 
             // set the two first line of vertices
             for (var l = 0; l < 2; ++l)
@@ -517,7 +512,6 @@ namespace Xenko.Graphics
                     for (var c = 0; c < 2; c++)
                     {
                         vertex->ColorScale = colorScale;
-                        vertex->ColorAdd = colorAdd;
 
                         vertex->Swizzle = (int)drawInfo->Swizzle;
                         vertex->TextureCoordinate.X = 0; // cubes are used only for color
@@ -572,8 +566,7 @@ namespace Xenko.Graphics
             shiftVectorY[3] = drawInfo->UnitYWorld;
 
             // convert colors here instead of in the loop
-            Color4 colorScale = drawInfo->ColorScale.ToColor4();
-            Color4 colorAdd = drawInfo->ColorAdd.ToColor4();
+            Color4 colorScale = drawInfo->ColorScale;
 
             for (var r = 0; r < 4; r++)
             {
@@ -593,7 +586,6 @@ namespace Xenko.Graphics
                     vertex->Position.W = currentPosition.W;
 
                     vertex->ColorScale = colorScale;
-                    vertex->ColorAdd = colorAdd;
 
                     vertex->TextureCoordinate.X = c == 0 ? uvX.X : uvX.Y;
                     vertex->TextureCoordinate.Y = uvYr;
@@ -630,8 +622,7 @@ namespace Xenko.Graphics
             float tcy1 = drawInfo->Source.Bottom;
 
             // convert colors here instead of in the loop
-            Color4 colorScale = drawInfo->ColorScale.ToColor4();
-            Color4 colorAdd = drawInfo->ColorAdd.ToColor4();
+            Color4 colorScale = drawInfo->ColorScale;
 
             // set the two first line of vertices
             for (var r = 0; r < 2; r++)
@@ -639,7 +630,6 @@ namespace Xenko.Graphics
                 // unroll this loop
                 // c = 0
                 vertex->ColorScale = colorScale;
-                vertex->ColorAdd = colorAdd;
                 vertex->Swizzle = (int)drawInfo->Swizzle;
                 vertex->TextureCoordinate.X = tcx0;
                 vertex->TextureCoordinate.Y = r == 0 ? tcy0 : tcy1;
@@ -663,7 +653,6 @@ namespace Xenko.Graphics
 
                 // c = 1
                 vertex->ColorScale = colorScale;
-                vertex->ColorAdd = colorAdd;
                 vertex->Swizzle = (int)drawInfo->Swizzle;
                 vertex->TextureCoordinate.X = tcx1;
                 vertex->TextureCoordinate.Y = r == 0 ? tcy0 : tcy1;
@@ -725,8 +714,7 @@ namespace Xenko.Graphics
             public RectangleF Source;
             public Vector4 BorderSize;
             public Vector4 VertexShift;
-            public Color ColorScale;
-            public Color ColorAdd;
+            public Color4 ColorScale;
             public int DepthBias;
             public SwizzleMode Swizzle;
             public bool SnapImage;

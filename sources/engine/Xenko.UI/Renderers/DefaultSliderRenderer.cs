@@ -42,7 +42,7 @@ namespace Xenko.UI.Renderers
                 var imageOrientation = (ImageOrientation)(axis ^ imageAxis);
                 var worldMatrix = GetAdjustedWorldMatrix(ref slider.WorldMatrixInternal, (axis & imageAxis) == 1);
 
-                Color tbt = slider.TrackBackgroundTint * slider.RenderOpacity;
+                Color4 tbt = slider.TrackBackgroundTint.ToColor4() * slider.RenderOpacity;
                 Batch.DrawImage(image.Texture, ref worldMatrix, ref image.RegionInternal, ref slider.RenderSizeInternal, ref image.BordersInternal, ref tbt, context.DepthBias, imageOrientation);
                 context.DepthBias += 1;
             }
@@ -84,7 +84,7 @@ namespace Xenko.UI.Renderers
                 }
                 var region = new RectangleF(position.X, position.Y, newRegionSize.X, newRegionSize.Y);
 
-                Color tft = slider.TrackForegroundTint * slider.RenderOpacity;
+                Color4 tft = slider.TrackForegroundTint.ToColor4() * slider.RenderOpacity;
                 Batch.DrawImage(image.Texture, ref worldMatrix, ref region, ref size, ref borders, ref tft, context.DepthBias, imageOrientation);
                 context.DepthBias += 1;
             }
@@ -111,7 +111,7 @@ namespace Xenko.UI.Renderers
                 worldMatrix.M42 += startOffset[axis] * worldMatrix[(axis << 2) + 1] + startOffset[axisPrime] * worldMatrix[(axisPrime << 2) + 1];
                 worldMatrix.M43 += startOffset[axis] * worldMatrix[(axis << 2) + 2] + startOffset[axisPrime] * worldMatrix[(axisPrime << 2) + 2];
 
-                Color tclr = slider.TickTint * slider.RenderOpacity;
+                Color4 tclr = slider.TickTint.ToColor4() * slider.RenderOpacity;
                 for (var i = 0; i < slider.TickFrequency + 1; i++)
                 {
                     Batch.DrawImage(image.Texture, ref worldMatrix, ref image.RegionInternal, ref size, ref image.BordersInternal, ref tclr, context.DepthBias, imageOrientation, SwizzleMode.None, true);
@@ -142,7 +142,7 @@ namespace Xenko.UI.Renderers
                 worldMatrix.M42 += offset * worldMatrix[(axis << 2) + 1];
                 worldMatrix.M43 += offset * worldMatrix[(axis << 2) + 2];
 
-                Color tc = slider.ThumbTint * slider.RenderOpacity;
+                Color4 tc = slider.ThumbTint.ToColor4() * slider.RenderOpacity;
                 Batch.DrawImage(image.Texture, ref worldMatrix, ref image.RegionInternal, ref size, ref image.BordersInternal, ref tc, context.DepthBias, imageOrientation);
 
                 context.DepthBias += 1;

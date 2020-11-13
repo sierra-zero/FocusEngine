@@ -80,7 +80,7 @@ namespace Xenko.UI.Renderers
             
             // determine the image to draw in background of the edit text
             var fontScale = element.LayoutingContext.RealVirtualResolutionRatio;
-            var color = editText.RenderOpacity * Color.White;
+            var color = new Color4(editText.RenderOpacity);
             var provider = editText.IsSelectionActive ? editText.ActiveImage : editText.MouseOverState == MouseOverState.MouseOverElement ? editText.MouseOverImage : editText.InactiveImage;
             var image = provider?.GetSprite();
 
