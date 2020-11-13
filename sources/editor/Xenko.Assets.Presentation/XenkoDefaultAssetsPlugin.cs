@@ -90,6 +90,11 @@ namespace Xenko.Assets.Presentation
             {
                 var logger = new LoggerResult();
                 var packageFile = PackageStore.Instance.GetPackageFileName(packageInfo.Name, new PackageVersionRange(new PackageVersion(packageInfo.Version)));
+                if (packageFile == null)
+                {
+                    logger.Warning("Package '" + packageInfo.Name + "' file couldn't be found.");
+                    continue;
+                }
                 var package = Package.Load(logger, packageFile.ToWindowsPath());
                 if (logger.HasErrors)
                     throw new InvalidOperationException($"Could not load package {packageInfo.Name}:{Environment.NewLine}{logger.ToText()}");
