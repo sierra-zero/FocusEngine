@@ -28,7 +28,7 @@ namespace Xenko.UI.Renderers
                 return;
 
             float finalOpacity = element.RenderOpacity * image.Tint.A;
-            var color = new Color4(image.Tint.R * finalOpacity, image.Tint.B * finalOpacity, image.Tint.G * finalOpacity, finalOpacity);
+            var color = new Color4(image.Tint.R * finalOpacity, image.Tint.G * finalOpacity, image.Tint.B * finalOpacity, finalOpacity);
             Batch.DrawImage(sprite.Texture, ref element.WorldMatrixInternal, ref sprite.RegionInternal, ref element.RenderSizeInternal, ref sprite.BordersInternal, ref color, context.DepthBias, sprite.Orientation);
         }
     }
