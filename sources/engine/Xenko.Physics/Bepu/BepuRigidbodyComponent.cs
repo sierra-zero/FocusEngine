@@ -182,10 +182,6 @@ namespace Xenko.Physics.Bepu
         {
             BepuSimulation bs = BepuSimulation.instance;
 
-            // don't worry about switching if we are to be removed (or have been removed)
-            if (InternalBody.Handle.Value == -1 || bs.ToBeRemoved.Contains(this))
-                return;
-
             using (bs.simulationLocker.WriteLock())
             {
                 // let's check handle again now that we are in the lock, just in case
@@ -213,7 +209,7 @@ namespace Xenko.Physics.Bepu
         {
             get
             {
-                return AddedToScene && wasAwake;
+                return wasAwake;
             }
             set
             {
@@ -221,12 +217,14 @@ namespace Xenko.Physics.Bepu
 
                 wasAwake = value;
 
-                BepuSimulation.instance.CriticalActions.Enqueue(new BepuSimulation.RBCriticalAction()
+                if (AddedToScene)
                 {
-                    Action = RB_ACTION.IsActive,
-                    Argument = value,
-                    Body = this
-                });
+                    BepuSimulation.instance.CriticalActions.Enqueue(new BepuSimulation.RBCriticalAction()
+                    {
+                        Action = RB_ACTION.IsActive,
+                        Body = this
+                    });
+                }
             }
         }
 
@@ -319,7 +317,7 @@ namespace Xenko.Physics.Bepu
 
         internal void resetProcessingContactsList()
         {
-            if (CurrentPhysicalContacts == null || IsActive == false) return;
+            if (CurrentPhysicalContacts == null || AddedToScene == false || IsActive == false) return;
 
             CurrentPhysicalContactsCount = Math.Min(CurrentPhysicalContacts.Length, processingPhysicalContactCount);
             processingPhysicalContactCount = 0;

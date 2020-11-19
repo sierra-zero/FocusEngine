@@ -47,7 +47,6 @@ namespace Xenko.Physics.Bepu
         {
             public BepuRigidbodyComponent.RB_ACTION Action;
             public BepuRigidbodyComponent Body;
-            public object Argument;
         }
 
         public static float TimeScale = 1f;
@@ -472,9 +471,13 @@ namespace Xenko.Physics.Bepu
                         AllRigidbodies.Add(rigidBody);
                         rigidBody.InternalBody.Handle = internalSimulation.Bodies.Add(rigidBody.bodyDescription);
                         AddBodyReference(rigidBody);
+                        // are we starting inactive?
+                        if (rigidBody.wasAwake == false) rigidBody.InternalBody.Awake = false;
                     }
                     component.Position = component.Entity.Transform.WorldPosition() - (rigidBody.LocalPhysicsOffset ?? Vector3.Zero);
                     component.Rotation = component.Entity.Transform.WorldRotation();
+                    // make sure bounds are updated correctly at least
+                    if (rigidBody.wasAwake == false) rigidBody.InternalBody.UpdateBounds();
                 }
             }
             ToBeAdded.Clear();
@@ -506,7 +509,7 @@ namespace Xenko.Physics.Bepu
                         RigidMappings[bh.Value] = null;
                         AllRigidbodies.Remove(rigidBody);
                     }
-
+                    rigidBody.wasAwake = true; // don't remember whether we were asleep or not, go to default
                     rigidBody.processingPhysicalContactCount = 0;
                     rigidBody.CurrentPhysicalContactsCount = 0;
                 }

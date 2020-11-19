@@ -63,6 +63,7 @@ namespace Xenko.Physics
             physicsConfiguration = Game?.Settings != null ? Game.Settings.Configurations.Get<PhysicsSettings>() : new PhysicsSettings();
 
             MaximumSimulationTime = physicsConfiguration.FixedTimeStep;
+            MaxSubSteps = physicsConfiguration.MaxSubSteps;
             EntityManager.preventPhysicsProcessor = physicsConfiguration.OnlyUseBepu;
 
             if (isMultithreaded)
@@ -188,23 +189,6 @@ namespace Xenko.Physics
                         }
                     }
 
-                    // critical actions for rigidbodies
-                    while (physicsScene.BepuSimulation.CriticalActions.TryDequeue(out var a))
-                    {
-                        switch (a.Action)
-                        {
-                            case BepuRigidbodyComponent.RB_ACTION.IsActive:
-                                using (physicsScene.BepuSimulation.simulationLocker.WriteLock())
-                                {
-                                    a.Body.InternalBody.Awake = (bool)a.Argument;
-                                }
-                                break;
-                            case BepuRigidbodyComponent.RB_ACTION.ColliderShape:
-                                a.Body.InternalColliderShapeReadd();
-                                break;
-                        }
-                    }
-
                     lock (physicsScene.BepuSimulation.ToBeAdded)
                     {
                         // remove all bodies set to be removed
@@ -216,6 +200,27 @@ namespace Xenko.Physics
 
                         // add everyone waiting (which could have been something just removed)
                         physicsScene.BepuSimulation.ProcessAdds();
+                    }
+
+                    // critical actions for rigidbodies
+                    while (physicsScene.BepuSimulation.CriticalActions.TryDequeue(out var a))
+                    {
+                        // don't worry about this if we are to be removed (or have been removed)
+                        if (a.Body.InternalBody.Handle.Value == -1 || BepuSimulation.instance.ToBeRemoved.Contains(a.Body))
+                            continue;
+
+                        switch (a.Action)
+                        {
+                            case BepuRigidbodyComponent.RB_ACTION.IsActive:
+                                using (physicsScene.BepuSimulation.simulationLocker.WriteLock())
+                                {
+                                    a.Body.InternalBody.Awake = a.Body.wasAwake;
+                                }
+                                break;
+                            case BepuRigidbodyComponent.RB_ACTION.ColliderShape:
+                                a.Body.InternalColliderShapeReadd();
+                                break;
+                        }
                     }
 
                     if (Simulation.DisableSimulation == false)

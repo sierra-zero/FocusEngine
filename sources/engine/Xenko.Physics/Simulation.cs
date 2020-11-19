@@ -95,9 +95,6 @@ namespace Xenko.Physics
                 configuration.Flags = OnSimulationCreation?.Invoke() ?? configuration.Flags;              
             }
 
-            MaxSubSteps = configuration.MaxSubSteps;
-            FixedTimeStep = configuration.FixedTimeStep;
-
             collisionConfiguration = new BulletSharp.DefaultCollisionConfiguration();
             dispatcher = new BulletSharp.CollisionDispatcherMultiThreaded(collisionConfiguration);
             broadphase = new BulletSharp.DbvtBroadphase();
@@ -703,13 +700,6 @@ namespace Xenko.Physics
         }
 
         /// <summary>
-        /// The maximum number of steps that the Simulation is allowed to take each tick.
-        /// If the engine is running slow (large deltaTime), then you must increase the number of maxSubSteps to compensate for this, otherwise your simulation is “losing” time.
-        /// It's important that frame DeltaTime is always less than MaxSubSteps*FixedTimeStep, otherwise you are losing time.
-        /// </summary>
-        public int MaxSubSteps { get; set; }
-
-        /// <summary>
         /// By decreasing the size of fixedTimeStep, you are increasing the “resolution” of the simulation.
         /// Default is 1.0f / 60.0f or 60fps
         /// </summary>
@@ -773,7 +763,7 @@ namespace Xenko.Physics
             if (discreteDynamicsWorld != null)
             {
                 if (simulationLocker != null) simulationLocker.EnterWriteLock();
-                discreteDynamicsWorld.StepSimulation(deltaTime, MaxSubSteps, FixedTimeStep);
+                discreteDynamicsWorld.StepSimulation(deltaTime, PhysicsSystem.MaxSubSteps, PhysicsSystem.MaximumSimulationTime);
                 if (simulationLocker != null) simulationLocker.ExitWriteLock();
             }
             else
