@@ -465,6 +465,8 @@ namespace Xenko.Physics.Bepu
                 }
                 else if (component is BepuRigidbodyComponent rigidBody)
                 {
+                    rigidBody.bodyDescription.Pose.Position = BepuHelpers.ToBepu(component.Entity.Transform.WorldPosition() - (rigidBody.LocalPhysicsOffset ?? Vector3.Zero));
+                    rigidBody.bodyDescription.Pose.Orientation = BepuHelpers.ToBepu(component.Entity.Transform.WorldRotation());
                     using (simulationLocker.WriteLock())
                     {
                         rigidBody.bodyDescription.Collidable = rigidBody.ColliderShape.GenerateDescription(internalSimulation, rigidBody.SpeculativeMargin);
@@ -474,10 +476,6 @@ namespace Xenko.Physics.Bepu
                         // are we starting inactive?
                         if (rigidBody.wasAwake == false) rigidBody.InternalBody.Awake = false;
                     }
-                    component.Position = component.Entity.Transform.WorldPosition() - (rigidBody.LocalPhysicsOffset ?? Vector3.Zero);
-                    component.Rotation = component.Entity.Transform.WorldRotation();
-                    // make sure bounds are updated correctly at least
-                    if (rigidBody.wasAwake == false) rigidBody.InternalBody.UpdateBounds();
                 }
             }
             ToBeAdded.Clear();
