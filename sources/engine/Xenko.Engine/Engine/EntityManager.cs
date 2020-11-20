@@ -488,13 +488,32 @@ namespace Xenko.Engine
         private void CheckEntityWithProcessors(Entity entity, bool forceRemove, bool collecComponentTypesAndProcessors)
         {
             var components = entity.Components;
+            EntityComponent tc = null;
             for (int i = 0; i < components.Count; i++)
             {
                 var component = components[i];
-                CheckEntityComponentWithProcessors(entity, component, forceRemove, null);
+
+                if (component is TransformComponent)
+                {
+                    // process the transform last, so parent stuff gets done first
+                    tc = component;
+                }
+                else
+                {
+                    CheckEntityComponentWithProcessors(entity, component, forceRemove, null);
+                    if (collecComponentTypesAndProcessors)
+                    {
+                        CollectNewProcessorsByComponentType(component.GetType().GetTypeInfo());
+                    }
+                }
+            }
+
+            if (tc != null)
+            {
+                CheckEntityComponentWithProcessors(entity, tc, forceRemove, null);
                 if (collecComponentTypesAndProcessors)
                 {
-                    CollectNewProcessorsByComponentType(component.GetType().GetTypeInfo());
+                    CollectNewProcessorsByComponentType(tc.GetType().GetTypeInfo());
                 }
             }
         }
