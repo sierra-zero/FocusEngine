@@ -286,9 +286,7 @@ namespace Xenko.Physics.Bepu
                 }
                 else
                 {
-                    positions = null;
-                    indicies = null;
-                    return false;
+                    throw new ArgumentException("Couldn't get StageMeshDraw mesh, unknown vert type for " + modelMesh.Name);
                 }
 
                 // take care of indicies
@@ -303,18 +301,14 @@ namespace Xenko.Physics.Bepu
                 if (buf == null || buf.VertIndexData == null ||
                     ibuf == null || ibuf.VertIndexData == null)
                 {
-                    positions = null;
-                    indicies = null;
-                    return false;
+                    throw new ArgumentException("Couldn't get mesh for " + modelMesh.Name + ", buffer wasn't stored probably. Try Xenko.Graphics.Buffer.CaptureAllModelBuffers to true.");
                 }
 
                 if (ModelBatcher.UnpackRawVertData(buf.VertIndexData, modelMesh.Draw.VertexBuffers[0].Declaration,
                                                    out Vector3[] arraypositions, out Core.Mathematics.Vector3[] normals, out Core.Mathematics.Vector2[] uvs,
                                                    out Color4[] colors, out Vector4[] tangents) == false)
                 {
-                    positions = null;
-                    indicies = null;
-                    return false;
+                    throw new ArgumentException("Couldn't unpack mesh for " + modelMesh.Name + ", buffer wasn't stored or data packed weird.");
                 }
 
                 // indicies
@@ -359,13 +353,7 @@ namespace Xenko.Physics.Bepu
         /// <returns>Returns false if no mesh could be made</returns>
         public static unsafe bool GenerateMeshShape(Xenko.Rendering.Mesh modelMesh, out BepuPhysics.Collidables.Mesh outMesh, out BepuUtilities.Memory.BufferPool poolUsed, Vector3? scale = null)
         {
-            if (getMeshOutputs(modelMesh, out var positions, out var indicies) == false)
-            {
-                outMesh = default;
-                poolUsed = null;
-                return false;
-            }
-
+            getMeshOutputs(modelMesh, out var positions, out var indicies);
             return GenerateMeshShape(positions, indicies, out outMesh, out poolUsed, scale);
         }
 
@@ -479,13 +467,8 @@ namespace Xenko.Physics.Bepu
                                                                  CollisionFilterGroups group = CollisionFilterGroups.DefaultFilter, CollisionFilterGroupFlags collidesWith = CollisionFilterGroupFlags.AllFilter,
                                                                  float friction = 0.5f, float maximumRecoverableVelocity = 1f, SpringSettings? springSettings = null, bool disposeOnDetach = false)
         {
-            if (getMeshOutputs(modelMesh, out var positions, out var indicies) == false)
-            {
-                return false;
-            }
-
+            getMeshOutputs(modelMesh, out var positions, out var indicies);
             GenerateBigMeshStaticColliders(e, positions, indicies, scale, group, collidesWith, friction, maximumRecoverableVelocity, springSettings, disposeOnDetach);
-
             return true;
         }
 
