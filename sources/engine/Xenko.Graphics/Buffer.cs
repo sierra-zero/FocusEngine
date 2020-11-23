@@ -41,6 +41,12 @@ namespace Xenko.Graphics
     public partial class Buffer : GraphicsResource
     {
         /// <summary>
+        /// If this is true, capture all vertex and index buffers regardless of size. Can be turned on and off as needed.
+        /// </summary>
+        [DataMemberIgnore]
+        public static bool CaptureAllModelBuffers = false;
+
+        /// <summary>
         /// Capture easy-access data for all vertex buffers below this size. Can be useful for batching!
         /// </summary>
         [DataMemberIgnore]

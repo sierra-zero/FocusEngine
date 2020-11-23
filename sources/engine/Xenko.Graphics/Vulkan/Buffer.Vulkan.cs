@@ -88,10 +88,10 @@ namespace Xenko.Graphics
         /// <param name="dataPointer"></param>
         public unsafe void Recreate(IntPtr dataPointer)
         {
-            // capture vertex information for things less than ~512 verts for possible later easy batching
+            // capture vertex information for possible later easy batching or physics mesh generation
             if (dataPointer != IntPtr.Zero &&
-                (ViewFlags == BufferFlags.VertexBuffer && bufferDescription.SizeInBytes <= CaptureVertexBuffersOfSize ||
-                 ViewFlags == BufferFlags.IndexBuffer && bufferDescription.SizeInBytes <= CaptureIndexBuffersOfSize))
+                (ViewFlags == BufferFlags.VertexBuffer && (CaptureAllModelBuffers || bufferDescription.SizeInBytes <= CaptureVertexBuffersOfSize) ||
+                 ViewFlags == BufferFlags.IndexBuffer && (CaptureAllModelBuffers || bufferDescription.SizeInBytes <= CaptureIndexBuffersOfSize)))
             {
                 VertIndexData = new byte[Description.SizeInBytes];
                 fixed (byte* vid = &VertIndexData[0])
