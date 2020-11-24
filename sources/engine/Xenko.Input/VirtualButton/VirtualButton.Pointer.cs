@@ -121,7 +121,7 @@ namespace Xenko.Input
                 return 0f;
             }
 
-            private bool AnyPointerInState(Func<IPointerDevice, IReadOnlySet<PointerPoint>> stateGetter)
+            private bool AnyPointerInState(Func<IPointerDevice, Core.Collections.IReadOnlySet<PointerPoint>> stateGetter)
             {
                 foreach (var pointerDevice in InputManager.instance.Pointers)
                 {
@@ -134,17 +134,17 @@ namespace Xenko.Input
                 return false;
             }
 
-            private IReadOnlySet<PointerPoint> GetDownPointers(IPointerDevice device)
+            private Core.Collections.IReadOnlySet<PointerPoint> GetDownPointers(IPointerDevice device)
             {
                 return device.DownPointers;
             }
 
-            private IReadOnlySet<PointerPoint> GetPressedPointers(IPointerDevice device)
+            private Core.Collections.IReadOnlySet<PointerPoint> GetPressedPointers(IPointerDevice device)
             {
                 return device.DownPointers;
             }
 
-            private IReadOnlySet<PointerPoint> GetReleasedPointers(IPointerDevice device)
+            private Core.Collections.IReadOnlySet<PointerPoint> GetReleasedPointers(IPointerDevice device)
             {
                 return device.DownPointers;
             }
