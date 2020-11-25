@@ -45,19 +45,11 @@ namespace Xenko.Rendering.UI
                     }
 
                     // Copy values from ECS to render object
+                    renderUIElement.Component = uiComponent;
                     renderUIElement.WorldMatrix = uiComponent.Entity.Transform.WorldMatrix;
-
                     renderUIElement.RenderGroup = uiComponent.RenderGroup;
                     renderUIElement.DistanceSortFudge = uiComponent.IsFullScreen ? -10000f : uiComponent.DistanceSortFudge;
-                    renderUIElement.depthMode = uiComponent.DepthMode;
                     renderUIElement.SmallFactorMultiplier = renderUIElement.IsFixedSize || uiComponent.IsFullScreen ? 0f : uiComponent.SmallFactorMultiplier;
-                    renderUIElement.Page = uiComponent.Page;
-                    renderUIElement.IsFullScreen = uiComponent.IsFullScreen;
-                    renderUIElement.Resolution = uiComponent.Resolution;
-                    renderUIElement.ResolutionStretch = uiComponent.ResolutionStretch;
-                    renderUIElement.IsBillboard = uiComponent.IsBillboard;
-                    renderUIElement.SnapText = uiComponent.SnapText;
-                    renderUIElement.IsFixedSize = uiComponent.IsFixedSize;
                 }
             }
         }

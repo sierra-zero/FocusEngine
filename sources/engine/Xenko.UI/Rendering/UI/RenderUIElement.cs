@@ -16,14 +16,17 @@ namespace Xenko.Rendering.UI
         public Matrix WorldMatrix, WorldMatrix3D;
 
         // UIComponent values
-        public UIPage Page;
-        public bool IsFullScreen;
-        public Vector3 Resolution;
-        public ResolutionStretch ResolutionStretch;
-        public bool IsBillboard;
-        public bool SnapText;
-        public bool IsFixedSize;
-        public RenderSprite.SpriteDepthMode depthMode;
+        public UIComponent Component;
+
+        // stuff to get from the UIComponent
+        public UIPage Page => Component.Page;
+        public bool IsFullScreen => Component.IsFullScreen;
+        public Vector3 Resolution => Component.Resolution;
+        public ResolutionStretch ResolutionStretch => Component.ResolutionStretch;
+        public bool IsBillboard => Component.IsBillboard;
+        public bool SnapText => Component.SnapText;
+        public bool IsFixedSize => Component.IsFixedSize;
+        public RenderSprite.SpriteDepthMode depthMode => Component.DepthMode;
 
         /// <summary>
         /// Last registered position of teh mouse

@@ -135,5 +135,18 @@ namespace Xenko.Engine
         [DataMember(110)]
         [DefaultValue(1f)]
         public float SmallFactorMultiplier { get; set; } = 1f;
+
+        /// <summary>
+        /// Track where the cursor is on this component? Works for mouse and VR pointer
+        /// </summary>
+        [DataMember(120)]
+        [DefaultValue(false)]
+        public bool AlwaysTrackPointer { get; set; } = false;
+
+        /// <summary>
+        /// Where is the cursor relative to this UI component?
+        /// </summary>
+        [DataMemberIgnore]
+        public Vector2 TrackedPointerPosition { get; internal set; }
     }
 }

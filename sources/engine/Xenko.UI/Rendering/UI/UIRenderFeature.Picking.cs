@@ -228,6 +228,20 @@ namespace Xenko.Rendering.UI
         [ThreadStatic]
         private static UIElement UIElementUnderMouseCursor;
 
+        private void updateUiComponent(ref Ray r, RenderUIElement root, bool nonui)
+        {
+            if (root.Component.AlwaysTrackPointer == false)
+                return;
+
+            if (root.Page.RootElement.Intersects(ref r, out var intersectionPoint, nonui))
+            {
+                Vector2 pos = intersectionPoint.XY();
+                pos.X += root.Resolution.X * 0.5f;
+                pos.Y += root.Resolution.Y * 0.5f;
+                root.Component.TrackedPointerPosition = pos;
+            }
+        }
+
         private bool UpdateMouseOver(ref Viewport viewport, ref Matrix worldViewProj, RenderUIElement state, GameTime time)
         {
             bool VRcontrollerUsed = VirtualReality.VRDeviceSystem.VRActive && (TransformComponent.LastLeftHandTracked != null || TransformComponent.LastRightHandTracked != null);
@@ -252,6 +266,8 @@ namespace Xenko.Rendering.UI
                     if (useHand != null)
                     {
                         Ray uiRay = new Ray(useHand.WorldPosition(), useHand.Forward(true));
+
+                        updateUiComponent(ref uiRay, state, true);
 
                         UIElementUnderMouseCursor = GetElementAtWorldPosition(rootElement, ref uiRay, ref worldViewProj, ref intersectionPoint);
 
@@ -296,7 +312,12 @@ namespace Xenko.Rendering.UI
 
                     Ray uiRay;
                     if (!GetTouchPosition(state.Resolution, ref viewport, ref worldViewProj, mousePosition, out uiRay))
+                    {
+                        updateUiComponent(ref uiRay, state, false);
                         return true;
+                    }
+
+                    updateUiComponent(ref uiRay, state, false);
 
                     UIElementUnderMouseCursor = GetElementAtScreenPosition(rootElement, ref uiRay, ref worldViewProj, ref intersectionPoint);
                 }
