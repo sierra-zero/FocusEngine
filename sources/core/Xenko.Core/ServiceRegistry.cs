@@ -22,6 +22,8 @@
 // THE SOFTWARE.
 using System;
 using System.Collections.Generic;
+using System.Threading;
+using Xenko.Core.Threading;
 
 namespace Xenko.Core
 {
@@ -31,6 +33,8 @@ namespace Xenko.Core
     public class ServiceRegistry : IServiceRegistry
     {
         public static readonly PropertyKey<IServiceRegistry> ServiceRegistryKey = new PropertyKey<IServiceRegistry>(nameof(ServiceRegistryKey), typeof(IServiceRegistry));
+
+        private ReaderWriterLockSlim serviceLocker = new ReaderWriterLockSlim();
 
         private readonly Dictionary<Type, object> registeredService = new Dictionary<Type, object>();
 
@@ -52,7 +56,7 @@ namespace Xenko.Core
             where T : class
         {
             var type = typeof(T);
-            lock (registeredService)
+            using (serviceLocker.ReadLock())
             {
                 if (registeredService.TryGetValue(type, out var service))
                     return (T)service;
@@ -68,7 +72,7 @@ namespace Xenko.Core
             if (service == null) throw new ArgumentNullException(nameof(service));
 
             var type = typeof(T);
-            lock (registeredService)
+            using (serviceLocker.WriteLock())
             {
                 if (registeredService.ContainsKey(type))
                     throw new ArgumentException("Service is already registered with this type", nameof(type));
@@ -83,7 +87,7 @@ namespace Xenko.Core
         {
             var type = typeof(T);
             object oldService;
-            lock (registeredService)
+            using (serviceLocker.WriteLock())
             {
                 if (registeredService.TryGetValue(type, out oldService))
                     registeredService.Remove(type);
