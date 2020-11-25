@@ -1,6 +1,8 @@
 // Copyright (c) Xenko contributors (https://xenko.com) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
+using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using Xenko.Core;
 using Xenko.Core.Mathematics;
@@ -141,12 +143,66 @@ namespace Xenko.Engine
         /// </summary>
         [DataMember(120)]
         [DefaultValue(false)]
-        public bool AlwaysTrackPointer { get; set; } = false;
+        public bool AlwaysTrackPointer
+        {
+            get
+            {
+                return AveragedPositions != null;
+            }
+            set
+            {
+                if (!value)
+                    AveragedPositions = null;
+                else if (AveragedPositions == null)
+                    AveragedPositions = new Vector2[1];
+            }
+        }
+
+        /// <summary>
+        /// How many frames to smooth out pointer tracking? Can be useful in VR to handle pointer shake
+        /// </summary>
+        [DataMember(130)]
+        [DefaultValue(1)]
+        public int FramesPointerSmoothing
+        {
+            get
+            {
+                return AveragedPositions?.Length ?? 1;
+            }
+            set
+            {
+                int minSize = value < 1 ? 1 : value;
+                
+                if (minSize != FramesPointerSmoothing && AveragedPositions != null)
+                    Array.Resize<Vector2>(ref AveragedPositions, minSize);
+            }
+        }
 
         /// <summary>
         /// Where is the cursor relative to this UI component?
         /// </summary>
         [DataMemberIgnore]
-        public Vector2 TrackedPointerPosition { get; internal set; }
+        public Vector2 TrackedPointerPosition
+        {
+            get
+            {
+                if (AveragedPositions == null || AveragedPositions.Length == 0)
+                    return Vector2.Zero;
+
+                if (AveragedPositions.Length == 1)
+                    return AveragedPositions[0];
+
+                Vector2 result = Vector2.Zero;
+                for (int i=0; i<AveragedPositions.Length; i++)
+                {
+                    result += AveragedPositions[i];
+                }
+
+                return result / AveragedPositions.Length;
+            }
+        }
+
+        internal Vector2[] AveragedPositions;
+        internal int AveragePositionIndex;
     }
 }

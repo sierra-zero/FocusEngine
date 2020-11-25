@@ -101,10 +101,6 @@ namespace Xenko.Rendering.UI
         /// <returns></returns>
         private bool GetTouchPosition(Vector3 resolution, ref Viewport viewport, ref Matrix worldViewProj, Vector2 screenPosition, out Ray uiRay)
         {
-            uiRay = new Ray(new Vector3(float.NegativeInfinity), new Vector3(0, 1, 0));
-
-            // TODO XK-3367 This only works for a single view
-
             // Get a touch ray in object (UI component) space
             var touchRay = GetWorldRay(ref resolution, ref viewport, screenPosition, ref worldViewProj);
 
@@ -112,7 +108,10 @@ namespace Xenko.Rendering.UI
             var dist = -touchRay.Position.Z / touchRay.Direction.Z;
             if (Math.Abs(touchRay.Position.X + touchRay.Direction.X * dist) > resolution.X * 0.5f ||
                 Math.Abs(touchRay.Position.Y + touchRay.Direction.Y * dist) > resolution.Y * 0.5f)
+            {
+                uiRay = new Ray(new Vector3(float.NegativeInfinity), new Vector3(0, 1, 0));
                 return false;
+            }
 
             uiRay = touchRay;
             return true;
@@ -228,6 +227,17 @@ namespace Xenko.Rendering.UI
         [ThreadStatic]
         private static UIElement UIElementUnderMouseCursor;
 
+        private void copyLastUiComponentAverage(RenderUIElement root)
+        {
+            if ((root.Component.AveragedPositions?.Length ?? 0) > 1)
+            {
+                // copy last entry
+                Vector2 lastEntry = root.Component.AveragedPositions[root.Component.AveragePositionIndex];
+                root.Component.AveragePositionIndex = (root.Component.AveragePositionIndex + 1) % root.Component.AveragedPositions.Length;
+                root.Component.AveragedPositions[root.Component.AveragePositionIndex] = lastEntry;
+            }
+        }
+
         private void updateUiComponent(ref Ray r, RenderUIElement root, bool nonui)
         {
             if (root.Component.AlwaysTrackPointer == false)
@@ -238,8 +248,10 @@ namespace Xenko.Rendering.UI
                 Vector2 pos = intersectionPoint.XY();
                 pos.X += root.Resolution.X * 0.5f;
                 pos.Y += root.Resolution.Y * 0.5f;
-                root.Component.TrackedPointerPosition = pos;
+                root.Component.AveragePositionIndex = (root.Component.AveragePositionIndex + 1) % root.Component.AveragedPositions.Length;
+                root.Component.AveragedPositions[root.Component.AveragePositionIndex] = pos;
             }
+            else copyLastUiComponentAverage(root);
         }
 
         private bool UpdateMouseOver(ref Viewport viewport, ref Matrix worldViewProj, RenderUIElement state, GameTime time)
@@ -313,7 +325,7 @@ namespace Xenko.Rendering.UI
                     Ray uiRay;
                     if (!GetTouchPosition(state.Resolution, ref viewport, ref worldViewProj, mousePosition, out uiRay))
                     {
-                        updateUiComponent(ref uiRay, state, false);
+                        copyLastUiComponentAverage(state);
                         return true;
                     }
 
@@ -321,6 +333,7 @@ namespace Xenko.Rendering.UI
 
                     UIElementUnderMouseCursor = GetElementAtScreenPosition(rootElement, ref uiRay, ref worldViewProj, ref intersectionPoint);
                 }
+                else copyLastUiComponentAverage(state);
             }
 
             // find the common parent between current and last overred elements
