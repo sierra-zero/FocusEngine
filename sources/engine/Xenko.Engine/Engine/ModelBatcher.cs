@@ -379,7 +379,7 @@ namespace Xenko.Engine
             };
 
             prefabModel.Add(m);
-            prefabModel.Add(material);
+            if (material != null) prefabModel.Add(material);
         }
 
         private static void Gather(Entity e, List<Entity> into, List<Entity> motion)
@@ -502,32 +502,45 @@ namespace Xenko.Engine
         {
             if (ModelOKForBatching(model) == false) return null;
 
-            var materials = new Dictionary<MaterialInstance, List<BatchingChunk>>();
-
-            for (var index = 0; index < model.Materials.Count; index++)
-            {
-                var material = model.Materials[index];
-
-                for (int i = 0; i < listOfTransforms.Count; i++)
-                {
-                    var chunk = new BatchingChunk { Entity = null, Model = model, MaterialIndex = index, Transform = listOfTransforms[i] };
-
-                    if (materials.TryGetValue(material, out var entities))
-                    {
-                        entities.Add(chunk);
-                    }
-                    else
-                    {
-                        materials[material] = new List<BatchingChunk> { chunk };
-                    }
-                }
-            }
-
             Model prefabModel = new Model();
 
-            foreach (var material in materials)
+            int cnt = model.Materials.Count;
+            if (cnt <= 1)
             {
-                ProcessMaterial(material.Value, material.Key, prefabModel);
+                List<BatchingChunk> chunks = new List<BatchingChunk>();
+
+                for (int i = 0; i < listOfTransforms.Count; i++)
+                    chunks.Add(new BatchingChunk { Entity = null, Model = model, MaterialIndex = 0, Transform = listOfTransforms[i] });
+
+                ProcessMaterial(chunks, cnt == 0 ? null : model.Materials[0], prefabModel);
+            }
+            else
+            {
+                var materials = new Dictionary<MaterialInstance, List<BatchingChunk>>();
+
+                for (var index = 0; index < model.Materials.Count; index++)
+                {
+                    var material = model.Materials[index];
+
+                    for (int i = 0; i < listOfTransforms.Count; i++)
+                    {
+                        var chunk = new BatchingChunk { Entity = null, Model = model, MaterialIndex = index, Transform = listOfTransforms[i] };
+
+                        if (materials.TryGetValue(material, out var entities))
+                        {
+                            entities.Add(chunk);
+                        }
+                        else
+                        {
+                            materials[material] = new List<BatchingChunk> { chunk };
+                        }
+                    }
+                }
+
+                foreach (var material in materials)
+                {
+                    ProcessMaterial(material.Value, material.Key, prefabModel);
+                }
             }
 
             prefabModel.UpdateBoundingBox();
@@ -544,29 +557,41 @@ namespace Xenko.Engine
         {
             if (ModelOKForBatching(model) == false) return model;
 
-            var materials = new Dictionary<MaterialInstance, List<BatchingChunk>>();
-
-            for (var index = 0; index < model.Materials.Count; index++)
-            {
-                var material = model.Materials[index];
-
-                var chunk = new BatchingChunk { Entity = null, Model = model, MaterialIndex = index, Transform = null };
-
-                if (materials.TryGetValue(material, out var entities))
-                {
-                    entities.Add(chunk);
-                }
-                else
-                {
-                    materials[material] = new List<BatchingChunk> { chunk };
-                }
-            }
-
             Model prefabModel = new Model();
 
-            foreach (var material in materials)
+            int cnt = model.Materials.Count;
+            if (cnt <= 1)
             {
-                ProcessMaterial(material.Value, material.Key, prefabModel);
+                List<BatchingChunk> chunks = new List<BatchingChunk>();
+
+                chunks.Add(new BatchingChunk { Entity = null, Model = model, MaterialIndex = 0, Transform = null });
+
+                ProcessMaterial(chunks, cnt == 0 ? null : model.Materials[0], prefabModel);
+            }
+            else
+            {
+                var materials = new Dictionary<MaterialInstance, List<BatchingChunk>>();
+
+                for (var index = 0; index < model.Materials.Count; index++)
+                {
+                    var material = model.Materials[index];
+
+                    var chunk = new BatchingChunk { Entity = null, Model = model, MaterialIndex = index, Transform = null };
+
+                    if (materials.TryGetValue(material, out var entities))
+                    {
+                        entities.Add(chunk);
+                    }
+                    else
+                    {
+                        materials[material] = new List<BatchingChunk> { chunk };
+                    }
+                }
+
+                foreach (var material in materials)
+                {
+                    ProcessMaterial(material.Value, material.Key, prefabModel);
+                }
             }
 
             prefabModel.UpdateBoundingBox();
