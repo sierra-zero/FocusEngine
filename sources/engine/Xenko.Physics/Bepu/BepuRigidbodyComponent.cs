@@ -830,10 +830,8 @@ namespace Xenko.Physics.Bepu
         /// </summary>
         /// <param name="physicsTransform"></param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal void UpdateTransformationComponent()
+        internal void UpdateTransformationComponent(Entity entity)
         {
-            var entity = Entity;
-
             entity.Transform.Position = Position;
             if (LocalPhysicsOffset.HasValue) entity.Transform.Position += LocalPhysicsOffset.Value;
             if (IgnorePhysicsRotation == false) entity.Transform.Rotation = Rotation;

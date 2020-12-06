@@ -244,6 +244,10 @@ namespace Xenko.Physics
                         {
                             BepuRigidbodyComponent rb = physicsScene.BepuSimulation.AllRigidbodies[j];
 
+                            // if we lost the entity, just return
+                            Entity e = rb.Entity;
+                            if (e == null) return;
+
                             rb.resetProcessingContactsList();
 
                             // pre-sync
@@ -256,7 +260,7 @@ namespace Xenko.Physics
                             if (rb.ActionPerSimulationTick != null)
                                 rb.ActionPerSimulationTick(rb, time);
 
-                            rb.UpdateTransformationComponent();
+                            rb.UpdateTransformationComponent(e);
                         });
                     }
 
