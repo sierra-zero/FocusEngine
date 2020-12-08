@@ -112,21 +112,35 @@ namespace Xenko.Games
 
         private void GameForm_ResizeBeginActions(SDL.SDL_WindowEvent e)
         {
-            isUserResizing = true;
-            cachedSize = Size;
-            PauseRendering?.Invoke(this, EventArgs.Empty);
+            if (Graphics.GraphicsDevice.Platform == Graphics.GraphicsPlatform.Vulkan && OriginalSize.HasValue)
+                // resizing not supported, return to original resolution
+                Size = cachedSize = OriginalSize.Value;
+            else
+            {
+                isUserResizing = true;
+                PauseRendering?.Invoke(this, EventArgs.Empty);
+                cachedSize = Size;
+            }
         }
 
         private void GameForm_ResizeEndActions(SDL.SDL_WindowEvent e)
         {
-            if (isUserResizing && cachedSize.Equals(Size))
+            if (Graphics.GraphicsDevice.Platform == Graphics.GraphicsPlatform.Vulkan && OriginalSize.HasValue)
             {
-                UserResized?.Invoke(this, EventArgs.Empty);
-                // UpdateScreen();
+                // resizing not supported, return to original resolution
+                Size = cachedSize = OriginalSize.Value;
             }
+            else
+            {
+                if (isUserResizing && cachedSize.Equals(Size))
+                {
+                    UserResized?.Invoke(this, EventArgs.Empty);
+                    // UpdateScreen();
+                }
 
-            isUserResizing = false;
-            ResumeRendering?.Invoke(this, EventArgs.Empty);
+                isUserResizing = false;
+                ResumeRendering?.Invoke(this, EventArgs.Empty);
+            }
         }
 #endregion
     }

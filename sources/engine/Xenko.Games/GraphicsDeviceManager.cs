@@ -898,6 +898,9 @@ namespace Xenko.Games
 
         private void Window_ClientSizeChanged(object sender, EventArgs e)
         {
+            // resizing not supported in vulkan
+            if (GraphicsDevice.Platform == GraphicsPlatform.Vulkan) return;
+
             if (!isChangingDevice && ((game.Window.ClientBounds.Height != 0) || (game.Window.ClientBounds.Width != 0)))
             {
                 resizedBackBufferWidth = game.Window.ClientBounds.Width;

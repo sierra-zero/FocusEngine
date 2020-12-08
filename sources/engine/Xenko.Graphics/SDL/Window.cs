@@ -21,9 +21,6 @@ namespace Xenko.Graphics.SDL
 
         #region Initialization
 
-        private Size2? oldSize = null;
-        private Point? oldLocation = null;
-
         /// <summary>
         /// Initializes static members of the <see cref="Window"/> class.
         /// </summary>
@@ -107,7 +104,7 @@ namespace Xenko.Graphics.SDL
 
         internal static void GenerateSwapchainError(string err)
         {
-            string error = "There was an error rendering to the screen. Try disabling display scaling, setting a normal DPI or using a lower resolution.\nDrivers, monitor configurations or invalid resolution settings may also be to blame.\nResolution settings have been set to default for the next run.";
+            string error = "There was an error rendering to the screen. Try these things to fix it:\n\n1) Turn off 'fix apps that are blurry' in Windows 10\n2) Disable display scaling (use 100% display scale)\n3) Use a lower resolution\n4) Use a default DPI setting\n\nDrivers, monitor configurations or invalid resolution settings may also be to blame.\nResolution settings have been set to default for the next run.";
             if (err != null) error += "\n\nDetails: " + err;
             try
             {
@@ -144,6 +141,8 @@ namespace Xenko.Graphics.SDL
                 flags |= SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN_DESKTOP;
             else if (fullscreen)
                 flags |= SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN;
+
+            OriginalSize = new Size2(width, height);
 
             try
             {
@@ -390,6 +389,8 @@ namespace Xenko.Graphics.SDL
                 // FIXME: How to implement this since this is being called.
             }
         }
+
+        public Size2? OriginalSize { get; private set; }
 
         /// <summary>
         /// Size of window.
