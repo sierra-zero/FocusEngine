@@ -830,8 +830,13 @@ namespace Xenko.Rendering.Compositing
                 }
             }
 
+            Texture oldDepthStencil = depthStencilROCached;
             depthStencilROCached = context.Resolver.GetDepthStencilAsRenderTarget(depthStencil, depthStencilROCached);
             context.CommandList.SetRenderTargets(depthStencilROCached, context.CommandList.RenderTargetCount, context.CommandList.RenderTargets);
+
+            // dispose of the old depth stencil if there was a different one used before
+            if (oldDepthStencil != null && oldDepthStencil != depthStencilROCached)
+                oldDepthStencil.Dispose();
 
             return depthStencilSRV;
         }
