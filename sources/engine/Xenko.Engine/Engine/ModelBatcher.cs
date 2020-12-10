@@ -493,6 +493,54 @@ namespace Xenko.Engine
         }
 
         /// <summary>
+        /// Puts each model at the cooresponding transform into one model
+        /// </summary>
+        /// <param name="models">List of models to batch</param>
+        /// <param name="listOfTransforms">Matrix position for each model listed</param>
+        /// <returns>batched model</returns>
+        public static Model GenerateBatch(List<Model> models, List<Matrix> listOfTransforms)
+        {
+            if (models == null || listOfTransforms == null || models.Count != listOfTransforms.Count)
+                throw new ArgumentException("Null arguments or counts do not match when generating batched model!");
+
+            var materials = new Dictionary<MaterialInstance, List<BatchingChunk>>();
+
+            for (int m = 0; m < models.Count; m++)
+            {
+                Model model = models[m];
+
+                if (ModelOKForBatching(model) == false) continue;
+
+                for (var index = 0; index < model.Materials.Count; index++)
+                {
+                    var material = model.Materials[index];
+
+                    var chunk = new BatchingChunk { Entity = null, Model = model, MaterialIndex = index, Transform = listOfTransforms[m] };
+
+                    if (materials.TryGetValue(material, out var entities))
+                    {
+                        entities.Add(chunk);
+                    }
+                    else
+                    {
+                        materials[material] = new List<BatchingChunk> { chunk };
+                    }
+                }
+            }
+
+            Model prefabModel = new Model();
+
+            foreach (var material in materials)
+            {
+                ProcessMaterial(material.Value, material.Key, prefabModel);
+            }
+
+            prefabModel.UpdateBoundingBox();
+
+            return prefabModel;
+        }
+
+        /// <summary>
         /// Generate a batched model. Copies the model to all positions in listOfTransforms into one batched model.
         /// </summary>
         /// <param name="model">Model to copy around</param>
