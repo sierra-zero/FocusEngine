@@ -171,6 +171,13 @@ namespace Xenko.Engine
         public float DistanceSortFudge { get; set; }
 
         /// <summary>
+        /// Disable automatic culling if this is too small to be really noticeable, can be adjusted via SmallFactorMultiplier
+        /// </summary>
+        [DataMember(35)]
+        [DefaultValue(false)]
+        public bool SkipCullIfSmall { get; set; } = false;
+
+        /// <summary>
         /// Multiply the small factor, if using that auto-culling system (see GameSettings -> Render Settings)
         /// </summary>
         [DataMember(40)]

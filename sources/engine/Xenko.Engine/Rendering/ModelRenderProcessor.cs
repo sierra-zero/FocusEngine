@@ -113,7 +113,9 @@ namespace Xenko.Rendering
                         var meshInfo = modelComponent.MeshInfos[sourceMeshIndex];
                         var nodeIndex = mesh.NodeIndex;
                         renderMesh.DistanceSortFudge = modelComponent.DistanceSortFudge;
-                        if (renderModel.Model.SmallFactorMultiplierOverride > 0.000001f)
+                        if (modelComponent.SkipCullIfSmall)
+                            renderMesh.SmallFactorMultiplier = 0f;
+                        else if (renderModel.Model.SmallFactorMultiplierOverride > 0.000001f)
                             renderMesh.SmallFactorMultiplier = renderModel.Model.SmallFactorMultiplierOverride;
                         else if (modelComponent.SmallFactorMultiplier > 0.000001f)
                             renderMesh.SmallFactorMultiplier = modelComponent.SmallFactorMultiplier;
