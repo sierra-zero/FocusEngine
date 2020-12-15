@@ -62,7 +62,7 @@ namespace Xenko.Assets
                     Name = PlatformType.Windows.ToString(),
                     IsAvailable = true,
                     Alias = "Any CPU",
-                    TargetFramework = "net461",
+                    TargetFramework = "net48",
                     Type = PlatformType.Windows
                 };
             windowsPlatform.PlatformsPart.Add(new SolutionPlatformPart("Any CPU"));
@@ -135,7 +135,7 @@ namespace Xenko.Assets
             {
                 Name = PlatformType.Linux.ToString(),
                 IsAvailable = true,
-                TargetFramework = "netcoreapp2.1",
+                TargetFramework = "net5.0",
                 RuntimeIdentifier = "linux-x64",
                 Type = PlatformType.Linux,
             };
@@ -148,7 +148,7 @@ namespace Xenko.Assets
             {
                 Name = PlatformType.macOS.ToString(),
                 IsAvailable = true,
-                TargetFramework = "netcoreapp2.1",
+                TargetFramework = "net5.0-macos",
                 RuntimeIdentifier = "osx-x64",
                 Type = PlatformType.macOS,
             };

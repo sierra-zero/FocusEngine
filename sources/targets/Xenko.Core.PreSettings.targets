@@ -41,7 +41,7 @@
   <PropertyGroup Condition=" '$(XenkoRuntime)' == 'true' And '$(XenkoRuntimeNetStandard)' != 'true' ">
     <!-- Add netstandard2.0 no matter what (needed for references) -->
     <XenkoRuntimeTargetFrameworks>netstandard2.0</XenkoRuntimeTargetFrameworks>
-    <XenkoRuntimeTargetFrameworks Condition="$(_XenkoPlatforms.Contains(';Windows;')) And '$(XenkoRuntimeWindowsDotNet)' == 'true'">$(XenkoRuntimeTargetFrameworks);net461</XenkoRuntimeTargetFrameworks>
+    <XenkoRuntimeTargetFrameworks Condition="$(_XenkoPlatforms.Contains(';Windows;')) And '$(XenkoRuntimeWindowsDotNet)' == 'true'">$(XenkoRuntimeTargetFrameworks);net48</XenkoRuntimeTargetFrameworks>
     <XenkoRuntimeTargetFrameworks Condition="$(_XenkoPlatforms.Contains(';UWP;'))">$(XenkoRuntimeTargetFrameworks);uap10.0.16299</XenkoRuntimeTargetFrameworks>
     <XenkoRuntimeTargetFrameworks Condition="$(_XenkoPlatforms.Contains(';Android;'))">$(XenkoRuntimeTargetFrameworks);monoandroid81</XenkoRuntimeTargetFrameworks>
     <XenkoRuntimeTargetFrameworks Condition="$(_XenkoPlatforms.Contains(';iOS;'))">$(XenkoRuntimeTargetFrameworks);xamarinios10</XenkoRuntimeTargetFrameworks>
@@ -76,7 +76,7 @@
 
     <!-- UpToDate check doesn't work with multi-TFM projects! https://github.com/dotnet/project-system/issues/2487 -->
     <!--<DisableFastUpToDateCheck Condition="$(TargetFrameworks.Contains(';')) Or $(RuntimeIdentifiers.Contains(';'))">true</DisableFastUpToDateCheck>-->
-    <!--<TargetFrameworks>net461;uap10.0.16299;monoandroid81;xamarinios10;netstandard2.0</TargetFrameworks>-->
+    <!--<TargetFrameworks>net48;uap10.0.16299;monoandroid81;xamarinios10;netstandard2.0</TargetFrameworks>-->
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(XenkoRuntime)' == 'true' And '$(XenkoRuntimeNetStandard)' == 'true' ">
