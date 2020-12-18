@@ -7,12 +7,15 @@ using Xenko.Games;
 using Xenko.Graphics;
 
 namespace Xenko.Rendering.Rendering {
-    public class StagedMeshDraw : MeshDraw {
+    public class StagedMeshDraw : MeshDraw, IDisposable {
 
         public Action<GraphicsDevice, StagedMeshDraw> performStage;
 
         public uint[] Indicies { get; private set; }
         public object Verticies { get; private set; }
+
+        public static uint Created { get; private set; }
+        public static uint Disposed { get; private set; }
 
         private StagedMeshDraw() { }
         private static object StagedLock = new object();
@@ -20,14 +23,26 @@ namespace Xenko.Rendering.Rendering {
         internal Xenko.Graphics.Buffer _vertexBuffer, _indexBuffer;
         internal static GraphicsDevice internalDevice;
 
+        ~StagedMeshDraw()
+        {
+            Dispose();
+        }
+
         public void Dispose()
         {
             performStage = null;
 
             if (_vertexBuffer != null)
+            {
+                _vertexBuffer.DestroyNow();
                 _vertexBuffer.Dispose();
+                Disposed++;
+            }
             if (_indexBuffer != null)
+            {
+                _indexBuffer.DestroyNow();
                 _indexBuffer.Dispose();
+            }
 
             _vertexBuffer = null;
             _indexBuffer = null;
@@ -86,12 +101,14 @@ namespace Xenko.Rendering.Rendering {
                         _smd.Indicies
                     );
                 }
+                Created++;
                 VertexBufferBinding[] vbb = new[] {
                     new VertexBufferBinding(_smd._vertexBuffer, vertexBufferLayout, _smd.DrawCount)
                 };
                 IndexBufferBinding ibb = new IndexBufferBinding(_smd._indexBuffer, true, _smd.DrawCount);
                 _smd.VertexBuffers = vbb;
                 _smd.IndexBuffer = ibb;
+                _smd.performStage = null;
             };
             return smd;
         }

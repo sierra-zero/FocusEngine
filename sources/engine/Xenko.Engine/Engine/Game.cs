@@ -320,6 +320,7 @@ namespace Xenko.Engine
                 // apply rendersettings
                 Xenko.Graphics.Buffer.CaptureIndexBuffersOfSize = renderingSettings.CaptureIndexBufferOfSize;
                 Xenko.Graphics.Buffer.CaptureVertexBuffersOfSize = renderingSettings.CaptureVertexBufferOfSize;
+                Xenko.Graphics.Buffer.UploadBufferSizeInMB = renderingSettings.UploadBufferSizeInMB;
                 VisibilityGroup.CullSmallFactor = renderingSettings.SmallCullFactor;
                 VisibilityGroup.CullShadowsSmallFactor = renderingSettings.SmallShadowCullFactor;
                 

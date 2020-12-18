@@ -161,10 +161,14 @@ namespace Xenko.Rendering.Materials
 
                     renderMesh.ActiveMeshDraw = tessellationState.MeshDraw;
                 }
-                else if (tessellationState.GeneratedIndicesAEN != null)
+                else
                 {
-                    // Not using tessellation anymore, dispose AEN indices if they were generated
-                    Utilities.Dispose(ref tessellationState.GeneratedIndicesAEN);
+                    renderMesh.ActiveMeshDraw = renderMesh.Mesh.Draw;
+                    if (tessellationState.GeneratedIndicesAEN != null)
+                    {
+                        // Not using tessellation anymore, dispose AEN indices if they were generated
+                        Utilities.Dispose(ref tessellationState.GeneratedIndicesAEN);
+                    }
                 }
 
                 // Rebuild rasterizer state if culling mode changed

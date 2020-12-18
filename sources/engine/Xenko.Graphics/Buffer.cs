@@ -58,6 +58,12 @@ namespace Xenko.Graphics
         [DataMemberIgnore]
         public static int CaptureIndexBuffersOfSize = 8192;
 
+        /// <summary>
+        /// How big should the Vulkan upload buffer be in megabytes? It is ring recycled. Bigger buffers may be needed for very frequent large uploads. Defaults to 128.
+        /// </summary>
+        [DataMemberIgnore]
+        public static int UploadBufferSizeInMB = 128;
+
         protected int elementCount;
         private BufferDescription bufferDescription;
 

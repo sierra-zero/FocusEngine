@@ -7,6 +7,7 @@ using Xenko.Core.Threading;
 using Vortice.Vulkan;
 using static Vortice.Vulkan.Vulkan;
 using Xenko.Core;
+using System.Runtime.ExceptionServices;
 
 namespace Xenko.Graphics
 {
@@ -39,6 +40,31 @@ namespace Xenko.Graphics
             }
 
             return this;
+        }
+
+        public unsafe void DestroyNow()
+        {
+            GraphicsDevice.RegisterBufferMemoryUsage(-SizeInBytes);
+
+            if (NativeBufferView != VkBufferView.Null)
+            {
+                vkDestroyBufferView(GraphicsDevice.NativeDevice, NativeBufferView, null);
+                NativeBufferView = VkBufferView.Null;
+            }
+
+            if (NativeBuffer != VkBuffer.Null)
+            {
+                vkDestroyBuffer(GraphicsDevice.NativeDevice, NativeBuffer, null);            
+                NativeBuffer = VkBuffer.Null;
+            }
+
+            if (NativeMemory != VkDeviceMemory.Null)
+            {
+                vkFreeMemory(GraphicsDevice.NativeDevice, NativeMemory, null);
+                NativeMemory = VkDeviceMemory.Null;
+            }
+
+            base.OnDestroyed();
         }
 
         /// <inheritdoc/>
@@ -172,103 +198,92 @@ namespace Xenko.Graphics
             if (NativeMemory != VkDeviceMemory.Null)
             {
                 vkBindBufferMemory(GraphicsDevice.NativeDevice, NativeBuffer, NativeMemory, 0);
-            }
 
-            if (SizeInBytes > 0)
-            {
-                // Begin copy command buffer
-                var commandBufferAllocateInfo = new VkCommandBufferAllocateInfo
+                if (SizeInBytes > 0)
                 {
-                    sType = VkStructureType.CommandBufferAllocateInfo,
-                    commandPool = GraphicsDevice.NativeCopyCommandPool,
-                    commandBufferCount = 1,
-                    level = VkCommandBufferLevel.Primary
-                };
-                VkCommandBuffer commandBuffer;
-
-                lock (BufferLocker)
-                {
-                    vkAllocateCommandBuffers(GraphicsDevice.NativeDevice, &commandBufferAllocateInfo, &commandBuffer);
-                }
-
-                var beginInfo = new VkCommandBufferBeginInfo { sType = VkStructureType.CommandBufferBeginInfo, flags = VkCommandBufferUsageFlags.OneTimeSubmit };
-                vkBeginCommandBuffer(commandBuffer, &beginInfo);
-
-                GraphicsDevice.UploadBuffer? uploadBuffer = null;
-
-                // Copy to upload buffer
-                if (dataPointer != IntPtr.Zero)
-                {
-                    if (Usage == GraphicsResourceUsage.Dynamic)
+                    // Begin copy command buffer
+                    var commandBufferAllocateInfo = new VkCommandBufferAllocateInfo
                     {
-                        void* uploadMemory;
-                        vkMapMemory(GraphicsDevice.NativeDevice, NativeMemory, 0, (ulong)SizeInBytes, VkMemoryMapFlags.None, &uploadMemory);
-                        Utilities.CopyMemory((IntPtr)uploadMemory, dataPointer, SizeInBytes);
-                        lock (BufferLocker)
+                        sType = VkStructureType.CommandBufferAllocateInfo,
+                        commandPool = GraphicsDevice.NativeCopyCommandPool,
+                        commandBufferCount = 1,
+                        level = VkCommandBufferLevel.Primary
+                    };
+                    VkCommandBuffer commandBuffer;
+
+                    lock (BufferLocker)
+                    {
+                        vkAllocateCommandBuffers(GraphicsDevice.NativeDevice, &commandBufferAllocateInfo, &commandBuffer);
+                    }
+
+                    var beginInfo = new VkCommandBufferBeginInfo { sType = VkStructureType.CommandBufferBeginInfo, flags = VkCommandBufferUsageFlags.OneTimeSubmit };
+                    vkBeginCommandBuffer(commandBuffer, &beginInfo);
+
+                    // Copy to upload buffer
+                    if (dataPointer != IntPtr.Zero)
+                    {
+                        if (Usage == GraphicsResourceUsage.Dynamic)
                         {
+                            void* uploadMemory;
+                            vkMapMemory(GraphicsDevice.NativeDevice, NativeMemory, 0, (ulong)SizeInBytes, VkMemoryMapFlags.None, &uploadMemory);
+                            Utilities.CopyMemory((IntPtr)uploadMemory, dataPointer, SizeInBytes);
                             vkUnmapMemory(GraphicsDevice.NativeDevice, NativeMemory);
+                        }
+                        else
+                        {
+                            var sizeInBytes = bufferDescription.SizeInBytes;
+                            var uploadMemory = GraphicsDevice.AllocateUploadBuffer(sizeInBytes, out var uploadBuffer, out int uploadOffset);
+                            Utilities.CopyMemory(uploadMemory, dataPointer, sizeInBytes);
+
+                            // Barrier
+                            var memoryBarrier = new VkBufferMemoryBarrier(uploadBuffer, VkAccessFlags.HostWrite, VkAccessFlags.TransferRead, (ulong)uploadOffset, (ulong)sizeInBytes);
+                            vkCmdPipelineBarrier(commandBuffer, VkPipelineStageFlags.Host, VkPipelineStageFlags.Transfer, VkDependencyFlags.None, 0, null, 1, &memoryBarrier, 0, null);
+
+                            // Copy
+                            var bufferCopy = new VkBufferCopy
+                            {
+                                srcOffset = (uint)uploadOffset,
+                                dstOffset = 0,
+                                size = (uint)sizeInBytes
+                            };
+
+                            vkCmdCopyBuffer(commandBuffer, uploadBuffer, NativeBuffer, 1, &bufferCopy);
                         }
                     }
                     else
                     {
-                        var sizeInBytes = bufferDescription.SizeInBytes;
-                        int uploadOffset;
-                        GraphicsDevice.AllocateOneTimeUploadBuffer(sizeInBytes, out var upBuf);
-                        uploadBuffer = upBuf;
-
-                        Utilities.CopyMemory(uploadBuffer.Value.address, dataPointer, sizeInBytes);
-
-                        // Barrier
-                        var memoryBarrier = new VkBufferMemoryBarrier(uploadBuffer.Value.buffer, VkAccessFlags.HostWrite, VkAccessFlags.TransferRead, 0, (ulong)sizeInBytes);
-                        vkCmdPipelineBarrier(commandBuffer, VkPipelineStageFlags.Host, VkPipelineStageFlags.Transfer, VkDependencyFlags.None, 0, null, 1, &memoryBarrier, 0, null);
-
-                        // Copy
-                        var bufferCopy = new VkBufferCopy
-                        {
-                            srcOffset = 0,
-                            dstOffset = 0,
-                            size = (uint)sizeInBytes
-                        };
-
-                        vkCmdCopyBuffer(commandBuffer, uploadBuffer.Value.buffer, NativeBuffer, 1, &bufferCopy);
+                        vkCmdFillBuffer(commandBuffer, NativeBuffer, 0, (uint)bufferDescription.SizeInBytes, 0);
                     }
+
+                    // Barrier
+                    var bufferMemoryBarrier = new VkBufferMemoryBarrier(NativeBuffer, VkAccessFlags.TransferWrite, NativeAccessMask);
+                    vkCmdPipelineBarrier(commandBuffer, VkPipelineStageFlags.Transfer, VkPipelineStageFlags.AllCommands, VkDependencyFlags.None, 0, null, 1, &bufferMemoryBarrier, 0, null);
+
+                    var submitInfo = new VkSubmitInfo
+                    {
+                        sType = VkStructureType.SubmitInfo,
+                        commandBufferCount = 1,
+                        pCommandBuffers = &commandBuffer,
+                    };
+
+                    var fenceCreateInfo = new VkFenceCreateInfo { sType = VkStructureType.FenceCreateInfo };
+                    vkCreateFence(GraphicsDevice.NativeDevice, &fenceCreateInfo, null, out var fence);
+
+                    // Close and submit
+                    vkEndCommandBuffer(commandBuffer);
+
+                    using (GraphicsDevice.QueueLock.WriteLock())
+                    {
+                        vkQueueSubmit(GraphicsDevice.NativeCommandQueue, 1, &submitInfo, fence);
+                    }
+
+                    vkWaitForFences(GraphicsDevice.NativeDevice, 1, &fence, true, ulong.MaxValue);
+
+                    vkFreeCommandBuffers(GraphicsDevice.NativeDevice, GraphicsDevice.NativeCopyCommandPool, 1, &commandBuffer);
+                    vkDestroyFence(GraphicsDevice.NativeDevice, fence, null);
+
+                    InitializeViews();
                 }
-                else
-                {
-                    vkCmdFillBuffer(commandBuffer, NativeBuffer, 0, (uint)bufferDescription.SizeInBytes, 0);
-                }
-
-                // Barrier
-                var bufferMemoryBarrier = new VkBufferMemoryBarrier(NativeBuffer, VkAccessFlags.TransferWrite, NativeAccessMask);
-                vkCmdPipelineBarrier(commandBuffer, VkPipelineStageFlags.Transfer, VkPipelineStageFlags.AllCommands, VkDependencyFlags.None, 0, null, 1, &bufferMemoryBarrier, 0, null);
-
-                var submitInfo = new VkSubmitInfo
-                {
-                    sType = VkStructureType.SubmitInfo,
-                    commandBufferCount = 1,
-                    pCommandBuffers = &commandBuffer,
-                };
-
-                var fenceCreateInfo = new VkFenceCreateInfo { sType = VkStructureType.FenceCreateInfo };
-                vkCreateFence(GraphicsDevice.NativeDevice, &fenceCreateInfo, null, out var fence);
-
-                // Close and submit
-                vkEndCommandBuffer(commandBuffer);
-
-                using (GraphicsDevice.QueueLock.WriteLock())
-                {
-                    vkQueueSubmit(GraphicsDevice.NativeCommandQueue, 1, &submitInfo, fence);
-                }
-
-                vkWaitForFences(GraphicsDevice.NativeDevice, 1, &fence, true, ulong.MaxValue);
-
-                vkFreeCommandBuffers(GraphicsDevice.NativeDevice, GraphicsDevice.NativeCopyCommandPool, 1, &commandBuffer);
-                vkDestroyFence(GraphicsDevice.NativeDevice, fence, null);
-
-                if (uploadBuffer.HasValue)
-                    GraphicsDevice.FreeOneTimeUploadBuffer(uploadBuffer.Value);
-
-                InitializeViews();
             }
         }
 

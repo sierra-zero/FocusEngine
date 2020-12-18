@@ -50,6 +50,11 @@ namespace Xenko.Graphics
             return this;
         }
 
+        public void DestroyNow()
+        {
+            OnDestroyed();
+        }
+
         /// <inheritdoc/>
         protected internal override void OnDestroyed()
         {

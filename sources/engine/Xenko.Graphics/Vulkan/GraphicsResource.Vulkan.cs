@@ -49,6 +49,8 @@ namespace Xenko.Graphics
             //}
         }
 
+        internal static VkPhysicalDeviceMemoryProperties physicalDeviceMemoryProperties;
+        internal static bool gotProps = false;
         protected unsafe void AllocateMemory(VkMemoryPropertyFlags memoryProperties, VkMemoryRequirements memoryRequirements)
         {
             if (NativeMemory != VkDeviceMemory.Null)
@@ -63,14 +65,21 @@ namespace Xenko.Graphics
                 allocationSize = memoryRequirements.size,
             };
 
-            vkGetPhysicalDeviceMemoryProperties(GraphicsDevice.NativePhysicalDevice, out var physicalDeviceMemoryProperties);
+            VkPhysicalDeviceMemoryProperties localProps;
+            if (!gotProps) 
+            {
+                gotProps = true;
+                vkGetPhysicalDeviceMemoryProperties(GraphicsDevice.NativePhysicalDevice, out physicalDeviceMemoryProperties);
+            }
+            localProps = physicalDeviceMemoryProperties;
+
             var typeBits = memoryRequirements.memoryTypeBits;
-            for (uint i = 0; i < physicalDeviceMemoryProperties.memoryTypeCount; i++)
+            for (uint i = 0; i < localProps.memoryTypeCount; i++)
             {
                 if ((typeBits & 1) == 1)
                 {
                     // Type is available, does it match user properties?
-                    var memoryType = *(&physicalDeviceMemoryProperties.memoryTypes_0 + i);
+                    var memoryType = *(&localProps.memoryTypes_0 + i);
                     if ((memoryType.propertyFlags & memoryProperties) == memoryProperties)
                     {
                         allocateInfo.memoryTypeIndex = i;
@@ -81,7 +90,16 @@ namespace Xenko.Graphics
             }
 
             fixed (VkDeviceMemory* nativeMemoryPtr = &NativeMemory)
-               vkAllocateMemory(GraphicsDevice.NativeDevice, &allocateInfo, null, nativeMemoryPtr);
+            {
+               var result = vkAllocateMemory(GraphicsDevice.NativeDevice, &allocateInfo, null, nativeMemoryPtr);
+
+               if (result != VkResult.Success)
+               {
+                    string err = "Couldn't allocate memory: " + result + ", NativeMemory: " + NativeMemory + ", type: " + allocateInfo.memoryTypeIndex + ", size: " + memoryRequirements.size;
+                    Xenko.Core.ErrorFileLogger.WriteLogToFile(err);
+                    throw new Exception(err);
+               }
+            }
         }
     }
 }

@@ -305,8 +305,6 @@ namespace Xenko.Graphics
 
             vkBeginCommandBuffer(commandBuffer, &beginInfo);
 
-            GraphicsDevice.UploadBuffer? uploadBuffer = null;
-
             if (dataBoxes != null && dataBoxes.Length > 0)
             {
                 // Buffer-to-image copies need to be aligned to the pixel size and 4 (always a power of 2)
@@ -319,11 +317,10 @@ namespace Xenko.Graphics
                     totalSize += dataBoxes[i].SlicePitch;
                 }
 
-                int uploadOffset = 0;
-                GraphicsDevice.AllocateOneTimeUploadBuffer(totalSize, out var upBuf);
+                var uploadMemory = GraphicsDevice.AllocateUploadBuffer(totalSize, out var upBuf, out int uploadOffset);
 
                 // Upload buffer barrier
-                var bufferMemoryBarrier = new VkBufferMemoryBarrier(upBuf.buffer, VkAccessFlags.HostWrite, VkAccessFlags.TransferRead, 0, (ulong)totalSize);
+                var bufferMemoryBarrier = new VkBufferMemoryBarrier(upBuf, VkAccessFlags.HostWrite, VkAccessFlags.TransferRead, (ulong)uploadOffset, (ulong)totalSize);
 
                 // Image barrier
                 NativeLayout = VkImageLayout.TransferDstOptimal;
@@ -341,10 +338,10 @@ namespace Xenko.Graphics
                     var mipMapDescription = GetMipMapDescription(mipSlice);
 
                     var alignment = ((uploadOffset + alignmentMask) & ~alignmentMask) - uploadOffset;
-                    upBuf.address += alignment;
+                    uploadMemory += alignment;
                     uploadOffset += alignment;
 
-                    Utilities.CopyMemory(upBuf.address, dataBoxes[i].DataPointer, slicePitch);
+                    Utilities.CopyMemory(uploadMemory, dataBoxes[i].DataPointer, slicePitch);
 
                     // TODO VULKAN: Check if pitches are valid
                     copies[i] = new VkBufferImageCopy
@@ -357,7 +354,7 @@ namespace Xenko.Graphics
                         imageExtent = new Vortice.Mathematics.Size3(mipMapDescription.Width, mipMapDescription.Height, mipMapDescription.Depth)
                     };
 
-                    upBuf.address += slicePitch;
+                    uploadMemory += slicePitch;
                     uploadOffset += slicePitch;
                 }
 
@@ -366,11 +363,9 @@ namespace Xenko.Graphics
                 {
                     fixed (VkBufferImageCopy* copiesPointer = copies)
                     {
-                        vkCmdCopyBufferToImage(commandBuffer, upBuf.buffer, NativeImage, VkImageLayout.TransferDstOptimal, (uint)copies.Length, copiesPointer);
+                        vkCmdCopyBufferToImage(commandBuffer, upBuf, NativeImage, VkImageLayout.TransferDstOptimal, (uint)copies.Length, copiesPointer);
                     }
                 }
-
-                uploadBuffer = upBuf;
 
                 IsInitialized = true;
             }
@@ -394,9 +389,6 @@ namespace Xenko.Graphics
             vkWaitForFences(GraphicsDevice.NativeDevice, 1, &fence, true, ulong.MaxValue);
             vkFreeCommandBuffers(GraphicsDevice.NativeDevice, GraphicsDevice.NativeCopyCommandPool, 1, &commandBuffer);
             vkDestroyFence(GraphicsDevice.NativeDevice, fence, null);
-            
-            if (uploadBuffer.HasValue)
-                GraphicsDevice.FreeOneTimeUploadBuffer(uploadBuffer.Value);
         }
 
         /// <inheritdoc/>

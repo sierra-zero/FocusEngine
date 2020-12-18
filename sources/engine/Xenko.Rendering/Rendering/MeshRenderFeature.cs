@@ -98,18 +98,6 @@ namespace Xenko.Rendering
         /// <inheritdoc/>
         public override void PrepareEffectPermutationsImpl(RenderDrawContext context)
         {
-            // Setup ActiveMeshDraw
-            Dispatcher.For(0, RenderObjects.Count, (i) =>
-            {
-                var renderMesh = (RenderMesh)RenderObjects[i];
-
-                renderMesh.ActiveMeshDraw = renderMesh.Mesh.Draw;
-
-                // do we need to prepare the buffers with staged data first?
-                if (renderMesh.ActiveMeshDraw is StagedMeshDraw smd && smd.VertexBuffers == null)
-                    smd.performStage(Context.GraphicsDevice, smd);
-            });
-
             base.PrepareEffectPermutationsImpl(context);
 
             for (int i=0; i<RenderFeatures.Count; i++)
@@ -134,6 +122,9 @@ namespace Xenko.Rendering
         {
             var renderMesh = (RenderMesh)renderObject;
             var drawData = renderMesh.ActiveMeshDraw;
+
+            if (drawData is StagedMeshDraw smd && smd.VertexBuffers == null)
+                smd.performStage(context.GraphicsDevice, smd);
 
             pipelineState.InputElements = PrepareInputElements(pipelineState, drawData);
             pipelineState.PrimitiveType = drawData.PrimitiveType;
