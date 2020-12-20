@@ -321,6 +321,10 @@ namespace Xenko.Engine
                 Xenko.Graphics.Buffer.CaptureIndexBuffersOfSize = renderingSettings.CaptureIndexBufferOfSize;
                 Xenko.Graphics.Buffer.CaptureVertexBuffersOfSize = renderingSettings.CaptureVertexBufferOfSize;
                 Xenko.Graphics.Buffer.UploadBufferSizeInMB = renderingSettings.UploadBufferSizeInMB;
+                Xenko.Graphics.Buffer.StagedMeshSmallBufferSize = (ulong)renderingSettings.StagedMeshSmallBufSize;
+                Xenko.Graphics.Buffer.StagedMeshSmallBufferCount = (ulong)renderingSettings.StagedMeshSmallBufCount;
+                Xenko.Graphics.Buffer.StagedMeshLargeBufferSize = (ulong)renderingSettings.StagedMeshLargeBufSize;
+                Xenko.Graphics.Buffer.StagedMeshLargeBufferCount = (ulong)renderingSettings.StagedMeshLargeBufCount;
                 VisibilityGroup.CullSmallFactor = renderingSettings.SmallCullFactor;
                 VisibilityGroup.CullShadowsSmallFactor = renderingSettings.SmallShadowCullFactor;
                 

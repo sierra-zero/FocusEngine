@@ -12,6 +12,7 @@ namespace Xenko.Graphics
     /// </summary>
     public abstract partial class GraphicsResource
     {
+        internal ulong? NativeMemoryOffset; // used if this is a pooled buffer
         internal VkDeviceMemory NativeMemory;
         internal long? StagingFenceValue;
         internal CommandList StagingBuilder;
@@ -28,29 +29,11 @@ namespace Xenko.Graphics
         protected override unsafe void OnNameChanged()
         {
             base.OnNameChanged();
-            //if (GraphicsDevice != null && GraphicsDevice.IsProfilingSupported)
-            //{
-            //    if (string.IsNullOrEmpty(Name))
-            //        return;
-
-            //    var bytes = System.Text.Encoding.ASCII.GetBytes(Name);
-
-            //    fixed (byte* bytesPointer = &bytes[0])
-            //    {
-            //        var nameInfo = new DebugMarkerObjectNameInfo
-            //        {
-            //            sType = VkStructureType.DebugMarkerObjectNameInfo,
-            //            Object = ,
-            //            ObjectName = new IntPtr(bytesPointer),
-            //            ObjectType = 
-            //        };
-            //        GraphicsDevice.NativeDevice.DebugMarkerSetObjectName(ref nameInfo);
-            //    }
-            //}
         }
-
+        
         internal static VkPhysicalDeviceMemoryProperties physicalDeviceMemoryProperties;
         internal static bool gotProps = false;
+
         protected unsafe void AllocateMemory(VkMemoryPropertyFlags memoryProperties, VkMemoryRequirements memoryRequirements)
         {
             if (NativeMemory != VkDeviceMemory.Null)

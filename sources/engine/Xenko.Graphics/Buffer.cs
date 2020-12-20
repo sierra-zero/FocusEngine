@@ -64,6 +64,32 @@ namespace Xenko.Graphics
         [DataMemberIgnore]
         public static int UploadBufferSizeInMB = 128;
 
+        /// <summary>
+        /// How many small buffers to preallocate for StagedMeshDraws? Only gets created when StagedMeshDraws gets used.
+        /// </summary>
+        [DataMemberIgnore]
+        public static ulong StagedMeshSmallBufferCount = 5000;
+
+        /// <summary>
+        /// How many large buffers to preallocate for StagedMeshDraws? Only gets created when StagedMeshDraws gets used.
+        /// </summary>
+        [DataMemberIgnore]
+        public static ulong StagedMeshLargeBufferCount = 400;
+
+        /// <summary>
+        /// How big is each small StagedMeshBufferSize? Make it big enough to store your biggest StagedMeshDraw. Total size is StagedMeshBufferSize * StagedMeshBufferCount. Only gets created
+        /// when StageMeshDraws are used.
+        /// </summary>
+        [DataMemberIgnore]
+        public static ulong StagedMeshSmallBufferSize = 12 * 4096;
+
+        /// <summary>
+        /// How big is each large StagedMeshBufferSize? Make it big enough to store your biggest StagedMeshDraw. Total size is StagedMeshBufferSize * StagedMeshBufferCount. Only gets created
+        /// when StageMeshDraws are used.
+        /// </summary>
+        [DataMemberIgnore]
+        public static ulong StagedMeshLargeBufferSize = 48 * 4096;
+
         protected int elementCount;
         private BufferDescription bufferDescription;
 

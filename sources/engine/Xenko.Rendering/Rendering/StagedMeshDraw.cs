@@ -94,11 +94,12 @@ namespace Xenko.Rendering.Rendering {
                     _smd._vertexBuffer = Xenko.Graphics.Buffer.Vertex.New<T>(
                         graphicsDevice,
                         (T[])_smd.Verticies,
-                        GraphicsResourceUsage.Immutable
+                        GraphicsResourceUsage.DefaultPooled
                     );
                     _smd._indexBuffer = Xenko.Graphics.Buffer.Index.New<uint>(
                         graphicsDevice,
-                        _smd.Indicies
+                        _smd.Indicies,
+                        GraphicsResourceUsage.DefaultPooled
                     );
                 }
                 Created++;

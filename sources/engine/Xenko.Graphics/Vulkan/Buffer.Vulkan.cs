@@ -60,7 +60,10 @@ namespace Xenko.Graphics
 
             if (NativeMemory != VkDeviceMemory.Null)
             {
-                vkFreeMemory(GraphicsDevice.NativeDevice, NativeMemory, null);
+                if (NativeMemoryOffset.HasValue)
+                    VulkanMemoryPool.Free(this, NativeMemoryOffset.Value);
+                else
+                    vkFreeMemory(GraphicsDevice.NativeDevice, NativeMemory, null);
                 NativeMemory = VkDeviceMemory.Null;
             }
 
@@ -86,7 +89,10 @@ namespace Xenko.Graphics
 
             if (NativeMemory != VkDeviceMemory.Null)
             {
-                GraphicsDevice.Collect(NativeMemory);
+                if (NativeMemoryOffset.HasValue)
+                    VulkanMemoryPool.Free(this, NativeMemoryOffset.Value);
+                else
+                    GraphicsDevice.Collect(NativeMemory);
                 NativeMemory = VkDeviceMemory.Null;
             }
 
@@ -193,11 +199,18 @@ namespace Xenko.Graphics
 
             vkGetBufferMemoryRequirements(GraphicsDevice.NativeDevice, NativeBuffer, out var memoryRequirements);
 
-            AllocateMemory(memoryProperties, memoryRequirements);
+            if (bufferDescription.Usage != GraphicsResourceUsage.DefaultPooled)
+                AllocateMemory(memoryProperties, memoryRequirements);
+            else
+            {
+                NativeMemory = VulkanMemoryPool.AllocateMemoryForBuffer(createInfo.size, GraphicsDevice.NativeDevice, GraphicsDevice.NativePhysicalDevice, ref memoryRequirements, ref memoryProperties, out var memOffset);
+                NativeMemoryOffset = memOffset;
+                bufferDescription.Usage = GraphicsResourceUsage.Default;
+            }
 
             if (NativeMemory != VkDeviceMemory.Null)
             {
-                vkBindBufferMemory(GraphicsDevice.NativeDevice, NativeBuffer, NativeMemory, 0);
+                vkBindBufferMemory(GraphicsDevice.NativeDevice, NativeBuffer, NativeMemory, NativeMemoryOffset ?? 0);
 
                 if (SizeInBytes > 0)
                 {
