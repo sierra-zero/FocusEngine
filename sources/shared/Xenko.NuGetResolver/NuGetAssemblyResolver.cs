@@ -33,12 +33,19 @@ namespace Xenko.Core.Assets
                 || Assembly.GetEntryAssembly() == Assembly.GetCallingAssembly())) // .NET Core: check against calling assembly
                 return;
 
-            // delete old temp files
+            // delete old temp files if we can
             var dirs = Directory.GetDirectories(Path.GetTempPath(), "Xenko*");
             if (dirs != null)
             {
                 foreach (string s in dirs)
-                    Directory.Delete(s, true);
+                {
+                    try
+                    {
+                        Directory.Delete(s, true);
+                    } catch (Exception e) { 
+                        // might have been in use, oh well
+                    }
+                }
             }
 
             // Make sure our nuget local store is added to nuget config
