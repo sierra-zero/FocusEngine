@@ -29,10 +29,5 @@ namespace Xenko.Graphics
         /// A resource that supports data transfer (copy) from the GPU to the CPU.
         /// </summary>
         Staging = unchecked((int)3),
-
-        /// <summary>
-        /// Default resource, BUT it is allocated in a pool to reduce individual allocations, but subject to fragmentation
-        /// </summary>
-        DefaultPooled = unchecked((int)4)
     }
 }

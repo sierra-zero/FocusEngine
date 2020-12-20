@@ -140,10 +140,7 @@ namespace Xenko.Graphics
             };
 
             createInfo.usage |= VkBufferUsageFlags.TransferSrc;
-
-            // We always fill using transfer
-            //if (bufferDescription.Usage != GraphicsResourceUsage.Immutable)
-                createInfo.usage |= VkBufferUsageFlags.TransferDst;
+            createInfo.usage |= VkBufferUsageFlags.TransferDst;
 
             if (Usage == GraphicsResourceUsage.Staging)
             {
@@ -199,14 +196,14 @@ namespace Xenko.Graphics
 
             vkGetBufferMemoryRequirements(GraphicsDevice.NativeDevice, NativeBuffer, out var memoryRequirements);
 
-            if (bufferDescription.Usage != GraphicsResourceUsage.DefaultPooled)
-                AllocateMemory(memoryProperties, memoryRequirements);
-            else
+            if (bufferDescription.Usage == GraphicsResourceUsage.Staging || Usage == GraphicsResourceUsage.Dynamic)
+                AllocateMemory(memoryProperties, memoryRequirements); // special case that doesn't use a pool
+            else if (VulkanMemoryPool.TryAllocateMemoryForBuffer(createInfo.size, GraphicsDevice.NativeDevice, GraphicsDevice.NativePhysicalDevice, ref memoryRequirements, ref memoryProperties, out var memOffset, out var devmem))
             {
-                NativeMemory = VulkanMemoryPool.AllocateMemoryForBuffer(createInfo.size, GraphicsDevice.NativeDevice, GraphicsDevice.NativePhysicalDevice, ref memoryRequirements, ref memoryProperties, out var memOffset);
+                NativeMemory = devmem;
                 NativeMemoryOffset = memOffset;
-                bufferDescription.Usage = GraphicsResourceUsage.Default;
             }
+            else AllocateMemory(memoryProperties, memoryRequirements); // last resort, allocate its own VkDeviceMemory
 
             if (NativeMemory != VkDeviceMemory.Null)
             {
