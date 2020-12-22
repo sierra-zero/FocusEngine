@@ -144,17 +144,31 @@ namespace Xenko.Physics.Bepu
 
             CachedDelegates[(int)RB_ACTION.Position] = (rb) =>
             {
-                rb.InternalBody.Pose.Position.X = rb.bodyDescription.Pose.Position.X;
-                rb.InternalBody.Pose.Position.Y = rb.bodyDescription.Pose.Position.Y;
-                rb.InternalBody.Pose.Position.Z = rb.bodyDescription.Pose.Position.Z;
+                ref RigidPose p = ref rb.InternalBody.Pose;
+
+                if (p.Position != rb.bodyDescription.Pose.Position)
+                {
+                    p.Position.X = rb.bodyDescription.Pose.Position.X;
+                    p.Position.Y = rb.bodyDescription.Pose.Position.Y;
+                    p.Position.Z = rb.bodyDescription.Pose.Position.Z;
+
+                    rb.IsActive = true;
+                }
             };
 
             CachedDelegates[(int)RB_ACTION.Rotation] = (rb) =>
             {
-                rb.InternalBody.Pose.Orientation.X = rb.bodyDescription.Pose.Orientation.X;
-                rb.InternalBody.Pose.Orientation.Y = rb.bodyDescription.Pose.Orientation.Y;
-                rb.InternalBody.Pose.Orientation.Z = rb.bodyDescription.Pose.Orientation.Z;
-                rb.InternalBody.Pose.Orientation.W = rb.bodyDescription.Pose.Orientation.W;
+                ref RigidPose p = ref rb.InternalBody.Pose;
+
+                if (p.Orientation != rb.bodyDescription.Pose.Orientation)
+                {
+                    p.Orientation.X = rb.bodyDescription.Pose.Orientation.X;
+                    p.Orientation.Y = rb.bodyDescription.Pose.Orientation.Y;
+                    p.Orientation.Z = rb.bodyDescription.Pose.Orientation.Z;
+                    p.Orientation.W = rb.bodyDescription.Pose.Orientation.W;
+
+                    rb.IsActive = true;
+                }
             };
 
             CachedDelegates[(int)RB_ACTION.AngularVelocity] = rb =>
@@ -162,9 +176,11 @@ namespace Xenko.Physics.Bepu
                 if (rb.bodyDescription.Velocity.Angular != System.Numerics.Vector3.Zero)
                     rb.IsActive = true;
 
-                rb.InternalBody.Velocity.Angular.X = rb.bodyDescription.Velocity.Angular.X;
-                rb.InternalBody.Velocity.Angular.Y = rb.bodyDescription.Velocity.Angular.Y;
-                rb.InternalBody.Velocity.Angular.Z = rb.bodyDescription.Velocity.Angular.Z;
+                ref BodyVelocity v = ref rb.InternalBody.Velocity;
+
+                v.Angular.X = rb.bodyDescription.Velocity.Angular.X;
+                v.Angular.Y = rb.bodyDescription.Velocity.Angular.Y;
+                v.Angular.Z = rb.bodyDescription.Velocity.Angular.Z;
             };
 
             CachedDelegates[(int)RB_ACTION.LinearVelocity] = rb =>
@@ -172,9 +188,11 @@ namespace Xenko.Physics.Bepu
                 if (rb.bodyDescription.Velocity.Linear != System.Numerics.Vector3.Zero)
                     rb.IsActive = true;
 
-                rb.InternalBody.Velocity.Linear.X = rb.bodyDescription.Velocity.Linear.X;
-                rb.InternalBody.Velocity.Linear.Y = rb.bodyDescription.Velocity.Linear.Y;
-                rb.InternalBody.Velocity.Linear.Z = rb.bodyDescription.Velocity.Linear.Z;
+                ref BodyVelocity v = ref rb.InternalBody.Velocity;
+
+                v.Linear.X = rb.bodyDescription.Velocity.Linear.X;
+                v.Linear.Y = rb.bodyDescription.Velocity.Linear.Y;
+                v.Linear.Z = rb.bodyDescription.Velocity.Linear.Z;
             };
         }
 
