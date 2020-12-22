@@ -152,7 +152,7 @@ namespace Xenko.Physics.Bepu
                     p.Position.Y = rb.bodyDescription.Pose.Position.Y;
                     p.Position.Z = rb.bodyDescription.Pose.Position.Z;
 
-                    rb.IsActive = true;
+                    if (!rb.InternalBody.Awake) rb.InternalBody.UpdateBounds();
                 }
             };
 
@@ -167,7 +167,7 @@ namespace Xenko.Physics.Bepu
                     p.Orientation.Z = rb.bodyDescription.Pose.Orientation.Z;
                     p.Orientation.W = rb.bodyDescription.Pose.Orientation.W;
 
-                    rb.IsActive = true;
+                    if (!rb.InternalBody.Awake) rb.InternalBody.UpdateBounds();
                 }
             };
 
