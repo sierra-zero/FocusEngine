@@ -118,6 +118,10 @@ namespace Xenko.Engine
         [DefaultValue(IMMOBILITY.FullMotion)]
         public IMMOBILITY Immobile { get; set; } = IMMOBILITY.FullMotion;
 
+        [DataMember(60)]
+        [DefaultValue(false)]
+        public bool IgnoreHierarchyRotation { get; set; } = false;
+
         /// <summary>
         /// If we are immobile, do one transform update to set initial (or just moved) position
         /// </summary>
@@ -556,7 +560,19 @@ namespace Xenko.Engine
             {
                 if (recursive)
                     Parent.UpdateWorldMatrix(true, postProcess);
-                Matrix.Multiply(ref LocalMatrix, ref Parent.WorldMatrix, out WorldMatrix);
+
+                if (IgnoreHierarchyRotation)
+                {
+                    Vector3 position = Parent.WorldMatrix.TranslationVector;
+                    Quaternion ident = Quaternion.Identity;
+                    Parent.WorldMatrix.GetScale(out Vector3 scale);
+                    Matrix.Transformation(ref scale, ref ident, ref position, out Matrix posOnly);
+                    Matrix.Multiply(ref LocalMatrix, ref posOnly, out WorldMatrix);
+                }
+                else
+                {
+                    Matrix.Multiply(ref LocalMatrix, ref Parent.WorldMatrix, out WorldMatrix);
+                }
             }
             else
             {
