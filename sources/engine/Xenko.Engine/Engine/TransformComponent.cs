@@ -21,6 +21,13 @@ namespace Xenko.Engine
         JustMeImmobile = 2
     }
 
+    public enum HIERARCHY_MODE
+    {
+        Normal = 0,
+        IgnoreFinalRotation = 1,
+        IgnoreAllRotation = 2
+    }
+
     /// <summary>
     /// Defines Position, Rotation and Scale of its <see cref="Entity"/>.
     /// </summary>
@@ -118,9 +125,12 @@ namespace Xenko.Engine
         [DefaultValue(IMMOBILITY.FullMotion)]
         public IMMOBILITY Immobile { get; set; } = IMMOBILITY.FullMotion;
 
+        /// <summary>
+        /// Used for advanced transform positioning. Can ignore the heirarchy rotations and rotational positioning.
+        /// </summary>
         [DataMember(60)]
-        [DefaultValue(false)]
-        public bool IgnoreHierarchyRotation { get; set; } = false;
+        [DefaultValue(HIERARCHY_MODE.Normal)]
+        public HIERARCHY_MODE HierarchyMode { get; set; } = HIERARCHY_MODE.Normal;
 
         /// <summary>
         /// If we are immobile, do one transform update to set initial (or just moved) position
@@ -561,18 +571,17 @@ namespace Xenko.Engine
                 if (recursive)
                     Parent.UpdateWorldMatrix(true, postProcess);
 
-                if (IgnoreHierarchyRotation)
+                if (HierarchyMode != HIERARCHY_MODE.Normal)
                 {
-                    Vector3 position = Parent.WorldMatrix.TranslationVector;
-                    Quaternion ident = Quaternion.Identity;
-                    Parent.WorldMatrix.GetScale(out Vector3 scale);
-                    Matrix.Transformation(ref scale, ref ident, ref position, out Matrix posOnly);
-                    Matrix.Multiply(ref LocalMatrix, ref posOnly, out WorldMatrix);
+                    Parent.WorldMatrix.GetRotationMatrix(out Matrix q);
+                    if (HierarchyMode != HIERARCHY_MODE.IgnoreAllRotation)
+                        LocalMatrix.TranslationVector = Vector3.Transform(Position, q).XYZ();
+                    q.Invert();
+                    Matrix cp = LocalMatrix;
+                    Matrix.Multiply(ref cp, ref q, out LocalMatrix);
                 }
-                else
-                {
-                    Matrix.Multiply(ref LocalMatrix, ref Parent.WorldMatrix, out WorldMatrix);
-                }
+
+                Matrix.Multiply(ref LocalMatrix, ref Parent.WorldMatrix, out WorldMatrix);
             }
             else
             {
