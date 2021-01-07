@@ -264,60 +264,67 @@ namespace Xenko.Core.Assets.CompilerApp
                     options.Logger.Info("BuildEngine arguments: " + string.Join(" ", args));
                     options.Logger.Info("Starting builder.");
 
-                    var baseDirectory = Path.Combine(options.BuildDirectory, @"../../../../../");
-                    var changeFile = baseDirectory + "/files_changed";
-                    var buildFile = baseDirectory + "/files_built";
-                    var skipFile = baseDirectory + "/always_build";
-                    long files_changed_ticks = 0, files_built_ticks = 0;
-                    string[] buildlines = null;
-                    string platform = options.Platform.ToString() + "-" + options.ProjectConfiguration;
-
-                    if (File.Exists(changeFile))
-                        long.TryParse(File.ReadAllText(changeFile), out files_changed_ticks);
-
-                    if (File.Exists(buildFile))
+                    try
                     {
-                        buildlines = File.ReadAllLines(buildFile);
-                        for (int i=0; i < buildlines.Length; i+=2)
+                        var baseDirectory = Path.Combine(options.BuildDirectory, @"../../../../../");
+                        var changeFile = baseDirectory + "/files_changed";
+                        var buildFile = baseDirectory + "/files_built";
+                        var skipFile = baseDirectory + "/always_build";
+                        long files_changed_ticks = 0, files_built_ticks = 0;
+                        string[] buildlines = null;
+                        string platform = options.Platform.ToString() + "-" + options.ProjectConfiguration;
+
+                        if (File.Exists(changeFile))
+                            long.TryParse(File.ReadAllText(changeFile), out files_changed_ticks);
+
+                        if (File.Exists(buildFile))
                         {
-                            if (buildlines[i] == platform)
+                            buildlines = File.ReadAllLines(buildFile);
+                            for (int i = 0; i < buildlines.Length; i += 2)
                             {
-                                long.TryParse(buildlines[i + 1], out files_built_ticks);
-                                // also update with now time
-                                buildlines[i + 1] = System.DateTime.Now.Ticks.ToString();
+                                if (buildlines[i] == platform)
+                                {
+                                    long.TryParse(buildlines[i + 1], out files_built_ticks);
+                                    // also update with now time
+                                    buildlines[i + 1] = System.DateTime.Now.Ticks.ToString();
+                                }
                             }
                         }
-                    }
 
-                    if (File.Exists(skipFile))
-                    {
-                        options.Logger.Info("Found always_build, so always building assets.");
-                    }
-                    else if (Process.GetProcessesByName("Focus.GameStudio").Length == 0)
-                    {
-                        options.Logger.Warning("Focus.GameStudio does not appear to be running, so the AssetCompiler will always rebuild assets.");
-                    }
-                    else if (files_changed_ticks > 0 && files_built_ticks > 0 && files_built_ticks > files_changed_ticks)
-                    {
-                        options.Logger.Info("All Assets/ and Resources/ appear up date for " + platform + ", so skipping recompilation. If this is a mistake, delete files_changed and files_built in the root project directory. If you want to always build assets, make a file called always_build in the root project directory.");
-                        return 0;
-                    }
+                        if (File.Exists(skipFile))
+                        {
+                            options.Logger.Info("Found always_build, so always building assets.");
+                        }
+                        else if (Process.GetProcessesByName("Focus.GameStudio").Length == 0)
+                        {
+                            options.Logger.Warning("Focus.GameStudio does not appear to be running, so the AssetCompiler will always rebuild assets.");
+                        }
+                        else if (files_changed_ticks > 0 && files_built_ticks > 0 && files_built_ticks > files_changed_ticks)
+                        {
+                            options.Logger.Info("All Assets/ and Resources/ appear up date for " + platform + ", so skipping recompilation. If this is a mistake, delete files_changed and files_built in the root project directory. If you want to always build assets, make a file called always_build in the root project directory.");
+                            return 0;
+                        }
 
-                    // if there was no changefile, do it now
-                    if (File.Exists(changeFile) == false)
-                    {
-                        File.WriteAllText(changeFile, System.DateTime.Now.Ticks.ToString());
-                    }
+                        // if there was no changefile, do it now
+                        if (File.Exists(changeFile) == false)
+                        {
+                            File.WriteAllText(changeFile, System.DateTime.Now.Ticks.ToString());
+                        }
 
-                    // update file with changes
-                    if (File.Exists(buildFile) == false)
-                    {
-                        File.WriteAllText(buildFile, platform + "\n" + System.DateTime.Now.Ticks.ToString());
+                        // update file with changes
+                        if (File.Exists(buildFile) == false)
+                        {
+                            File.WriteAllText(buildFile, platform + "\n" + System.DateTime.Now.Ticks.ToString());
+                        }
+                        else
+                        {
+                            File.WriteAllLines(buildFile, buildlines);
+                            if (files_built_ticks <= 0) File.AppendAllText(buildFile, platform + "\n" + System.DateTime.Now.Ticks.ToString());
+                        }
                     }
-                    else
+                    catch (Exception)
                     {
-                        File.WriteAllLines(buildFile, buildlines);
-                        if (files_built_ticks <= 0) File.AppendAllText(buildFile, platform + "\n" + System.DateTime.Now.Ticks.ToString());
+                        options.Logger.Warning("Error reading/writing files_changed and/or files_built to see if we can skip asset compilation. Reverting to building them.");
                     }
                 }
                 else
