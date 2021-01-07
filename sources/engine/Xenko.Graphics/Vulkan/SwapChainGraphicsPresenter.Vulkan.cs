@@ -274,9 +274,9 @@ namespace Xenko.Graphics
 
             // Transform
             VkSurfaceTransformFlagsKHR preTransform;
-            if ((surfaceCapabilities.supportedTransforms & VkSurfaceTransformFlagsKHR.IdentityKHR) != 0)
+            if ((surfaceCapabilities.supportedTransforms & VkSurfaceTransformFlagsKHR.Identity) != 0)
             {
-                preTransform = VkSurfaceTransformFlagsKHR.IdentityKHR;
+                preTransform = VkSurfaceTransformFlagsKHR.Identity;
             }
             else
             {
@@ -284,14 +284,14 @@ namespace Xenko.Graphics
             }
 
             // Find present mode
-            var swapChainPresentMode = VkPresentModeKHR.FifoKHR; // Always supported, but slow
+            var swapChainPresentMode = VkPresentModeKHR.Fifo; // Always supported, but slow
             if (Description.PresentationInterval == PresentInterval.Immediate) {
                 var presentModes = vkGetPhysicalDeviceSurfacePresentModesKHR(GraphicsDevice.NativePhysicalDevice, surface);
                 foreach (var pm in presentModes)
                 {
-                    if (pm == VkPresentModeKHR.MailboxKHR)
+                    if (pm == VkPresentModeKHR.Mailbox)
                     {
-                        swapChainPresentMode = VkPresentModeKHR.MailboxKHR;
+                        swapChainPresentMode = VkPresentModeKHR.Mailbox;
                         break;
                     }
                 }
@@ -306,10 +306,10 @@ namespace Xenko.Graphics
                 imageSharingMode = VkSharingMode.Exclusive,
                 imageExtent = new Vortice.Mathematics.Size(Description.BackBufferWidth, Description.BackBufferHeight),
                 imageFormat = backBufferFormat,
-                imageColorSpace = Description.ColorSpace == ColorSpace.Gamma ? VkColorSpaceKHR.SrgbNonLinearKHR : 0,
+                imageColorSpace = Description.ColorSpace == ColorSpace.Gamma ? VkColorSpaceKHR.SrgbNonLinear : 0,
                 imageUsage = VkImageUsageFlags.ColorAttachment | VkImageUsageFlags.TransferDst | (surfaceCapabilities.supportedUsageFlags & VkImageUsageFlags.TransferSrc), // TODO VULKAN: Use off-screen buffer to emulate
                 presentMode = swapChainPresentMode,
-                compositeAlpha = VkCompositeAlphaFlagsKHR.OpaqueKHR,
+                compositeAlpha = VkCompositeAlphaFlagsKHR.Opaque,
                 minImageCount = desiredImageCount,
                 preTransform = preTransform,
                 oldSwapchain = swapChain,

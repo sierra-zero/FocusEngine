@@ -41,8 +41,7 @@ namespace Xenko.Graphics
 
             NativeMemory = new VkDeviceMemory();
 
-            fixed (VkDeviceMemory* nativeMemoryPtr = &NativeMemory)
-                Vortice.Vulkan.Vulkan.vkAllocateMemory(device, &allocateInfo, null, nativeMemoryPtr);
+            Vortice.Vulkan.Vulkan.vkAllocateMemory(device, &allocateInfo, null, out NativeMemory);
         }
 
         public static bool Free(Buffer buf, ulong offset)

@@ -202,7 +202,7 @@ namespace Xenko.Graphics
                     var createInfo = new VkDebugReportCallbackCreateInfoEXT
                     {
                         sType = VkStructureType.DebugReportCallbackCreateInfoEXT,
-                        flags = VkDebugReportFlagsEXT.ErrorEXT | VkDebugReportFlagsEXT.WarningEXT /* | VkDebugReportFlagsEXT.PerformanceWarningEXT | VkDebugReportFlagsEXT.InformationEXT | VkDebugReportFlagsEXT.DebugEXT*/,
+                        flags = VkDebugReportFlagsEXT.Error | VkDebugReportFlagsEXT.Warning /* | VkDebugReportFlagsEXT.PerformanceWarningEXT | VkDebugReportFlagsEXT.InformationEXT | VkDebugReportFlagsEXT.DebugEXT*/,
                         pfnCallback = Marshal.GetFunctionPointerForDelegate(debugReport)
                     };
                     createDebugReportCallback(NativeInstance, ref createInfo, null, out debugReportCallback);

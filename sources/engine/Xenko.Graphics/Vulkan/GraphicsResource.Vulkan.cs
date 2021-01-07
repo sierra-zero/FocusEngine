@@ -72,16 +72,13 @@ namespace Xenko.Graphics
                 typeBits >>= 1;
             }
 
-            fixed (VkDeviceMemory* nativeMemoryPtr = &NativeMemory)
-            {
-               var result = vkAllocateMemory(GraphicsDevice.NativeDevice, &allocateInfo, null, nativeMemoryPtr);
+            var result = vkAllocateMemory(GraphicsDevice.NativeDevice, &allocateInfo, null, out NativeMemory);
 
-               if (result != VkResult.Success)
-               {
-                    string err = "Couldn't allocate memory: " + result + ", NativeMemory: " + NativeMemory + ", type: " + allocateInfo.memoryTypeIndex + ", size: " + memoryRequirements.size;
-                    Xenko.Core.ErrorFileLogger.WriteLogToFile(err);
-                    throw new Exception(err);
-               }
+            if (result != VkResult.Success)
+            {
+                string err = "Couldn't allocate memory: " + result + ", NativeMemory: " + NativeMemory + ", type: " + allocateInfo.memoryTypeIndex + ", size: " + memoryRequirements.size;
+                Xenko.Core.ErrorFileLogger.WriteLogToFile(err);
+                throw new Exception(err);
             }
         }
     }
