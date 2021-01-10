@@ -176,6 +176,7 @@ postswitch:
                 if (Device != null)
                 {
                     Game.TreatNotFocusedLikeMinimized = false;
+                    Game.DrawEvenMinimized = true;
                     Game.IsFixedTimeStep = false;
                     deviceManager.SynchronizeWithVerticalRetrace = false;
 

@@ -101,6 +101,7 @@ namespace Xenko.Games
             TargetElapsedTime = defaultTimeSpan; // default empty timespan, will be set on window create if not set elsewhere
 
             TreatNotFocusedLikeMinimized = true;
+            DrawEvenMinimized            = false;
             WindowMinimumUpdateRate      = new ThreadThrottler(defaultTimeSpan); // will be set when window gets created with window's refresh rate
             MinimizedMinimumUpdateRate   = new ThreadThrottler(TimeSpan.FromTicks(TimeSpan.TicksPerSecond / 15)); // by default 15 updates per second while minimized
 
@@ -328,6 +329,11 @@ namespace Xenko.Games
         /// Considers windows without user focus like a minimized window for <see cref="MinimizedMinimumUpdateRate"/> 
         /// </summary>
         public bool TreatNotFocusedLikeMinimized { get; set; }
+
+        /// <summary>
+        /// Draw even when minimized? Needed in VR
+        /// </summary>
+        public bool DrawEvenMinimized { get; set; }
 
         /// <summary>
         /// Gets the abstract window.
@@ -1093,7 +1099,7 @@ namespace Xenko.Games
 
             try
             {
-                if (!isExiting && GameSystems.IsFirstUpdateDone && !Window.IsMinimized)
+                if (!isExiting && GameSystems.IsFirstUpdateDone && (!Window.IsMinimized || DrawEvenMinimized))
                 {
                     DrawTime.Factor = UpdateTime.Factor;
                     drawTime.Update(totalDrawTime, lastFrameElapsedGameTime, true);
