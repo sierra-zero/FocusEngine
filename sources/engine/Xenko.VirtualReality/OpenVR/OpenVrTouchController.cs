@@ -22,7 +22,6 @@ namespace Xenko.VirtualReality
 
         private Quaternion? holdOffset;
         private float _holdoffset;
-        private bool _fliptouchpad;
 
         public override float HoldAngleOffset
         { 
@@ -35,14 +34,7 @@ namespace Xenko.VirtualReality
             }
         }
 
-        public override bool SwapTouchpadJoystick
-        {
-            get => _fliptouchpad;
-            set
-            {
-                _fliptouchpad = value;
-            }
-        }
+        public override bool SwapTouchpadJoystick { get; set; }
 
         internal OpenVRTouchController(TouchControllerHand hand)
         {
@@ -117,21 +109,21 @@ namespace Xenko.VirtualReality
 
         public override bool ThumbResting => controller?.GetTouch(OpenVR.Controller.ButtonId.ButtonSteamVrTouchpad) ?? false;
 
-        public override Vector2 ThumbAxis => controller?.GetAxis(_fliptouchpad ? OpenVR.Controller.ButtonId.ButtonAxis3 : OpenVR.Controller.ButtonId.ButtonAxis0) ?? Vector2.Zero;
+        public override Vector2 ThumbAxis => controller?.GetAxis(SwapTouchpadJoystick ? OpenVR.Controller.ButtonId.ButtonAxis2 : OpenVR.Controller.ButtonId.ButtonAxis0) ?? Vector2.Zero;
 
-        public override Vector2 ThumbstickAxis => controller?.GetAxis(_fliptouchpad ? OpenVR.Controller.ButtonId.ButtonAxis0 : OpenVR.Controller.ButtonId.ButtonAxis3) ?? Vector2.Zero;
+        public override Vector2 ThumbstickAxis => controller?.GetAxis(SwapTouchpadJoystick ? OpenVR.Controller.ButtonId.ButtonAxis0 : OpenVR.Controller.ButtonId.ButtonAxis2) ?? Vector2.Zero;
 
         private OpenVR.Controller.ButtonId ToOpenVrButton(TouchControllerButton button)
         {
             switch (button)
             {
                 case TouchControllerButton.Thumbstick:
-                    return _fliptouchpad ? OpenVR.Controller.ButtonId.ButtonSteamVrTouchpad : OpenVR.Controller.ButtonId.ButtonAxis3;
+                    return SwapTouchpadJoystick ? OpenVR.Controller.ButtonId.ButtonSteamVrTouchpad : OpenVR.Controller.ButtonId.ButtonAxis2;
                 case TouchControllerButton.A:
                 case TouchControllerButton.X:
                     return OpenVR.Controller.ButtonId.ButtonA;
                 case TouchControllerButton.Touchpad:
-                    return _fliptouchpad ? OpenVR.Controller.ButtonId.ButtonAxis3 : OpenVR.Controller.ButtonId.ButtonSteamVrTouchpad;              
+                    return SwapTouchpadJoystick ? OpenVR.Controller.ButtonId.ButtonAxis2 : OpenVR.Controller.ButtonId.ButtonSteamVrTouchpad;              
                 case TouchControllerButton.Trigger:
                     return OpenVR.Controller.ButtonId.ButtonSteamVrTrigger;
                 case TouchControllerButton.Grip:
