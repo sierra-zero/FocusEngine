@@ -25,7 +25,7 @@ namespace Xenko.Rendering.Rendering.Materials
             public float FogStart;
         }
 
-        internal static bool usingGlobalFog = false;
+        private static Dictionary<RootEffectRenderFeature, ConstantBufferOffsetReference> effectReferences = new Dictionary<RootEffectRenderFeature, ConstantBufferOffsetReference>();
 
         private static FogData GlobalFogParameters;
 
@@ -47,8 +47,6 @@ namespace Xenko.Rendering.Rendering.Materials
             {
                 GlobalFogParameters.FogStart = fogstart.Value;
             }
-
-            usingGlobalFog = true;
         }
 
         public static void GetGlobalFog(out Color3 color, out float density, out float fogstart)
@@ -67,7 +65,6 @@ namespace Xenko.Rendering.Rendering.Materials
                 GlobalFogParameters.FogColor.X = value.R;
                 GlobalFogParameters.FogColor.Y = value.G;
                 GlobalFogParameters.FogColor.Z = value.B;
-                usingGlobalFog = true;
             }
         }
         
@@ -78,7 +75,6 @@ namespace Xenko.Rendering.Rendering.Materials
             set
             {
                 GlobalFogParameters.FogColor.W = value;
-                usingGlobalFog = true;
             }
         }
 
@@ -89,7 +85,6 @@ namespace Xenko.Rendering.Rendering.Materials
             set
             {
                 GlobalFogParameters.FogStart = value;
-                usingGlobalFog = true;
             }
         }
 
@@ -105,24 +100,25 @@ namespace Xenko.Rendering.Rendering.Materials
             if (GraphicsDevice.Platform == GraphicsPlatform.Vulkan) usecolor.W = 1f / Math.Max(0.000001f, usecolor.W);
             usecolor.W = -usecolor.W; // flip this here so we don't need to do it in the shader
 
-            foreach (var renderFeature in context.RenderSystem.RenderFeatures)
+            for (int i=0; i<context.RenderSystem.RenderFeatures.Count; i++)
             {
-                if (!(renderFeature is RootEffectRenderFeature))
-                    continue;
+                var renderFeature = context.RenderSystem.RenderFeatures[i];
+                RootEffectRenderFeature rooteff = renderFeature as RootEffectRenderFeature;
 
-                var renderView = context.RenderView;
-                var logicalKey = ((RootEffectRenderFeature)renderFeature).CreateViewLogicalGroup("GlobalFog");
-                var viewFeature = renderView.Features[renderFeature.Index];
+                if (rooteff == null) continue;
 
-                foreach (var viewLayout in viewFeature.Layouts)
+                if (effectReferences.TryGetValue(rooteff, out var offsetref) == false)
+                    effectReferences[rooteff] = offsetref = ((RootEffectRenderFeature)renderFeature).CreateFrameCBufferOffsetSlot(FogFeatureKeys.FogColor.Name);
+
+                foreach (var frameLayout in ((RootEffectRenderFeature)renderFeature).FrameLayouts)
                 {
-                    var resourceGroup = viewLayout.Entries[renderView.Index].Resources;
-
-                    var logicalGroup = viewLayout.GetLogicalGroup(logicalKey);
-                    if (logicalGroup.Hash == ObjectId.Empty)
+                    var fogOffset = frameLayout.GetConstantBufferOffset(offsetref);
+                    if (fogOffset == -1)
                         continue;
 
-                    var mappedCB = (FogData*)(resourceGroup.ConstantBuffer.Data + logicalGroup.ConstantBufferOffset);
+                    var resourceGroup = frameLayout.Entry.Resources;
+
+                    var mappedCB = (FogData*)(resourceGroup.ConstantBuffer.Data + fogOffset);
                     mappedCB->FogColor = usecolor;
                     mappedCB->FogStart = GlobalFogParameters.FogStart;
                 }
@@ -131,8 +127,6 @@ namespace Xenko.Rendering.Rendering.Materials
 
         public override void GenerateShader(MaterialGeneratorContext context)
         {
-            usingGlobalFog = true;
-            
             var shaderBuilder = context.AddShading(this);
             shaderBuilder.ShaderSources.Add(new ShaderClassSource("FogFeature"));
         }

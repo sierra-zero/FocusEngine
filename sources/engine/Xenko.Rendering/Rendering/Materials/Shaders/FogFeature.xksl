@@ -4,7 +4,7 @@ namespace Xenko.Rendering.Materials
 {
     shader FogFeature : IMaterialSurfacePixel, MaterialPixelShadingStream, ShaderBaseStream
     {
-        cbuffer PerView.GlobalFog {
+        cbuffer PerFrame {
             stage float4 FogColor;
             stage float FogStart;
         };

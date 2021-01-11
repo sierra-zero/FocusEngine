@@ -540,9 +540,6 @@ namespace Xenko.Rendering.Compositing
         {
             var renderSystem = context.RenderSystem;
 
-            if (GlobalFog.usingGlobalFog)
-                GlobalFog.PrepareFogConstantBuffer(context);
-
             if (eyeCount == 2)
                 PrepareVRConstantBuffer(context, eyeIndex, eyeCount);
 
@@ -668,6 +665,8 @@ namespace Xenko.Rendering.Compositing
 
             using (drawContext.PushRenderTargetsAndRestore())
             {
+                GlobalFog.PrepareFogConstantBuffer(context);
+
                 // Render Shadow maps
                 shadowMapRenderer?.Draw(drawContext);
 
