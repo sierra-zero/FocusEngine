@@ -77,7 +77,7 @@ namespace Xenko.UI.Renderers
             var backgroundColor = element.RenderOpacity * element.BackgroundColor;
 
             // pass the 3D matrix onto the element for picking
-            element.WorldMatrix3D = context.IsFullscreen ? (Matrix?)null : context.WorldMatrix3D;
+            element.WorldMatrix3D = context.WorldMatrix3D;
 
             // optimization: don't draw the background if transparent
             if (backgroundColor.A == (byte)0)

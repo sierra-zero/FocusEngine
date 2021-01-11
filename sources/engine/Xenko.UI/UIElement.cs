@@ -38,7 +38,7 @@ namespace Xenko.UI
         internal Vector3 RenderSizeInternal;
         internal Matrix WorldMatrixInternal;
         internal Matrix WorldMatrixPickingInternal;
-        internal Matrix? WorldMatrix3D;
+        internal Matrix WorldMatrix3D;
         protected internal Thickness MarginInternal = Thickness.UniformCuboid(0f);
 
         private string name, emptyDefaultName;
@@ -1231,11 +1231,11 @@ namespace Xenko.UI
         {
             // does ray intersect element Oxy face?
             bool intersects;
-            if (WorldMatrix3D.HasValue && nonUISpace)
+            if (nonUISpace)
             {
                 Matrix worldMatrix = WorldMatrixPickingInternal;
                 worldMatrix.M42 = -worldMatrix.M42; // for some reason Y translation needs to be flipped
-                worldMatrix *= WorldMatrix3D.Value;
+                worldMatrix *= WorldMatrix3D;
                 Vector3 topLeft = Vector3.Transform(new Vector3(-RenderSizeInternal.X * 0.5f,
                                                                  RenderSizeInternal.Y * 0.5f,
                                                                  0f), worldMatrix).XYZ();

@@ -291,7 +291,7 @@ namespace Xenko.Rendering.UI
                             if (tc != null)
                             {
                                 // adjust intersection point into local UI space from world space
-                                intersectionPoint = (intersectionPoint - UIElementUnderMouseCursor.WorldMatrix3D.Value.TranslationVector) / state.WorldMatrix3D.ScaleVector;
+                                intersectionPoint = (intersectionPoint - UIElementUnderMouseCursor.WorldMatrix3D.TranslationVector) / state.WorldMatrix3D.ScaleVector;
 
                                 if (tc.IsPressedDown(VirtualReality.VRDeviceSystem.UIActivationButton))
                                 {
