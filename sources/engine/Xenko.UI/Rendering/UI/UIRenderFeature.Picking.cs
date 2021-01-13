@@ -293,15 +293,15 @@ namespace Xenko.Rendering.UI
                                 // adjust intersection point into local UI space from world space
                                 intersectionPoint = (intersectionPoint - UIElementUnderMouseCursor.WorldMatrix3D.TranslationVector) / state.WorldMatrix3D.ScaleVector;
 
-                                if (tc.IsPressedDown(VirtualReality.VRDeviceSystem.UIActivationButton))
+                                if (tc.IsTouchedDown(VirtualReality.VRDeviceSystem.UIActivationButton) || tc.IsPressedDown(VirtualReality.VRDeviceSystem.UIActivationButton))
                                 {
                                     MakeTouchEvent(UIElementUnderMouseCursor, lastMouseOverElement, PointerEventType.Pressed, Vector2.Zero, Vector2.Zero, intersectionPoint, Vector3.Zero, time);
                                 }
-                                else if (tc.IsPressReleased(VirtualReality.VRDeviceSystem.UIActivationButton))
+                                else if (tc.IsTouchReleased(VirtualReality.VRDeviceSystem.UIActivationButton) || tc.IsPressReleased(VirtualReality.VRDeviceSystem.UIActivationButton))
                                 {
                                     MakeTouchEvent(UIElementUnderMouseCursor, lastMouseOverElement, PointerEventType.Released, Vector2.Zero, Vector2.Zero, intersectionPoint, Vector3.Zero, time);
                                 }
-                                else if (tc.IsPressed(VirtualReality.VRDeviceSystem.UIActivationButton))
+                                else if (tc.IsTouched(VirtualReality.VRDeviceSystem.UIActivationButton) || tc.IsPressed(VirtualReality.VRDeviceSystem.UIActivationButton))
                                 {
                                     MakeTouchEvent(UIElementUnderMouseCursor, lastMouseOverElement, PointerEventType.Moved, Vector2.Zero, Vector2.Zero, intersectionPoint, state.LastIntersectionPoint - intersectionPoint, time);
                                 }
