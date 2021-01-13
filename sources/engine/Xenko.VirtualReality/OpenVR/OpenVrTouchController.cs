@@ -82,14 +82,16 @@ namespace Xenko.VirtualReality
                     Vector3 scale;
                     if (holdOffset.HasValue)
                     {
-                        mat.Decompose(out scale, out Quaternion tempRot, out currentPos);
+                        mat.Decompose(out scale, out Quaternion tempRot, out var currentPosPrescaled);
                         currentRot = holdOffset.Value * tempRot;
-                    } 
+                        currentPos = currentPosPrescaled * HostDevice.BodyScaling;
+                    }
                     else
                     {
-                        mat.Decompose(out scale, out currentRot, out currentPos);
+                        mat.Decompose(out scale, out currentRot, out var currentPosPrescaled);
+                        currentPos = currentPosPrescaled * HostDevice.BodyScaling;
                     }
-                    currentLinearVelocity = vel;
+                    currentLinearVelocity = vel * HostDevice.BodyScaling;
                     currentAngularVelocity = new Vector3(MathUtil.DegreesToRadians(angVel.X), MathUtil.DegreesToRadians(angVel.Y), MathUtil.DegreesToRadians(angVel.Z));
                 }
             }

@@ -243,11 +243,23 @@ namespace Xenko.Rendering.UI
             if (root.Component.AlwaysTrackPointer == false)
                 return;
 
-            if (root.Page.RootElement.Intersects(ref r, out var intersectionPoint, nonui))
+            UIElement rootElement = root.Page.RootElement;
+
+            if (rootElement.Intersects(ref r, out var intersectionPoint, nonui))
             {
                 Vector2 pos = intersectionPoint.XY();
+
+                if (nonui)
+                {
+                    pos = (pos - rootElement.WorldMatrix3D.TranslationVector.XY()) / root.WorldMatrix3D.ScaleVector.XY();
+                    pos.Y = root.Resolution.Y * 0.5f - pos.Y;
+                } 
+                else
+                {
+                    pos.Y += root.Resolution.Y * 0.5f;
+                }
+
                 pos.X += root.Resolution.X * 0.5f;
-                pos.Y += root.Resolution.Y * 0.5f;
                 root.Component.AveragePositionIndex = (root.Component.AveragePositionIndex + 1) % root.Component.AveragedPositions.Length;
                 root.Component.AveragedPositions[root.Component.AveragePositionIndex] = pos;
             }

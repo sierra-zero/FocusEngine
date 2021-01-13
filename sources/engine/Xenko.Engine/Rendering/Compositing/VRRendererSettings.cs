@@ -37,9 +37,6 @@ namespace Xenko.Rendering.Compositing
         [DataMember(30)]
         public List<VRDeviceDescription> RequiredApis { get; } = new List<VRDeviceDescription>();
 
-        [DataMember(40)]
-        public List<VROverlayRenderer> Overlays { get; } = new List<VROverlayRenderer>();
-
         [DataMemberIgnore]
         public RenderView[] RenderViews = { new RenderView(), new RenderView() };
 

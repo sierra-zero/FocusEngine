@@ -13,7 +13,7 @@ namespace Xenko.VirtualReality
 
         protected VRDevice()
         {
-            ViewScaling = 1.0f;
+            BodyScaling = 1.0f;
         }
 
         public abstract Size2 OptimalRenderFrameSize { get; }
@@ -45,23 +45,12 @@ namespace Xenko.VirtualReality
         public VRApi VRApi { get; protected set; }
 
         /// <summary>
-        /// Allows you to scale the view, effectively it will change the size of the player in respect to the world, turning it into a giant or a tiny ant.
+        /// Allows you to scale your whole body, effectively it will change the size of the player in respect to the world, turning it into a giant or a tiny ant.
         /// </summary>
         /// <remarks>This will reduce the near clip plane of the cameras, it might induce depth issues.</remarks>
-        public float ViewScaling { get; set; }
+        public float BodyScaling { get; set; }
 
         public abstract bool CanInitialize { get; }
-
-        public bool SupportsOverlays { get; protected set; } = false;
-
-        public virtual VROverlay CreateOverlay(int width, int height, int mipLevels, int sampleCount)
-        {
-            return null;
-        }
-
-        public virtual void ReleaseOverlay(VROverlay overlay)
-        {         
-        }
 
         public abstract void Enable(GraphicsDevice device, GraphicsDeviceManager graphicsDeviceManager, bool requireMirror);
 

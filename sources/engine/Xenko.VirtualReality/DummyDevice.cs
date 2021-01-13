@@ -111,7 +111,7 @@ namespace Xenko.VirtualReality
             projection = new Matrix(1.19034183f, 0, 0, 0, 0, 0.999788344f, 0, 0, (eye == Eyes.Left ? -1.0f : 1.0f) * 0.148591548f, -0.110690169f, -1.0001f, -1, 0, 0, -0.10001f, 0);
 
             // Adjust position from camera to eye
-            var eyeLocal = new Vector3((eye == Eyes.Left ? -HalfIpd : HalfIpd) * 0.5f, 0.0f, 0.0f) * ViewScaling;
+            var eyeLocal = new Vector3((eye == Eyes.Left ? -HalfIpd : HalfIpd) * 0.5f, 0.0f, 0.0f) * BodyScaling;
             Vector3 eyeWorld;
             Matrix fullRotation;
             var headRotationMatrix = ignoreHeadRotation ? Matrix.Identity : Matrix.RotationQuaternion(headRotation);

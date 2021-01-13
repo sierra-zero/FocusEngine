@@ -194,17 +194,6 @@ namespace Xenko.Rendering.Compositing
                         vrSystem.PreviousUseCustomProjectionMatrix = camera.UseCustomProjectionMatrix;
                         vrSystem.PreviousUseCustomViewMatrix = camera.UseCustomViewMatrix;
                         vrSystem.PreviousCameraProjection = camera.ProjectionMatrix;
-
-                        if (VRSettings.VRDevice.SupportsOverlays)
-                        {
-                            foreach (var overlay in VRSettings.Overlays)
-                            {
-                                if (overlay != null && overlay.Texture != null)
-                                {
-                                    overlay.Overlay = VRSettings.VRDevice.CreateOverlay(overlay.Texture.Width, overlay.Texture.Height, overlay.Texture.MipLevels, (int)overlay.Texture.MultisampleCount);
-                                }
-                            }
-                        }
                     }
                 }
                 else
@@ -435,20 +424,6 @@ namespace Xenko.Rendering.Compositing
                             LightShafts?.Collect(context);
 
                             PostEffects?.Collect(context);
-                        }
-                    }
-
-                    if (VRSettings.VRDevice.SupportsOverlays)
-                    {
-                        foreach (var overlay in VRSettings.Overlays)
-                        {
-                            if (overlay != null && overlay.Texture != null)
-                            {
-                                overlay.Overlay.Position = overlay.LocalPosition;
-                                overlay.Overlay.Rotation = overlay.LocalRotation;
-                                overlay.Overlay.SurfaceSize = overlay.SurfaceSize;
-                                overlay.Overlay.FollowHeadRotation = overlay.FollowsHeadRotation;
-                            }
                         }
                     }
                 }
@@ -726,17 +701,6 @@ namespace Xenko.Rendering.Compositing
                                         }
 
                                         PostEffects.Draw(drawContext, OpaqueRenderStage.OutputValidator, currentRenderTargets.Items, currentDepthStencil, vrFullSurface);
-                                    }
-                                }
-                            }
-
-                            if (VRSettings.VRDevice.SupportsOverlays)
-                            {
-                                foreach (var overlay in VRSettings.Overlays)
-                                {
-                                    if (overlay != null && overlay.Texture != null)
-                                    {
-                                        overlay.Overlay.UpdateSurface(drawContext.CommandList, overlay.Texture);
                                     }
                                 }
                             }
