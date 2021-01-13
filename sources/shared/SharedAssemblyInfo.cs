@@ -30,7 +30,7 @@ namespace Xenko
         /// <summary>
         /// This version will be shown in the editor and actually is the version. Can be changed without triggering weird NuGet behavior.
         /// </summary>
-        public const string VersionToShowInEditor = "3.13.9";
+        public const string VersionToShowInEditor = "3.14.1";
 
         /// <summary>
         /// The current assembly version as text, currently same as <see cref="PublicVersion"/>.
