@@ -357,6 +357,34 @@ namespace Xenko.UI
         }
 
         /// <summary>
+        /// Used for getting and setting the top left positon of this UIElement
+        /// </summary>
+        [DataMemberIgnore]
+        public Vector2 LeftTopPosition
+        {
+            get
+            {
+                return new Vector2(MarginInternal.Left, MarginInternal.Top);
+            }
+            set
+            {
+                // make sure we are using top left positioning
+                if (HorizontalAlignment != HorizontalAlignment.Left)
+                    HorizontalAlignment = HorizontalAlignment.Left;
+
+                if (VerticalAlignment != VerticalAlignment.Top)
+                    VerticalAlignment = VerticalAlignment.Top;
+
+                if (MarginInternal.Left == value.X && MarginInternal.Top == value.Y)
+                    return; // didn't move
+
+                MarginInternal.Left = value.X;
+                MarginInternal.Top = value.Y;
+                InvalidateMeasure();
+            }
+        }
+
+        /// <summary>
         /// Gets or sets the minimum width of this element.
         /// </summary>
         /// <remarks>The value is coerced in the range [0, <see cref="float.MaxValue"/>].</remarks>
