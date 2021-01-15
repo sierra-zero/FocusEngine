@@ -394,36 +394,51 @@ namespace Xenko.Rendering.UI
                 }
                 else
                 {
-                    Matrix viewInverse;
-                    Matrix.Invert(ref viewMatrix, out viewInverse);
-                    var forwardVector = viewInverse.Forward;
-
-                    if (renderObject.IsBillboard)
+                    if (renderObject.IsBillboard || renderObject.IsFullScreen)
                     {
-                        var viewInverseRow1 = viewInverse.Row1;
-                        var viewInverseRow2 = viewInverse.Row2;
+                        Matrix viewInverse;
+                        Matrix.Invert(ref viewMatrix, out viewInverse);
+                        var diff = worldMatrix.TranslationVector - viewInverse.TranslationVector;
 
-                        // remove scale of the camera
-                        viewInverseRow1 /= viewInverseRow1.XYZ().Length();
-                        viewInverseRow2 /= viewInverseRow2.XYZ().Length();
+                        if (renderObject.IsBillboard)
+                        {
+                            switch (renderObject.Component.BillboardType)
+                            {
+                                case UIComponent.BILLBOARD_TYPE.VIEW:
+                                    var viewInverseRow1 = viewInverse.Row1;
+                                    var viewInverseRow2 = viewInverse.Row2;
 
-                        // set the scale of the object
-                        viewInverseRow1 *= worldMatrix.Row1.XYZ().Length();
-                        viewInverseRow2 *= worldMatrix.Row2.XYZ().Length();
+                                    // remove scale of the camera
+                                    viewInverseRow1 /= viewInverseRow1.XYZ().Length();
+                                    viewInverseRow2 /= viewInverseRow2.XYZ().Length();
 
-                        // set the adjusted world matrix
-                        worldMatrix.Row1 = viewInverseRow1;
-                        worldMatrix.Row2 = viewInverseRow2;
-                        worldMatrix.Row3 = viewInverse.Row3;
-                    }
+                                    // set the scale of the object
+                                    viewInverseRow1 *= worldMatrix.Row1.XYZ().Length();
+                                    viewInverseRow2 *= worldMatrix.Row2.XYZ().Length();
 
-                    if (renderObject.IsFixedSize)
-                    {
-                        var distVec = (worldMatrix.TranslationVector - viewInverse.TranslationVector).Length();
+                                    // set the adjusted world matrix
+                                    worldMatrix.Row1 = viewInverseRow1;
+                                    worldMatrix.Row2 = viewInverseRow2;
+                                    worldMatrix.Row3 = viewInverse.Row3;
+                                    break;
+                                case UIComponent.BILLBOARD_TYPE.POSITION:
+                                    // generate a new matrix that looks at the camera's position
+                                    Quaternion look = new Quaternion();
+                                    Quaternion.LookAt(ref look, diff);
+                                    TransformComponent original = renderObject.Component.Entity.Transform;
+                                    worldMatrix = Matrix.Transformation(original.WorldScale(), look, original.WorldPosition());
+                                    break;
+                            }
+                        }
 
-                        worldMatrix.Row1 *= distVec;
-                        worldMatrix.Row2 *= distVec;
-                        worldMatrix.Row3 *= distVec;
+                        if (renderObject.IsFixedSize)
+                        {
+                            var distVec = diff.Length();
+
+                            worldMatrix.Row1 *= distVec;
+                            worldMatrix.Row2 *= distVec;
+                            worldMatrix.Row3 *= distVec;
+                        }
                     }
 
                     // If the UI component is not drawn fullscreen it should be drawn as a quad with world sizes corresponding to its actual size

@@ -16,5 +16,10 @@ namespace Xenko.Rendering.Sprites
         /// A billboard sprite.
         /// </summary>
         Billboard,
+
+        /// <summary>
+        /// A billboard sprite that looks at position.
+        /// </summary>
+        BillboardPosition,
     }
 }

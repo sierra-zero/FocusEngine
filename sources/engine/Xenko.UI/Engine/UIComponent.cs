@@ -23,6 +23,12 @@ namespace Xenko.Engine
     [ComponentCategory("UI")]
     public sealed class UIComponent : ActivableEntityComponent
     {
+        public enum BILLBOARD_TYPE
+        {
+            VIEW,
+            POSITION
+        }
+
         public static readonly float DefaultDepth = 128f;
         public static readonly float DefaultHeight = 720f;
         public static readonly float DefaultWidth = 1280f;
@@ -92,6 +98,13 @@ namespace Xenko.Engine
         [Display("Billboard")]
         [DefaultValue(true)]
         public bool IsBillboard { get; set; } = true;
+
+        /// <summary>
+        /// How do we calculate the billboard? Position works better for VR, but perhaps not for non-VR.
+        /// </summary>
+        [DataMember(55)]
+        [DefaultValue(BILLBOARD_TYPE.VIEW)]
+        public BILLBOARD_TYPE BillboardType { get; set; } = BILLBOARD_TYPE.VIEW; 
 
         /// <summary>
         /// Gets or sets the value indicating of the UI texts should be snapped to closest pixel.
