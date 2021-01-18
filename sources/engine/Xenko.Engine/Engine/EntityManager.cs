@@ -244,6 +244,9 @@ namespace Xenko.Engine
                 addEntityLevel--;
             }
 
+            // if we were immmobile, update its position
+            entity.Transform.UpdateImmobilePosition = true;
+
             // Register all new processors
             RegisterPendingProcessors();
 
