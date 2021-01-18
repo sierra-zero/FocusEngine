@@ -278,8 +278,16 @@ namespace Xenko.UI.Controls
             return realSize;
         }
 
-        private void UpdateWrappedText(Vector3 availableSpace)
+        public void UpdateWrappedText(Vector3? overrideAvailableSpace = null)
         {
+            var availableSpace = overrideAvailableSpace ?? availableSizeWithoutMargins;
+
+            if (availableSpace.X <= 0f)
+            {
+                CalculateWithoutMargins(ref previousProvidedMeasureSize, out _);
+                availableSpace = availableSizeWithoutMargins;
+            }
+
             if (string.IsNullOrEmpty(text))
             {
                 wrappedText = string.Empty;

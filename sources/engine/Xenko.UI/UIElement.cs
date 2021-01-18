@@ -68,7 +68,8 @@ namespace Xenko.UI
         protected bool ArrangeChanged;
         protected bool LocalMatrixChanged;
 
-        private Vector3 previousProvidedMeasureSize = new Vector3(-1,-1,-1);
+        protected Vector3 availableSizeWithoutMargins = new Vector3(-1, -1, -1);
+        internal Vector3 previousProvidedMeasureSize = new Vector3(-1,-1,-1);
         private Vector3 previousProvidedArrangeSize = new Vector3(-1,-1,-1);
         private bool previousIsParentCollapsed;
 
@@ -915,18 +916,19 @@ namespace Xenko.UI
             }
         }
 
-        internal Vector3? lastResolution;
-
-        /// <summary>
-        /// Rearrange the UIElement now, perhaps right after changes to its position, so it will be ready for the next frame.
-        /// </summary>
-        public void RearrangeNow()
+        internal void CalculateWithoutMargins(ref Vector3 availableSizeWithMargins, out Vector3 desiredSize)
         {
-            if (lastResolution.HasValue)
-            {
-                Measure(lastResolution.Value);
-                Arrange(lastResolution.Value, false);
-            }
+            // variable containing the temporary desired size
+            desiredSize = new Vector3(Width, Height, Depth);
+
+            // removes the size required for the margins in the available size
+            availableSizeWithoutMargins = CalculateSizeWithoutThickness(ref availableSizeWithMargins, ref MarginInternal);
+
+            // clamp the available size for the element between the maximum and minimum width/height of the UIElement
+            availableSizeWithoutMargins = new Vector3(
+                Math.Max(MinimumWidth, Math.Min(MaximumWidth, !float.IsNaN(desiredSize.X) ? desiredSize.X : availableSizeWithoutMargins.X)),
+                Math.Max(MinimumHeight, Math.Min(MaximumHeight, !float.IsNaN(desiredSize.Y) ? desiredSize.Y : availableSizeWithoutMargins.Y)),
+                Math.Max(MinimumDepth, Math.Min(MaximumDepth, !float.IsNaN(desiredSize.Z) ? desiredSize.Z : availableSizeWithoutMargins.Z)));
         }
 
         /// <summary>
@@ -957,20 +959,9 @@ namespace Xenko.UI
                 return;
             }
 
-            // variable containing the temporary desired size
-            var desiredSize = new Vector3(Width, Height, Depth);
-
             // width, height or the depth of the UIElement might be undetermined
             // -> compute the desired size of the children to determine it
-
-            // removes the size required for the margins in the available size
-            var availableSizeWithoutMargins = CalculateSizeWithoutThickness(ref availableSizeWithMargins, ref MarginInternal);
-
-            // clamp the available size for the element between the maximum and minimum width/height of the UIElement
-            availableSizeWithoutMargins = new Vector3(
-                Math.Max(MinimumWidth, Math.Min(MaximumWidth, !float.IsNaN(desiredSize.X) ? desiredSize.X : availableSizeWithoutMargins.X)),
-                Math.Max(MinimumHeight, Math.Min(MaximumHeight, !float.IsNaN(desiredSize.Y) ? desiredSize.Y : availableSizeWithoutMargins.Y)),
-                Math.Max(MinimumDepth, Math.Min(MaximumDepth, !float.IsNaN(desiredSize.Z) ? desiredSize.Z : availableSizeWithoutMargins.Z)));
+            CalculateWithoutMargins(ref availableSizeWithMargins, out var desiredSize);
 
             // compute the desired size for the children
             var childrenDesiredSize = MeasureOverride(availableSizeWithoutMargins);
@@ -1070,9 +1061,6 @@ namespace Xenko.UI
                 CollapseOverride();
                 return;
             }
-
-            // store for possible later rearrange
-            lastResolution = finalSizeWithMargins;
 
             // initialize the element size with the user suggested size (maybe NaN if not set)
             var elementSize = new Vector3(Width, Height, Depth);

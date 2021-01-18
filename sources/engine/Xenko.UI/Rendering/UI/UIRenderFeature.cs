@@ -88,6 +88,10 @@ namespace Xenko.Rendering.UI
                 var virtualResolution = renderObject.Resolution;
                 var updatableRootElement = (IUIElementUpdate)rootElement;
 
+                // update the UI element disposition
+                rootElement.Measure(virtualResolution);
+                rootElement.Arrange(virtualResolution, false);
+
                 // calculate an estimate of the UI real size by projecting the element virtual resolution on the screen
                 var virtualOrigin = uiElementState.WorldViewProjectionMatrix.Row4;
                 var virtualWidth = new Vector4(virtualResolution.X / 2, 0, 0, 1);
@@ -124,10 +128,6 @@ namespace Xenko.Rendering.UI
                 layoutingContext.RealResolution = viewportSize;
                 layoutingContext.RealVirtualResolutionRatio = new Vector2(projectedVirtualWidth.Length() / virtualResolution.X, projectedVirtualHeight.Length() / virtualResolution.Y);
                 rootElement.LayoutingContext = layoutingContext;
-
-                // update the UI element disposition
-                rootElement.Measure(renderObject.Resolution);
-                rootElement.Arrange(renderObject.Resolution, false);
 
                 if (renderObject.IsFullScreen)
                 {
