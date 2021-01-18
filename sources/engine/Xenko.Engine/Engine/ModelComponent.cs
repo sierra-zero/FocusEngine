@@ -185,6 +185,18 @@ namespace Xenko.Engine
         public float SmallFactorMultiplier { get; set; } = 1f;
 
         /// <summary>
+        /// If this model may change at any time, have this false. Otherwise, if the model (material and meshes) stay the same, set this to true for performance improvements.
+        [DataMember(45)]
+        [DefaultValue(false)]
+        public bool FixedModel { get; set; } = false;
+
+        /// <summary>
+        /// Set to "true" if this is a fixed model, but the model has changed and needs updating. Will reset to false after updating.
+        /// </summary>
+        [DataMemberIgnore]
+        public bool NeedsModelUpdate = true;
+
+        /// <summary>
         /// Gets the bounding box in world space.
         /// </summary>
         /// <value>The bounding box.</value>

@@ -3,6 +3,7 @@
 
 using System.Collections.Generic;
 using Xenko.Core;
+using Xenko.Core.Annotations;
 using Xenko.Core.Extensions;
 using Xenko.Core.Mathematics;
 using Xenko.Core.Threading;
@@ -67,29 +68,62 @@ namespace Xenko.Rendering
             }
         }
 
+        protected override void OnEntityComponentAdding(Entity entity, [NotNull] ModelComponent component, [NotNull] RenderModel data)
+        {
+            base.OnEntityComponentAdding(entity, component, data);
+            component.NeedsModelUpdate = true;
+        }
+
+        internal List<int> checkMeshes = new List<int>();
+        internal List<int> updateMeshes = new List<int>();
+
         /// <inheritdoc />
         public override void Draw(RenderContext context)
         {
-            // Note: we are rebuilding RenderMeshes every frame
-            // TODO: check if it wouldn't be better to add/remove directly in CheckMeshes()?
-            //foreach (var entity in ComponentDatas)
-            Dispatcher.For(0, ComponentDataKeys.Count, i =>
+            checkMeshes.Clear();
+            updateMeshes.Clear();
+            for (int i=0; i<ComponentDataKeys.Count; i++)
             {
                 var modelComponent = ComponentDataKeys[i];
+                if (modelComponent == null) continue;
                 var renderModel = ComponentDataValues[i];
+                if (renderModel == null) continue;
 
-                if (modelComponent != null && renderModel != null) {
-                    CheckMeshes(modelComponent, renderModel);
-                    UpdateRenderModel(modelComponent, renderModel);
+                if (modelComponent.FixedModel == false ||
+                    modelComponent.NeedsModelUpdate ||
+                    modelComponent.Entity.Transform.UpdateImmobilePosition)
+                {
+                    checkMeshes.Add(i);
+                    if (modelComponent.Model != null)
+                        updateMeshes.Add(i);
                 }
+                else if (modelComponent.Entity.Transform.Immobile == IMMOBILITY.FullMotion &&
+                         modelComponent.Model != null)
+                {
+                    updateMeshes.Add(i);
+                }
+            }
+
+            Dispatcher.For(0, checkMeshes.Count, j =>
+            {
+                var i = checkMeshes[j];
+                var modelComponent = ComponentDataKeys[i];
+                var renderModel = ComponentDataValues[i];
+                modelComponent.NeedsModelUpdate = false;
+                CheckMeshes(modelComponent, renderModel);
+            });
+
+            Dispatcher.For(0, updateMeshes.Count, j =>
+            {
+                var i = updateMeshes[j];
+                var modelComponent = ComponentDataKeys[i];
+                var renderModel = ComponentDataValues[i];
+                UpdateRenderModel(modelComponent, renderModel);
             });
         }
 
         private void UpdateRenderModel(ModelComponent modelComponent, RenderModel renderModel)
         {
-            if (modelComponent.Model == null)
-                return;
-
             var modelViewHierarchy = modelComponent.Skeleton;
             var nodeTransformations = modelViewHierarchy.NodeTransformations;
 
@@ -123,7 +157,8 @@ namespace Xenko.Rendering
                             renderMesh.SmallFactorMultiplier = 1f;
                         renderMesh.World = nodeTransformations[nodeIndex].WorldMatrix;
                         renderMesh.IsScalingNegative = nodeTransformations[nodeIndex].IsScalingNegative;
-                        renderMesh.BoundingBox = new BoundingBoxExt(meshInfo.BoundingBox);
+                        renderMesh.BoundingBox.Center = (meshInfo.BoundingBox.Maximum + meshInfo.BoundingBox.Minimum) * 0.5f;
+                        renderMesh.BoundingBox.Extent = (meshInfo.BoundingBox.Maximum - meshInfo.BoundingBox.Minimum) * 0.5f;
                         renderMesh.BlendMatrices = meshInfo.BlendMatrices;
                     }
                 }
