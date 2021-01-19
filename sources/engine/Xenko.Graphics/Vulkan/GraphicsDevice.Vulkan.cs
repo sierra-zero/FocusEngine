@@ -200,8 +200,8 @@ namespace Xenko.Graphics
                 vkQueueSubmit(NativeCommandQueue, 1, &submitInfo, fence);
             }
 
-            nativeResourceCollector.Release();
-            graphicsResourceLinkCollector.Release();
+            nativeResourceCollector.FastRelease();
+            graphicsResourceLinkCollector.FastRelease();
         }
 
         private void InitializePostFeatures()
@@ -527,8 +527,8 @@ namespace Xenko.Graphics
                 vkQueueSubmit(NativeCommandQueue, 1, &submitInfo, fence);
             }
 
-            nativeResourceCollector.Release();
-            graphicsResourceLinkCollector.Release();
+            nativeResourceCollector.FastRelease();
+            graphicsResourceLinkCollector.FastRelease();
 
             return fenceValue;
         }
@@ -1031,7 +1031,7 @@ namespace Xenko.Graphics
         }
 
         protected readonly GraphicsDevice GraphicsDevice;
-        private readonly HashSet<TempResource> items = new HashSet<TempResource>();
+        private readonly ConcurrentHashSet<TempResource> items = new ConcurrentHashSet<TempResource>();
 
         protected TemporaryResourceCollector(GraphicsDevice graphicsDevice)
         {
@@ -1043,16 +1043,26 @@ namespace Xenko.Graphics
             TempResource tr = new TempResource();
             tr.obj = item;
             tr.fence = fenceValue;
-            lock (items) {
-                items.Add(tr);
+            items.Add(tr);
+        }
+
+        // only releases things that are easy to determine
+        public void FastRelease()
+        {
+            foreach (TempResource tr in items)
+            {
+                if (tr.fence <= GraphicsDevice.lastCompletedFence) 
+                {
+                    ReleaseObject(tr.obj);
+                    items.TryRemove(tr);
+                }
             }
         }
 
         public void Release()
         {
-            lock (items) {
-                items.RemoveWhere(RemoveDone);
-            }
+            foreach (TempResource tr in items)
+                if (RemoveDone(tr)) items.TryRemove(tr);
         }
 
         private bool RemoveDone(TempResource tr) {
