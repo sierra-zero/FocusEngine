@@ -139,6 +139,21 @@ namespace Xenko.Engine
         [DefaultValue(true)]
         public bool UpdateImmobilePosition { get; set; } = true;
 
+        /// <summary>
+        /// Recursively go through transform hierarchy, marking everything as needing an update to its immobile position.
+        /// </summary>
+        public void RecursiveUpdateImmobilePosition()
+        {
+            _updateImmobilePos(this);
+        }
+
+        internal static void _updateImmobilePos(TransformComponent root)
+        {
+            root.UpdateImmobilePosition = true;
+
+            for (int i = 0; i < root.children.Count; i++)
+                _updateImmobilePos(root.children[i]);
+        }
 
         [DataMemberIgnore]
         public TransformLink TransformLink;

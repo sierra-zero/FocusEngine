@@ -197,6 +197,23 @@ namespace Xenko.Engine
         public bool NeedsModelUpdate = true;
 
         /// <summary>
+        /// Update all model components in Entity tree.
+        /// </summary>
+        /// <param name="root">Root entity to look at all model components, updating all of them</param>
+        public static void RecursiveModelUpdate(Entity root)
+        {
+            for (int i=0; i<root.Components.Count; i++)
+            {
+                var component = root.Components[i];
+                if (component is ModelComponent mc)
+                    mc.NeedsModelUpdate = true;
+            }
+
+            for (int i = 0; i < root.Transform.Children.Count; i++)
+                RecursiveModelUpdate(root.Transform.Children[i].Entity);
+        }
+
+        /// <summary>
         /// Gets the bounding box in world space.
         /// </summary>
         /// <value>The bounding box.</value>
