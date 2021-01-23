@@ -1010,28 +1010,8 @@ namespace Xenko.Graphics
     
     internal abstract class TemporaryResourceCollector<T> : IDisposable
     {
-        struct TempResource : IEquatable<TempResource> {
-            public T obj;
-            public int hash;
-            public long fence;
-
-            public bool Equals(TempResource other) {
-                return other.GetHashCode() == GetHashCode();
-            }
-
-            public override bool Equals(object other) {
-                if (other == null || other is TempResource == false) return false;
-                return Equals((TempResource)other);
-            }
-
-            public override int GetHashCode() {
-                if (hash == 0) hash = obj.GetHashCode();
-                return hash;
-            }
-        }
-
         protected readonly GraphicsDevice GraphicsDevice;
-        private readonly ConcurrentHashSet<TempResource> items = new ConcurrentHashSet<TempResource>();
+        private readonly ConcurrentDictionary<T, long> items = new ConcurrentDictionary<T, long>();
 
         protected TemporaryResourceCollector(GraphicsDevice graphicsDevice)
         {
@@ -1040,45 +1020,28 @@ namespace Xenko.Graphics
 
         public void Add(long fenceValue, T item)
         {
-            TempResource tr = new TempResource();
-            tr.obj = item;
-            tr.fence = fenceValue;
-            items.Add(tr);
+            items[item] = fenceValue;
         }
 
         // only releases things that are easy to determine
         public void FastRelease()
         {
-            foreach (TempResource tr in items)
+            foreach (var pair in items)
             {
-                if (tr.fence <= GraphicsDevice.lastCompletedFence) 
+                if (pair.Value <= GraphicsDevice.lastCompletedFence) 
                 {
-                    ReleaseObject(tr.obj);
-                    items.TryRemove(tr);
+                    ReleaseObject(pair.Key);
+                    items.TryRemove(pair.Key, out _);
                 }
             }
-        }
-
-        public void Release()
-        {
-            foreach (TempResource tr in items)
-                if (RemoveDone(tr)) items.TryRemove(tr);
-        }
-
-        private bool RemoveDone(TempResource tr) {
-            if (GraphicsDevice.IsFenceCompleteInternal(tr.fence)) {
-                ReleaseObject(tr.obj);
-                return true;
-            }            
-            return false;
         }
 
         protected abstract void ReleaseObject(T item);
 
         public void Dispose()
         {
-            foreach (TempResource tr in items) {
-                ReleaseObject(tr.obj);
+            foreach (T tr in items.Keys) {
+                ReleaseObject(tr);
             }
             items.Clear();
         }
