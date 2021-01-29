@@ -46,8 +46,11 @@ namespace Xenko.Engine
 
         public SoundInstance PlayPositionSound(string url, Vector3 position, float pitch = 1f, float volume = 1f, float distanceScale = 1f, bool looped = false)
         {
-            float sqrDist = (position - AudioEngine.DefaultListener.Position).LengthSquared();
-            if (MaxSoundDistance > 0f && sqrDist >= MaxSoundDistance * MaxSoundDistance) return null;
+            if (MaxSoundDistance > 0f)
+            {
+                float sqrDist = ((position - AudioEngine.DefaultListener.Position) * distanceScale).LengthSquared();
+                if (sqrDist >= MaxSoundDistance * MaxSoundDistance) return null;
+            }
             SoundInstance s = getFreeInstance(url, true);
             if (s == null) return null;
             s.Pitch = pitch < 0f ? RandomPitch() : pitch;
@@ -62,8 +65,11 @@ namespace Xenko.Engine
         public SoundInstance PlayAttachedSound(string url, Entity parent, float pitch = 1f, float volume = 1f, float distanceScale = 1f, bool looped = false)
         {
             Vector3 pos = parent.Transform.WorldPosition();
-            float sqrDist = (pos - AudioEngine.DefaultListener.Position).LengthSquared();
-            if (MaxSoundDistance > 0f && sqrDist >= MaxSoundDistance * MaxSoundDistance) return null;
+            if (MaxSoundDistance > 0f)
+            {
+                float sqrDist = ((pos - AudioEngine.DefaultListener.Position) * distanceScale).LengthSquared();
+                if (MaxSoundDistance > 0f && sqrDist >= MaxSoundDistance * MaxSoundDistance) return null;
+            }
             SoundInstance s = getFreeInstance(url, true);
             if (s == null) return null;
             s.Pitch = pitch < 0f ? RandomPitch() : pitch;
