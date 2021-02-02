@@ -138,7 +138,11 @@ namespace Xenko.Graphics.SDL
             // don't try using a resolution too large
             SDL.SDL_GetDesktopDisplayMode(0, out SDL.SDL_DisplayMode mode);
             if (mode.w <= width || mode.h <= height)
+            {
                 flags |= SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN_DESKTOP;
+                width = mode.w;
+                height = mode.h;
+            }
             else if (fullscreen)
                 flags |= SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN;
 

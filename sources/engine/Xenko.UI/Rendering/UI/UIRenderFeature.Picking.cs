@@ -102,18 +102,16 @@ namespace Xenko.Rendering.UI
         private bool GetTouchPosition(Vector3 resolution, ref Viewport viewport, ref Matrix worldViewProj, Vector2 screenPosition, out Ray uiRay)
         {
             // Get a touch ray in object (UI component) space
-            var touchRay = GetWorldRay(ref resolution, ref viewport, screenPosition, ref worldViewProj);
+            uiRay = GetWorldRay(ref resolution, ref viewport, screenPosition, ref worldViewProj);
 
             // If the click point is outside the canvas ignore any further testing
-            var dist = -touchRay.Position.Z / touchRay.Direction.Z;
-            if (Math.Abs(touchRay.Position.X + touchRay.Direction.X * dist) > resolution.X * 0.5f ||
-                Math.Abs(touchRay.Position.Y + touchRay.Direction.Y * dist) > resolution.Y * 0.5f)
+            var dist = -uiRay.Position.Z / uiRay.Direction.Z;
+            if (Math.Abs(uiRay.Position.X + uiRay.Direction.X * dist) > resolution.X * 0.5f ||
+                Math.Abs(uiRay.Position.Y + uiRay.Direction.Y * dist) > resolution.Y * 0.5f)
             {
-                uiRay = new Ray(new Vector3(float.NegativeInfinity), new Vector3(0, 1, 0));
                 return false;
             }
 
-            uiRay = touchRay;
             return true;
         }
 
@@ -243,11 +241,25 @@ namespace Xenko.Rendering.UI
             if (root.Component.AlwaysTrackPointer == false)
                 return;
 
-            if (root.Page.RootElement.Intersects(ref r, out var intersectionPoint, nonui))
+            UIElement rootElement = root.Page.RootElement;
+
+            if (rootElement.Intersects(ref r, out var intersectionPoint, nonui, root.Component.TrackedCanvasScale))
             {
                 Vector2 pos = intersectionPoint.XY();
+
+                if (nonui)
+                {
+                    pos = (pos - rootElement.WorldMatrix3D.TranslationVector.XY()) / root.WorldMatrix3D.ScaleVector.XY();
+                    pos.Y = root.Resolution.Y * 0.5f - pos.Y;
+                } 
+                else
+                {
+                    pos.Y += root.Resolution.Y * 0.5f;
+                }
                 pos.X += root.Resolution.X * 0.5f;
-                pos.Y += root.Resolution.Y * 0.5f;
+                pos.X -= rootElement.RenderOffsets.X;
+                pos.Y -= rootElement.RenderOffsets.Y;
+
                 root.Component.AveragePositionIndex = (root.Component.AveragePositionIndex + 1) % root.Component.AveragedPositions.Length;
                 root.Component.AveragedPositions[root.Component.AveragePositionIndex] = pos;
             }
@@ -322,14 +334,14 @@ namespace Xenko.Rendering.UI
                 {
                     state.LastMousePosition = mousePosition;
 
-                    Ray uiRay;
-                    if (!GetTouchPosition(state.Resolution, ref viewport, ref worldViewProj, mousePosition, out uiRay))
-                    {
-                        copyLastUiComponentAverage(state);
-                        return true;
-                    }
+                    // check if we touch anything of importance
+                    bool hitElement = GetTouchPosition(state.Resolution, ref viewport, ref worldViewProj, mousePosition, out Ray uiRay);
 
+                    // update tracked position on canvas, if this is enabled
                     updateUiComponent(ref uiRay, state, false);
+
+                    // bail out early if we didn't touch anything
+                    if (!hitElement) return true;
 
                     UIElementUnderMouseCursor = GetElementAtScreenPosition(rootElement, ref uiRay, ref worldViewProj, ref intersectionPoint);
                 }

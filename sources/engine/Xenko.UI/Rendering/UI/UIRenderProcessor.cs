@@ -58,12 +58,8 @@ namespace Xenko.Rendering.UI
         {
             if (uiComponent.IsFullScreen == false &&
                 uiComponent.Page?.RootElement != null &&
-                uiComponent.Page.RootElement.lastResolution.HasValue == false)
-            {
-                // this fixes UIElements being rendered incorrectly for the first frame they are added
-                uiComponent.Page.RootElement.lastResolution = uiComponent.Resolution;
-                uiComponent.Page.RootElement.RearrangeNow();
-            }
+                uiComponent.Page.RootElement.previousProvidedMeasureSize.X == -1f)
+                uiComponent.Page.RootElement.previousProvidedMeasureSize = uiComponent.Resolution;
 
             VisibilityGroup.RenderObjects.Add(renderUIElement);
         }

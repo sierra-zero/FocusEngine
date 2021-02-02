@@ -37,6 +37,7 @@ Most of Focus is similar to Stride and there shouldn't be any loss of functional
 * UI Text features: vertically align text or use \<color> tags to dynamically change text colors. Use \<br> tags to have multiline text set straight from GameStudio. Need text shadows, outlines or bevels? Precompile a font (right click it in the asset view) that has a Glyph Margin > 0, which will generate a PNG with room to edit in effects right into the glyphs.
 * ModelBatcher: Easily make batched models using lots of individual models (think grass and rocks for your whole terrain batched into one draw call and entity). See https://github.com/phr00t/FocusEngine/blob/master/sources/engine/Xenko.Engine/Engine/ModelBatcher.cs
 * Level of detail system: in GameSettings -> Rendering, you can set a value for things to cull when they are really small on the screen. Separate value can be used for culling shadows, too. Individual models can have "Small Factor Adjustment" values that make them more important (or less important) to make them cull easier/harder.
+* Able to set Entities (via the TransformComponent) as "static" so complex matrix calculations can be skipped for them every frame. If you have lots of objects that don't move in a scene, this can provide a significant CPU boost.
 * Much more control over the depth buffer: objects, even transparent ones and UI components, provide options for how they interacts with the depth buffer.
 * More Post Processing Effects: Depth-based fog, Outline post processing shaders, and a virtual reality field-of-view reducing filter for motion sickness out of the box.
 * Non-post processing based fog too: GlobalFog which is drawn at the material-level to avoid problems with transparency, see https://github.com/phr00t/FocusEngine/blob/master/sources/engine/Xenko.Rendering/Rendering/Materials/GlobalFog.cs
@@ -53,6 +54,8 @@ Most of Focus is similar to Stride and there shouldn't be any loss of functional
 ## What is worse in this fork?
 
 Android/mobile support, different languages, and Universal Windows Platform support. I also work very little with DirectX, which is maintained just for the editor. Some changes I make to improve Vulkan might cause a (hopefully minor) bug in the DirectX API, which will be of low priority to fix. Vulkan isn't as fully featured as DirectX yet, so GPU instancing doesn't work on Vulkan (although you may find the ModelBatcher works in many cases).
+
+Documentation is worse in this fork, as I don't have time to go back and properly document the new features I add. The list above isn't updated often enough to showcase the latest improvements. I try to comment new additions, but would require looking at the source to see them. Stride documentation is mostly still applicable, but there may be better ways to do things in this fork (VR for example).
 
 Creating templates with this fork is semi broken (you'll get an error, but it still gets created). Just browse for it next time you open Focus. There is an issue for it on the issues tab.
 

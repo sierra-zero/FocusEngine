@@ -40,7 +40,6 @@ namespace Xenko.VirtualReality
         {
             mainGame = game;
             VRApi = VRApi.OpenVR;
-            SupportsOverlays = true;
         }
 
         public override void Enable(GraphicsDevice device, GraphicsDeviceManager graphicsDeviceManager, bool requireMirror)
@@ -51,6 +50,8 @@ namespace Xenko.VirtualReality
 
             leftHandController = new OpenVRTouchController(TouchControllerHand.Left);
             rightHandController = new OpenVRTouchController(TouchControllerHand.Right);
+            leftHandController.HostDevice = this;
+            rightHandController.HostDevice = this;
 
             trackedDevices = new OpenVRTrackedDevice[Valve.VR.OpenVR.k_unMaxTrackedDeviceCount];
             for (int i = 0; i < trackedDevices.Length; i++) {
@@ -63,12 +64,6 @@ namespace Xenko.VirtualReality
 #if XENKO_GRAPHICS_API_VULKAN
             OpenVR.InitVulkan(mainGame);
 #endif
-        }
-
-        public override VROverlay CreateOverlay(int width, int height, int mipLevels, int sampleCount)
-        {
-            var overlay = new OpenVROverlay();
-            return overlay;
         }
 
         public override void Draw(GameTime gameTime)
@@ -109,7 +104,7 @@ namespace Xenko.VirtualReality
                 adjustedHeadMatrix.Row3 = new Vector4(0, 0, adjustedHeadMatrix.Row3.Length(), 0);
             }
 
-            eyeMat = eyeMat * adjustedHeadMatrix * Matrix.Scaling(ViewScaling) * cameraRotation * Matrix.Translation(cameraPosition);
+            eyeMat = eyeMat * adjustedHeadMatrix * Matrix.Scaling(BodyScaling) * cameraRotation * Matrix.Translation(cameraPosition);
             eyeMat.Decompose(out scale, out rot, out pos);
             var finalUp = Vector3.TransformCoordinate(new Vector3(0, 1, 0), rot);
             var finalForward = Vector3.TransformCoordinate(new Vector3(0, 0, -1), rot);

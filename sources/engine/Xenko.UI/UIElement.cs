@@ -68,7 +68,8 @@ namespace Xenko.UI
         protected bool ArrangeChanged;
         protected bool LocalMatrixChanged;
 
-        private Vector3 previousProvidedMeasureSize = new Vector3(-1,-1,-1);
+        protected Vector3 availableSizeWithoutMargins = new Vector3(-1, -1, -1);
+        internal Vector3 previousProvidedMeasureSize = new Vector3(-1,-1,-1);
         private Vector3 previousProvidedArrangeSize = new Vector3(-1,-1,-1);
         private bool previousIsParentCollapsed;
 
@@ -352,6 +353,34 @@ namespace Xenko.UI
             set
             {
                 MarginInternal = value;
+                InvalidateMeasure();
+            }
+        }
+
+        /// <summary>
+        /// Used for getting and setting the top left positon of this UIElement
+        /// </summary>
+        [DataMemberIgnore]
+        public Vector2 LeftTopPosition
+        {
+            get
+            {
+                return new Vector2(MarginInternal.Left, MarginInternal.Top);
+            }
+            set
+            {
+                // make sure we are using top left positioning
+                if (HorizontalAlignment != HorizontalAlignment.Left)
+                    HorizontalAlignment = HorizontalAlignment.Left;
+
+                if (VerticalAlignment != VerticalAlignment.Top)
+                    VerticalAlignment = VerticalAlignment.Top;
+
+                if (MarginInternal.Left == value.X && MarginInternal.Top == value.Y)
+                    return; // didn't move
+
+                MarginInternal.Left = value.X;
+                MarginInternal.Top = value.Y;
                 InvalidateMeasure();
             }
         }
@@ -887,18 +916,19 @@ namespace Xenko.UI
             }
         }
 
-        internal Vector3? lastResolution;
-
-        /// <summary>
-        /// Rearrange the UIElement now, perhaps right after changes to its position, so it will be ready for the next frame.
-        /// </summary>
-        public void RearrangeNow()
+        internal void CalculateWithoutMargins(ref Vector3 availableSizeWithMargins, out Vector3 desiredSize)
         {
-            if (lastResolution.HasValue)
-            {
-                Measure(lastResolution.Value);
-                Arrange(lastResolution.Value, false);
-            }
+            // variable containing the temporary desired size
+            desiredSize = new Vector3(Width, Height, Depth);
+
+            // removes the size required for the margins in the available size
+            availableSizeWithoutMargins = CalculateSizeWithoutThickness(ref availableSizeWithMargins, ref MarginInternal);
+
+            // clamp the available size for the element between the maximum and minimum width/height of the UIElement
+            availableSizeWithoutMargins = new Vector3(
+                Math.Max(MinimumWidth, Math.Min(MaximumWidth, !float.IsNaN(desiredSize.X) ? desiredSize.X : availableSizeWithoutMargins.X)),
+                Math.Max(MinimumHeight, Math.Min(MaximumHeight, !float.IsNaN(desiredSize.Y) ? desiredSize.Y : availableSizeWithoutMargins.Y)),
+                Math.Max(MinimumDepth, Math.Min(MaximumDepth, !float.IsNaN(desiredSize.Z) ? desiredSize.Z : availableSizeWithoutMargins.Z)));
         }
 
         /// <summary>
@@ -929,20 +959,9 @@ namespace Xenko.UI
                 return;
             }
 
-            // variable containing the temporary desired size
-            var desiredSize = new Vector3(Width, Height, Depth);
-
             // width, height or the depth of the UIElement might be undetermined
             // -> compute the desired size of the children to determine it
-
-            // removes the size required for the margins in the available size
-            var availableSizeWithoutMargins = CalculateSizeWithoutThickness(ref availableSizeWithMargins, ref MarginInternal);
-
-            // clamp the available size for the element between the maximum and minimum width/height of the UIElement
-            availableSizeWithoutMargins = new Vector3(
-                Math.Max(MinimumWidth, Math.Min(MaximumWidth, !float.IsNaN(desiredSize.X) ? desiredSize.X : availableSizeWithoutMargins.X)),
-                Math.Max(MinimumHeight, Math.Min(MaximumHeight, !float.IsNaN(desiredSize.Y) ? desiredSize.Y : availableSizeWithoutMargins.Y)),
-                Math.Max(MinimumDepth, Math.Min(MaximumDepth, !float.IsNaN(desiredSize.Z) ? desiredSize.Z : availableSizeWithoutMargins.Z)));
+            CalculateWithoutMargins(ref availableSizeWithMargins, out var desiredSize);
 
             // compute the desired size for the children
             var childrenDesiredSize = MeasureOverride(availableSizeWithoutMargins);
@@ -1042,9 +1061,6 @@ namespace Xenko.UI
                 CollapseOverride();
                 return;
             }
-
-            // store for possible later rearrange
-            lastResolution = finalSizeWithMargins;
 
             // initialize the element size with the user suggested size (maybe NaN if not set)
             var elementSize = new Vector3(Width, Height, Depth);
@@ -1227,7 +1243,7 @@ namespace Xenko.UI
         /// <param name="ray">The ray in world space coordinate</param>
         /// <param name="intersectionPoint">The intersection point in world space coordinate</param>
         /// <returns><value>true</value> if the two elements intersects, <value>false</value> otherwise</returns>
-        protected internal virtual bool Intersects(ref Ray ray, out Vector3 intersectionPoint, bool nonUISpace)
+        protected internal virtual bool Intersects(ref Ray ray, out Vector3 intersectionPoint, bool nonUISpace, float canvasScale = 1f)
         {
             // does ray intersect element Oxy face?
             bool intersects;
@@ -1236,20 +1252,21 @@ namespace Xenko.UI
                 Matrix worldMatrix = WorldMatrixPickingInternal;
                 worldMatrix.M42 = -worldMatrix.M42; // for some reason Y translation needs to be flipped
                 worldMatrix *= WorldMatrix3D;
-                Vector3 topLeft = Vector3.Transform(new Vector3(-RenderSizeInternal.X * 0.5f,
-                                                                 RenderSizeInternal.Y * 0.5f,
-                                                                 0f), worldMatrix).XYZ();
-                Vector3 topRight = Vector3.Transform(new Vector3( RenderSizeInternal.X * 0.5f,
-                                                                  RenderSizeInternal.Y * 0.5f,
-                                                                 0f), worldMatrix).XYZ();
-                Vector3 bottomLeft = Vector3.Transform(new Vector3(-RenderSizeInternal.X * 0.5f,
-                                                                   -RenderSizeInternal.Y * 0.5f,
-                                                                 0f), worldMatrix).XYZ();
+                float rsx = RenderSizeInternal.X * 0.5f * canvasScale;
+                float rsy = RenderSizeInternal.Y * 0.5f * canvasScale;
+                Vector3 topLeft = Vector3.Transform(new Vector3(-rsx, rsy, 0f), worldMatrix).XYZ();
+                Vector3 topRight = Vector3.Transform(new Vector3(rsx, rsy, 0f), worldMatrix).XYZ();
+                Vector3 bottomLeft = Vector3.Transform(new Vector3(-rsx, -rsy, 0f), worldMatrix).XYZ();
                 intersects = RayIntersectsRectangle(ref ray, ref topLeft, ref topRight, ref bottomLeft, out intersectionPoint);
+            }
+            else if (canvasScale == 1f)
+            {
+                intersects = CollisionHelper.RayIntersectsRectangle(ref ray, ref WorldMatrixPickingInternal, ref RenderSizeInternal, 2, out intersectionPoint);
             }
             else
             {
-                intersects = CollisionHelper.RayIntersectsRectangle(ref ray, ref WorldMatrixPickingInternal, ref RenderSizeInternal, 2, out intersectionPoint);
+                Vector3 renderSize = RenderSizeInternal * canvasScale;
+                intersects = CollisionHelper.RayIntersectsRectangle(ref ray, ref WorldMatrixPickingInternal, ref renderSize, 2, out intersectionPoint);
             }
 
             // if element has depth also test other faces

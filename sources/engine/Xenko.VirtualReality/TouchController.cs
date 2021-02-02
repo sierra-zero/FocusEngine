@@ -8,6 +8,8 @@ namespace Xenko.VirtualReality
 {
     public abstract class TouchController : IDisposable
     {
+        public virtual VRDevice HostDevice { get; internal set; }
+
         public abstract Vector3 Position { get; }
 
         public abstract Quaternion Rotation { get; }

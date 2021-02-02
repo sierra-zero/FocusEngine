@@ -185,6 +185,35 @@ namespace Xenko.Engine
         public float SmallFactorMultiplier { get; set; } = 1f;
 
         /// <summary>
+        /// If this model may change at any time, have this false. Otherwise, if the model (material and meshes) stay the same, set this to true for performance improvements.
+        [DataMember(45)]
+        [DefaultValue(false)]
+        public bool FixedModel { get; set; } = false;
+
+        /// <summary>
+        /// Set to "true" if this is a fixed model, but the model has changed and needs updating. Will reset to false after updating.
+        /// </summary>
+        [DataMemberIgnore]
+        public bool NeedsModelUpdate = true;
+
+        /// <summary>
+        /// Update all model components in Entity tree.
+        /// </summary>
+        /// <param name="root">Root entity to look at all model components, updating all of them</param>
+        public static void RecursiveModelUpdate(Entity root)
+        {
+            for (int i=0; i<root.Components.Count; i++)
+            {
+                var component = root.Components[i];
+                if (component is ModelComponent mc)
+                    mc.NeedsModelUpdate = true;
+            }
+
+            for (int i = 0; i < root.Transform.Children.Count; i++)
+                RecursiveModelUpdate(root.Transform.Children[i].Entity);
+        }
+
+        /// <summary>
         /// Gets the bounding box in world space.
         /// </summary>
         /// <value>The bounding box.</value>

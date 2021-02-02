@@ -203,31 +203,40 @@ namespace Xenko.Rendering.Sprites
 
                 // determine the element world matrix depending on the type of sprite
                 var worldMatrix = renderSprite.WorldMatrix;
-                if (renderSprite.SpriteType == SpriteType.Billboard)
+                switch (renderSprite.SpriteType)
                 {
-                    worldMatrix = viewInverse;
+                    case SpriteType.Billboard:
+                        worldMatrix = viewInverse;
 
-                    var worldMatrixRow1 = worldMatrix.Row1;
-                    var worldMatrixRow2 = worldMatrix.Row2;
+                        var worldMatrixRow1 = worldMatrix.Row1;
+                        var worldMatrixRow2 = worldMatrix.Row2;
 
-                    // remove scale of the camera
-                    worldMatrixRow1 /= ((Vector3)viewInverse.Row1).Length();
-                    worldMatrixRow2 /= ((Vector3)viewInverse.Row2).Length();
+                        // remove scale of the camera
+                        worldMatrixRow1 /= ((Vector3)viewInverse.Row1).Length();
+                        worldMatrixRow2 /= ((Vector3)viewInverse.Row2).Length();
 
-                    // set the scale of the object
-                    worldMatrixRow1 *= ((Vector3)renderSprite.WorldMatrix.Row1).Length();
-                    worldMatrixRow2 *= ((Vector3)renderSprite.WorldMatrix.Row2).Length();
+                        // set the scale of the object
+                        worldMatrixRow1 *= ((Vector3)renderSprite.WorldMatrix.Row1).Length();
+                        worldMatrixRow2 *= ((Vector3)renderSprite.WorldMatrix.Row2).Length();
 
-                    worldMatrix.Row1 = worldMatrixRow1;
-                    worldMatrix.Row2 = worldMatrixRow2;
+                        worldMatrix.Row1 = worldMatrixRow1;
+                        worldMatrix.Row2 = worldMatrixRow2;
 
-                    // set the position
-                    worldMatrix.TranslationVector = renderSprite.WorldMatrix.TranslationVector;
+                        // set the position
+                        worldMatrix.TranslationVector = renderSprite.WorldMatrix.TranslationVector;
 
-                    // set the rotation
-                    var localRotationZ = renderSprite.RotationEulerZ;
-                    if (localRotationZ != 0)
-                        worldMatrix = Matrix.RotationZ(localRotationZ) * worldMatrix;
+                        // set the rotation
+                        var localRotationZ = renderSprite.RotationEulerZ;
+                        if (localRotationZ != 0)
+                            worldMatrix = Matrix.RotationZ(localRotationZ) * worldMatrix;
+                        break;
+                    case SpriteType.BillboardPosition:
+                        Vector3 diff = renderSprite.WorldMatrix.TranslationVector - viewInverse.TranslationVector;
+                        Quaternion look = new Quaternion();
+                        Quaternion.LookAt(ref look, diff);
+                        renderSprite.WorldMatrix.GetScale(out var scale);
+                        worldMatrix = Matrix.Transformation(scale, look, renderSprite.WorldMatrix.TranslationVector);
+                        break;
                 }
 
                 // calculate normalized position of the center of the sprite (takes into account the possible rotation of the image)

@@ -163,7 +163,7 @@ namespace Xenko.Rendering.Lights
             // Artifically increase range of first slice to not waste too much slices in very short area
             public float SpecialNearPlane = 2.0f;
 
-            private ConcurrentCollector<int>[] lightNodes;
+            private FastConcurrentCollector<int>[] lightNodes;
             private RenderViewInfo[] renderViewInfos;
             private Int2 maxClusterCount;
             //private Plane[] zPlanes;
@@ -293,22 +293,31 @@ namespace Xenko.Rendering.Lights
                 float clusterDepthScale = renderViewInfo.ClusterDepthScale = (float)(Math.Pow(2.0f, ClusterSlices) - 2.0f) / (renderView.FarClipPlane - nearPlane);
                 float clusterDepthBias = renderViewInfo.ClusterDepthBias = 2.0f - clusterDepthScale * nearPlane;
 
+                // count lights
+                var pointLightRanges = lightRanges[viewIndex];
+                int totalLights = pointLightRanges.End - pointLightRanges.Start;
+
+                var spotLightRanges = clusteredGroupRenderer.spotGroup.LightRanges[viewIndex];
+                totalLights += spotLightRanges.End - spotLightRanges.Start;
+
                 // make sure we have enough lists
                 if (lightNodes == null || lightNodes.Length < totalClusterCount)
                 {
-                    lightNodes = new ConcurrentCollector<int>[totalClusterCount];
+                    int nodesize = Math.Max(totalLights, 16);
+                    lightNodes = new FastConcurrentCollector<int>[totalClusterCount];
                     for (int i = 0; i < totalClusterCount; i++)
-                        lightNodes[i] = new ConcurrentCollector<int>(128);
+                        lightNodes[i] = new FastConcurrentCollector<int>(nodesize);
+                }
+                else if (lightNodes[0].Capacity < totalLights)
+                {
+                    for (int i = 0; i < totalClusterCount; i++)
+                        lightNodes[i] = new FastConcurrentCollector<int>(totalLights);
                 }
 
-                int totalLights = 0;
-
                 //---------------- POINT LIGHTS -------------------
-                var lightRange = lightRanges[viewIndex];
-                totalLights += lightRange.End - lightRange.Start;
 
                 // make point light data
-                for (int i = lightRange.Start; i < lightRange.End; i++)
+                for (int i = pointLightRanges.Start; i < pointLightRanges.End; i++)
                 {
                     var light = lights[i].Light;
                     var pointLight = (LightPoint)light.Type;
@@ -324,11 +333,11 @@ namespace Xenko.Rendering.Lights
                     renderViewInfo.PointLights.Add(pointLightData);
                 }
 
-                Xenko.Core.Threading.Dispatcher.For(lightRange.Start, lightRange.End, (i) =>
+                Xenko.Core.Threading.Dispatcher.For(pointLightRanges.Start, pointLightRanges.End, (i) =>
                 {
                     var light = lights[i].Light;
                     var pointLight = (LightPoint)light.Type;
-                    int lightIndex = i - lightRange.Start;
+                    int lightIndex = i - pointLightRanges.Start;
                     var pointLightData = renderViewInfos[viewIndex].PointLights[lightIndex];
 
                     var radius = LightClusteredPointSpotGroupRenderer.UseLinearLighting ? pointLightData.InvSquareRadius : (float)Math.Sqrt(1.0f / pointLightData.InvSquareRadius);
@@ -369,22 +378,22 @@ namespace Xenko.Rendering.Lights
                         //    positionScreen = Plane.DotCoordinate(ref plane, ref positionScreen, out )
                         //}
 
+                        int zcc = z * clusterCountY;
                         for (int y = tileStartY; y < tileEndY; ++y)
                         {
+                            int ycc = (y + zcc) * clusterCountX;
                             for (int x = tileStartX; x < tileEndX; ++x)
                             {
-                                lightNodes[x + (y + z * clusterCountY) * clusterCountX].Add(myNode);
+                                lightNodes[x + ycc].Add(myNode);
                             }
                         }
                     }
                 });
 
                 //---------------- SPOT LIGHTS -------------------
-                lightRange = clusteredGroupRenderer.spotGroup.LightRanges[viewIndex];
-                totalLights += lightRange.End - lightRange.Start;
 
                 // make spotlight data
-                for (int i = lightRange.Start; i < lightRange.End; i++)
+                for (int i = spotLightRanges.Start; i < spotLightRanges.End; i++)
                 {
                     var light = clusteredGroupRenderer.spotGroup.Lights[i].Light;
                     var spotLight = (LightSpot)light.Type;
@@ -401,11 +410,11 @@ namespace Xenko.Rendering.Lights
                     renderViewInfo.SpotLights.Add(spotLightData);
                 }
 
-                Xenko.Core.Threading.Dispatcher.For(lightRange.Start, lightRange.End, (i) =>
+                Xenko.Core.Threading.Dispatcher.For(spotLightRanges.Start, spotLightRanges.End, (i) =>
                 {
                     var light = clusteredGroupRenderer.spotGroup.Lights[i].Light;
                     var spotLight = (LightSpot)light.Type;
-                    int lightIndex = i - lightRange.Start;
+                    int lightIndex = i - spotLightRanges.Start;
                     var spotLightData = renderViewInfos[viewIndex].SpotLights[lightIndex];
 
                     var radius = UseLinearLighting ? spotLightData.AngleOffsetAndInvSquareRadius.Z : (float)Math.Sqrt(1.0f / spotLightData.AngleOffsetAndInvSquareRadius.Z);
@@ -434,11 +443,13 @@ namespace Xenko.Rendering.Lights
 
                     for (int z = tileStartZ; z < tileEndZ; ++z)
                     {
+                        int zcc = z * clusterCountY;
                         for (int y = tileStartY; y < tileEndY; ++y)
                         {
+                            int ycc = (y + zcc) * clusterCountX;
                             for (int x = tileStartX; x < tileEndX; ++x)
                             {
-                                lightNodes[x + (y + z * clusterCountY) * clusterCountX].Add(myNode);
+                                lightNodes[x + ycc].Add(myNode);
                             }
                         }
                     }
@@ -463,8 +474,6 @@ namespace Xenko.Rendering.Lights
                             continue;
                         }
 
-                        lnds.Close();
-
                         // Build light indices
                         int pointLightCounter = 0;
                         int spotLightCounter = 0;
@@ -472,7 +481,7 @@ namespace Xenko.Rendering.Lights
 
                         for (int i=0; i<lnds.Count; i++)
                         {
-                            int cluster = lnds[i];
+                            int cluster = lnds.Collected[i];
 
                             rvinfo.LightIndices[indexStart + i] = (byte)(cluster >> 1);
 
@@ -487,7 +496,7 @@ namespace Xenko.Rendering.Lights
                             }
                         }
 
-                        lnds.UnsafeClear();
+                        lnds.Clear();
 
                         // Add new light cluster range
                         // Stored in the format:
