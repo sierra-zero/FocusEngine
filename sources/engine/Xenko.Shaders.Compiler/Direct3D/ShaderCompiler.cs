@@ -104,9 +104,15 @@ namespace Xenko.Shaders.Compiler.Direct3D
                 if (constantBufferRawDesc.Type == SharpDX.D3DCompiler.ConstantBufferType.ResourceBindInformation)
                     continue;
 
-                var linkBuffer = effectReflection.ConstantBuffers.First(buffer => buffer.Name == constantBufferRawDesc.Name);
-
-                ValidateConstantBufferReflection(constantBufferRaw, ref constantBufferRawDesc, linkBuffer, log);
+                try
+                {
+                    var linkBuffer = effectReflection.ConstantBuffers.First(buffer => buffer.Name == constantBufferRawDesc.Name);
+                    ValidateConstantBufferReflection(constantBufferRaw, ref constantBufferRawDesc, linkBuffer, log);
+                }
+                catch (Exception)
+                {
+                    // couldn't find a match for this resource, skip
+                }
             }
 
             // BoundResources
