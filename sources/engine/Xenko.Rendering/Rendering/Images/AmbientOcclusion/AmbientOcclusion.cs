@@ -18,10 +18,7 @@ namespace Xenko.Rendering.Images
     public class AmbientOcclusion : ImageEffect
     {
         private ImageEffectShader aoRawImageEffect;
-        private ImageEffectShader blurH;
-        private ImageEffectShader blurV;
-        private string nameGaussianBlurH;
-        private string nameGaussianBlurV;
+        private ImageEffectShader blur;
         private float[] offsetsWeights;
 
         private ImageEffectShader aoApplyImageEffect;
@@ -35,10 +32,10 @@ namespace Xenko.Rendering.Images
             ParamIntensity = 0.2f;
             ParamBias = 0.01f;
             ParamRadius = 1f;
-            NumberOfBounces = 2;
+            Blur = true;
             BlurScale = 1.85f;
             EdgeSharpness = 3f;
-            TempSize = TemporaryBufferSize.SizeFull;
+            ResolutionScale = 1f;
         }
 
         /// <userdoc>
@@ -58,6 +55,14 @@ namespace Xenko.Rendering.Images
         [DefaultValue(0.5f)]
         [Display("Projection scale")]
         public float ParamProjScale { get; set; } = 0.5f;
+
+        /// <userdoc>
+        /// Scales the sample radius. In most cases, 1 (no scaling) produces the most accurate result.
+        /// </userdoc>
+        [DataMember(25)]
+        [DefaultValue(300f)]
+        [Display("Fade Distance")]
+        public float ParamDistance { get; set; } = 300f;
 
         /// <userdoc>
         /// The strength of the darkening effect in occluded areas
@@ -87,10 +92,9 @@ namespace Xenko.Rendering.Images
         /// The number of times the ambient occlusion image is blurred. Higher numbers reduce noise, but can produce artifacts.
         /// </userdoc>
         [DataMember(70)]
-        [DefaultValue(2)]
-        [DataMemberRange(0, 3, 1, 1, 0)]
-        [Display("Blur count")]
-        public int NumberOfBounces { get; set; } = 2;
+        [DefaultValue(true)]
+        [Display("Apply Blur")]
+        public bool Blur { get; set; } = true;
 
         /// <userdoc>
         /// The blur radius in pixels
@@ -113,9 +117,22 @@ namespace Xenko.Rendering.Images
         /// Larger sizes produce better results but use more memory and affect performance.
         /// </userdoc>
         [DataMember(100)]
-        [DefaultValue(TemporaryBufferSize.SizeFull)]
-        [Display("Buffer size")]
-        public TemporaryBufferSize TempSize { get; set; } = TemporaryBufferSize.SizeFull;
+        [DefaultValue(1f)]
+        [Display("Scale Resolution")]
+        public float ResolutionScale {
+            get => _resolutionScale;
+            set
+            {
+                if (value > 1f)
+                    _resolutionScale = 1f;
+                else if (value < 0.01f)
+                    _resolutionScale = 0.01f;
+                else
+                    _resolutionScale = value;
+            }
+        }
+
+        private float _resolutionScale = 1f;
 
         protected override void InitializeCore()
         {
@@ -126,14 +143,8 @@ namespace Xenko.Rendering.Images
             aoRawImageEffect = ToLoadAndUnload(new ImageEffectShader("AmbientOcclusionRawAOEffect"));
             aoRawImageEffect.Initialize(Context);
 
-            blurH = ToLoadAndUnload(new ImageEffectShader("AmbientOcclusionBlurEffect"));
-            blurV = ToLoadAndUnload(new ImageEffectShader("AmbientOcclusionBlurEffect", true));
-            blurH.Initialize(Context);
-            blurV.Initialize(Context);
-
-            // Setup Horizontal parameters
-            blurH.Parameters.Set(AmbientOcclusionBlurKeys.VerticalBlur, false);
-            blurV.Parameters.Set(AmbientOcclusionBlurKeys.VerticalBlur, true);
+            blur = ToLoadAndUnload(new ImageEffectShader("AmbientOcclusionBlurEffect"));
+            blur.Initialize(Context);
         }
 
         protected override void Destroy()
@@ -165,11 +176,6 @@ namespace Xenko.Rendering.Images
             // Ambient Occlusion
             //---------------------------------
 
-            var tempWidth = (originalColorBuffer.Width * (int)TempSize) / (int)TemporaryBufferSize.SizeFull;
-            var tempHeight = (originalColorBuffer.Height * (int)TempSize) / (int)TemporaryBufferSize.SizeFull;
-            var aoTexture1 = NewScopedRenderTarget2D(tempWidth, tempHeight, PixelFormat.R8_UNorm, 1);
-            var aoTexture2 = NewScopedRenderTarget2D(tempWidth, tempHeight, PixelFormat.R8_UNorm, 1);
-
             aoRawImageEffect.Parameters.Set(AmbientOcclusionRawAOKeys.Count, NumberOfSamples > 0 ? NumberOfSamples : 9);
 
             // Set Near/Far pre-calculated factors to speed up the linear depth reconstruction
@@ -177,7 +183,6 @@ namespace Xenko.Rendering.Images
 
             Vector4 screenSize = new Vector4(originalColorBuffer.Width, originalColorBuffer.Height, 0, 0);
             screenSize.Z = screenSize.X / screenSize.Y;
-            aoRawImageEffect.Parameters.Set(AmbientOcclusionRawAOShaderKeys.ScreenInfo, screenSize);
 
             // Projection infor used to reconstruct the View space position from linear depth
             var p00 = renderView.Projection.M11;
@@ -189,87 +194,62 @@ namespace Xenko.Rendering.Images
 
             //**********************************
             // User parameters
+            aoRawImageEffect.Parameters.Set(AmbientOcclusionRawAOShaderKeys.ScreenInfo, screenSize);
             aoRawImageEffect.Parameters.Set(AmbientOcclusionRawAOShaderKeys.ParamProjScale, ParamProjScale);
+            aoRawImageEffect.Parameters.Set(AmbientOcclusionRawAOShaderKeys.ParamDistance, ParamDistance);
             aoRawImageEffect.Parameters.Set(AmbientOcclusionRawAOShaderKeys.ParamIntensity, ParamIntensity);
             aoRawImageEffect.Parameters.Set(AmbientOcclusionRawAOShaderKeys.ParamBias, ParamBias);
             aoRawImageEffect.Parameters.Set(AmbientOcclusionRawAOShaderKeys.ParamRadius, ParamRadius);
             aoRawImageEffect.Parameters.Set(AmbientOcclusionRawAOShaderKeys.ParamRadiusSquared, ParamRadius * ParamRadius);
 
+            var tempWidth = (int)((float)originalColorBuffer.Width * ResolutionScale);
+            var tempHeight = (int)((float)originalColorBuffer.Height * ResolutionScale);
+            var aoTexture1 = NewScopedRenderTarget2D(tempWidth, tempHeight, PixelFormat.R8_UNorm, 1);
+
             aoRawImageEffect.SetInput(0, originalDepthBuffer);
             aoRawImageEffect.SetOutput(aoTexture1);
             aoRawImageEffect.Draw(context, "AmbientOcclusionRawAO");
 
-            for (int bounces = 0; bounces < NumberOfBounces; bounces++)
+            if (Blur)
             {
+                var aoTexture2 = NewScopedRenderTarget2D(tempWidth, tempHeight, PixelFormat.R8_UNorm, 1);
+
                 if (offsetsWeights == null)
                 {
                     offsetsWeights = new[]
                     {
-                        //  0.356642f, 0.239400f, 0.072410f, 0.009869f,
-                        //  0.398943f, 0.241971f, 0.053991f, 0.004432f, 0.000134f, // stddev = 1.0
-                            0.153170f, 0.144893f, 0.122649f, 0.092902f, 0.062970f, // stddev = 2.0
-                        //  0.111220f, 0.107798f, 0.098151f, 0.083953f, 0.067458f, 0.050920f, 0.036108f, // stddev = 3.0
+                        0.153170f, 0.144893f, 0.122649f, 0.092902f, 0.062970f, // stddev = 2.0
                     };
-
-                    nameGaussianBlurH = string.Format("AmbientOcclusionBlurH{0}x{0}", offsetsWeights.Length);
-                    nameGaussianBlurV = string.Format("AmbientOcclusionBlurV{0}x{0}", offsetsWeights.Length);
                 }
 
                 // Set Near/Far pre-calculated factors to speed up the linear depth reconstruction
                 var zProj = CameraKeys.ZProjectionACalculate(renderView.NearClipPlane, renderView.FarClipPlane);
-                blurH.Parameters.Set(CameraKeys.ZProjection, ref zProj);
-                blurV.Parameters.Set(CameraKeys.ZProjection, ref zProj);
+                blur.Parameters.Set(CameraKeys.ZProjection, ref zProj);
 
-                // Update permutation parameters
-                blurH.Parameters.Set(AmbientOcclusionBlurKeys.Count, offsetsWeights.Length);
-                blurH.Parameters.Set(AmbientOcclusionBlurKeys.BlurScale, BlurScale);
-                blurH.Parameters.Set(AmbientOcclusionBlurKeys.EdgeSharpness, EdgeSharpness);
-                blurH.EffectInstance.UpdateEffect(context.GraphicsDevice);
+                blur.Parameters.Set(AmbientOcclusionBlurKeys.Count, offsetsWeights.Length);
+                blur.Parameters.Set(AmbientOcclusionBlurKeys.BlurScale, BlurScale * 0.01f);
+                blur.Parameters.Set(AmbientOcclusionBlurKeys.EdgeSharpness, EdgeSharpness);
+                blur.EffectInstance.UpdateEffect(context.GraphicsDevice);
 
-                blurV.Parameters.Set(AmbientOcclusionBlurKeys.Count, offsetsWeights.Length);
-                blurV.Parameters.Set(AmbientOcclusionBlurKeys.BlurScale, BlurScale);
-                blurV.Parameters.Set(AmbientOcclusionBlurKeys.EdgeSharpness, EdgeSharpness);
-                blurV.EffectInstance.UpdateEffect(context.GraphicsDevice);
+                blur.Parameters.Set(AmbientOcclusionBlurShaderKeys.Weights, offsetsWeights);
+                blur.Parameters.Set(AmbientOcclusionBlurShaderKeys.BlurDistance, ParamDistance);
 
-                // Update parameters
-                blurH.Parameters.Set(AmbientOcclusionBlurShaderKeys.Weights, offsetsWeights);
-                blurV.Parameters.Set(AmbientOcclusionBlurShaderKeys.Weights, offsetsWeights);
+                blur.SetInput(0, aoTexture1);
+                blur.SetInput(1, originalDepthBuffer);
+                blur.SetInput(2, originalColorBuffer);
+                blur.SetOutput(aoTexture2);
+                blur.Draw(context);
 
-                // Horizontal pass
-                blurH.SetInput(0, aoTexture1);
-                blurH.SetInput(1, originalDepthBuffer);
-                blurH.SetOutput(aoTexture2);
-                blurH.Draw(context, nameGaussianBlurH);
-
-                // Vertical pass
-                blurV.SetInput(0, aoTexture2);
-                blurV.SetInput(1, originalDepthBuffer);
-                blurV.SetOutput(aoTexture1);
-                blurV.Draw(context, nameGaussianBlurV);
+                aoApplyImageEffect.SetInput(1, aoTexture2);
+            }
+            else
+            {
+                aoApplyImageEffect.SetInput(1, aoTexture1);
             }
 
             aoApplyImageEffect.SetInput(0, originalColorBuffer);
-            aoApplyImageEffect.SetInput(1, aoTexture1);
             aoApplyImageEffect.SetOutput(outputTexture);
             aoApplyImageEffect.Draw(context, "AmbientOcclusionApply");
-        }
-
-        public enum TemporaryBufferSize
-        {
-            [Display("Full size")]
-            SizeFull = 12,
-
-            [Display("5/6 size")]
-            Size1012 = 10,
-
-            [Display("3/4 size")]
-            Size0912 = 9,
-
-            [Display("2/3 size")]
-            Size0812 = 8,
-
-            [Display("1/2 size")]
-            Size0612 = 6,
         }
     }
 }

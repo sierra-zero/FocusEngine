@@ -21,6 +21,7 @@ namespace Xenko.Rendering.Images
         public static readonly ValueParameterKey<Vector4> ProjInfo = ParameterKeys.NewValue<Vector4>();
         public static readonly ValueParameterKey<Vector4> ScreenInfo = ParameterKeys.NewValue<Vector4>();
         public static readonly ValueParameterKey<float> ParamProjScale = ParameterKeys.NewValue<float>(1);
+        public static readonly ValueParameterKey<float> ParamDistance = ParameterKeys.NewValue<float>(1000f);
         public static readonly ValueParameterKey<float> ParamIntensity = ParameterKeys.NewValue<float>(1);
         public static readonly ValueParameterKey<float> ParamBias = ParameterKeys.NewValue<float>(0.01f);
         public static readonly ValueParameterKey<float> ParamRadius = ParameterKeys.NewValue<float>(1);
