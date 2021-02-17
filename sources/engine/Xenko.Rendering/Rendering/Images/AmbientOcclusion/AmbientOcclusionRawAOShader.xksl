@@ -13,6 +13,7 @@ namespace Xenko.Rendering.Images
         float    ParamBias = 0.01f;
         float    ParamRadius = 1;
         float    ParamRadiusSquared = 1;
+        float    ParamDistance = 1000;
 
         stage float reconstructCSZ(float depth)
         {
@@ -29,12 +30,12 @@ namespace Xenko.Rendering.Images
             return normalize(cross(ddy(position), ddx(position)));
         }
 
-        stage float sampleAO(int2 screenPosition, float3 viewPosition, float3 viewNormal, float diskRadius, int i, float randomPatternRotationAngle)
+        stage float sampleAO(float3 viewPosition, float3 viewNormal, float diskRadius, int i, float randomPatternRotationAngle)
         {
             //*****************************
             //  Sample Offset
-            float alpha = 1 * (i + 0.5) * 0.675f / SamplesCount;
-            float angle = 1 * 43.9822971503f * alpha + randomPatternRotationAngle;
+            float alpha = (i + 0.5) * 0.675f / SamplesCount;
+            float angle = 43.9822971503f * alpha + randomPatternRotationAngle;
 
             float2 offset = float2(cos(angle), sin(angle));
             float ssRadius = alpha * diskRadius;
@@ -49,13 +50,13 @@ namespace Xenko.Rendering.Images
 
             //*****************************
             // View Position
-            float3 position = reconstructCSPosition(samplePosInt + float2(0.5, 0.5), linearDepth);
-                   position.x *= -1;
+            float3 position = reconstructCSPosition(samplePosInt, linearDepth);
+                   position.x = -position.x;
 
             //*****************************
             // View Normal
             float3 v = position - viewPosition;
-            v.z *= -1;
+            v.z = -v.z;
             
             //*****************************
             // Ambient Occlusion
@@ -76,10 +77,12 @@ namespace Xenko.Rendering.Images
             float depth = Texture0.SampleLevel(Sampler, streams.TexCoord, 0).x;
             float linearDepth = reconstructCSZ(depth);
 
+            float finalStrength = ParamIntensity * (1.0 - linearDepth / ParamDistance);
+            if (finalStrength <= 0.0) return float4(1,1,1,1);
+
             //*****************************
             // Reconstruct View space position XYZ
-            int2 screenPosition = streams.TexCoord.xy * ScreenInfo.xy;
-            float3 viewPosition = reconstructCSPosition(screenPosition + float2(0.5, 0.5), linearDepth);
+            float3 viewPosition = reconstructCSPosition(streams.TexCoord.xy * ScreenInfo.xy, linearDepth);
                    viewPosition.x *= -1;
 
             //*****************************
@@ -87,15 +90,10 @@ namespace Xenko.Rendering.Images
             float3 viewNormal = reconstructCSNormal(viewPosition.xyz);
                    viewNormal.xy *= -1;
 
-            //*****************************
-            // Hash function used in the HPG12 AlchemyAO paper
-            int linearDepthInt = (int)linearDepth;
-            //float randomPatternRotationAngle = (3 * screenPosition.x ^ screenPosition.y + screenPosition.x * screenPosition.y) * 10;
-            float randomPatternRotationAngle = (15 * linearDepthInt + 3 * screenPosition.x ^ 2 * screenPosition.y + screenPosition.x * screenPosition.y) * 10;
+            float randomPatternRotationAngle = sin(dot(streams.TexCoord,float2(12.9898,78.233))) * 43758.5453;
 
             //*****************************
             // Choose a sample radius proportional to the projected area of the half-sphere
-            //float diskRadius = -projScale * radius / linearDepth;
             float diskRadius = ParamProjScale / linearDepth;
 
             //*****************************
@@ -103,50 +101,14 @@ namespace Xenko.Rendering.Images
             float sum = 0.0;
             for (int i = 0; i < SamplesCount; i++)
             {
-                sum += sampleAO(screenPosition, viewPosition, viewNormal, diskRadius, i, randomPatternRotationAngle);
+                sum += sampleAO(viewPosition, viewNormal, diskRadius, i, randomPatternRotationAngle);
             }
 
             float temp = ParamRadiusSquared * ParamRadius;
             sum /= temp * temp;
-	        float A = max(0.0, 1.0 - sum * 5 * ParamIntensity / SamplesCount);
+	        float A = max(0.0, 1.0 - sum * 5 * finalStrength / SamplesCount);
             
-            float nearPlaneFade = saturate(linearDepth * 2.0 - 0.5);
-            A = lerp(1, A, nearPlaneFade);
-
-            //*****************************
-            // Bilateral box-filter over a quad for free, respecting depth edges
-	        // (the difference that this makes is subtle)
-            if (abs(ddx(linearDepth)) < 0.02)
-            {
-		        A -= ddx(A) * ((screenPosition.x & 1) - 0.5);
-	        }
-	        if (abs(ddy(linearDepth)) < 0.02)
-            {
-                A -= ddy(A) * ((screenPosition.y & 1) - 0.5);
-	        }
-
-            //************************
-            // A now contains the light intensity factor (0 to 1) which can be applied to the ambient light illuminating the pixel
-
-
-
-            //************************
-            // Debug - visualize different
-            //************************
-
-            /************************
-            // Visualize depth as color bands
-            //************************
-            linearDepth = sum;
-            float4 color = Texture0.Sample(Sampler, streams.TexCoord);
-            color.r = ((float)(linearDepth % 4)) / 4.0;
-            color.g = ((float)((linearDepth / 4) % 4)) / 4.0;
-            color.b = ((float)((linearDepth / 16) % 4)) / 4.0;
-            return color; //*/
-
-
-
-            return float4(A, A, A, A);
+            return float4(A, A, A, 1.0);
         }
     };
 }

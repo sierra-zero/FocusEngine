@@ -2,6 +2,7 @@
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System.Linq;
+using Xenko.Core.Mathematics;
 
 namespace Xenko.Rendering.Images
 {
@@ -11,8 +12,6 @@ namespace Xenko.Rendering.Images
     internal static class AmbientOcclusionBlurKeys
     {
         public static readonly PermutationParameterKey<int> Count = ParameterKeys.NewPermutation<int>(9);
-
-        public static readonly PermutationParameterKey<bool> VerticalBlur = ParameterKeys.NewPermutation<bool>();
 
         public static readonly PermutationParameterKey<float> BlurScale = ParameterKeys.NewPermutation<float>(2f);
 

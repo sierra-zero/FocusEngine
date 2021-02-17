@@ -6,8 +6,9 @@ namespace Xenko.Rendering.Images
     /// <summary>
     /// A gaussian blur shader
     /// </summary>
-    internal shader AmbientOcclusionBlurShader<int BlurCount, bool IsVertical, float BlurScale, float EdgeSharpness> : ImageEffectShader, Camera
+    internal shader AmbientOcclusionBlurShader<int BlurCount, float BlurScale, float EdgeSharpness> : ImageEffectShader, Camera
     {
+        stage float  BlurDistance;
         stage float  Weights[BlurCount];
 
         stage float reconstructCSZ(float depth)
@@ -19,34 +20,52 @@ namespace Xenko.Rendering.Images
         {
             const float epsilon = 0.0001;
 
-            // Direction in texel size: (float2(1,0) or float2(0,1)) * texel size
-            float2 direction = (IsVertical ? float2(0, 1) : float2(1, 0)) * Texture0TexelSize;
-
             // Add center
             float totalWeight = Weights[0];
             float3 sum = Texture0.Sample(LinearSampler, streams.TexCoord).rgb * totalWeight;
 
             float linearDepth = reconstructCSZ(Texture1.Sample(LinearSampler, streams.TexCoord).x);
-            if (linearDepth >= 300)
+            if (linearDepth >= BlurDistance)
             {
                 sum /= (totalWeight + epsilon);
                 return float4(sum, 1);
             }
 
-                // mirrored samples using bilinear filtering
-            [
-            unroll]
+            // mirrored samples using bilinear filtering
+            [unroll]
             for(int i = 1; i < BlurCount; i++)
             {
-                // Handle both directions
+                float2 coordBase = float2(i * BlurScale, 0);
+                float origweight = 0.3 + Weights[i];
+
+                // Handle all directions
                 [unroll]
                 for (int j = -1; j <= 1; j += 2)
                 {
-                    float weight = 0.3 + Weights[i];
+                    float weight = origweight;
+                    float2 coord = streams.TexCoord + coordBase * j;
 
-                    float value = Texture0.Sample(LinearSampler, streams.TexCoord + direction * j * i * BlurScale).rgb;
+                    float value = Texture0.Sample(LinearSampler, coord).rgb;
 
-                    float linearDepthOther = reconstructCSZ(Texture1.Sample(LinearSampler, streams.TexCoord + direction * j * i * BlurScale).x);
+                    float linearDepthOther = reconstructCSZ(Texture1.Sample(LinearSampler, coord).x);
+                    weight *= max(0.0, 1.0 - EdgeSharpness * abs(linearDepth - linearDepthOther));
+
+                    sum += value * weight;
+
+                    totalWeight += weight;
+                }
+
+                coordBase = float2(0, i * BlurScale);
+
+                [unroll]
+                for (int j = -1; j <= 1; j += 2)
+                {
+                    float weight = origweight;
+                    float2 coord = streams.TexCoord + coordBase * j;
+
+                    float value = Texture0.Sample(LinearSampler, coord).rgb;
+
+                    float linearDepthOther = reconstructCSZ(Texture1.Sample(LinearSampler, coord).x);
                     weight *= max(0.0, 1.0 - EdgeSharpness * abs(linearDepth - linearDepthOther));
 
                     sum += value * weight;

@@ -19,12 +19,7 @@ namespace Xenko.Rendering.Images
             float4 color     = Texture0.SampleLevel(Sampler, streams.TexCoord, 0);
             float  occlusion = Texture1.SampleLevel(Sampler, streams.TexCoord, 0).x;
 
-            // TODO Enable debug output as a mixin
-            // color.rgba = occlusion;
-
-            color.rgba *= occlusion;
-
-            return color;
+            return color * occlusion;
         }
     };
 }
