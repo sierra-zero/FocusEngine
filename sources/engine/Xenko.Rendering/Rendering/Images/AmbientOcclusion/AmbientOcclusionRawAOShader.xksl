@@ -75,10 +75,12 @@ namespace Xenko.Rendering.Images
             //*****************************
             // Reconstruct View space linear depth Z from the depth buffer
             float depth = Texture0.SampleLevel(Sampler, streams.TexCoord, 0).x;
-            float linearDepth = reconstructCSZ(depth);
 
-            float finalStrength = ParamIntensity * (1.0 - linearDepth / ParamDistance);
-            if (finalStrength <= 0.0) return float4(1,1,1,1);
+            // ignore stuff too close or far away
+            float linearDepth = reconstructCSZ(depth);
+            if (linearDepth > ParamDistance) return float4(1,1,1,1);
+
+            float finalStrength = ParamIntensity * (1.0 - linearDepth / ParamDistance) * saturate(linearDepth * 2.0 - 0.5);
 
             //*****************************
             // Reconstruct View space position XYZ
