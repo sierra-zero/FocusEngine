@@ -111,7 +111,7 @@ namespace Xenko.Graphics
         protected QueueComparer<ElementInfo> BackToFrontComparer { get; set; }
         protected QueueComparer<ElementInfo> FrontToBackComparer { get; set; }
 
-        internal const float DepthBiasShiftOneUnit = 0.0001f;
+        internal const float DepthBiasShiftOneUnit = 0.000005f;
 
         protected BatchBase(GraphicsDevice device, EffectBytecode defaultEffectByteCode, EffectBytecode defaultEffectByteCodeSRgb, ResourceBufferInfo resourceBufferInfo, VertexDeclaration vertexDeclaration, int indexSize = sizeof(short))
         {
