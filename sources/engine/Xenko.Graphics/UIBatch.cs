@@ -503,6 +503,7 @@ namespace Xenko.Graphics
 
             // convert colors here instead of in the loop
             Color4 colorScale = drawInfo->ColorScale;
+            float depthShift = drawInfo->DepthBias * DepthBiasShiftOneUnit;
 
             // set the two first line of vertices
             for (var l = 0; l < 2; ++l)
@@ -519,7 +520,7 @@ namespace Xenko.Graphics
 
                         vertex->Position.X = currentPosition.X;
                         vertex->Position.Y = currentPosition.Y;
-                        vertex->Position.Z = currentPosition.Z - currentPosition.W * drawInfo->DepthBias * DepthBiasShiftOneUnit;
+                        vertex->Position.Z = currentPosition.Z - currentPosition.W * depthShift;
                         vertex->Position.W = currentPosition.W;
 
                         vertex++;
@@ -567,6 +568,7 @@ namespace Xenko.Graphics
 
             // convert colors here instead of in the loop
             Color4 colorScale = drawInfo->ColorScale;
+            float depthShift = drawInfo->DepthBias * DepthBiasShiftOneUnit;
 
             for (var r = 0; r < 4; r++)
             {
@@ -582,7 +584,7 @@ namespace Xenko.Graphics
 
                     vertex->Position.X = currentPosition.X;
                     vertex->Position.Y = currentPosition.Y;
-                    vertex->Position.Z = currentPosition.Z - currentPosition.W * drawInfo->DepthBias * DepthBiasShiftOneUnit;
+                    vertex->Position.Z = currentPosition.Z - currentPosition.W * depthShift;
                     vertex->Position.W = currentPosition.W;
 
                     vertex->ColorScale = colorScale;
@@ -623,6 +625,7 @@ namespace Xenko.Graphics
 
             // convert colors here instead of in the loop
             Color4 colorScale = drawInfo->ColorScale;
+            float depthShift = drawInfo->DepthBias * DepthBiasShiftOneUnit;
 
             // set the two first line of vertices
             for (var r = 0; r < 2; r++)
@@ -636,7 +639,7 @@ namespace Xenko.Graphics
 
                 vertex->Position.X = currentPosition.X;
                 vertex->Position.Y = currentPosition.Y;
-                vertex->Position.Z = currentPosition.Z - currentPosition.W * drawInfo->DepthBias * DepthBiasShiftOneUnit;
+                vertex->Position.Z = currentPosition.Z - currentPosition.W * depthShift;
                 vertex->Position.W = currentPosition.W;
 
                 if (drawInfo->SnapImage)
@@ -659,7 +662,7 @@ namespace Xenko.Graphics
 
                 vertex->Position.X = currentPosition.X;
                 vertex->Position.Y = currentPosition.Y;
-                vertex->Position.Z = currentPosition.Z - currentPosition.W * drawInfo->DepthBias * DepthBiasShiftOneUnit;
+                vertex->Position.Z = currentPosition.Z - currentPosition.W * depthShift;
                 vertex->Position.W = currentPosition.W;
 
                 if (drawInfo->SnapImage)
