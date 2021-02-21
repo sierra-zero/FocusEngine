@@ -3,7 +3,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Runtime.ExceptionServices;
 using System.Threading;
 using Xenko.Core.Mathematics;
 using Xenko.Core.Threading;
@@ -293,7 +292,6 @@ namespace Xenko.Particles.Rendering
         }
 
         /// <inheritdoc/>
-        [HandleProcessCorruptedStateExceptionsAttribute]
         public override unsafe void Draw(RenderDrawContext context, RenderView renderView, RenderViewStage renderViewStage, int startIndex, int endIndex)
         {
             if (ParticleSystemSettings.DisableAllDrawing) return;
@@ -315,35 +313,26 @@ namespace Xenko.Particles.Rendering
                 Matrix.Multiply(ref view.View, ref view.Projection, out view.ViewProjection);
 
                 // Copy ViewProjection to PerFrame cbuffer
-                try
+                foreach (var viewLayout in viewFeature.Layouts)
                 {
-                    foreach (var viewLayout in viewFeature.Layouts)
+                    var resourceGroup = viewLayout.Entries[view.Index].Resources;
+                    var mappedCB = resourceGroup.ConstantBuffer.Data;
+
+                    // PerView constant buffer
+                    var perViewOffset = viewLayout.GetConstantBufferOffset(this.perViewCBufferOffset);
+                    if (perViewOffset != -1)
                     {
-                        var resourceGroup = viewLayout.Entries[view.Index].Resources;
-                        var mappedCB = resourceGroup.ConstantBuffer.Data;
+                        var perView = (ParticleUtilitiesPerView*)((byte*)mappedCB + perViewOffset);
+                        perView->ViewMatrix = view.View;
+                        perView->ProjectionMatrix = view.Projection;
+                        perView->ViewProjectionMatrix = view.ViewProjection;
+                        perView->ViewFrustum = new Vector4(view.ViewSize.X, view.ViewSize.Y, view.NearClipPlane, view.FarClipPlane);
 
-                        // PerView constant buffer
-                        var perViewOffset = viewLayout.GetConstantBufferOffset(this.perViewCBufferOffset);
-                        if (perViewOffset != -1)
-                        {
-                            var perView = (ParticleUtilitiesPerView*)((byte*)mappedCB + perViewOffset);
-                            perView->ViewMatrix = view.View;
-                            perView->ProjectionMatrix = view.Projection;
-                            perView->ViewProjectionMatrix = view.ViewProjection;
-                            perView->ViewFrustum = new Vector4(view.ViewSize.X, view.ViewSize.Y, view.NearClipPlane, view.FarClipPlane);
-
-                            perView->Viewport = new Vector4(0,
-                                                            0,
-                                                            ((float)context.CommandList.Viewport.Width) / ((float)context.CommandList.RenderTarget.Width),
-                                                            ((float)context.CommandList.Viewport.Height) / ((float)context.CommandList.RenderTarget.Height));
-                        }
+                        perView->Viewport = new Vector4(0,
+                                                        0,
+                                                        ((float)context.CommandList.Viewport.Width) / ((float)context.CommandList.RenderTarget.Width),
+                                                        ((float)context.CommandList.Viewport.Height) / ((float)context.CommandList.RenderTarget.Height));
                     }
-                }
-                catch (Exception)
-                {
-                    // linux mesa drivers usually break above, so let's keep running without particles
-                    ParticleSystemSettings.DisableAllDrawing = true;
-                    return;
                 }
             }
 
