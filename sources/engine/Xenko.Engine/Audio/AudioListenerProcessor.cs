@@ -47,12 +47,14 @@ namespace Xenko.Audio
 
         protected override void OnEntityComponentAdding(Entity entity, AudioListenerComponent component, AudioListenerComponent data)
         {
-            primaryTransform = entity.Transform;
+            if (!entity.Transform.IsMovingInsideRootScene)
+                primaryTransform = entity.Transform;
         }
 
         protected override void OnEntityComponentRemoved(Entity entity, AudioListenerComponent component, AudioListenerComponent data)
         {
-            primaryTransform = null;
+            if (!entity.Transform.IsMovingInsideRootScene)
+                primaryTransform = null;
         }
 
         public override void Draw(RenderContext context)
