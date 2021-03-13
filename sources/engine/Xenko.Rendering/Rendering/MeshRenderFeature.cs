@@ -181,9 +181,16 @@ namespace Xenko.Rendering
                 // Bind VB
                 if (currentDrawData != drawData)
                 {
+                    if (drawData.IndexBuffer != null)
+                    {
+                        if (drawData.IndexBuffer.Buffer.Ready == false) continue;
+                        commandList.SetIndexBuffer(drawData.IndexBuffer.Buffer, drawData.IndexBuffer.Offset, drawData.IndexBuffer.Is32Bit);
+                    }
+
                     for (int slot = 0; slot < drawData.VertexBuffers.Length; slot++)
                     {
                         var vertexBuffer = drawData.VertexBuffers[slot];
+                        if (vertexBuffer.Buffer.Ready == false) goto skip_loop;
                         commandList.SetVertexBuffer(slot, vertexBuffer.Buffer, vertexBuffer.Offset, vertexBuffer.Stride);
                     }
 
@@ -195,8 +202,6 @@ namespace Xenko.Rendering
                         emptyBufferSlot = drawData.VertexBuffers.Length;
                     }
 
-                    if (drawData.IndexBuffer != null)
-                        commandList.SetIndexBuffer(drawData.IndexBuffer.Buffer, drawData.IndexBuffer.Offset, drawData.IndexBuffer.Is32Bit);
                     currentDrawData = drawData;
                 }
 
@@ -225,6 +230,7 @@ namespace Xenko.Rendering
                 {
                     commandList.DrawIndexed(drawData.DrawCount, drawData.StartLocation);
                 }
+                skip_loop:;
             }
         }
 
