@@ -39,6 +39,8 @@ namespace Xenko.Graphics
                 GraphicsDevice.RegisterBufferMemoryUsage(SizeInBytes);
             }
 
+            Ready = true;
+
             return this;
         }
 
@@ -73,6 +75,8 @@ namespace Xenko.Graphics
         /// <inheritdoc/>
         protected internal override void OnDestroyed()
         {
+            Ready = false;
+
             GraphicsDevice.RegisterBufferMemoryUsage(-SizeInBytes);
 
             if (NativeBufferView != VkBufferView.Null)

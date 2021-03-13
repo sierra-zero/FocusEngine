@@ -109,6 +109,11 @@ namespace Xenko.Graphics
         private BufferDescription bufferDescription;
 
         /// <summary>
+        /// Is this buffer fully initialized and ready to go?
+        /// </summary>
+        public bool Ready { get; internal set; }
+
+        /// <summary>
         /// If this is a vertex or index buffer, this stores the raw data. Only works in Vulkan
         /// </summary>
         public byte[] VertIndexData { get; private set; }
