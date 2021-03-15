@@ -46,19 +46,9 @@ namespace Xenko.Graphics
             Recreate();
         }
 
-        private static List<CommandBufferPool> UsedPools = new List<CommandBufferPool>();
-
-        public static void ResetAllPools() {
-            foreach(CommandBufferPool cbp in UsedPools) {
-                cbp.ResetAll();
-            }
-            UsedPools.Clear();
-        }
-
         protected void Recreate()
         {
             CommandBufferPool = new CommandBufferPool(GraphicsDevice);
-            UsedPools.Add(CommandBufferPool);
 
             descriptorPool = GraphicsDevice.DescriptorPools.GetObject();
             allocatedTypeCounts = new uint[DescriptorSetLayout.DescriptorTypeCount];

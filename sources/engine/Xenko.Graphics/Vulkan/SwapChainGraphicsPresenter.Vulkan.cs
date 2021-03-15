@@ -209,7 +209,6 @@ namespace Xenko.Graphics
             }
 
             vkQueueWaitIdle(GraphicsDevice.NativeCommandQueue);
-            CommandList.ResetAllPools();
 
             backbuffer.OnDestroyed();
 
