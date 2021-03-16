@@ -708,7 +708,7 @@ namespace Xenko.Graphics
                 {
                     firstAllocator = liveObjects.Peek();
 
-                    if (firstAllocator.Value.Key <= GraphicsDevice.lastCompletedFence)
+                    if (firstAllocator.Value.Key < GraphicsDevice.lastCompletedFence)
                     {
                         liveObjects.Dequeue();
                     }
