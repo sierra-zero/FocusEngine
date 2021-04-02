@@ -544,6 +544,11 @@ namespace Xenko.Games
             }
         }
 
+#if XENKO_PLATFORM_WINDOWS_DESKTOP && XENKO_GRAPHICS_API_VULKAN
+        [System.Runtime.InteropServices.DllImport("shcore.dll")]
+        private static extern bool SetProcessDpiAwareness(int dpimode);
+#endif
+
         /// <summary>
         /// Call this method to initialize the game, begin running the game loop, and start processing events for the game.
         /// </summary>
@@ -562,6 +567,11 @@ namespace Xenko.Games
             {
                 throw new InvalidOperationException("No GraphicsDeviceManager found");
             }
+
+#if XENKO_PLATFORM_WINDOWS_DESKTOP && XENKO_GRAPHICS_API_VULKAN
+            // fix scaling on Windows 8.1+
+            SetProcessDpiAwareness(2);
+#endif
 
 #if XENKO_GRAPHICS_API_VULKAN
             // get the resolution now, so we can create our window with the right settings right from the start
