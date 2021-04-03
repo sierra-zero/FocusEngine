@@ -569,8 +569,10 @@ namespace Xenko.Games
             }
 
 #if XENKO_PLATFORM_WINDOWS_DESKTOP && XENKO_GRAPHICS_API_VULKAN
-            // fix scaling on Windows 8.1+
-            SetProcessDpiAwareness(2);
+            try {
+                // fix scaling on Windows 8.1+
+                SetProcessDpiAwareness(2);
+            } catch(Exception e) { } // don't break if we are on windows 8 or lower
 #endif
 
 #if XENKO_GRAPHICS_API_VULKAN
