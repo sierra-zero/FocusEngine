@@ -247,6 +247,21 @@ namespace Xenko.Audio
 
                 FillBuffer(sdata, countByteTransfered, bufferType);
             }
+            else if (currentPacketIndex > endPacketIndex)
+            {
+                // Go back to beginning if necessary
+                if (soundInstance.Position.TotalSeconds == 0.0)
+                {
+                    if (looped) //prepare again to play from begin
+                    {
+                        PrepareInternal();
+                    }
+                    else // stops the sound
+                    {
+                        StopInternal(false);
+                    }
+                }
+            }
             else
             {
                 const int passes = SamplesPerBuffer / SamplesPerFrame;
@@ -292,19 +307,6 @@ namespace Xenko.Audio
                     begin = false;
                 }
                 FillBuffer(finalPtr, finalSize, bufferType);
-
-                // Go back to beginning if necessary
-                if (endingPacket || compressedSoundStream.Position == compressedSoundStream.Length)
-                {
-                    if (looped) //prepare again to play from begin
-                    {
-                        PrepareInternal();
-                    }
-                    else // stops the sound
-                    {
-                        StopInternal(false);
-                    }
-                }
             }
         }
     }
