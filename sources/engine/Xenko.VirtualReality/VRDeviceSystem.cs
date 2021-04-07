@@ -38,6 +38,11 @@ namespace Xenko.VirtualReality
         public static TouchControllerButton UIActivationButton = TouchControllerButton.Trigger;
 
         /// <summary>
+        /// Which VR button to activate UI like you were right clicking a mouse? Defaults to Grip.
+        /// </summary>
+        public static TouchControllerButton UIActivationButton2 = TouchControllerButton.Grip;
+
+        /// <summary>
         /// Shortcut to getting VR hands
         /// </summary>
         /// <param name="hand">Which hand?</param>

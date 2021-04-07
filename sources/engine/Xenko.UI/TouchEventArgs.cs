@@ -41,5 +41,10 @@ namespace Xenko.UI
         /// Gets the translation of the touch in the UI virtual world space.
         /// </summary>
         public Vector3 WorldTranslation { get; internal set; }
+
+        /// <summary>
+        /// What kind of touch is it? 0 for left click, 2 for right click etc. for mouse pointers.
+        /// </summary>
+        public int ButtonId { get; internal set; }
     }
 }

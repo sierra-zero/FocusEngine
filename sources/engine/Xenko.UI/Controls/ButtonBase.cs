@@ -67,6 +67,9 @@ namespace Xenko.UI.Controls
 
         protected override void OnTouchDown(TouchEventArgs args)
         {
+            // only respond to left clicks
+            if (args.ButtonId != 0) return;
+
             base.OnTouchDown(args);
 
             IsPressed = true;
@@ -77,6 +80,9 @@ namespace Xenko.UI.Controls
 
         protected override void OnTouchUp(TouchEventArgs args)
         {
+            // only respond to left clicks
+            if (args.ButtonId != 0) return;
+
             base.OnTouchUp(args);
 
             if (IsPressed && ClickMode == ClickMode.Release)
@@ -104,6 +110,9 @@ namespace Xenko.UI.Controls
 
         private static void ClickClassHandler(object sender, RoutedEventArgs args)
         {
+            // only accept left clicks
+            if (args is TouchEventArgs tea && tea.ButtonId != 0) return;
+
             var buttonBase = (ButtonBase)sender;
 
             buttonBase.OnClick(args);
