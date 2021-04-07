@@ -390,7 +390,8 @@ namespace Xenko.Rendering.UI
                 // rotate the UI element perpendicular to the camera view vector, if billboard is activated
                 if (renderObject.IsFullScreen)
                 {
-                    worldMatrix = ReallyCloseUI;
+                    Matrix.Scaling(ref renderObject.Component.Entity.Transform.Scale, out Matrix scalar);
+                    worldMatrix = ReallyCloseUI * scalar;
                 }
                 else
                 {
