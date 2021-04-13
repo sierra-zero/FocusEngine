@@ -52,39 +52,6 @@ namespace Xenko.Graphics
         {
             if (targetProfiles == null) throw new ArgumentNullException("targetProfiles");
 
-            // TODO VULKAN
-
-            //ModeDescription closestDescription;
-            //SharpDX.Direct3D12.Device deviceTemp = null;
-            //for (int i = 0; i < targetProfiles.Length; i++)
-            //{
-            //    // Create Device D3D12 with feature Level based on profile
-            //    try
-            //    {
-            //        deviceTemp = new SharpDX.Direct3D12.Device(Adapter.NativeAdapter, (FeatureLevel)targetProfiles[i]);
-            //        break;
-            //    }
-            //    catch (Exception)
-            //    {
-            //    }
-            //}
-
-            //if (deviceTemp == null)
-            //    throw new InvalidOperationException("Could not create D3D12 graphics device");
-
-            //var description = new SharpDX.DXGI.ModeDescription()
-            //{
-            //    Width = mode.Width,
-            //    Height = mode.Height,
-            //    RefreshRate = mode.RefreshRate.ToSharpDX(),
-            //    Format = (SharpDX.DXGI.Format)mode.Format,
-            //    Scaling = DisplayModeScaling.Unspecified,
-            //    ScanlineOrdering = DisplayModeScanlineOrder.Unspecified
-            //};
-            //using (var device = deviceTemp)
-            //    output.GetClosestMatchingMode(device, description, out closestDescription);
-
-            //return DisplayMode.FromDescription(closestDescription);
             return mode;
         }
 
@@ -97,18 +64,6 @@ namespace Xenko.Graphics
         public IntPtr MonitorHandle { get { return IntPtr.Zero; } }
 
         /// <summary>
-        /// Gets the native output.
-        /// </summary>
-        /// <value>The native output.</value>
-        //internal Output NativeOutput
-        //{
-        //    get
-        //    {
-        //        return output;
-        //    }
-        //}
-
-        /// <summary>
         /// Enumerates all available display modes for this output and stores them in <see cref="SupportedDisplayModes"/>.
         /// </summary>
         private void InitializeSupportedDisplayModes()
@@ -116,50 +71,6 @@ namespace Xenko.Graphics
             var modesAvailable = new List<DisplayMode>();
             var modesMap = new Dictionary<string, DisplayMode>();
 
-//#if DIRECTX11_1
-//            var output1 = output.QueryInterface<Output1>();
-//#endif
-
-//            try
-//            {
-//                const DisplayModeEnumerationFlags displayModeEnumerationFlags = DisplayModeEnumerationFlags.Interlaced | DisplayModeEnumerationFlags.Scaling;
-
-//                foreach (var format in Enum.GetValues(typeof(SharpDX.DXGI.Format)))
-//                {
-//                    var dxgiFormat = (Format)format;
-//#if DIRECTX11_1
-//                    var modes = output1.GetDisplayModeList1(dxgiFormat, displayModeEnumerationFlags);
-//#else
-//                    var modes = output.GetDisplayModeList(dxgiFormat, displayModeEnumerationFlags);
-//#endif
-
-//                    foreach (var mode in modes)
-//                    {
-//                        if (mode.Scaling == DisplayModeScaling.Unspecified)
-//                        {
-//                            var key = format + ";" + mode.Width + ";" + mode.Height + ";" + mode.RefreshRate.Numerator + ";" + mode.RefreshRate.Denominator;
-
-//                            DisplayMode oldMode;
-//                            if (!modesMap.TryGetValue(key, out oldMode))
-//                            {
-//                                var displayMode = DisplayMode.FromDescription(mode);
-
-//                                modesMap.Add(key, displayMode);
-//                                modesAvailable.Add(displayMode);
-//                            }
-//                        }
-//                    }
-//                }
-//            }
-//            catch (SharpDX.SharpDXException dxgiException)
-//            {
-//                if (dxgiException.ResultCode != ResultCode.NotCurrentlyAvailable)
-//                    throw;
-//            }
-
-#if DIRECTX11_1
-            output1.Dispose();
-#endif
             supportedDisplayModes = modesAvailable.ToArray();
         }
 
@@ -170,8 +81,6 @@ namespace Xenko.Graphics
         /// if it is not found - it checks for <see cref="Format.B8G8R8A8_UNorm"/>.</remarks>
         private void InitializeCurrentDisplayMode()
         {
-            //currentDisplayMode = TryFindMatchingDisplayMode(Format.R8G8B8A8_UNorm)
-            //                     ?? TryFindMatchingDisplayMode(Format.B8G8R8A8_UNorm);
         }
 
         /// <summary>
@@ -182,22 +91,6 @@ namespace Xenko.Graphics
         /// <returns>A matched <see cref="DisplayMode"/> or null if nothing is found.</returns>
         private DisplayMode TryFindMatchingDisplayMode(VkFormat format)
         {
-            //var desktopBounds = outputDescription.DesktopBounds;
-
-            //foreach (var supportedDisplayMode in SupportedDisplayModes)
-            //{
-            //    var width = desktopBounds.Right - desktopBounds.Left;
-            //    var height = desktopBounds.Bottom - desktopBounds.Top;
-
-            //    if (supportedDisplayMode.Width == width
-            //        && supportedDisplayMode.Height == height
-            //        && (Format)supportedDisplayMode.Format == format)
-            //    {
-            //        // Stupid DXGI, there is no way to get the DXGI.Format, nor the refresh rate.
-            //        return new DisplayMode((PixelFormat)format, width, height, supportedDisplayMode.RefreshRate);
-            //    }
-            //}
-
             return null;
         }
     }
