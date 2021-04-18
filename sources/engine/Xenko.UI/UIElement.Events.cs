@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using Xenko.Core;
+using Xenko.Engine;
 using Xenko.Input;
 using Xenko.UI.Events;
 
@@ -158,6 +159,10 @@ namespace Xenko.UI
                 throw new InvalidOperationException("The type of second parameter of the handler (" + e.RoutedEvent.HandlerSecondArgumentType
                                                     + ") is not assignable from the parameter 'e' type (" + e.GetType() + ").");
 
+            // temporarily disable errors from add/removes of entities during events in other threads, as it is always safe to do it now
+            bool previousEnforce = EntityManager.EnforceThreads;
+            EntityManager.EnforceThreads = false;
+
             var sourceWasNull = e.Source == null;
             if (sourceWasNull) // set the source to default if needed
                 e.Source = this;
@@ -167,6 +172,9 @@ namespace Xenko.UI
             PropagateRoutedEvent(e);
 
             e.EndEventRouting();
+
+            // return to enforcing thread add/removes, if we were before
+            EntityManager.EnforceThreads = previousEnforce;
 
             if (sourceWasNull) // reset the source if it was not explicitly set (event might be reused again for other sources)
                 e.Source = null;
