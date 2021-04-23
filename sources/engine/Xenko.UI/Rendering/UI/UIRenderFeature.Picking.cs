@@ -238,7 +238,7 @@ namespace Xenko.Rendering.UI
             }
         }
 
-        private void updateUiComponent(ref Ray r, RenderUIElement root, bool nonui)
+        private void TrackUIPointer(ref Ray r, RenderUIElement root, bool nonui)
         {
             if (root.Component.AlwaysTrackPointer == false)
                 return;
@@ -247,15 +247,19 @@ namespace Xenko.Rendering.UI
 
             if (rootElement.Intersects(ref r, out var intersectionPoint, nonui, root.Component.TrackedCanvasScale))
             {
-                Vector2 pos = intersectionPoint.XY();
+                Vector2 pos;
 
                 if (nonui)
                 {
-                    pos = (pos - rootElement.WorldMatrix3D.TranslationVector.XY()) / root.WorldMatrix3D.ScaleVector.XY();
+                    root.WorldMatrix3D.Decompose(out Vector3 scale, out Matrix rotation, out Vector3 translation);
+                    Vector3 pos3d = intersectionPoint - translation;
+                    rotation.Invert();
+                    pos = Vector3.Transform(pos3d, rotation).XY() / scale.XY();
                     pos.Y = root.Resolution.Y * 0.5f - pos.Y;
                 } 
                 else
                 {
+                    pos = intersectionPoint.XY();
                     pos.Y += root.Resolution.Y * 0.5f;
                 }
                 pos.X += root.Resolution.X * 0.5f;
@@ -292,7 +296,7 @@ namespace Xenko.Rendering.UI
                     if (useHand != null)
                     {
                         Ray uiRay = new Ray(useHand.WorldPosition(), useHand.Forward(true));
-                        updateUiComponent(ref uiRay, state, true);
+                        TrackUIPointer(ref uiRay, state, true);
                         UIElementUnderMouseCursor = GetElementAtWorldPosition(rootElement, ref uiRay, ref worldViewProj, ref intersectionPoint);
                         if (UIElementUnderMouseCursor != null)
                         {
@@ -338,7 +342,7 @@ namespace Xenko.Rendering.UI
                     // check if we touch anything of importance
                     bool hitElement = GetTouchPosition(state.Resolution, ref viewport, ref worldViewProj, mousePosition, out Ray uiRay);
                     // update tracked position on canvas, if this is enabled
-                    updateUiComponent(ref uiRay, state, false);
+                    TrackUIPointer(ref uiRay, state, false);
                     // bail out early if we didn't touch anything
                     if (!hitElement) return true;
                     UIElementUnderMouseCursor = GetElementAtScreenPosition(rootElement, ref uiRay, ref worldViewProj, ref intersectionPoint);
