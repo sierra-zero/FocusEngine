@@ -280,7 +280,7 @@ namespace Xenko.Rendering.UI
                     batch.Begin(context.GraphicsContext, ref uiElementState.WorldViewProjectionMatrix, BlendStates.AlphaBlend, samplerState, null, stencilState, renderingContext.StencilTestReferenceValue);
 
                     // Render the UI elements in the final render target
-                    RecursiveDrawWithClipping(context, rootElement, ref uiElementState.WorldViewProjectionMatrix, batch, ref stencilState);
+                    RecursiveDrawWithClipping(context, rootElement, ref uiElementState.WorldViewProjectionMatrix, batch, ref stencilState, samplerState);
 
                     batch.End();
                 }
@@ -311,7 +311,7 @@ namespace Xenko.Rendering.UI
                 batches.Enqueue(batch);
         }
 
-        private void RecursiveDrawWithClipping(RenderDrawContext context, UIElement element, ref Matrix worldViewProj, UIBatch batch, ref DepthStencilStateDescription dstate)
+        private void RecursiveDrawWithClipping(RenderDrawContext context, UIElement element, ref Matrix worldViewProj, UIBatch batch, ref DepthStencilStateDescription dstate, SamplerState samplerState)
         {
             // if the element is not visible, we also remove all its children
             if (!element.IsVisible)
@@ -330,13 +330,13 @@ namespace Xenko.Rendering.UI
                 batch.End();
 
                 // render the clipping region
-                batch.Begin(context.GraphicsContext, ref worldViewProj, BlendStates.ColorDisabled, uiSystem.IncreaseStencilValueState, renderingContext.StencilTestReferenceValue);
+                batch.Begin(context.GraphicsContext, ref worldViewProj, BlendStates.ColorDisabled, samplerState, null, uiSystem.IncreaseStencilValueState, renderingContext.StencilTestReferenceValue);
                 renderer.RenderClipping(element, renderingContext, batch);
                 batch.End();
 
                 // update context and restart the batch
                 renderingContext.StencilTestReferenceValue += 1;
-                batch.Begin(context.GraphicsContext, ref worldViewProj, BlendStates.AlphaBlend, dstate, renderingContext.StencilTestReferenceValue);
+                batch.Begin(context.GraphicsContext, ref worldViewProj, BlendStates.AlphaBlend, samplerState, null, dstate, renderingContext.StencilTestReferenceValue);
             }
 
             // render the design of the element
@@ -344,7 +344,7 @@ namespace Xenko.Rendering.UI
 
             // render the children
             foreach (var child in element.VisualChildrenCollection)
-                RecursiveDrawWithClipping(context, child, ref worldViewProj, batch, ref dstate);
+                RecursiveDrawWithClipping(context, child, ref worldViewProj, batch, ref dstate, samplerState);
 
             // clear the element clipping region from the stencil buffer
             if (element.ClipToBounds)
@@ -355,13 +355,13 @@ namespace Xenko.Rendering.UI
                 renderingContext.DepthBias = element.MaxChildrenDepthBias;
 
                 // render the clipping region
-                batch.Begin(context.GraphicsContext, ref worldViewProj, BlendStates.ColorDisabled, uiSystem.DecreaseStencilValueState, renderingContext.StencilTestReferenceValue);
+                batch.Begin(context.GraphicsContext, ref worldViewProj, BlendStates.ColorDisabled, samplerState, null, uiSystem.DecreaseStencilValueState, renderingContext.StencilTestReferenceValue);
                 renderer.RenderClipping(element, renderingContext, batch);
                 batch.End();
 
                 // update context and restart the batch
                 renderingContext.StencilTestReferenceValue -= 1;
-                batch.Begin(context.GraphicsContext, ref worldViewProj, BlendStates.AlphaBlend, dstate, renderingContext.StencilTestReferenceValue);
+                batch.Begin(context.GraphicsContext, ref worldViewProj, BlendStates.AlphaBlend, samplerState, null, dstate, renderingContext.StencilTestReferenceValue);
             }
         }
 
