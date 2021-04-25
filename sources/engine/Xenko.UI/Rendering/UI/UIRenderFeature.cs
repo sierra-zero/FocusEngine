@@ -233,18 +233,14 @@ namespace Xenko.Rendering.UI
                 {
                     var uiElementState = uiElementStates[j];
 
-                    var renderObject = uiElementState.RenderObject;
-                    var rootElement = renderObject.Page?.RootElement;
+                    renderingContext.RenderObject = uiElementState.RenderObject;
+                    var rootElement = renderingContext.RenderObject.Page?.RootElement;
                     if (rootElement == null) continue;
 
                     // update the rendering context values specific to this element
-                    renderingContext.Resolution = renderObject.Resolution;
                     renderingContext.ViewProjectionMatrix = uiElementState.WorldViewProjectionMatrix;
-                    renderingContext.ShouldSnapText = renderObject.SnapText;
-                    renderingContext.IsFullscreen = renderObject.IsFullScreen;
-                    renderingContext.WorldMatrix3D = renderObject.WorldMatrix3D;
                     
-                    switch (renderObject.depthMode)
+                    switch (renderingContext.RenderObject.depthMode)
                     {
                         case Sprites.RenderSprite.SpriteDepthMode.Ignore:
                             stencilState.DepthBufferWriteEnable = false;
@@ -265,9 +261,23 @@ namespace Xenko.Rendering.UI
                             break;
                     }
 
+                    SamplerState samplerState;
+                    switch (renderingContext.RenderObject.Sampler)
+                    {
+                        default:
+                            samplerState = context.GraphicsDevice.SamplerStates.LinearClamp;
+                            break;
+                        case UIElementSampler.PointClamp:
+                            samplerState = context.GraphicsDevice.SamplerStates.PointClamp;
+                            break;
+                        case UIElementSampler.AnisotropicClamp:
+                            samplerState = context.GraphicsDevice.SamplerStates.AnisotropicClamp;
+                            break;
+                    }
+
                     // start the image draw session
                     renderingContext.StencilTestReferenceValue = 0;
-                    batch.Begin(context.GraphicsContext, ref uiElementState.WorldViewProjectionMatrix, BlendStates.AlphaBlend, stencilState, renderingContext.StencilTestReferenceValue);
+                    batch.Begin(context.GraphicsContext, ref uiElementState.WorldViewProjectionMatrix, BlendStates.AlphaBlend, samplerState, null, stencilState, renderingContext.StencilTestReferenceValue);
 
                     // Render the UI elements in the final render target
                     RecursiveDrawWithClipping(context, rootElement, ref uiElementState.WorldViewProjectionMatrix, batch, ref stencilState);

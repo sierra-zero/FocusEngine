@@ -136,6 +136,15 @@ namespace Xenko.Engine
         public RenderGroup RenderGroup { get; set; }
 
         /// <summary>
+        /// Specifies the sampling method to be used for this component
+        /// </summary>
+        /// <userdoc>Specifies the sampling method to be used for this component</userdoc>
+        [DataMember(15)]
+        [DefaultValue(UIElementSampler.LinearClamp)]
+        [Display("Sampler")]
+        public UIElementSampler Sampler { get; set; } = UIElementSampler.LinearClamp;
+
+        /// <summary>
         /// Tweak the sorting distance. Can help with transparent sorting.
         /// </summary>
         [DataMember(90)]
