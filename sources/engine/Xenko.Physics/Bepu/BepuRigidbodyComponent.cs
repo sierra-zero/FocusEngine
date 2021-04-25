@@ -791,18 +791,14 @@ namespace Xenko.Physics.Bepu
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void UpdateCachedPoseAndVelocity()
         {
-            if (newPos)
+            wasAwake = InternalBody.Awake;
+            if (newPos || newRotation)
             {
-                newPos = false; 
-                InternalBody.Pose.Position = bodyDescription.Pose.Position;
-            }
-            if (newRotation)
-            {
-                newRotation = false;
-                InternalBody.Pose.Orientation = bodyDescription.Pose.Orientation;
+                if (newPos) { newPos = false; InternalBody.Pose.Position = bodyDescription.Pose.Position; }
+                if (newRotation) { newRotation = false; InternalBody.Pose.Orientation = bodyDescription.Pose.Orientation; }
+                if (!wasAwake) InternalBody.UpdateBounds();
             }
             bodyDescription.Pose = InternalBody.Pose;
-            wasAwake = InternalBody.Awake;
             BodyVelocity bv = InternalBody.Velocity;
             VelocityLinearChange = BepuHelpers.ToXenko(bv.Linear - bodyDescription.Velocity.Linear);
             VelocityAngularChange = BepuHelpers.ToXenko(bv.Angular - bodyDescription.Velocity.Angular);
