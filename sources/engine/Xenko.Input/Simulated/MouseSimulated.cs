@@ -37,7 +37,7 @@ namespace Xenko.Input
             if (positionLocked)
             {
                 MouseState.Position = capturedPosition;
-                PointerState.GetPointerData(0).Position = capturedPosition;
+                PointerState.pointerData.Position = capturedPosition;
             }
         }
 
