@@ -277,7 +277,7 @@ namespace Xenko.Graphics
             {
                 sType = VkStructureType.PipelineInputAssemblyStateCreateInfo,
                 topology = VulkanConvertExtensions.ConvertPrimitiveType(Description.PrimitiveType),
-                primitiveRestartEnable = VulkanConvertExtensions.ConvertPrimitiveRestart(Description.PrimitiveType),
+                primitiveRestartEnable = VulkanConvertExtensions.ConvertPrimitiveRestart(Description.PrimitiveType) ? (uint)1 : (uint)0,
             };
 
             // TODO VULKAN: Tessellation and multisampling
@@ -293,21 +293,21 @@ namespace Xenko.Graphics
                 cullMode = VulkanConvertExtensions.ConvertCullMode(Description.RasterizerState.CullMode),
                 frontFace = Description.RasterizerState.FrontFaceCounterClockwise ? VkFrontFace.CounterClockwise : VkFrontFace.Clockwise,
                 polygonMode = VulkanConvertExtensions.ConvertFillMode(Description.RasterizerState.FillMode),
-                depthBiasEnable = true, // TODO VULKAN
+                depthBiasEnable = 1, // TODO VULKAN
                 depthBiasConstantFactor = Description.RasterizerState.DepthBias,
                 depthBiasSlopeFactor = Description.RasterizerState.SlopeScaleDepthBias,
                 depthBiasClamp = Description.RasterizerState.DepthBiasClamp,
                 lineWidth = 1.0f,
-                depthClampEnable = !Description.RasterizerState.DepthClipEnable,
-                rasterizerDiscardEnable = false,
+                depthClampEnable = Description.RasterizerState.DepthClipEnable ? (uint)0 : (uint)1,
+                rasterizerDiscardEnable = 0,
             };
 
             var depthStencilState = new VkPipelineDepthStencilStateCreateInfo
             {
                 sType = VkStructureType.PipelineDepthStencilStateCreateInfo,
-                depthTestEnable = Description.DepthStencilState.DepthBufferEnable,
-                stencilTestEnable = Description.DepthStencilState.StencilEnable,
-                depthWriteEnable = Description.DepthStencilState.DepthBufferWriteEnable,
+                depthTestEnable = Description.DepthStencilState.DepthBufferEnable ? (uint)1 : (uint)0,
+                stencilTestEnable = Description.DepthStencilState.StencilEnable ? (uint)1 : (uint)0,
+                depthWriteEnable = Description.DepthStencilState.DepthBufferWriteEnable ? (uint)1 : (uint)0,
 
                 minDepthBounds = 0.0f,
                 maxDepthBounds = 1.0f,
@@ -341,7 +341,7 @@ namespace Xenko.Graphics
             {
                 colorBlendAttachments[i] = new VkPipelineColorBlendAttachmentState
                 {
-                    blendEnable = renderTargetBlendState->BlendEnable,
+                    blendEnable = renderTargetBlendState->BlendEnable ? (uint)1 : (uint)0,
                     alphaBlendOp = VulkanConvertExtensions.ConvertBlendFunction(renderTargetBlendState->AlphaBlendFunction),
                     colorBlendOp = VulkanConvertExtensions.ConvertBlendFunction(renderTargetBlendState->ColorBlendFunction),
                     dstAlphaBlendFactor = VulkanConvertExtensions.ConvertBlend(renderTargetBlendState->AlphaDestinationBlend),

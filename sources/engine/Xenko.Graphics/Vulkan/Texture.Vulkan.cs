@@ -217,7 +217,7 @@ namespace Xenko.Graphics
             {
                 sType = VkStructureType.ImageCreateInfo,
                 arrayLayers = (uint)ArraySize,
-                extent = new Vortice.Mathematics.Size3(Width, Height, Depth),
+                extent = new Vortice.Vulkan.VkExtent3D(Width, Height, Depth),
                 mipLevels = (uint)MipLevels,
                 samples = VkSampleCountFlags.Count1,
                 format = NativeFormat,
@@ -350,8 +350,8 @@ namespace Xenko.Graphics
                         imageSubresource = new VkImageSubresourceLayers(VkImageAspectFlags.Color, (uint)mipSlice, (uint)arraySlice, 1),
                         bufferRowLength = 0, //(uint)(dataBoxes[i].RowPitch / pixelSize),
                         bufferImageHeight = 0, //(uint)(dataBoxes[i].SlicePitch / dataBoxes[i].RowPitch),
-                        imageOffset = new Vortice.Mathematics.Point3(0, 0, 0),
-                        imageExtent = new Vortice.Mathematics.Size3(mipMapDescription.Width, mipMapDescription.Height, mipMapDescription.Depth)
+                        imageOffset = new Vortice.Vulkan.VkOffset3D(0, 0, 0),
+                        imageExtent = new Vortice.Vulkan.VkExtent3D(mipMapDescription.Width, mipMapDescription.Height, mipMapDescription.Depth)
                     };
 
                     uploadMemory += slicePitch;
@@ -386,7 +386,7 @@ namespace Xenko.Graphics
                 vkQueueSubmit(GraphicsDevice.NativeCommandQueue, 1, &submitInfo, fence);
             }
 
-            vkWaitForFences(GraphicsDevice.NativeDevice, 1, &fence, true, ulong.MaxValue);
+            vkWaitForFences(GraphicsDevice.NativeDevice, 1, &fence, 1, ulong.MaxValue);
             vkFreeCommandBuffers(GraphicsDevice.NativeDevice, GraphicsDevice.NativeCopyCommandPool, 1, &commandBuffer);
             vkDestroyFence(GraphicsDevice.NativeDevice, fence, null);
         }

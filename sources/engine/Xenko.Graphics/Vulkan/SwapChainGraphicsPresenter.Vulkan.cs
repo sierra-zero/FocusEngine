@@ -248,7 +248,7 @@ namespace Xenko.Graphics
             // Queue
             // TODO VULKAN: Queue family is needed when creating the Device, so here we can just do a sanity check?
             var queueNodeIndex = vkGetPhysicalDeviceQueueFamilyProperties(GraphicsDevice.NativePhysicalDevice).ToArray().
-                Where((properties, index) => (properties.queueFlags & VkQueueFlags.Graphics) != 0 && vkGetPhysicalDeviceSurfaceSupportKHR(GraphicsDevice.NativePhysicalDevice, (uint)index, surface, out var supported) == VkResult.Success && supported).
+                Where((properties, index) => (properties.queueFlags & VkQueueFlags.Graphics) != 0 && vkGetPhysicalDeviceSurfaceSupportKHR(GraphicsDevice.NativePhysicalDevice, (uint)index, surface, out var supported) == VkResult.Success && supported == 1).
                 Select((properties, index) => index).First();
 
             // Surface format
@@ -303,7 +303,7 @@ namespace Xenko.Graphics
                 surface = surface,
                 imageArrayLayers = 1,
                 imageSharingMode = VkSharingMode.Exclusive,
-                imageExtent = new Vortice.Mathematics.Size(Description.BackBufferWidth, Description.BackBufferHeight),
+                imageExtent = new Vortice.Vulkan.VkExtent2D(Description.BackBufferWidth, Description.BackBufferHeight),
                 imageFormat = backBufferFormat,
                 imageColorSpace = Description.ColorSpace == ColorSpace.Gamma ? VkColorSpaceKHR.SrgbNonLinear : 0,
                 imageUsage = VkImageUsageFlags.ColorAttachment | VkImageUsageFlags.TransferDst | (surfaceCapabilities.supportedUsageFlags & VkImageUsageFlags.TransferSrc), // TODO VULKAN: Use off-screen buffer to emulate
@@ -312,7 +312,7 @@ namespace Xenko.Graphics
                 minImageCount = desiredImageCount,
                 preTransform = preTransform,
                 oldSwapchain = swapChain,
-                clipped = true
+                clipped = 1
             };
 
             vkCreateSwapchainKHR(GraphicsDevice.NativeDevice, &swapchainCreateInfo, null, out swapChain);

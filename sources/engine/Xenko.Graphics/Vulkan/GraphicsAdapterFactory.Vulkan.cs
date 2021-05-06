@@ -239,7 +239,7 @@ namespace Xenko.Graphics
             }
         }
 
-        private static VkBool32 DebugReport(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objectType, ulong @object, VkPointerSize location, int messageCode, string layerPrefix, string message, IntPtr userData)
+        private static bool DebugReport(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objectType, ulong @object, nuint location, int messageCode, string layerPrefix, string message, IntPtr userData)
         {
             Debug.WriteLine($"{flags}: {message} ([{messageCode}] {layerPrefix})");
             return false;
@@ -262,7 +262,7 @@ namespace Xenko.Graphics
         internal delegate void EndDebugMarkerDelegate(VkCommandBuffer commandBuffer);
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall, CharSet = CharSet.Ansi)]
-        private delegate VkBool32 DebugReportCallbackDelegate(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objectType, ulong @object, VkPointerSize location, int messageCode, string layerPrefix, string message, IntPtr userData);
+        private delegate bool DebugReportCallbackDelegate(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objectType, ulong @object, nuint location, int messageCode, string layerPrefix, string message, IntPtr userData);
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
         private unsafe delegate VkResult CreateDebugReportCallbackDelegate(VkInstance instance, ref VkDebugReportCallbackCreateInfoEXT createInfo, VkAllocationCallbacks* allocator, out VkDebugReportCallbackEXT callback);

@@ -625,7 +625,7 @@ namespace Xenko.Graphics
                     {
                         var fenceCopy = nativeFences[i].Value;
 
-                        vkWaitForFences(NativeDevice, 1, &fenceCopy, true, ulong.MaxValue);
+                        vkWaitForFences(NativeDevice, 1, &fenceCopy, 1, ulong.MaxValue);
 
                         if (fenceValue > lastCompletedFence)
                             lastCompletedFence = fenceValue;
