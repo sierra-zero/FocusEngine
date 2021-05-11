@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Threading;
 using Xenko.Core.Mathematics;
 using Xenko.Core.Threading;
-using Xenko.Engine;
 using Xenko.Graphics;
 using Xenko.Particles.Materials;
 using Xenko.Rendering;
@@ -295,7 +294,7 @@ namespace Xenko.Particles.Rendering
         /// <inheritdoc/>
         public override unsafe void Draw(RenderDrawContext context, RenderView renderView, RenderViewStage renderViewStage, int startIndex, int endIndex)
         {
-            if (ParticleSystemSettings.DisableAllDrawing || SceneSystem.LinuxNonNVIDIAMode) return;
+            if (ParticleSystemSettings.DisableAllDrawing) return;
 
             var commandList = context.CommandList;
 
