@@ -26,7 +26,7 @@ namespace Xenko.Graphics
 
         private readonly GraphicsResourceAllocator allocator;
         private MappedResource mappedConstantBuffer;
-        private CommandList commandList;
+        internal CommandList commandList;
         private BufferDescription defaultDescription;
 
         private int bufferAllocationOffset;
