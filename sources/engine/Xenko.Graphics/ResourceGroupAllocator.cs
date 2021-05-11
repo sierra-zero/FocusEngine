@@ -131,7 +131,6 @@ namespace Xenko.Graphics
             currentBufferPoolIndex++;
             if (currentBufferPoolIndex >= bufferPools.Count)
             {
-                //Flush();
                 bufferPools.Add(currentBufferPool = BufferPool.New(allocator, graphicsDevice, 1024 * 1024, 4));
                 currentBufferPool.Map(commandList);
             }
