@@ -243,7 +243,6 @@ namespace Xenko.Graphics
                     break;
             }
 
-            // TODO VULKAN: Can we restrict more based on GraphicsResourceUsage? 
             createInfo.usage |= VkImageUsageFlags.TransferSrc | VkImageUsageFlags.TransferDst;
 
             if (IsRenderTarget)
@@ -253,7 +252,7 @@ namespace Xenko.Graphics
                 createInfo.usage |= VkImageUsageFlags.DepthStencilAttachment;
 
             if (IsShaderResource)
-                createInfo.usage |= VkImageUsageFlags.Sampled; // TODO VULKAN: Input attachments
+                createInfo.usage |= VkImageUsageFlags.Sampled;
 
             if (IsUnorderedAccess)
                 createInfo.usage |= VkImageUsageFlags.Storage;
@@ -261,7 +260,6 @@ namespace Xenko.Graphics
             var memoryProperties = VkMemoryPropertyFlags.DeviceLocal;
 
             // Create native image
-            // TODO: Multisampling, flags, usage, etc.
             vkCreateImage(GraphicsDevice.NativeDevice, &createInfo, null, out NativeImage);
 
             // Allocate and bind memory

@@ -15,18 +15,21 @@ namespace Xenko.Graphics
     public static partial class GraphicsAdapterFactory
     {
         private static GraphicsAdapterFactoryInstance defaultInstance;
+
+#if DEBUG
         private static GraphicsAdapterFactoryInstance debugInstance;
+#endif
 
         /// <summary>
         /// Initializes all adapters with the specified factory.
         /// </summary>
-        internal static void InitializeInternal()
+        internal static void InitializeInternal(bool debug)
         {
             var result = vkInitialize();
             result.CheckResult();
 
             // Create the default instance to enumerate physical devices
-            defaultInstance = new GraphicsAdapterFactoryInstance(false);
+            defaultInstance = new GraphicsAdapterFactoryInstance(debug);
             var nativePhysicalDevices = vkEnumeratePhysicalDevices(defaultInstance.NativeInstance);
 
             var adapterList = new List<GraphicsAdapter>();
@@ -51,11 +54,13 @@ namespace Xenko.Graphics
                 defaultInstance = null;
             }
 
+#if DEBUG
             if (debugInstance != null)
             {
                 debugInstance.Dispose();
                 debugInstance = null;
             }
+#endif
         }
 
         /// <summary>
@@ -67,6 +72,7 @@ namespace Xenko.Graphics
             {
                 Initialize();
 
+#if DEBUG
                 if (enableValidation)
                 {
                     return debugInstance ?? (debugInstance = new GraphicsAdapterFactoryInstance(true));
@@ -75,19 +81,23 @@ namespace Xenko.Graphics
                 {
                     return defaultInstance;
                 }
+#else
+                return defaultInstance;
+#endif
             }
         }
     }
 
     internal class GraphicsAdapterFactoryInstance : IDisposable
     {
+#if DEBUG
         private VkDebugReportCallbackEXT debugReportCallback;
         private DebugReportCallbackDelegate debugReport;
-
-        internal VkInstance NativeInstance;
-
         internal BeginDebugMarkerDelegate BeginDebugMarker;
         internal EndDebugMarkerDelegate EndDebugMarker;
+#endif
+
+        internal VkInstance NativeInstance;
 
         public unsafe GraphicsAdapterFactoryInstance(bool enableValidation)
         {
@@ -101,21 +111,12 @@ namespace Xenko.Graphics
 
             IntPtr[] enabledLayerNames = new IntPtr[0];
 
+#if DEBUG
             if (enableValidation)
             {
                 var desiredLayerNames = new[]
                 {
-                    //"VK_LAYER_LUNARG_standard_validation",
-                    "VK_LAYER_GOOGLE_threading",
-                    "VK_LAYER_LUNARG_parameter_validation",
-                    "VK_LAYER_LUNARG_device_limits",
-                    "VK_LAYER_LUNARG_object_tracker",
-                    "VK_LAYER_LUNARG_image",
-                    "VK_LAYER_LUNARG_core_validation",
-                    "VK_LAYER_LUNARG_swapchain",
-                    "VK_LAYER_GOOGLE_unique_objects",
-                    //"VK_LAYER_LUNARG_api_dump",
-                    //"VK_LAYER_LUNARG_vktrace"
+                    "VK_LAYER_KHRONOS_validation",
                 };
 
                 var layers = vkEnumerateInstanceLayerProperties();
@@ -134,6 +135,7 @@ namespace Xenko.Graphics
                     .Where(x => availableLayerNames.Contains(x))
                     .Select(Marshal.StringToHGlobalAnsi).ToArray();
             }
+#endif
 
             var extensionProperties = vkEnumerateInstanceExtensionProperties();
             var availableExtensionNames = new List<string>();
@@ -147,6 +149,8 @@ namespace Xenko.Graphics
             }
 
             desiredExtensionNames.Add("VK_KHR_get_physical_device_properties2");
+            desiredExtensionNames.Add("VK_KHR_external_semaphore_capabilities");
+            desiredExtensionNames.Add("VK_KHR_external_semaphore");
             desiredExtensionNames.Add("VK_KHR_surface");
             desiredExtensionNames.Add("VK_KHR_win32_surface"); // windows
             desiredExtensionNames.Add("VK_KHR_android_surface"); // android
@@ -158,9 +162,11 @@ namespace Xenko.Graphics
             desiredExtensionNames.Add("VK_NV_external_memory_capabilities"); // NVIDIA needs this one for OpenVR
             desiredExtensionNames.Add("VK_KHR_external_memory_capabilities"); // this one might be used in the future for OpenVR
 
+#if DEBUG
             bool enableDebugReport = enableValidation && availableExtensionNames.Contains("VK_EXT_debug_report");
             if (enableDebugReport)
                 desiredExtensionNames.Add("VK_EXT_debug_report");
+#endif
 
             // take out any extensions not supported
             for (int i=0; i<desiredExtensionNames.Count; i++)
@@ -173,8 +179,6 @@ namespace Xenko.Graphics
             }
 
             var enabledExtensionNames = desiredExtensionNames.Select(Marshal.StringToHGlobalAnsi).ToArray();
-
-            var createDebugReportCallbackName = Marshal.StringToHGlobalAnsi("vkCreateDebugReportCallbackEXT");
 
             try
             {
@@ -194,8 +198,10 @@ namespace Xenko.Graphics
                     vkLoadInstance(NativeInstance);
                 }
 
+#if DEBUG
                 if (enableDebugReport)
                 {
+                    var createDebugReportCallbackName = Marshal.StringToHGlobalAnsi("vkCreateDebugReportCallbackEXT");
                     var createDebugReportCallback = (CreateDebugReportCallbackDelegate)Marshal.GetDelegateForFunctionPointer(vkGetInstanceProcAddr(NativeInstance, (byte*)createDebugReportCallbackName), typeof(CreateDebugReportCallbackDelegate));
 
                     debugReport = DebugReport;
@@ -206,6 +212,7 @@ namespace Xenko.Graphics
                         pfnCallback = Marshal.GetFunctionPointerForDelegate(debugReport)
                     };
                     createDebugReportCallback(NativeInstance, ref createInfo, null, out debugReportCallback);
+                    Marshal.FreeHGlobal(createDebugReportCallbackName);
                 }
 
                 if (availableExtensionNames.Contains("VK_EXT_debug_marker"))
@@ -221,6 +228,7 @@ namespace Xenko.Graphics
                     if (ptr != IntPtr.Zero)
                         EndDebugMarker = (EndDebugMarkerDelegate)Marshal.GetDelegateForFunctionPointer(ptr, typeof(EndDebugMarkerDelegate));
                 }
+#endif
             }
             finally
             {
@@ -235,26 +243,33 @@ namespace Xenko.Graphics
                 }
 
                 Marshal.FreeHGlobal((IntPtr)applicationInfo.pEngineName);
-                Marshal.FreeHGlobal(createDebugReportCallbackName);
             }
         }
 
+#if DEBUG
         private static bool DebugReport(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objectType, ulong @object, nuint location, int messageCode, string layerPrefix, string message, IntPtr userData)
         {
-            Debug.WriteLine($"{flags}: {message} ([{messageCode}] {layerPrefix})");
+            string debugMessage = $"{flags}: {message} ([{messageCode}] {layerPrefix})";
+            Debug.WriteLine(debugMessage);
+            if (GraphicsAdapterFactory.adapterFlags == DeviceCreationFlags.DebugAndBreak)
+                Debugger.Break();
             return false;
         }
+#endif
 
         public unsafe void Dispose()
         {
+#if DEBUG
             if (debugReportCallback != VkDebugReportCallbackEXT.Null)
             {
                 vkDestroyDebugReportCallbackEXT(NativeInstance, debugReportCallback, null);
             }
+#endif
 
             vkDestroyInstance(NativeInstance, null);
         }
 
+#if DEBUG
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
         internal unsafe delegate void BeginDebugMarkerDelegate(VkCommandBuffer commandBuffer, VkDebugMarkerMarkerInfoEXT* markerInfo);
 
@@ -266,6 +281,7 @@ namespace Xenko.Graphics
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
         private unsafe delegate VkResult CreateDebugReportCallbackDelegate(VkInstance instance, ref VkDebugReportCallbackCreateInfoEXT createInfo, VkAllocationCallbacks* allocator, out VkDebugReportCallbackEXT callback);
+#endif
     }
 }
 #endif 

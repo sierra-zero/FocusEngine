@@ -192,7 +192,14 @@ namespace Xenko.Games
         /// Gets or sets the device creation flags that will be used to create the <see cref="GraphicsDevice"/>
         /// </summary>
         /// <value>The device creation flags.</value>
-        public DeviceCreationFlags DeviceCreationFlags { get; set; }
+        public DeviceCreationFlags DeviceCreationFlags
+        {
+            get => GraphicsAdapterFactory.adapterFlags;
+            set
+            {
+                GraphicsAdapterFactory.adapterFlags = value;
+            }
+        }
 
         /// <summary>
         /// If populated the engine will try to initialize the device with the same unique id

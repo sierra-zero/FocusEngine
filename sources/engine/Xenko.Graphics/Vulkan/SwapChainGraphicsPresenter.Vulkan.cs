@@ -111,21 +111,15 @@ namespace Xenko.Graphics
             presentFrame = currentBufferIndex;
 
             VkResult result;
-            
+
             // try to get the next frame
             using (GraphicsDevice.QueueLock.ReadLock())
             {
-                result = vkAcquireNextImageKHR(GraphicsDevice.NativeDevice, swapChain, (ulong)0, VkSemaphore.Null, presentFence, out currentBufferIndex);
+                result = vkAcquireNextImageKHR(GraphicsDevice.NativeDevice, swapChain, (ulong)0, VkSemaphore.Null, VkFence.Null, out currentBufferIndex);
             }
 
             // say we can present
             presentWaiter.Set();
-
-            // make sure fence is reset
-            fixed (VkFence* fences = &presentFence)
-            {
-                vkResetFences(GraphicsDevice.NativeDevice, 1, fences);
-            }
 
             if ((int)result < 0)
             {
@@ -138,13 +132,7 @@ namespace Xenko.Graphics
                 // try to get the next frame (again)
                 using (GraphicsDevice.QueueLock.ReadLock())
                 {
-                    result = vkAcquireNextImageKHR(GraphicsDevice.NativeDevice, swapChain, (ulong)0, VkSemaphore.Null, presentFence, out currentBufferIndex);
-                }
-
-                // make sure fence is reset
-                fixed (VkFence* fences = &presentFence)
-                {
-                    vkResetFences(GraphicsDevice.NativeDevice, 1, fences);
+                    result = vkAcquireNextImageKHR(GraphicsDevice.NativeDevice, swapChain, (ulong)0, VkSemaphore.Null, VkFence.Null, out currentBufferIndex);
                 }
             }
 
@@ -449,17 +437,8 @@ namespace Xenko.Graphics
             vkQueueSubmit(GraphicsDevice.NativeCommandQueue, 1, &submitInfo, VkFence.Null);
             vkQueueWaitIdle(GraphicsDevice.NativeCommandQueue);
             vkResetCommandBuffer(commandBuffer, VkCommandBufferResetFlags.None);
-            
-            // need to make a fence, but can immediately reset it, as it acts as a dummy
-            var fenceCreateInfo = new VkFenceCreateInfo { sType = VkStructureType.FenceCreateInfo };
-            vkCreateFence(GraphicsDevice.NativeDevice, &fenceCreateInfo, null, out presentFence);
 
-            vkAcquireNextImageKHR(GraphicsDevice.NativeDevice, swapChain, ulong.MaxValue, VkSemaphore.Null, presentFence, out currentBufferIndex);
-
-            fixed (VkFence* fences = &presentFence)
-            {
-                vkResetFences(GraphicsDevice.NativeDevice, 1, fences);
-            }
+            vkAcquireNextImageKHR(GraphicsDevice.NativeDevice, swapChain, ulong.MaxValue, VkSemaphore.Null, VkFence.Null, out currentBufferIndex);
 
             // Apply the first swap chain image to the texture
             backbuffer.SetNativeHandles(swapchainImages[currentBufferIndex].NativeImage, swapchainImages[currentBufferIndex].NativeColorAttachmentView);

@@ -680,6 +680,7 @@ namespace Xenko.Graphics
         /// <param name="name">The name.</param>
         public unsafe void BeginProfile(Color4 profileColor, string name)
         {
+#if DEBUG
             if (GraphicsDevice.IsProfilingSupported)
             {
                 var bytes = System.Text.Encoding.ASCII.GetBytes(name);
@@ -696,6 +697,7 @@ namespace Xenko.Graphics
                     GraphicsAdapterFactory.GetInstance(GraphicsDevice.IsDebugMode).BeginDebugMarker(currentCommandList.NativeCommandBuffer, &debugMarkerInfo);
                 }
             }
+#endif
         }
 
         /// <summary>
@@ -703,10 +705,12 @@ namespace Xenko.Graphics
         /// </summary>
         public void EndProfile()
         {
+#if DEBUG
             if (GraphicsDevice.IsProfilingSupported)
             {
                 GraphicsAdapterFactory.GetInstance(GraphicsDevice.IsDebugMode).EndDebugMarker(currentCommandList.NativeCommandBuffer);
             }
+#endif
         }
         /// <summary>
         /// Submit a timestamp query.
@@ -1365,13 +1369,13 @@ namespace Xenko.Graphics
 
             void* mappedMemory;
             vkMapMemory(GraphicsDevice.NativeDevice, resource.NativeMemory, (ulong)offsetInBytes, (ulong)lengthInBytes, VkMemoryMapFlags.None, &mappedMemory);
+            GraphicsDevice.DelayedUnmaps.Enqueue(resource.NativeMemory);
             return new MappedResource(resource, subResourceIndex, new DataBox((IntPtr)mappedMemory, rowPitch, 0), offsetInBytes, lengthInBytes);
         }
 
         // TODO GRAPHICS REFACTOR what should we do with this?
         public void UnmapSubresource(MappedResource unmapped)
         {
-            vkUnmapMemory(GraphicsDevice.NativeDevice, unmapped.Resource.NativeMemory);
         }
 
         /// <inheritdoc/>

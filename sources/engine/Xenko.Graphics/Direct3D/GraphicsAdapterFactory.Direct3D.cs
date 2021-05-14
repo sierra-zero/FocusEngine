@@ -17,7 +17,7 @@ namespace Xenko.Graphics
         /// <summary>
         /// Initializes all adapters with the specified factory.
         /// </summary>
-        internal static void InitializeInternal()
+        internal static void InitializeInternal(bool debug)
         {
             staticCollector.Dispose();
 

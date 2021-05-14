@@ -241,7 +241,7 @@ namespace Xenko.Graphics
                             void* uploadMemory;
                             vkMapMemory(GraphicsDevice.NativeDevice, NativeMemory, 0, (ulong)SizeInBytes, VkMemoryMapFlags.None, &uploadMemory);
                             Utilities.CopyMemory((IntPtr)uploadMemory, dataPointer, SizeInBytes);
-                            vkUnmapMemory(GraphicsDevice.NativeDevice, NativeMemory);
+                            GraphicsDevice.DelayedUnmaps.Enqueue(NativeMemory);
                         }
                         else
                         {

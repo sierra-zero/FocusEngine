@@ -13,6 +13,11 @@ namespace Xenko.Graphics
         /// <summary>
         /// Creates a device that supports the debug layer.
         /// </summary>
+        DebugAndBreak = unchecked((int)4),
+
+        /// <summary>
+        /// Creates a device that supports the debug layer.
+        /// </summary>
         Debug = unchecked((int)2),
 
         /// <summary>
