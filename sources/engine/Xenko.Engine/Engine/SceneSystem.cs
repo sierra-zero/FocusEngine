@@ -20,19 +20,7 @@ namespace Xenko.Engine
     /// </summary>
     public class SceneSystem : GameSystemBase
     {
-        public enum AUTO_DISABLE_PARTICLES
-        {
-            ALWAYS_ENABLE_PARTICLES = 0,
-            CHECK_ON_STARTUP = 1,
-            ALWAYS_DISABLE_PARTICLES = 2
-        }
-
         private static readonly Logger Log = GlobalLogger.GetLogger("SceneSystem");
-
-        /// <summary>
-        /// Do we need to disable particles?
-        /// </summary>
-        public static AUTO_DISABLE_PARTICLES LinuxNonNVIDIAMode = AUTO_DISABLE_PARTICLES.CHECK_ON_STARTUP;
 
         private RenderContext renderContext;
         private RenderDrawContext renderDrawContext;
@@ -172,11 +160,6 @@ namespace Xenko.Engine
             // Create the drawing context
             renderContext = RenderContext.GetShared(Services);
             renderDrawContext = new RenderDrawContext(Services, renderContext, graphicsContext);
-
-            // do we need to disable particles, which break on non-nivida linux builds?
-            if (LinuxNonNVIDIAMode == AUTO_DISABLE_PARTICLES.CHECK_ON_STARTUP)
-                LinuxNonNVIDIAMode = RuntimeInformation.IsOSPlatform(OSPlatform.Linux) && renderContext.GraphicsDevice.RendererName.ToLower().Contains("nvidia") == false ?
-                                     AUTO_DISABLE_PARTICLES.ALWAYS_DISABLE_PARTICLES : AUTO_DISABLE_PARTICLES.ALWAYS_ENABLE_PARTICLES;
         }
 
         protected override void Destroy()

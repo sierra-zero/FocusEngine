@@ -22,12 +22,5 @@ namespace Xenko.Particles
         [DataMemberRange(0, 5, 0.01, 1, 3)]
         [DefaultValue(0f)]
         public float WarmupTime { get; set; } = 0f;
-
-        /// <summary>
-        /// There is a crashing bug on Linux, with mesa drivers, with Vulkan when drawing particles.
-        /// ParticleEmitterRenderFeature does some memory PerView voodoo to set matricies, and Linux MESA explodes with memory access violations.
-        /// Setting this to true is a workaround to allow a game to otherwise run, but obviously will not render particles.
-        /// </summary>
-        public static bool DisableAllDrawing = false;
     }
 }
