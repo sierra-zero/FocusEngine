@@ -38,6 +38,11 @@ namespace Xenko.VirtualReality
         public static TouchControllerButton UIActivationButton = TouchControllerButton.Trigger;
 
         /// <summary>
+        /// Which VR button to activate UI like you were right clicking a mouse? Defaults to Grip.
+        /// </summary>
+        public static TouchControllerButton UIActivationButton2 = TouchControllerButton.Grip;
+
+        /// <summary>
         /// Shortcut to getting VR hands
         /// </summary>
         /// <param name="hand">Which hand?</param>
@@ -111,30 +116,17 @@ namespace Xenko.VirtualReality
                             Device = new DummyDevice(Services);
                             break;
                         }
-                        /*case VRApi.Oculus:
-                        {
-#if XENKO_GRAPHICS_API_DIRECT3D11
-                            Device = new OculusOvrHmd();
-                                
+                        case VRApi.OpenXR:
+#if XENKO_GRAPHICS_API_VULKAN || XENKO_GRAPHICS_API_DIRECT3D11
+                            Device = new OpenXRHmd(Game);
 #endif
                             break;
-                        }*/
                         case VRApi.OpenVR:
                         {
 #if XENKO_GRAPHICS_API_VULKAN || XENKO_GRAPHICS_API_DIRECT3D11
                             Device = new OpenVRHmd(Game);
 #endif
                             break;
-                        
-/*                        case VRApi.WindowsMixedReality:
-                        {
-#if XENKO_GRAPHICS_API_DIRECT3D11 && XENKO_PLATFORM_UWP
-                            if (Windows.Graphics.Holographic.HolographicSpace.IsAvailable && GraphicsDevice.Presenter is WindowsMixedRealityGraphicsPresenter)
-                            {
-                                Device = new WindowsMixedRealityHmd();
-                            }
-#endif
-                            break;*/
                         }
                         //case VRApi.Fove:
                         //{

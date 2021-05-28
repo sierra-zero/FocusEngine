@@ -1,5 +1,6 @@
 // Copyright (c) Xenko contributors (https://xenko.com) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
+using Xenko.Core;
 using Xenko.Core.Mathematics;
 using Xenko.Engine;
 using Xenko.Rendering.Sprites;
@@ -7,6 +8,18 @@ using Xenko.UI;
 
 namespace Xenko.Rendering.UI
 {
+    public enum UIElementSampler
+    {
+        [Display("Point (Nearest)")]
+        PointClamp,
+
+        [Display("Linear")]
+        LinearClamp,
+
+        [Display("Anisotropic")]
+        AnisotropicClamp,
+    }
+
     public class RenderUIElement : RenderObject
     {
         public RenderUIElement()
@@ -27,6 +40,7 @@ namespace Xenko.Rendering.UI
         public bool SnapText => Component.SnapText;
         public bool IsFixedSize => Component.IsFixedSize;
         public RenderSprite.SpriteDepthMode depthMode => Component.DepthMode;
+        public UIElementSampler Sampler => Component.Sampler;
 
         /// <summary>
         /// Last registered position of teh mouse

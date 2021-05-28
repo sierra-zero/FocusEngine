@@ -192,7 +192,14 @@ namespace Xenko.Games
         /// Gets or sets the device creation flags that will be used to create the <see cref="GraphicsDevice"/>
         /// </summary>
         /// <value>The device creation flags.</value>
-        public DeviceCreationFlags DeviceCreationFlags { get; set; }
+        public DeviceCreationFlags DeviceCreationFlags
+        {
+            get => GraphicsAdapterFactory.adapterFlags;
+            set
+            {
+                GraphicsAdapterFactory.adapterFlags = value;
+            }
+        }
 
         /// <summary>
         /// If populated the engine will try to initialize the device with the same unique id
@@ -679,18 +686,7 @@ namespace Xenko.Games
 
             var devices = graphicsDeviceFactory.FindBestDevices(preferredParameters);
             if (devices.Count == 0)
-            {
-                // Nothing was found; first, let's check if graphics profile was actually supported
-                // Note: we don't do this preemptively because in some cases it seems to take lot of time (happened on a test machine, several seconds freeze on ID3D11Device.Release())
-                GraphicsProfile availableGraphicsProfile;
-                if (!IsPreferredProfileAvailable(preferredParameters.PreferredGraphicsProfile, out availableGraphicsProfile))
-                {
-                    throw new InvalidOperationException($"Graphics profiles [{string.Join(", ", preferredParameters.PreferredGraphicsProfile)}] are not supported by the device. The highest available profile is [{availableGraphicsProfile}].");
-                }
-
-                // Otherwise, there was just no screen mode
                 throw new InvalidOperationException("No screen modes found");
-            }
 
             RankDevices(devices);
 
@@ -810,31 +806,6 @@ namespace Xenko.Games
 
                         return 0;
                     });
-        }
-
-        protected virtual bool IsPreferredProfileAvailable(GraphicsProfile[] preferredProfiles, out GraphicsProfile availableProfile)
-        {
-            availableProfile = GraphicsProfile.Level_9_1;
-
-            var graphicsProfiles = Enum.GetValues(typeof(GraphicsProfile));
-
-            foreach (var graphicsAdapter in GraphicsAdapterFactory.Adapters)
-            {
-                foreach (var graphicsProfileValue in graphicsProfiles)
-                {
-                    var graphicsProfile = (GraphicsProfile)graphicsProfileValue;
-                    if (graphicsProfile > availableProfile && graphicsAdapter.IsProfileSupported(graphicsProfile))
-                        availableProfile = graphicsProfile;
-                }
-            }
-
-            foreach (var preferredProfile in preferredProfiles)
-            {
-                if (availableProfile >= preferredProfile)
-                    return true;
-            }
-
-            return false;
         }
 
         private int CalculateRankForFormat(PixelFormat format)

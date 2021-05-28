@@ -1,4 +1,4 @@
-﻿// Copyright (c) Xenko contributors (https://xenko.com) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) Xenko contributors (https://xenko.com) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
@@ -15,7 +15,7 @@ namespace Xenko.Input
     public class PointerDeviceState
     {
         public readonly List<InputEvent> PointerInputEvents = new List<InputEvent>();
-        public readonly List<PointerData> PointerDatas = new List<PointerData>();
+        public readonly PointerData pointerData = new PointerData();
 
         private readonly HashSet<PointerPoint> pressedPointers = new HashSet<PointerPoint>();
         private readonly HashSet<PointerPoint> releasedPointers = new HashSet<PointerPoint>();
@@ -90,55 +90,39 @@ namespace Xenko.Input
         /// <param name="evt"></param>
         public void UpdatePointerState(PointerEvent evt, bool updateDelta = true)
         {
-            var data = GetPointerData(evt.PointerId);
-
             if (updateDelta)
             {
                 // Update delta based on change in position
-                evt.DeltaPosition = data.Delta = evt.Position - data.Position;
+                evt.DeltaPosition = pointerData.Delta = evt.Position - pointerData.Position;
             }
             else
             {
-                data.Delta = evt.DeltaPosition;
+                pointerData.Delta = evt.DeltaPosition;
             }
 
             // Update position
-            data.Position = evt.Position;
+            pointerData.Position = evt.Position;
 
             if (evt.EventType == PointerEventType.Pressed)
             {
                 // Start pressed events with time 0
-                data.Clock.Restart();
-                data.IsDown = true;
-                pressedPointers.Add(data);
-                downPointers.Add(data);
+                pointerData.Clock.Restart();
+                pointerData.IsDown = true;
+                pressedPointers.Add(pointerData);
+                downPointers.Add(pointerData);
             }
             else if (evt.EventType == PointerEventType.Released || evt.EventType == PointerEventType.Canceled)
             {
-                releasedPointers.Add(data);
-                downPointers.Remove(data);
-                data.IsDown = false;
+                releasedPointers.Add(pointerData);
+                downPointers.Remove(pointerData);
+                pointerData.IsDown = false;
             }
 
-            evt.IsDown = data.IsDown;
-            evt.DeltaTime = data.Clock.Elapsed;
+            evt.IsDown = pointerData.IsDown;
+            evt.DeltaTime = pointerData.Clock.Elapsed;
 
             // Reset pointer clock
-            data.Clock.Restart();
-        }
-
-        /// <summary>
-        /// Retrueves a pointer data structure unqiue to the given pointer ID
-        /// </summary>
-        /// <param name="pointerId"></param>
-        /// <returns></returns>
-        public PointerData GetPointerData(int pointerId)
-        {
-            while (PointerDatas.Count <= pointerId)
-            {
-                PointerDatas.Add(new PointerData { Pointer = SourceDevice });
-            }
-            return PointerDatas[pointerId];
+            pointerData.Clock.Restart();
         }
 
         /// <summary>
@@ -147,11 +131,7 @@ namespace Xenko.Input
         private void Reset()
         {
             // Reset delta for all pointers before processing newly received events
-            foreach (var pointerData in PointerDatas)
-            {
-                pointerData.Delta = Vector2.Zero;
-            }
-
+            pointerData.Delta = Vector2.Zero;
             pressedPointers.Clear();
             releasedPointers.Clear();
         }

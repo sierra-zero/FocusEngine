@@ -104,7 +104,7 @@ namespace Xenko.Graphics.SDL
 
         internal static void GenerateSwapchainError(string err)
         {
-            string error = "There was an error rendering to the screen. Try these things to fix it:\n\n1) Turn off 'fix apps that are blurry' in Windows 10\n2) Disable display scaling (use 100% display scale)\n3) Use a lower resolution\n4) Use a default DPI setting\n\nDrivers, monitor configurations or invalid resolution settings may also be to blame.\nResolution settings have been set to default for the next run.";
+            string error = "There was an error rendering to the screen. Try these things to fix it:\n\n1) Update your video drivers to latest\n2) Turn off 'fix apps that are blurry' in Windows 10\n3) Disable display scaling (use 100% display scale)\n4) Use a lower resolution or windowed-mode\n\nMonitor configurations or invalid resolution settings may also be to blame.\nResolution settings have been set to default for the next run.";
             if (err != null) error += "\n\nDetails: " + err;
             try
             {

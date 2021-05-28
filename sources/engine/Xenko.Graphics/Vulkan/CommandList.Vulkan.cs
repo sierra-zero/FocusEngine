@@ -46,19 +46,9 @@ namespace Xenko.Graphics
             Recreate();
         }
 
-        private static List<CommandBufferPool> UsedPools = new List<CommandBufferPool>();
-
-        public static void ResetAllPools() {
-            foreach(CommandBufferPool cbp in UsedPools) {
-                cbp.ResetAll();
-            }
-            UsedPools.Clear();
-        }
-
         protected void Recreate()
         {
             CommandBufferPool = new CommandBufferPool(GraphicsDevice);
-            UsedPools.Add(CommandBufferPool);
 
             descriptorPool = GraphicsDevice.DescriptorPools.GetObject();
             allocatedTypeCounts = new uint[DescriptorSetLayout.DescriptorTypeCount];
@@ -242,7 +232,7 @@ namespace Xenko.Graphics
                 {
                     // Use manual scissor
                     var scissor = scissors[0];
-                    var nativeScissor = new Vortice.Mathematics.Rectangle(scissor.Left, scissor.Top, scissor.Width, scissor.Height);
+                    var nativeScissor = new Vortice.Vulkan.VkRect2D(scissor.Left, scissor.Top, scissor.Width, scissor.Height);
                     vkCmdSetScissor(currentCommandList.NativeCommandBuffer, 0, 1, &nativeScissor);
                 }
             }
@@ -250,7 +240,7 @@ namespace Xenko.Graphics
             {
                 // Use viewport
                 // Always update, because either scissor or viewport was dirty and we use viewport size
-                var scissor = new Vortice.Mathematics.Rectangle((int)viewportCopy.X, (int)viewportCopy.Y, (int)viewportCopy.Width, (int)viewportCopy.Height);
+                var scissor = new Vortice.Vulkan.VkRect2D((int)viewportCopy.X, (int)viewportCopy.Y, (int)viewportCopy.Width, (int)viewportCopy.Height);
                 vkCmdSetScissor(currentCommandList.NativeCommandBuffer, 0, 1, &scissor);
             }
 
@@ -690,6 +680,7 @@ namespace Xenko.Graphics
         /// <param name="name">The name.</param>
         public unsafe void BeginProfile(Color4 profileColor, string name)
         {
+#if DEBUG
             if (GraphicsDevice.IsProfilingSupported)
             {
                 var bytes = System.Text.Encoding.ASCII.GetBytes(name);
@@ -706,6 +697,7 @@ namespace Xenko.Graphics
                     GraphicsAdapterFactory.GetInstance(GraphicsDevice.IsDebugMode).BeginDebugMarker(currentCommandList.NativeCommandBuffer, &debugMarkerInfo);
                 }
             }
+#endif
         }
 
         /// <summary>
@@ -713,10 +705,12 @@ namespace Xenko.Graphics
         /// </summary>
         public void EndProfile()
         {
+#if DEBUG
             if (GraphicsDevice.IsProfilingSupported)
             {
                 GraphicsAdapterFactory.GetInstance(GraphicsDevice.IsDebugMode).EndDebugMarker(currentCommandList.NativeCommandBuffer);
             }
+#endif
         }
         /// <summary>
         /// Submit a timestamp query.
@@ -924,7 +918,7 @@ namespace Xenko.Graphics
                         var copy = new VkBufferImageCopy
                         {
                             imageSubresource = new VkImageSubresourceLayers(sourceParent.NativeImageAspect, (uint)sourceTexture.MipLevel, (uint)sourceTexture.ArraySlice, (uint)sourceTexture.ArraySize),
-                            imageExtent = new Vortice.Mathematics.Size3(destinationTexture.Width, destinationTexture.Height, destinationTexture.Depth)
+                            imageExtent = new Vortice.Vulkan.VkExtent3D(destinationTexture.Width, destinationTexture.Height, destinationTexture.Depth)
                         };
                         vkCmdCopyImageToBuffer(currentCommandList.NativeCommandBuffer, sourceParent.NativeImage, VkImageLayout.TransferSrcOptimal, destinationParent.NativeBuffer, 1, &copy);
                     }
@@ -943,7 +937,7 @@ namespace Xenko.Graphics
                         var copy = new VkBufferImageCopy
                         {
                             imageSubresource = destinationSubresource,
-                            imageExtent = new Vortice.Mathematics.Size3(destinationTexture.Width, destinationTexture.Height, destinationTexture.Depth)
+                            imageExtent = new Vortice.Vulkan.VkExtent3D(destinationTexture.Width, destinationTexture.Height, destinationTexture.Depth)
                         };
                         vkCmdCopyBufferToImage(currentCommandList.NativeCommandBuffer, sourceParent.NativeBuffer, destinationParent.NativeImage, VkImageLayout.TransferDstOptimal, 1, &copy);
                     }
@@ -953,7 +947,7 @@ namespace Xenko.Graphics
                         {
                             srcSubresource = new VkImageSubresourceLayers(sourceParent.NativeImageAspect, (uint)sourceTexture.MipLevel, (uint)sourceTexture.ArraySlice, (uint)sourceTexture.ArraySize),
                             dstSubresource = destinationSubresource,
-                            extent = new Vortice.Mathematics.Size3(sourceTexture.ViewWidth, sourceTexture.ViewHeight, sourceTexture.ViewDepth),
+                            extent = new Vortice.Vulkan.VkExtent3D(sourceTexture.ViewWidth, sourceTexture.ViewHeight, sourceTexture.ViewDepth),
                         };
                         vkCmdCopyImage(currentCommandList.NativeCommandBuffer, sourceParent.NativeImage, VkImageLayout.TransferSrcOptimal, destinationParent.NativeImage, VkImageLayout.TransferDstOptimal, 1, &copy);
                     }
@@ -1115,8 +1109,8 @@ namespace Xenko.Graphics
                             bufferOffset = (ulong)sourceTexture.ComputeBufferOffset(sourceSubresource, 0),
                             bufferImageHeight = (uint)sourceTexture.Height,
                             bufferRowLength = (uint)sourceTexture.Width,
-                            imageOffset = new Vortice.Mathematics.Point3(dstX, dstY, dstZ),
-                            imageExtent = new Vortice.Mathematics.Size3(region.Right - region.Left, region.Bottom - region.Top, region.Back - region.Front),
+                            imageOffset = new Vortice.Vulkan.VkOffset3D(dstX, dstY, dstZ),
+                            imageExtent = new Vortice.Vulkan.VkExtent3D(region.Right - region.Left, region.Bottom - region.Top, region.Back - region.Front),
                         };
                         vkCmdCopyBufferToImage(currentCommandList.NativeCommandBuffer, sourceParent.NativeBuffer, destinationParent.NativeImage, VkImageLayout.TransferDstOptimal, 1, &copy);
                     }
@@ -1126,8 +1120,8 @@ namespace Xenko.Graphics
                         {
                             srcSubresource = new VkImageSubresourceLayers(sourceParent.NativeImageAspect, (uint)sourceTexture.MipLevel, (uint)sourceTexture.ArraySlice, (uint)sourceTexture.ArraySize),
                             dstSubresource = destinationSubresource,
-                            dstOffset = new Vortice.Mathematics.Point3(dstX, dstY, dstZ),
-                            extent = new Vortice.Mathematics.Size3((region.Right - region.Left), (region.Bottom - region.Top), (region.Back - region.Front)),
+                            dstOffset = new Vortice.Vulkan.VkOffset3D(dstX, dstY, dstZ),
+                            extent = new Vortice.Vulkan.VkExtent3D((region.Right - region.Left), (region.Bottom - region.Top), (region.Back - region.Front)),
                         };
                         vkCmdCopyImage(currentCommandList.NativeCommandBuffer, sourceParent.NativeImage, VkImageLayout.TransferSrcOptimal, destinationParent.NativeImage, VkImageLayout.TransferDstOptimal, 1, &copy);
                     }
@@ -1251,8 +1245,8 @@ namespace Xenko.Graphics
                     imageSubresource = new VkImageSubresourceLayers { aspectMask = VkImageAspectFlags.Color, baseArrayLayer = (uint)arraySlice, layerCount = 1, mipLevel = (uint)mipSlice },
                     bufferRowLength = 0, //(uint)databox.RowPitch / ...,
                     bufferImageHeight = 0, //(uint)databox.SlicePitch / ...,
-                    imageOffset = new Vortice.Mathematics.Point3(region.Left, region.Top, region.Front),
-                    imageExtent = new Vortice.Mathematics.Size3(region.Right - region.Left, region.Bottom - region.Top, region.Back - region.Front),
+                    imageOffset = new Vortice.Vulkan.VkOffset3D(region.Left, region.Top, region.Front),
+                    imageExtent = new Vortice.Vulkan.VkExtent3D(region.Right - region.Left, region.Bottom - region.Top, region.Back - region.Front),
                 };
                 vkCmdCopyBufferToImage(currentCommandList.NativeCommandBuffer, uploadResource, texture.NativeImage, VkImageLayout.TransferDstOptimal, 1, &bufferCopy);
 
@@ -1375,13 +1369,13 @@ namespace Xenko.Graphics
 
             void* mappedMemory;
             vkMapMemory(GraphicsDevice.NativeDevice, resource.NativeMemory, (ulong)offsetInBytes, (ulong)lengthInBytes, VkMemoryMapFlags.None, &mappedMemory);
+            GraphicsDevice.DelayedUnmaps.Enqueue(resource.NativeMemory);
             return new MappedResource(resource, subResourceIndex, new DataBox((IntPtr)mappedMemory, rowPitch, 0), offsetInBytes, lengthInBytes);
         }
 
         // TODO GRAPHICS REFACTOR what should we do with this?
         public void UnmapSubresource(MappedResource unmapped)
         {
-            vkUnmapMemory(GraphicsDevice.NativeDevice, unmapped.Resource.NativeMemory);
         }
 
         /// <inheritdoc/>
@@ -1480,7 +1474,7 @@ namespace Xenko.Graphics
                     sType = VkStructureType.RenderPassBeginInfo,
                     renderPass = pipelineRenderPass,
                     framebuffer = activeFramebuffer,
-                    renderArea = new Vortice.Mathematics.Rectangle(0, 0, renderTarget.ViewWidth, renderTarget.ViewHeight),
+                    renderArea = new Vortice.Vulkan.VkRect2D(0, 0, renderTarget.ViewWidth, renderTarget.ViewHeight),
                 };
                 vkCmdBeginRenderPass(currentCommandList.NativeCommandBuffer, &renderPassBegin, VkSubpassContents.Inline);
 

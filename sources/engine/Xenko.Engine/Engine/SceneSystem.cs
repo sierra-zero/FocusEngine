@@ -22,11 +22,6 @@ namespace Xenko.Engine
     {
         private static readonly Logger Log = GlobalLogger.GetLogger("SceneSystem");
 
-        /// <summary>
-        /// Do we need to disable particles? If this is detected, yes. Can be overwritten
-        /// </summary>
-        public static bool LinuxNonNVIDIAMode = false;
-
         private RenderContext renderContext;
         private RenderDrawContext renderDrawContext;
 
@@ -165,9 +160,6 @@ namespace Xenko.Engine
             // Create the drawing context
             renderContext = RenderContext.GetShared(Services);
             renderDrawContext = new RenderDrawContext(Services, renderContext, graphicsContext);
-
-            // do we need to disable particles, which break on non-nivida linux builds?
-            LinuxNonNVIDIAMode = RuntimeInformation.IsOSPlatform(OSPlatform.Linux) && renderContext.GraphicsDevice.RendererName.ToLower().Contains("nvidia") == false;
         }
 
         protected override void Destroy()

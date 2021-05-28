@@ -22,6 +22,9 @@ namespace Xenko.Graphics
         internal readonly ConcurrentPool<List<VkDescriptorPool>> DescriptorPoolLists = new ConcurrentPool<List<VkDescriptorPool>>(() => new List<VkDescriptorPool>());
         internal readonly ConcurrentPool<List<Texture>> StagingResourceLists = new ConcurrentPool<List<Texture>>(() => new List<Texture>());
 
+        internal static HashSet<VkDeviceMemory> SkipUnmap = new HashSet<VkDeviceMemory>();
+        internal static ConcurrentQueue<VkDeviceMemory> DelayedUnmaps = new ConcurrentQueue<VkDeviceMemory>();
+
         private const GraphicsPlatform GraphicPlatform = GraphicsPlatform.Vulkan;
         internal GraphicsProfile RequestedProfile;
 
@@ -143,6 +146,15 @@ namespace Xenko.Graphics
         public void End()
         {
             CleanupFences();
+            
+            while(DelayedUnmaps.TryDequeue(out var mem)) {
+                if (SkipUnmap.Contains(mem) == false) {
+                    vkUnmapMemory(NativeDevice, mem);
+                    SkipUnmap.Add(mem);
+                }
+            }
+
+            SkipUnmap.Clear();
         }
 
         /// <summary>
@@ -485,15 +497,6 @@ namespace Xenko.Graphics
 
         internal unsafe long ExecuteCommandListInternal(CompiledCommandList commandList)
         {
-            //if (nativeUploadBuffer != VkBuffer.Null)
-            //{
-            //    NativeDevice.UnmapMemory(nativeUploadBufferMemory);
-            //    TemporaryResources.Enqueue(new BufferInfo(NextFenceValue, nativeUploadBuffer, nativeUploadBufferMemory));
-
-            //    nativeUploadBuffer = VkBuffer.Null;
-            //    nativeUploadBufferMemory = VkDeviceMemory.Null;
-            //}
-
             var fenceValue = NextFenceValue++;
 
             // Create new fence
@@ -625,7 +628,7 @@ namespace Xenko.Graphics
                     {
                         var fenceCopy = nativeFences[i].Value;
 
-                        vkWaitForFences(NativeDevice, 1, &fenceCopy, true, ulong.MaxValue);
+                        vkWaitForFences(NativeDevice, 1, &fenceCopy, 1, ulong.MaxValue);
 
                         if (fenceValue > lastCompletedFence)
                             lastCompletedFence = fenceValue;
@@ -708,7 +711,7 @@ namespace Xenko.Graphics
                 {
                     firstAllocator = liveObjects.Peek();
 
-                    if (firstAllocator.Value.Key <= GraphicsDevice.lastCompletedFence)
+                    if (firstAllocator.Value.Key < GraphicsDevice.lastCompletedFence)
                     {
                         liveObjects.Dequeue();
                     }

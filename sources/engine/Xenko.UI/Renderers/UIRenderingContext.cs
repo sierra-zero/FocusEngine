@@ -5,6 +5,7 @@ using System;
 using Xenko.Core.Mathematics;
 using Xenko.Games;
 using Xenko.Graphics;
+using Xenko.Rendering.UI;
 
 namespace Xenko.UI.Renderers
 {
@@ -25,6 +26,11 @@ namespace Xenko.UI.Renderers
         public GameTime Time { get; internal set; }
 
         /// <summary>
+        /// Set to use other values easily
+        /// </summary>
+        public RenderUIElement RenderObject;
+
+        /// <summary>
         /// The current reference value for the stencil test.
         /// </summary>
         public int StencilTestReferenceValue { get; set; }
@@ -34,29 +40,14 @@ namespace Xenko.UI.Renderers
         /// </summary>
         public int DepthBias { get; set; }
 
-        /// <summary>
-        /// Gets or sets the value indicating if UI text should be snapped.
-        /// </summary>
-        public bool ShouldSnapText { get; set; }
-
-        /// <summary>
-        /// Gets the  virtual resolution of the UI.
-        /// </summary>
-        public Vector3 Resolution;
+        public bool ShouldSnapText => RenderObject.SnapText;
+        public Vector3 Resolution => RenderObject.Resolution;
+        public Matrix WorldMatrix3D => RenderObject.WorldMatrix3D;
+        public bool IsFullscreen => RenderObject.IsFullScreen;
 
         /// <summary>
         /// Gets the view projection matrix of the UI.
         /// </summary>
         public Matrix ViewProjectionMatrix;
-
-        /// <summary>
-        /// World Matrix of the UI
-        /// </summary>
-        public Matrix WorldMatrix3D;
-
-        /// <summary>
-        /// Is this UI being drawn fullscreen, or in the 3D scene?
-        /// </summary>
-        public bool IsFullscreen;
     }
 }

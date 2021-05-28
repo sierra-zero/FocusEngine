@@ -69,8 +69,6 @@ namespace Xenko.Physics.Bepu
             ApplyImpulse,
             ApplyImpulseOffset,
             ApplyTorqueImpulse,
-            Position,
-            Rotation,
             AngularVelocity,
             LinearVelocity
         }
@@ -139,35 +137,6 @@ namespace Xenko.Physics.Bepu
 
                     // update changed velocity
                     rb.bodyDescription.Velocity.Angular = rb.InternalBody.Velocity.Angular;
-                }
-            };
-
-            CachedDelegates[(int)RB_ACTION.Position] = (rb) =>
-            {
-                ref RigidPose p = ref rb.InternalBody.Pose;
-
-                if (p.Position != rb.bodyDescription.Pose.Position)
-                {
-                    p.Position.X = rb.bodyDescription.Pose.Position.X;
-                    p.Position.Y = rb.bodyDescription.Pose.Position.Y;
-                    p.Position.Z = rb.bodyDescription.Pose.Position.Z;
-
-                    if (!rb.InternalBody.Awake) rb.InternalBody.UpdateBounds();
-                }
-            };
-
-            CachedDelegates[(int)RB_ACTION.Rotation] = (rb) =>
-            {
-                ref RigidPose p = ref rb.InternalBody.Pose;
-
-                if (p.Orientation != rb.bodyDescription.Pose.Orientation)
-                {
-                    p.Orientation.X = rb.bodyDescription.Pose.Orientation.X;
-                    p.Orientation.Y = rb.bodyDescription.Pose.Orientation.Y;
-                    p.Orientation.Z = rb.bodyDescription.Pose.Orientation.Z;
-                    p.Orientation.W = rb.bodyDescription.Pose.Orientation.W;
-
-                    if (!rb.InternalBody.Awake) rb.InternalBody.UpdateBounds();
                 }
             };
 
@@ -700,6 +669,8 @@ namespace Xenko.Physics.Bepu
             }
         }
 
+        private bool newPos = false, newRotation = false;
+
         [DataMemberIgnore]
         public override Vector3 Position
         {
@@ -709,16 +680,10 @@ namespace Xenko.Physics.Bepu
             }
             set
             {
-                if (bodyDescription.Pose.Position == BepuHelpers.ToBepu(value)) return;
-
                 bodyDescription.Pose.Position.X = value.X;
                 bodyDescription.Pose.Position.Y = value.Y;
                 bodyDescription.Pose.Position.Z = value.Z;
-
-                if (AddedToScene)
-                {
-                    SafeRun(CachedDelegates[(int)RB_ACTION.Position]);
-                }
+                newPos = true;
             }
         }
 
@@ -731,20 +696,11 @@ namespace Xenko.Physics.Bepu
             }
             set
             {
-                if (bodyDescription.Pose.Orientation.X == value.X &&
-                    bodyDescription.Pose.Orientation.Y == value.Y &&
-                    bodyDescription.Pose.Orientation.Z == value.Z &&
-                    bodyDescription.Pose.Orientation.W == value.W) return;
-
                 bodyDescription.Pose.Orientation.X = value.X;
                 bodyDescription.Pose.Orientation.Y = value.Y;
                 bodyDescription.Pose.Orientation.Z = value.Z;
                 bodyDescription.Pose.Orientation.W = value.W;
-
-                if (AddedToScene)
-                {
-                    SafeRun(CachedDelegates[(int)RB_ACTION.Rotation]);
-                }
+                newRotation = true;
             }
         }
 
@@ -835,8 +791,14 @@ namespace Xenko.Physics.Bepu
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void UpdateCachedPoseAndVelocity()
         {
-            bodyDescription.Pose = InternalBody.Pose;
             wasAwake = InternalBody.Awake;
+            if (newPos || newRotation)
+            {
+                if (newPos) { newPos = false; InternalBody.Pose.Position = bodyDescription.Pose.Position; }
+                if (newRotation) { newRotation = false; InternalBody.Pose.Orientation = bodyDescription.Pose.Orientation; }
+                if (!wasAwake) InternalBody.UpdateBounds();
+            }
+            bodyDescription.Pose = InternalBody.Pose;
             BodyVelocity bv = InternalBody.Velocity;
             VelocityLinearChange = BepuHelpers.ToXenko(bv.Linear - bodyDescription.Velocity.Linear);
             VelocityAngularChange = BepuHelpers.ToXenko(bv.Angular - bodyDescription.Velocity.Angular);

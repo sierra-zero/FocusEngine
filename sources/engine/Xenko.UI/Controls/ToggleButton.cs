@@ -233,6 +233,9 @@ namespace Xenko.UI.Controls
 
         protected override void OnClick(RoutedEventArgs args)
         {
+            // only accept left clicks
+            if (args is TouchEventArgs tea && tea.ButtonId != 0) return;
+
             base.OnClick(args);
 
             GoToNextState();

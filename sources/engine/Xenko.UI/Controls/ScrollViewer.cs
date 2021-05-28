@@ -900,7 +900,8 @@ namespace Xenko.UI.Controls
                 Action = args.Action,
                 ScreenPosition = args.ScreenPosition,
                 ScreenTranslation = args.ScreenTranslation,
-                Timestamp = args.Timestamp
+                Timestamp = args.Timestamp,
+                ButtonId = args.ButtonId
             };
 
             foreach (var child in parent.VisualChildrenCollection)

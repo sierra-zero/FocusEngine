@@ -233,18 +233,14 @@ namespace Xenko.Rendering.UI
                 {
                     var uiElementState = uiElementStates[j];
 
-                    var renderObject = uiElementState.RenderObject;
-                    var rootElement = renderObject.Page?.RootElement;
+                    renderingContext.RenderObject = uiElementState.RenderObject;
+                    var rootElement = renderingContext.RenderObject.Page?.RootElement;
                     if (rootElement == null) continue;
 
                     // update the rendering context values specific to this element
-                    renderingContext.Resolution = renderObject.Resolution;
                     renderingContext.ViewProjectionMatrix = uiElementState.WorldViewProjectionMatrix;
-                    renderingContext.ShouldSnapText = renderObject.SnapText;
-                    renderingContext.IsFullscreen = renderObject.IsFullScreen;
-                    renderingContext.WorldMatrix3D = renderObject.WorldMatrix3D;
                     
-                    switch (renderObject.depthMode)
+                    switch (renderingContext.RenderObject.depthMode)
                     {
                         case Sprites.RenderSprite.SpriteDepthMode.Ignore:
                             stencilState.DepthBufferWriteEnable = false;
@@ -265,12 +261,26 @@ namespace Xenko.Rendering.UI
                             break;
                     }
 
+                    SamplerState samplerState;
+                    switch (renderingContext.RenderObject.Sampler)
+                    {
+                        default:
+                            samplerState = context.GraphicsDevice.SamplerStates.LinearClamp;
+                            break;
+                        case UIElementSampler.PointClamp:
+                            samplerState = context.GraphicsDevice.SamplerStates.PointClamp;
+                            break;
+                        case UIElementSampler.AnisotropicClamp:
+                            samplerState = context.GraphicsDevice.SamplerStates.AnisotropicClamp;
+                            break;
+                    }
+
                     // start the image draw session
                     renderingContext.StencilTestReferenceValue = 0;
-                    batch.Begin(context.GraphicsContext, ref uiElementState.WorldViewProjectionMatrix, BlendStates.AlphaBlend, stencilState, renderingContext.StencilTestReferenceValue);
+                    batch.Begin(context.GraphicsContext, ref uiElementState.WorldViewProjectionMatrix, BlendStates.AlphaBlend, samplerState, null, stencilState, renderingContext.StencilTestReferenceValue);
 
                     // Render the UI elements in the final render target
-                    RecursiveDrawWithClipping(context, rootElement, ref uiElementState.WorldViewProjectionMatrix, batch, ref stencilState);
+                    RecursiveDrawWithClipping(context, rootElement, ref uiElementState.WorldViewProjectionMatrix, batch, ref stencilState, samplerState);
 
                     batch.End();
                 }
@@ -301,7 +311,7 @@ namespace Xenko.Rendering.UI
                 batches.Enqueue(batch);
         }
 
-        private void RecursiveDrawWithClipping(RenderDrawContext context, UIElement element, ref Matrix worldViewProj, UIBatch batch, ref DepthStencilStateDescription dstate)
+        private void RecursiveDrawWithClipping(RenderDrawContext context, UIElement element, ref Matrix worldViewProj, UIBatch batch, ref DepthStencilStateDescription dstate, SamplerState samplerState)
         {
             // if the element is not visible, we also remove all its children
             if (!element.IsVisible)
@@ -320,13 +330,13 @@ namespace Xenko.Rendering.UI
                 batch.End();
 
                 // render the clipping region
-                batch.Begin(context.GraphicsContext, ref worldViewProj, BlendStates.ColorDisabled, uiSystem.IncreaseStencilValueState, renderingContext.StencilTestReferenceValue);
+                batch.Begin(context.GraphicsContext, ref worldViewProj, BlendStates.ColorDisabled, samplerState, null, uiSystem.IncreaseStencilValueState, renderingContext.StencilTestReferenceValue);
                 renderer.RenderClipping(element, renderingContext, batch);
                 batch.End();
 
                 // update context and restart the batch
                 renderingContext.StencilTestReferenceValue += 1;
-                batch.Begin(context.GraphicsContext, ref worldViewProj, BlendStates.AlphaBlend, dstate, renderingContext.StencilTestReferenceValue);
+                batch.Begin(context.GraphicsContext, ref worldViewProj, BlendStates.AlphaBlend, samplerState, null, dstate, renderingContext.StencilTestReferenceValue);
             }
 
             // render the design of the element
@@ -334,7 +344,7 @@ namespace Xenko.Rendering.UI
 
             // render the children
             foreach (var child in element.VisualChildrenCollection)
-                RecursiveDrawWithClipping(context, child, ref worldViewProj, batch, ref dstate);
+                RecursiveDrawWithClipping(context, child, ref worldViewProj, batch, ref dstate, samplerState);
 
             // clear the element clipping region from the stencil buffer
             if (element.ClipToBounds)
@@ -345,13 +355,13 @@ namespace Xenko.Rendering.UI
                 renderingContext.DepthBias = element.MaxChildrenDepthBias;
 
                 // render the clipping region
-                batch.Begin(context.GraphicsContext, ref worldViewProj, BlendStates.ColorDisabled, uiSystem.DecreaseStencilValueState, renderingContext.StencilTestReferenceValue);
+                batch.Begin(context.GraphicsContext, ref worldViewProj, BlendStates.ColorDisabled, samplerState, null, uiSystem.DecreaseStencilValueState, renderingContext.StencilTestReferenceValue);
                 renderer.RenderClipping(element, renderingContext, batch);
                 batch.End();
 
                 // update context and restart the batch
                 renderingContext.StencilTestReferenceValue -= 1;
-                batch.Begin(context.GraphicsContext, ref worldViewProj, BlendStates.AlphaBlend, dstate, renderingContext.StencilTestReferenceValue);
+                batch.Begin(context.GraphicsContext, ref worldViewProj, BlendStates.AlphaBlend, samplerState, null, dstate, renderingContext.StencilTestReferenceValue);
             }
         }
 
@@ -390,7 +400,8 @@ namespace Xenko.Rendering.UI
                 // rotate the UI element perpendicular to the camera view vector, if billboard is activated
                 if (renderObject.IsFullScreen)
                 {
-                    worldMatrix = ReallyCloseUI;
+                    Matrix.Scaling(ref renderObject.Component.Entity.Transform.Scale, out Matrix scalar);
+                    worldMatrix = ReallyCloseUI * scalar;
                 }
                 else
                 {

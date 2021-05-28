@@ -5,6 +5,7 @@ namespace Xenko.VirtualReality
     public enum VRApi
     {
         OpenVR = 1,
+        OpenXR = 2,
         Dummy = 100,
     }
 }

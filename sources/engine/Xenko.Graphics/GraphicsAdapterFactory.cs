@@ -14,6 +14,7 @@ namespace Xenko.Graphics
         private static bool isInitialized = false;
         private static GraphicsAdapter[] adapters;
         private static GraphicsAdapter defaultAdapter;
+        internal static DeviceCreationFlags adapterFlags;
 
         /// <summary>
         /// Initializes the GraphicsAdapter. On Desktop and WinRT, this is done statically.
@@ -24,7 +25,7 @@ namespace Xenko.Graphics
             {
                 if (!isInitialized)
                 {
-                    InitializeInternal();
+                    InitializeInternal(adapterFlags == DeviceCreationFlags.Debug || adapterFlags == DeviceCreationFlags.DebugAndBreak);
                     isInitialized = true;
                 }
             }

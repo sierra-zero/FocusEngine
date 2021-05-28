@@ -1,4 +1,4 @@
-﻿// Copyright (c) Xenko contributors (https://xenko.com) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) Xenko contributors (https://xenko.com) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
@@ -117,9 +117,7 @@ namespace Xenko.Input
             buttonEvent.IsDown = true;
             Events.Add(buttonEvent);
 
-            // Simulate tap on primary mouse button
-            if (button == MouseButton.Left)
-                HandlePointerDown();
+            HandlePointerDown((int)button);
         }
 
         public void HandleButtonUp(MouseButton button)
@@ -135,9 +133,7 @@ namespace Xenko.Input
             buttonEvent.IsDown = false;
             Events.Add(buttonEvent);
 
-            // Simulate tap on primary mouse button
-            if (button == MouseButton.Left)
-                HandlePointerUp();
+            HandlePointerUp((int)button);
         }
 
         public void HandleMouseWheel(float wheelDelta)
@@ -150,17 +146,17 @@ namespace Xenko.Input
         /// <summary>
         /// Handles a single pointer down
         /// </summary>
-        public void HandlePointerDown()
+        public void HandlePointerDown(int buttonId)
         {
-            PointerState.PointerInputEvents.Add(new PointerDeviceState.InputEvent { Type = PointerEventType.Pressed, Position = Position, Id = 0 });
+            PointerState.PointerInputEvents.Add(new PointerDeviceState.InputEvent { Type = PointerEventType.Pressed, Position = Position, Id = buttonId });
         }
 
         /// <summary>
         /// Handles a single pointer up
         /// </summary>
-        public void HandlePointerUp()
+        public void HandlePointerUp(int buttonId)
         {
-            PointerState.PointerInputEvents.Add(new PointerDeviceState.InputEvent { Type = PointerEventType.Released, Position = Position, Id = 0 });
+            PointerState.PointerInputEvents.Add(new PointerDeviceState.InputEvent { Type = PointerEventType.Released, Position = Position, Id = buttonId });
         }
 
         /// <summary>

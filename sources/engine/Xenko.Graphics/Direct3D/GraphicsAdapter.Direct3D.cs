@@ -110,38 +110,6 @@ namespace Xenko.Graphics
                 return adapter;
             }
         }
-
-        /// <summary>
-        /// Tests to see if the adapter supports the requested profile.
-        /// </summary>
-        /// <param name="graphicsProfile">The graphics profile.</param>
-        /// <returns>true if the profile is supported</returns>
-        public bool IsProfileSupported(GraphicsProfile graphicsProfile)
-        {
-#if XENKO_GRAPHICS_API_DIRECT3D12
-            return true;
-#else
-            // Did we check fo this or a higher profile, and it was supported?
-            if (maximumSupportedProfile >= graphicsProfile)
-                return true;
-
-            // Did we check for this or a lower profile and it was unsupported?
-            if (minimumUnsupportedProfile <= graphicsProfile)
-                return false;
-
-            // Check and min/max cached values
-            if (SharpDX.Direct3D11.Device.IsSupportedFeatureLevel(this.NativeAdapter, (SharpDX.Direct3D.FeatureLevel)graphicsProfile))
-            {
-                maximumSupportedProfile = graphicsProfile;
-                return true;
-            }
-            else
-            {
-                minimumUnsupportedProfile = graphicsProfile;
-                return false;
-            }
-#endif
-        }
     }
 } 
 #endif

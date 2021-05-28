@@ -181,18 +181,20 @@ namespace Xenko.Rendering
                 // Bind VB
                 if (currentDrawData != drawData)
                 {
-                    if (drawData.IndexBuffer != null)
-                    {
-                        if (drawData.IndexBuffer.Buffer.Ready == false) continue;
-                        commandList.SetIndexBuffer(drawData.IndexBuffer.Buffer, drawData.IndexBuffer.Offset, drawData.IndexBuffer.Is32Bit);
-                    }
+                    // make sure buffers are ready first
+                    if (drawData.IndexBuffer != null && drawData.IndexBuffer.Buffer.Ready == false) continue;
+                    for (int slot = 0; slot < drawData.VertexBuffers.Length; slot++)
+                        if (drawData.VertexBuffers[slot].Buffer.Ready == false) goto skip_loop;
 
+                    // ok, buffers ready, set
                     for (int slot = 0; slot < drawData.VertexBuffers.Length; slot++)
                     {
                         var vertexBuffer = drawData.VertexBuffers[slot];
-                        if (vertexBuffer.Buffer.Ready == false) goto skip_loop;
                         commandList.SetVertexBuffer(slot, vertexBuffer.Buffer, vertexBuffer.Offset, vertexBuffer.Stride);
                     }
+
+                    if (drawData.IndexBuffer != null)
+                        commandList.SetIndexBuffer(drawData.IndexBuffer.Buffer, drawData.IndexBuffer.Offset, drawData.IndexBuffer.Is32Bit);
 
                     // If the mesh's vertex buffers miss any input streams, an additional input binding will have been added to the pipeline state.
                     // We bind an additional empty vertex buffer to that slot handle those streams gracefully.

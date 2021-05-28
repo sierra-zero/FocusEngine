@@ -241,7 +241,7 @@ namespace Xenko.Graphics
                             void* uploadMemory;
                             vkMapMemory(GraphicsDevice.NativeDevice, NativeMemory, 0, (ulong)SizeInBytes, VkMemoryMapFlags.None, &uploadMemory);
                             Utilities.CopyMemory((IntPtr)uploadMemory, dataPointer, SizeInBytes);
-                            vkUnmapMemory(GraphicsDevice.NativeDevice, NativeMemory);
+                            GraphicsDevice.DelayedUnmaps.Enqueue(NativeMemory);
                         }
                         else
                         {
@@ -291,7 +291,7 @@ namespace Xenko.Graphics
                         vkQueueSubmit(GraphicsDevice.NativeCommandQueue, 1, &submitInfo, fence);
                     }
 
-                    vkWaitForFences(GraphicsDevice.NativeDevice, 1, &fence, true, ulong.MaxValue);
+                    vkWaitForFences(GraphicsDevice.NativeDevice, 1, &fence, 1, ulong.MaxValue);
 
                     vkFreeCommandBuffers(GraphicsDevice.NativeDevice, GraphicsDevice.NativeCopyCommandPool, 1, &commandBuffer);
                     vkDestroyFence(GraphicsDevice.NativeDevice, fence, null);

@@ -115,7 +115,7 @@ namespace Xenko.Rendering.UI
             return true;
         }
 
-        private void MakeTouchEvent(UIElement currentTouchedElement, UIElement lastTouchedElement, PointerEventType type,
+        private void MakeTouchEvent(UIElement currentTouchedElement, UIElement lastTouchedElement, PointerEventType type, int ButtonId,
                                     Vector2 screenPos, Vector2 screenTranslation, Vector3 worldPos, Vector3 worldTranslation, GameTime time)
         {
             var touchEvent = new TouchEventArgs
@@ -125,7 +125,8 @@ namespace Xenko.Rendering.UI
                 ScreenPosition = screenPos,
                 ScreenTranslation = screenTranslation,
                 WorldPosition = worldPos,
-                WorldTranslation = worldTranslation
+                WorldTranslation = worldTranslation,
+                ButtonId = ButtonId
             };
 
             switch (type)
@@ -210,7 +211,8 @@ namespace Xenko.Rendering.UI
                 if (pointerEvent.EventType == PointerEventType.Pressed || pointerEvent.EventType == PointerEventType.Released)
                     state.LastIntersectionPoint = intersectionPoint;
 
-                MakeTouchEvent(currentTouchedElement, lastTouchedElement, pointerEvent.EventType, currentTouchPosition, pointerEvent.DeltaPosition, intersectionPoint,
+                MakeTouchEvent(currentTouchedElement, lastTouchedElement, pointerEvent.EventType, pointerEvent.PointerId,
+                               currentTouchPosition, pointerEvent.DeltaPosition, intersectionPoint,
                                intersectionPoint - state.LastIntersectionPoint, gameTime);
 
                 lastTouchPosition = currentTouchPosition;
@@ -236,7 +238,7 @@ namespace Xenko.Rendering.UI
             }
         }
 
-        private void updateUiComponent(ref Ray r, RenderUIElement root, bool nonui)
+        private void TrackUIPointer(ref Ray r, RenderUIElement root, bool nonui)
         {
             if (root.Component.AlwaysTrackPointer == false)
                 return;
@@ -245,15 +247,19 @@ namespace Xenko.Rendering.UI
 
             if (rootElement.Intersects(ref r, out var intersectionPoint, nonui, root.Component.TrackedCanvasScale))
             {
-                Vector2 pos = intersectionPoint.XY();
+                Vector2 pos;
 
                 if (nonui)
                 {
-                    pos = (pos - rootElement.WorldMatrix3D.TranslationVector.XY()) / root.WorldMatrix3D.ScaleVector.XY();
+                    root.WorldMatrix3D.Decompose(out Vector3 scale, out Matrix rotation, out Vector3 translation);
+                    Vector3 pos3d = intersectionPoint - translation;
+                    rotation.Invert();
+                    pos = Vector3.Transform(pos3d, rotation).XY() / scale.XY();
                     pos.Y = root.Resolution.Y * 0.5f - pos.Y;
                 } 
                 else
                 {
+                    pos = intersectionPoint.XY();
                     pos.Y += root.Resolution.Y * 0.5f;
                 }
                 pos.X += root.Resolution.X * 0.5f;
@@ -290,11 +296,8 @@ namespace Xenko.Rendering.UI
                     if (useHand != null)
                     {
                         Ray uiRay = new Ray(useHand.WorldPosition(), useHand.Forward(true));
-
-                        updateUiComponent(ref uiRay, state, true);
-
+                        TrackUIPointer(ref uiRay, state, true);
                         UIElementUnderMouseCursor = GetElementAtWorldPosition(rootElement, ref uiRay, ref worldViewProj, ref intersectionPoint);
-
                         if (UIElementUnderMouseCursor != null)
                         {
                             // wait, are we selecting this element?
@@ -305,18 +308,21 @@ namespace Xenko.Rendering.UI
                                 // adjust intersection point into local UI space from world space
                                 intersectionPoint = (intersectionPoint - UIElementUnderMouseCursor.WorldMatrix3D.TranslationVector) / state.WorldMatrix3D.ScaleVector;
 
+                                // check the first button
                                 if (tc.IsTouchedDown(VirtualReality.VRDeviceSystem.UIActivationButton) || tc.IsPressedDown(VirtualReality.VRDeviceSystem.UIActivationButton))
-                                {
-                                    MakeTouchEvent(UIElementUnderMouseCursor, lastMouseOverElement, PointerEventType.Pressed, Vector2.Zero, Vector2.Zero, intersectionPoint, Vector3.Zero, time);
-                                }
+                                    MakeTouchEvent(UIElementUnderMouseCursor, lastMouseOverElement, PointerEventType.Pressed, 0, Vector2.Zero, Vector2.Zero, intersectionPoint, Vector3.Zero, time);
                                 else if (tc.IsTouchReleased(VirtualReality.VRDeviceSystem.UIActivationButton) || tc.IsPressReleased(VirtualReality.VRDeviceSystem.UIActivationButton))
-                                {
-                                    MakeTouchEvent(UIElementUnderMouseCursor, lastMouseOverElement, PointerEventType.Released, Vector2.Zero, Vector2.Zero, intersectionPoint, Vector3.Zero, time);
-                                }
+                                    MakeTouchEvent(UIElementUnderMouseCursor, lastMouseOverElement, PointerEventType.Released, 0, Vector2.Zero, Vector2.Zero, intersectionPoint, Vector3.Zero, time);
                                 else if (tc.IsTouched(VirtualReality.VRDeviceSystem.UIActivationButton) || tc.IsPressed(VirtualReality.VRDeviceSystem.UIActivationButton))
-                                {
-                                    MakeTouchEvent(UIElementUnderMouseCursor, lastMouseOverElement, PointerEventType.Moved, Vector2.Zero, Vector2.Zero, intersectionPoint, state.LastIntersectionPoint - intersectionPoint, time);
-                                }
+                                    MakeTouchEvent(UIElementUnderMouseCursor, lastMouseOverElement, PointerEventType.Moved, 0, Vector2.Zero, Vector2.Zero, intersectionPoint, state.LastIntersectionPoint - intersectionPoint, time);
+
+                                // check the second button
+                                if (tc.IsTouchedDown(VirtualReality.VRDeviceSystem.UIActivationButton2) || tc.IsPressedDown(VirtualReality.VRDeviceSystem.UIActivationButton2))
+                                    MakeTouchEvent(UIElementUnderMouseCursor, lastMouseOverElement, PointerEventType.Pressed, 2, Vector2.Zero, Vector2.Zero, intersectionPoint, Vector3.Zero, time);
+                                else if (tc.IsTouchReleased(VirtualReality.VRDeviceSystem.UIActivationButton2) || tc.IsPressReleased(VirtualReality.VRDeviceSystem.UIActivationButton2))
+                                    MakeTouchEvent(UIElementUnderMouseCursor, lastMouseOverElement, PointerEventType.Released, 2, Vector2.Zero, Vector2.Zero, intersectionPoint, Vector3.Zero, time);
+                                else if (tc.IsTouched(VirtualReality.VRDeviceSystem.UIActivationButton2) || tc.IsPressed(VirtualReality.VRDeviceSystem.UIActivationButton2))
+                                    MakeTouchEvent(UIElementUnderMouseCursor, lastMouseOverElement, PointerEventType.Moved, 2, Vector2.Zero, Vector2.Zero, intersectionPoint, state.LastIntersectionPoint - intersectionPoint, time);
 
                                 state.LastIntersectionPoint = intersectionPoint;
                             }
@@ -333,16 +339,12 @@ namespace Xenko.Rendering.UI
                 if (mousePosition != state.LastMousePosition)
                 {
                     state.LastMousePosition = mousePosition;
-
                     // check if we touch anything of importance
                     bool hitElement = GetTouchPosition(state.Resolution, ref viewport, ref worldViewProj, mousePosition, out Ray uiRay);
-
                     // update tracked position on canvas, if this is enabled
-                    updateUiComponent(ref uiRay, state, false);
-
+                    TrackUIPointer(ref uiRay, state, false);
                     // bail out early if we didn't touch anything
                     if (!hitElement) return true;
-
                     UIElementUnderMouseCursor = GetElementAtScreenPosition(rootElement, ref uiRay, ref worldViewProj, ref intersectionPoint);
                 }
                 else copyLastUiComponentAverage(state);
@@ -364,7 +366,6 @@ namespace Xenko.Rendering.UI
             {
                 // the element itself
                 UIElementUnderMouseCursor.MouseOverState = MouseOverState.MouseOverElement;
-
                 // its hierarchy
                 parent = UIElementUnderMouseCursor.VisualParent;
                 while (parent != null)
@@ -375,10 +376,8 @@ namespace Xenko.Rendering.UI
                     parent = parent.VisualParent;
                 }
             }
-
             // update cached values
             state.LastMouseOverElement = UIElementUnderMouseCursor;
-
             return !VRcontrollerUsed;
         }
 
