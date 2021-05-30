@@ -5,12 +5,15 @@ using Xenko.Core.Mathematics;
 using Xenko.Games;
 using Xenko.Graphics;
 using Silk.NET.OpenXR;
+using System.Runtime.InteropServices;
+using System.Linq;
 
 namespace Xenko.VirtualReality
 {
     public class OpenXRHmd : VRDevice
     {
         private GameBase baseGame;
+        private XR XRApi;
 
         public OpenXRHmd(GameBase game)
         {
@@ -53,7 +56,7 @@ namespace Xenko.VirtualReality
             throw new NotImplementedException();
         }
 
-        public override void Enable(GraphicsDevice device, GraphicsDeviceManager graphicsDeviceManager, bool requireMirror)
+        public override unsafe void Enable(GraphicsDevice device, GraphicsDeviceManager graphicsDeviceManager, bool requireMirror)
         {            
             // Changing to HANDHELD_DISPLAY or a future form factor may work, but has not been tested.
             FormFactor form_factor = FormFactor.HeadMountedDisplay;
@@ -62,90 +65,72 @@ namespace Xenko.VirtualReality
             ViewConfigurationType view_type = ViewConfigurationType.PrimaryStereo;
 
             // Typically STAGE for room scale/standing, LOCAL for seated
-            /*XrReferenceSpaceType play_space_type = XR_REFERENCE_SPACE_TYPE_LOCAL;
-            XrSpace play_space = XR_NULL_HANDLE;
+            ReferenceSpaceType play_space_type = ReferenceSpaceType.Local; //XR_REFERENCE_SPACE_TYPE_LOCAL;
+            Space play_space;
 
             // the instance handle can be thought of as the basic connection to the OpenXR runtime
-            XrInstance instance = XR_NULL_HANDLE;
+            Instance instance;
             // the system represents an (opaque) set of XR devices in use, managed by the runtime
-            XrSystemId system_id = XR_NULL_SYSTEM_ID;
+            //SystemId system_id;
             // the session deals with the renderloop submitting frames to the runtime
-            XrSession session = XR_NULL_HANDLE;
+            Session session;
 
             // each graphics API requires the use of a specialized struct
-            XrGraphicsBindingOpenGLXlibKHR graphics_binding_gl;
+            GraphicsBindingOpenGLXlibKHR graphics_binding_gl;
 
             // each physical Display/Eye is described by a view.
             // view_count usually depends on the form_factor / view_type.
             // dynamically allocating all view related structs instead of assuming 2
             // hopefully allows this app to scale easily to different view_counts.
-            uint32_t view_count = 0;
+            uint view_count = 0;
             // the viewconfiguration views contain information like resolution about each view
-            XrViewConfigurationView* viewconfig_views = NULL;
+            ViewConfigurationView viewconfig_views;
 
             // array of view_count containers for submitting swapchains with rendered VR frames
-            XrCompositionLayerProjectionView* projection_views = NULL;
+            CompositionLayerProjectionView projection_views;
             // array of view_count views, filled by the runtime with current HMD display pose
-            XrView* views = NULL;
+            View views;
 
             // array of view_count handles for swapchains.
             // it is possible to use imageRect to render all views to different areas of the
             // same texture, but in this example we use one swapchain per view
-            XrSwapchain* swapchains = NULL;
+            Swapchain swapchains;
             // array of view_count ints, storing the length of swapchains
-            uint32_t* swapchain_lengths = NULL;
+            uint swapchain_lengths;
             // array of view_count array of swapchain_length containers holding an OpenGL texture
             // that is allocated by the runtime
-            XrSwapchainImageOpenGLKHR** images = NULL;
+            SwapchainImageOpenGLKHR images;
 
             // depth swapchain equivalent to the VR color swapchains
-            XrSwapchain* depth_swapchains = NULL;
-            uint32_t* depth_swapchain_lengths = NULL;
-            XrSwapchainImageOpenGLKHR** depth_images = NULL;
+            Swapchain depth_swapchains;
+            uint depth_swapchain_lengths;
+            SwapchainImageOpenGLKHR depth_images;
 
-            XrPath hand_paths[HAND_COUNT];
+            //Path hand_paths[HAND_COUNT];
 
-
-                struct
-
-                {
-                    // supporting depth layers is *optional* for runtimes
-                    bool supported;
-                    XrCompositionLayerDepthInfoKHR* infos;
-                }
-                depth;
-
-	            struct
-
-                {
-                    // To render into a texture we need a framebuffer (one per texture to make it easy)
-                GLuint** framebuffers;
-
-                float near_z;
-                float far_z;
-
-                GLuint shader_program_id;
-                GLuint VAO;
+            /*struct
+            {
+                // supporting depth layers is *optional* for runtimes
+                bool supported;
+                XrCompositionLayerDepthInfoKHR* infos;
             }
-            gl_rendering;
-            gl_rendering.near_z = 0.01f;
-            gl_rendering.far_z = 100.0f;
-
+            depth;*/
 
             // reuse this variable for all our OpenXR return codes
-            XrResult result = XR_SUCCESS;
+            Result result = Result.Success;
 
             // xrEnumerate*() functions are usually called once with CapacityInput = 0.
             // The function will write the required amount into CountOutput. We then have
             // to allocate an array to hold CountOutput elements and call the function
             // with CountOutput as CapacityInput.
-            uint32_t ext_count = 0;
-            result = xrEnumerateInstanceExtensionProperties(NULL, 0, &ext_count, NULL);
+            uint ext_count = 0;
+            Span<ExtensionProperties> props = new Span<ExtensionProperties>(new ExtensionProperties[128]);
+            XRApi = XR.GetApi();
+            result = XRApi.EnumerateInstanceExtensionProperties(0, ref ext_count, props);
 
             // TODO: instance null will not be able to convert XrResult to string
-            if (!xr_check(NULL, result, "Failed to enumerate number of extension properties"))
+            /*if (!xr_check(NULL, result, "Failed to enumerate number of extension properties"))
                 return 1;
-
 
             XrExtensionProperties* ext_props = malloc(sizeof(XrExtensionProperties) * ext_count);
             for (uint16_t i = 0; i < ext_count; i++)
@@ -183,49 +168,36 @@ namespace Xenko.VirtualReality
             {
                 printf("Runtime does not support OpenGL extension!\n");
                 return 1;
-            }
+            }*/
 
 
             // --- Create XrInstance
-            int enabled_ext_count = 1;
-            const char* enabled_exts[1] = { XR_KHR_OPENGL_ENABLE_EXTENSION_NAME };
+            uint enabled_ext_count = 2;
+            List<string> enabled_exts = new List<string>() { "XR_KHR_vulkan_enable", "VK_KHR_image_format_list" };
+            //string
             // same can be done for API layers, but API layers can also be enabled by env var
 
-            XrInstanceCreateInfo instance_create_info = {
-	                .type = XR_TYPE_INSTANCE_CREATE_INFO,
-	                .next = NULL,
-	                .createFlags = 0,
-	                .enabledExtensionCount = enabled_ext_count,
-	                .enabledExtensionNames = enabled_exts,
-	                .enabledApiLayerCount = 0,
-	                .enabledApiLayerNames = NULL,
-	                .applicationInfo =
+            var enabledExtensionNames = enabled_exts.Select(Marshal.StringToHGlobalAnsi).ToArray();
 
-                        {
-	                        // some compilers have trouble with char* initialization
-	                        .applicationName = "",
-	                        .engineName = "",
-	                        .applicationVersion = 1,
-	                        .engineVersion = 0,
-	                        .apiVersion = XR_CURRENT_API_VERSION,
-                        },
+            fixed (void* enabledExtensionNamesPointer = &enabledExtensionNames[0])
+            {
+                InstanceCreateInfo instance_create_info = new InstanceCreateInfo()
+                {
+                    Type = StructureType.TypeInstanceCreateInfo,
+                    Next = (void*)0,
+                    CreateFlags = 0,
+                    EnabledExtensionCount = enabled_ext_count,
+                    EnabledExtensionNames = (byte**)enabledExtensionNamesPointer,
+                    EnabledApiLayerCount = 0,
+                    EnabledApiLayerNames = (byte**)0,
+                    ApplicationInfo = new ApplicationInfo(),
                 };
-            strncpy(instance_create_info.applicationInfo.applicationName, "OpenXR OpenGL Example",
-                    XR_MAX_APPLICATION_NAME_SIZE);
-            strncpy(instance_create_info.applicationInfo.engineName, "Custom", XR_MAX_ENGINE_NAME_SIZE);
 
-            result = xrCreateInstance(&instance_create_info, &instance);
-            if (!xr_check(NULL, result, "Failed to create XR instance."))
-                return 1;
-
-            if (!load_extension_function_pointers(instance))
-                return 1;
-
-            // Optionally get runtime name and version
-            print_instance_properties(instance);
+                result = XRApi.CreateInstance(&instance_create_info, &instance);
+            }
 
             // --- Get XrSystemId
-            XrSystemGetInfo system_get_info = {
+            /*XrSystemGetInfo system_get_info = {
 	                .type = XR_TYPE_SYSTEM_GET_INFO, .formFactor = form_factor, .next = NULL};
 
             result = xrGetSystem(instance, &system_get_info, &system_id);
