@@ -33,6 +33,9 @@ namespace Xenko.Rendering.Images {
         [DataMember(30)]
         public float NormalNearCutoff { get; set; } = 0.1f;
 
+        [DataMember(40)]
+        public float ThicknessFactor { get; set; } = 1f;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="CartoonFilter"/> class.
         /// </summary>
@@ -63,6 +66,7 @@ namespace Xenko.Rendering.Images {
             NormalWeight = 2f;
             DepthWeight = 0.2f;
             NormalNearCutoff = 0.1f;
+            ThicknessFactor = 1f;
             base.SetDefaultParameters();
         }
 
@@ -73,7 +77,7 @@ namespace Xenko.Rendering.Images {
                 return;
             }
 
-            outlineFilter.Parameters.Set(OutlineEffectKeys.ScreenDiffs, new Vector2(0.5f / color.Width, 0.5f / color.Height));
+            outlineFilter.Parameters.Set(OutlineEffectKeys.ScreenDiffs, new Vector2(ThicknessFactor / color.Width, ThicknessFactor / color.Height));
             outlineFilter.Parameters.Set(OutlineEffectKeys.DepthTexture, depthTexture);
             outlineFilter.Parameters.Set(OutlineEffectKeys.zFar, zMax);
             outlineFilter.Parameters.Set(OutlineEffectKeys.zNear, zMin);
