@@ -21,11 +21,7 @@ namespace Xenko.VirtualReality
         /// </summary>
         public bool UseGyroscope = true;
 
-        public override Size2 OptimalRenderFrameSize => optimalRenderFrameSize;
-
-        public override Size2 ActualRenderFrameSize { get; protected set; }
-
-        public override Texture MirrorTexture { get; protected set; }
+        public override Size2 ActualRenderFrameSize => optimalRenderFrameSize;
 
         public override float RenderFrameScaling { get; set; }
 
@@ -45,14 +41,7 @@ namespace Xenko.VirtualReality
 
         public override ulong PoseCount => 0;
 
-        public override TrackedItem[] TrackedItems => new TrackedItem[0];
-
         public override bool CanInitialize => true;
-
-        /// <summary>
-        /// If true, build the mirror view.
-        /// </summary>
-        public bool BuildMirror = true;
 
         private Quaternion headRotation = Quaternion.Identity;
 
@@ -101,8 +90,7 @@ namespace Xenko.VirtualReality
 
         public override void Enable(GraphicsDevice device, GraphicsDeviceManager graphicsDeviceManager, bool requireMirror)
         {
-            ActualRenderFrameSize = optimalRenderFrameSize = new Size2(2560, 1440);
-            MirrorTexture = Texture.New2D(device, ActualRenderFrameSize.Width, ActualRenderFrameSize.Height, PixelFormat.R8G8B8A8_UNorm_SRgb, TextureFlags.RenderTarget | TextureFlags.ShaderResource);
+            optimalRenderFrameSize = new Size2(2560, 1440);
         }
 
         public override void ReadEyeParameters(Eyes eye, float near, float far, ref Vector3 cameraPosition, ref Matrix cameraRotation, bool ignoreHeadRotation, bool ignoreHeadPosition, out Matrix view, out Matrix projection)
@@ -131,8 +119,6 @@ namespace Xenko.VirtualReality
 
         public override void Commit(CommandList commandList, Texture renderFrame)
         {
-            if (BuildMirror)
-                commandList.Copy(renderFrame, MirrorTexture);
         }
 
         public override void Update(GameTime gameTime)

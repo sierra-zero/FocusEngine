@@ -7,44 +7,61 @@ using Xenko.Graphics;
 using Silk.NET.OpenXR;
 using System.Runtime.InteropServices;
 using System.Linq;
+using Silk.NET.Core.Native;
 
 namespace Xenko.VirtualReality
 {
     public class OpenXRHmd : VRDevice
     {
         private GameBase baseGame;
+
         private XR XRApi;
+        private CompositionLayerProjectionView[] ProjectionViews;
+        private Size2 renderSize;
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private unsafe delegate Result pfnGetVulkanGraphicsRequirementsKHR(Instance instance, ulong sys_id, GraphicsRequirementsVulkanKHR* req);
 
         public OpenXRHmd(GameBase game)
         {
             baseGame = game;
+            VRApi = VRApi.OpenXR;
         }
 
-        public override Size2 OptimalRenderFrameSize => throw new NotImplementedException();
+        public override Size2 ActualRenderFrameSize { get => renderSize; }
+        public override float RenderFrameScaling { get; set; } = 1.4f;
 
-        public override Size2 ActualRenderFrameSize { get => throw new NotImplementedException(); protected set => throw new NotImplementedException(); }
-        public override Texture MirrorTexture { get => throw new NotImplementedException(); protected set => throw new NotImplementedException(); }
-        public override float RenderFrameScaling { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+        public override DeviceState State
+        {
+            get
+            {
+                if (XRApi == null) return DeviceState.Invalid;
+                return DeviceState.Valid;
+            }
+        }
 
-        public override DeviceState State => throw new NotImplementedException();
+        private Vector3 headPos;
+        public override Vector3 HeadPosition => headPos;
 
-        public override Vector3 HeadPosition => throw new NotImplementedException();
+        private Quaternion headRot;
+        public override Quaternion HeadRotation => headRot;
 
-        public override Quaternion HeadRotation => throw new NotImplementedException();
+        private Vector3 headLinVel;
+        public override Vector3 HeadLinearVelocity => headLinVel;
 
-        public override Vector3 HeadLinearVelocity => throw new NotImplementedException();
+        private Vector3 headAngVel;
+        public override Vector3 HeadAngularVelocity => headAngVel;
 
-        public override Vector3 HeadAngularVelocity => throw new NotImplementedException();
+        private TouchController leftHand;
+        public override TouchController LeftHand => leftHand;
 
-        public override TouchController LeftHand => throw new NotImplementedException();
+        private TouchController rightHand;
+        public override TouchController RightHand => rightHand;
 
-        public override TouchController RightHand => throw new NotImplementedException();
+        private ulong poseCount;
+        public override ulong PoseCount => poseCount;
 
-        public override TrackedItem[] TrackedItems => throw new NotImplementedException();
-
-        public override ulong PoseCount => throw new NotImplementedException();
-
-        public override bool CanInitialize => throw new NotImplementedException();
+        public override bool CanInitialize => true;
 
         public override void Commit(CommandList commandList, Texture renderFrame)
         {
@@ -71,12 +88,9 @@ namespace Xenko.VirtualReality
             // the instance handle can be thought of as the basic connection to the OpenXR runtime
             Instance instance;
             // the system represents an (opaque) set of XR devices in use, managed by the runtime
-            //SystemId system_id;
+            ulong system_id = 0;
             // the session deals with the renderloop submitting frames to the runtime
             Session session;
-
-            // each graphics API requires the use of a specialized struct
-            GraphicsBindingOpenGLXlibKHR graphics_binding_gl;
 
             // each physical Display/Eye is described by a view.
             // view_count usually depends on the form_factor / view_type.
@@ -84,27 +98,27 @@ namespace Xenko.VirtualReality
             // hopefully allows this app to scale easily to different view_counts.
             uint view_count = 0;
             // the viewconfiguration views contain information like resolution about each view
-            ViewConfigurationView viewconfig_views;
+            ViewConfigurationView[] viewconfig_views;
 
             // array of view_count containers for submitting swapchains with rendered VR frames
-            CompositionLayerProjectionView projection_views;
+            CompositionLayerProjectionView[] projection_views;
             // array of view_count views, filled by the runtime with current HMD display pose
-            View views;
+            View[] views;
 
             // array of view_count handles for swapchains.
             // it is possible to use imageRect to render all views to different areas of the
             // same texture, but in this example we use one swapchain per view
-            Swapchain swapchains;
+            Swapchain[] swapchains;
             // array of view_count ints, storing the length of swapchains
-            uint swapchain_lengths;
+            uint[] swapchain_lengths;
             // array of view_count array of swapchain_length containers holding an OpenGL texture
             // that is allocated by the runtime
-            SwapchainImageOpenGLKHR images;
+            SwapchainImageVulkanKHR[][] images;
 
             // depth swapchain equivalent to the VR color swapchains
-            Swapchain depth_swapchains;
-            uint depth_swapchain_lengths;
-            SwapchainImageOpenGLKHR depth_images;
+            Swapchain[] depth_swapchains;
+            uint[] depth_swapchain_lengths;
+            SwapchainImageVulkanKHR[][] depth_images;
 
             //Path hand_paths[HAND_COUNT];
 
@@ -197,105 +211,91 @@ namespace Xenko.VirtualReality
             }
 
             // --- Get XrSystemId
-            /*XrSystemGetInfo system_get_info = {
-	                .type = XR_TYPE_SYSTEM_GET_INFO, .formFactor = form_factor, .next = NULL};
+            SystemGetInfo system_get_info = new SystemGetInfo() {
+	            Type = StructureType.TypeSystemGetInfo,
+                FormFactor = form_factor
+            };
 
-            result = xrGetSystem(instance, &system_get_info, &system_id);
-            if (!xr_check(instance, result, "Failed to get system for HMD form factor."))
-                return 1;
-
-            printf("Successfully got XrSystem with id %lu for HMD form factor\n", system_id);
-
+            result = XRApi.GetSystem(instance, &system_get_info, ref system_id);
 
             {
-                XrSystemProperties system_props = {
-		                .type = XR_TYPE_SYSTEM_PROPERTIES,
-		                .next = NULL,
-                    };
+                SystemProperties system_props = new SystemProperties() {
+		            Type = StructureType.TypeSystemProperties,
+                };
 
-                result = xrGetSystemProperties(instance, system_id, &system_props);
-                if (!xr_check(instance, result, "Failed to get System properties"))
-                    return 1;
-
-                print_system_properties(&system_props);
+                result = XRApi.GetSystemProperties(instance, system_id, &system_props);
             }
 
-            result = xrEnumerateViewConfigurationViews(instance, system_id, view_type, 0, &view_count, NULL);
-            if (!xr_check(instance, result, "Failed to get view configuration view count!"))
-                return 1;
-
-            viewconfig_views = malloc(sizeof(XrViewConfigurationView) * view_count);
-            for (uint32_t i = 0; i < view_count; i++)
+            ViewConfigurationView vcv = new ViewConfigurationView()
             {
-                viewconfig_views[i].type = XR_TYPE_VIEW_CONFIGURATION_VIEW;
-                viewconfig_views[i].next = NULL;
-            }
+                Type = StructureType.TypeViewConfigurationView,                 
+            };
 
-            result = xrEnumerateViewConfigurationViews(instance, system_id, view_type, view_count,
-                                                       &view_count, viewconfig_views);
-            if (!xr_check(instance, result, "Failed to enumerate view configuration views!"))
-                return 1;
-            print_viewconfig_view_info(view_count, viewconfig_views);
+            viewconfig_views = new ViewConfigurationView[128];
+            fixed (ViewConfigurationView* viewspnt = &viewconfig_views[0])
+                result = XRApi.EnumerateViewConfigurationView(instance, system_id, view_type, 0, ref view_count, viewspnt);
+            Array.Resize<ViewConfigurationView>(ref viewconfig_views, (int)view_count);
 
+            // get size
+            renderSize.Height = (int)viewconfig_views[0].RecommendedImageRectHeight;
+            renderSize.Width = (int)viewconfig_views[0].RecommendedImageRectWidth;
 
             // OpenXR requires checking graphics requirements before creating a session.
-            XrGraphicsRequirementsOpenGLKHR opengl_reqs = {.type = XR_TYPE_GRAPHICS_REQUIREMENTS_OPENGL_KHR,
-	                                                           .next = NULL};
+            GraphicsRequirementsOpenGLKHR opengl_reqs = new GraphicsRequirementsOpenGLKHR()
+            {
+                Type = StructureType.TypeGraphicsRequirementsVulkanKhr
+            };
 
             // this function pointer was loaded with xrGetInstanceProcAddr
-            result = pfnGetOpenGLGraphicsRequirementsKHR(instance, system_id, &opengl_reqs);
-            if (!xr_check(instance, result, "Failed to get OpenGL graphics requirements!"))
-                return 1;
+            Silk.NET.Core.PfnVoidFunction func = new Silk.NET.Core.PfnVoidFunction();
+            GraphicsRequirementsVulkanKHR vulk = new GraphicsRequirementsVulkanKHR();
+            result = XRApi.GetInstanceProcAddr(instance, "pfnGetVulkanGraphicsRequirementsKHR", ref func);
+            Delegate vulk_req = Marshal.GetDelegateForFunctionPointer((IntPtr)func.Handle, typeof(pfnGetVulkanGraphicsRequirementsKHR));
+            vulk_req.DynamicInvoke(instance, system_id, (ulong)&vulk);
 
             // Checking opengl_reqs.minApiVersionSupported and opengl_reqs.maxApiVersionSupported
             // is not very useful, compatibility will depend on the OpenGL implementation and the
             // OpenXR runtime much more than the OpenGL version.
             // Other APIs have more useful verifiable requirements.
 
-
+#if XENKO_GRAPHICS_API_VULKAN
             // --- Create session
-            graphics_binding_gl = (XrGraphicsBindingOpenGLXlibKHR){
-	                .type = XR_TYPE_GRAPHICS_BINDING_OPENGL_XLIB_KHR,
-	            };
+            var graphics_binding_vulkan = new GraphicsBindingVulkanKHR(){
+	            Type = StructureType.TypeGraphicsBindingVulkanKhr,
+                Device = new VkHandle((nint)device.NativeDevice.Handle),
+                Instance = new VkHandle((nint)device.NativeInstance.Handle),
+                PhysicalDevice = new VkHandle((nint)device.NativePhysicalDevice.Handle),
+                QueueFamilyIndex = 0,
+                QueueIndex = 0,
+	        };
+#else
+            GraphicsBindingVulkanKHR graphics_binding_vulkan = new GraphicsBindingVulkanKHR();
+            throw new Exception("OpenXR is only compatible with Vulkan");
+#endif
 
-            // create SDL window the size of the left eye & fill GL graphics binding info
-            if (!init_sdl_window(&graphics_binding_gl.xDisplay, &graphics_binding_gl.visualid,
-                                 &graphics_binding_gl.glxFBConfig, &graphics_binding_gl.glxDrawable,
-                                 &graphics_binding_gl.glxContext,
-                                 viewconfig_views[0].recommendedImageRectWidth,
-                                 viewconfig_views[0].recommendedImageRectHeight))
-            {
-                printf("GLX init failed!\n");
-                return 1;
-            }
+            SessionCreateInfo session_create_info = new SessionCreateInfo() {
+	            Type = StructureType.TypeSessionCreateInfo,
+                Next = &graphics_binding_vulkan,
+                SystemId = system_id
+            };
 
-            printf("Using OpenGL version: %s\n", glGetString(GL_VERSION));
-            printf("Using OpenGL Renderer: %s\n", glGetString(GL_RENDERER));
-
-            XrSessionCreateInfo session_create_info = {
-	                .type = XR_TYPE_SESSION_CREATE_INFO, .next = &graphics_binding_gl, .systemId = system_id};
-
-            result = xrCreateSession(instance, &session_create_info, &session);
-            if (!xr_check(instance, result, "Failed to create session"))
-                return 1;
-
-            printf("Successfully created a session with OpenGL!\n");
+            result = XRApi.CreateSession(instance, &session_create_info, &session);
 
             // Many runtimes support at least STAGE and LOCAL but not all do.
             // Sophisticated apps might check with xrEnumerateReferenceSpaces() if the
             // chosen one is supported and try another one if not.
             // Here we will get an error from xrCreateReferenceSpace() and exit.
-            XrReferenceSpaceCreateInfo play_space_create_info = {.type = XR_TYPE_REFERENCE_SPACE_CREATE_INFO,
-	                                                                 .next = NULL,
-	                                                                 .referenceSpaceType = play_space_type,
-	                                                                 .poseInReferenceSpace = identity_pose};
+            ReferenceSpaceCreateInfo play_space_create_info = new ReferenceSpaceCreateInfo()
+            {
+                Type = StructureType.TypeReferenceSpaceCreateInfo,
+                ReferenceSpaceType = play_space_type,
+                PoseInReferenceSpace = new Posef(new Quaternionf(0f, 0f, 0f, 1f), new Vector3f(0f, 0f, 0f))
+            };
 
-            result = xrCreateReferenceSpace(session, &play_space_create_info, &play_space);
-            if (!xr_check(instance, result, "Failed to create play space!"))
-                return 1;
+            result = XRApi.CreateReferenceSpace(session, &play_space_create_info, &play_space);
 
             // --- Create Swapchains
-            uint32_t swapchain_format_count;
+            /*uint32_t swapchain_format_count;
             result = xrEnumerateSwapchainFormats(session, 0, &swapchain_format_count, NULL);
             if (!xr_check(instance, result, "Failed to get number of supported swapchain formats"))
                 return 1;
@@ -319,38 +319,35 @@ namespace Xenko.VirtualReality
             {
                 printf("Preferred depth format GL_DEPTH_COMPONENT16 not supported, disabling depth\n");
                 depth.supported = false;
-            }
-
+            }*/
 
             // --- Create swapchain for main VR rendering
             {
                 // In the frame loop we render into OpenGL textures we receive from the runtime here.
-                swapchains = malloc(sizeof(XrSwapchain) * view_count);
-                swapchain_lengths = malloc(sizeof(uint32_t) * view_count);
-                images = malloc(sizeof(XrSwapchainImageOpenGLKHR*) * view_count);
-                for (uint32_t i = 0; i < view_count; i++)
+                swapchains = new Swapchain[view_count]; //malloc(sizeof(XrSwapchain) * view_count);
+                swapchain_lengths = new uint[view_count]; //malloc(sizeof(uint32_t) * view_count);
+                images = new SwapchainImageVulkanKHR[view_count][]; //malloc(sizeof(SwapchainImageVulkanKHR*) * view_count);
+                for (int i = 0; i < view_count; i++)
                 {
-                    XrSwapchainCreateInfo swapchain_create_info = {
-			                .type = XR_TYPE_SWAPCHAIN_CREATE_INFO,
-			                .usageFlags = XR_SWAPCHAIN_USAGE_SAMPLED_BIT | XR_SWAPCHAIN_USAGE_COLOR_ATTACHMENT_BIT,
-			                .createFlags = 0,
-			                .format = color_format,
-			                .sampleCount = viewconfig_views[i].recommendedSwapchainSampleCount,
-			                .width = viewconfig_views[i].recommendedImageRectWidth,
-			                .height = viewconfig_views[i].recommendedImageRectHeight,
-			                .faceCount = 1,
-			                .arraySize = 1,
-			                .mipCount = 1,
-			                .next = NULL,
-                        };
+                    SwapchainCreateInfo swapchain_create_info = new SwapchainCreateInfo() {
+			            Type = StructureType.TypeSwapchainCreateInfo,
+			            UsageFlags = SwapchainUsageFlags.SwapchainUsageSampledBit | SwapchainUsageFlags.SwapchainUsageColorAttachmentBit, //XR_SWAPCHAIN_USAGE_SAMPLED_BIT | XR_SWAPCHAIN_USAGE_COLOR_ATTACHMENT_BIT,
+			            CreateFlags = 0,
+			            Format = (long)PixelFormat.R8G8B8A8_UNorm_SRgb,
+			            SampleCount = viewconfig_views[i].RecommendedSwapchainSampleCount,
+			            Width = viewconfig_views[i].RecommendedImageRectWidth,
+			            Height = viewconfig_views[i].RecommendedImageRectHeight,
+			            FaceCount = 1,
+			            ArraySize = 1,
+			            MipCount = 1,
+                    };
 
-                    result = xrCreateSwapchain(session, &swapchain_create_info, &swapchains[i]);
-                    if (!xr_check(instance, result, "Failed to create swapchain %d!", i))
-                        return 1;
+                    fixed (Swapchain* scp = &swapchains[i])
+                        result = XRApi.CreateSwapchain(session, &swapchain_create_info, scp);
 
                     // The runtime controls how many textures we have to be able to render to
                     // (e.g. "triple buffering")
-                    result = xrEnumerateSwapchainImages(swapchains[i], 0, &swapchain_lengths[i], NULL);
+                    /*result = xrEnumerateSwapchainImages(swapchains[i], 0, &swapchain_lengths[i], NULL);
                     if (!xr_check(instance, result, "Failed to enumerate swapchains"))
                         return 1;
 
@@ -359,17 +356,21 @@ namespace Xenko.VirtualReality
                     {
                         images[i][j].type = XR_TYPE_SWAPCHAIN_IMAGE_OPENGL_KHR;
                         images[i][j].next = NULL;
+                    }*/
+                    images[i] = new SwapchainImageVulkanKHR[32];
+
+                    fixed (uint* lenp = &swapchain_lengths[i]) {
+                        fixed (void* sibhp = &images[i][0]) {
+                        result =
+                            XRApi.EnumerateSwapchainImages(swapchains[i], swapchain_lengths[i], lenp, (SwapchainImageBaseHeader*)sibhp);
+                        }
                     }
-                    result =
-                        xrEnumerateSwapchainImages(swapchains[i], swapchain_lengths[i], &swapchain_lengths[i],
-                                                   (XrSwapchainImageBaseHeader*)images[i]);
-                    if (!xr_check(instance, result, "Failed to enumerate swapchain images"))
-                        return 1;
+                    Array.Resize(ref images[i], (int)swapchain_lengths[i]);
                 }
             }
 
-            // --- Create swapchain for depth buffers if supported
-            {
+            // --- Create swapchain for depth buffers if supported (//TODO support depth buffering)
+            /*{
                 if (depth.supported)
                 {
                     depth_swapchains = malloc(sizeof(XrSwapchain) * view_count);
@@ -414,38 +415,31 @@ namespace Xenko.VirtualReality
                             return 1;
                     }
                 }
-            }
+            }*/
 
 
             // Do not allocate these every frame to save some resources
-            views = (XrView*)malloc(sizeof(XrView) * view_count);
-            for (uint32_t i = 0; i < view_count; i++)
-            {
-                views[i].type = XR_TYPE_VIEW;
-                views[i].next = NULL;
-            }
+            views = new View[view_count]; //(XrView*)malloc(sizeof(XrView) * view_count);
+            for (int i = 0; i < view_count; i++)
+                views[i].Type = StructureType.TypeView;
 
-            projection_views = (XrCompositionLayerProjectionView*)malloc(
-                sizeof(XrCompositionLayerProjectionView) * view_count);
-            for (uint32_t i = 0; i < view_count; i++)
+            projection_views = new CompositionLayerProjectionView[view_count]; //(XrCompositionLayerProjectionView*)malloc(sizeof(XrCompositionLayerProjectionView) * view_count);
+            for (int i = 0; i < view_count; i++)
             {
-                projection_views[i].type = XR_TYPE_COMPOSITION_LAYER_PROJECTION_VIEW;
-                projection_views[i].next = NULL;
+                projection_views[i].Type = StructureType.TypeCompositionLayerProjectionView; //XR_TYPE_COMPOSITION_LAYER_PROJECTION_VIEW;
 
-                projection_views[i].subImage.swapchain = swapchains[i];
-                projection_views[i].subImage.imageArrayIndex = 0;
-                projection_views[i].subImage.imageRect.offset.x = 0;
-                projection_views[i].subImage.imageRect.offset.y = 0;
-                projection_views[i].subImage.imageRect.extent.width =
-                    viewconfig_views[i].recommendedImageRectWidth;
-                projection_views[i].subImage.imageRect.extent.height =
-                    viewconfig_views[i].recommendedImageRectHeight;
+                projection_views[i].SubImage.Swapchain = swapchains[i];
+                projection_views[i].SubImage.ImageArrayIndex = 0;
+                projection_views[i].SubImage.ImageRect.Offset.X = 0;
+                projection_views[i].SubImage.ImageRect.Offset.Y = 0;
+                projection_views[i].SubImage.ImageRect.Extent.Width = (int)viewconfig_views[i].RecommendedImageRectWidth;
+                projection_views[i].SubImage.ImageRect.Extent.Height = (int)viewconfig_views[i].RecommendedImageRectHeight;
 
                 // projection_views[i].{pose, fov} have to be filled every frame in frame loop
             };
 
 
-            if (depth.supported)
+            /*if (depth.supported) //TODO: depth buffering support
             {
                 depth.infos = (XrCompositionLayerDepthInfoKHR*)malloc(sizeof(XrCompositionLayerDepthInfoKHR) *
                                                                       view_count);
@@ -470,12 +464,12 @@ namespace Xenko.VirtualReality
                     // depth is chained to projection, not submitted as separate layer
                     projection_views[i].next = &depth.infos[i];
                 };
-            }
+            }*/
 
 
             // --- Set up input (actions)
 
-            xrStringToPath(instance, "/user/hand/left", &hand_paths[HAND_LEFT_INDEX]);
+            /*xrStringToPath(instance, "/user/hand/left", &hand_paths[HAND_LEFT_INDEX]);
             xrStringToPath(instance, "/user/hand/right", &hand_paths[HAND_RIGHT_INDEX]);
 
             XrPath select_click_path[HAND_COUNT];
@@ -671,12 +665,14 @@ namespace Xenko.VirtualReality
 
         public override void ReadEyeParameters(Eyes eye, float near, float far, ref Vector3 cameraPosition, ref Matrix cameraRotation, bool ignoreHeadRotation, bool ignoreHeadPosition, out Matrix view, out Matrix projection)
         {
-            throw new NotImplementedException();
+            //TODO
+            view = Matrix.Identity;
+            projection = Matrix.Identity;
         }
 
         public override void Update(GameTime gameTime)
         {
-            throw new NotImplementedException();
+            //TODO
         }
     }
 }

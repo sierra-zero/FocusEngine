@@ -117,7 +117,7 @@ namespace Xenko.VirtualReality
                             break;
                         }
                         case VRApi.OpenXR:
-#if XENKO_GRAPHICS_API_VULKAN || XENKO_GRAPHICS_API_DIRECT3D11
+#if XENKO_GRAPHICS_API_VULKAN
                             Device = new OpenXRHmd(Game);
 #endif
                             break;

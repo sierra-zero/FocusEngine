@@ -2,6 +2,7 @@
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 #if XENKO_GRAPHICS_API_VULKAN || XENKO_GRAPHICS_API_DIRECT3D11
 
+using Valve.VR;
 using Xenko.Core.Mathematics;
 using Xenko.Games;
 using Xenko.Graphics;
@@ -15,7 +16,6 @@ namespace Xenko.VirtualReality
         private DeviceState state;
         private OpenVRTouchController leftHandController;
         private OpenVRTouchController rightHandController;
-        private OpenVRTrackedDevice[] trackedDevices;
         private bool needsMirror;
         private Matrix currentHead;
         private Vector3 currentHeadPos;
@@ -44,8 +44,6 @@ namespace Xenko.VirtualReality
 
         public override void Enable(GraphicsDevice device, GraphicsDeviceManager graphicsDeviceManager, bool requireMirror)
         {
-            ActualRenderFrameSize = OptimalRenderFrameSize;
-
             needsMirror = requireMirror;
 
             leftHandController = new OpenVRTouchController(TouchControllerHand.Left);
@@ -53,11 +51,11 @@ namespace Xenko.VirtualReality
             leftHandController.HostDevice = this;
             rightHandController.HostDevice = this;
 
-            trackedDevices = new OpenVRTrackedDevice[Valve.VR.OpenVR.k_unMaxTrackedDeviceCount];
-            for (int i = 0; i < trackedDevices.Length; i++) {
-                trackedDevices[i] = new OpenVRTrackedDevice(i);
-                if (trackedDevices[i].Class == DeviceClass.HMD) {
-                    HMDindex = i;
+            // find HMD index
+            for (uint i = 0; i < Valve.VR.OpenVR.k_unMaxTrackedDeviceCount; i++) {
+                if (Valve.VR.OpenVR.System.GetTrackedDeviceClass(i) == ETrackedDeviceClass.HMD) {
+                    HMDindex = (int)i;
+                    break;
                 }
             }
 
@@ -79,8 +77,6 @@ namespace Xenko.VirtualReality
         {
             LeftHand.Update(gameTime);
             RightHand.Update(gameTime);
-            foreach (var tracker in trackedDevices)
-                tracker.Update(gameTime);
         }
 
         public override void ReadEyeParameters(Eyes eye, float near, float far, ref Vector3 cameraPosition, ref Matrix cameraRotation, bool ignoreHeadRotation, bool ignoreHeadPosition, out Matrix view, out Matrix projection)
@@ -140,15 +136,10 @@ namespace Xenko.VirtualReality
 
         public override TouchController RightHand => rightHandController;
 
-        public override TrackedItem[] TrackedItems => trackedDevices;
-
-        public override Texture MirrorTexture { get; protected set; }
-
         public override float RenderFrameScaling { get; set; } = 1.4f;
 
-        public override Size2 ActualRenderFrameSize { get; protected set; }
-
-        public override Size2 OptimalRenderFrameSize {
+        public override Size2 ActualRenderFrameSize
+        {
             get {
                 uint width = 0, height = 0;
                 Valve.VR.OpenVR.System.GetRecommendedRenderTargetSize(ref width, ref height);

@@ -16,11 +16,7 @@ namespace Xenko.VirtualReality
             BodyScaling = 1.0f;
         }
 
-        public abstract Size2 OptimalRenderFrameSize { get; }
-
-        public abstract Size2 ActualRenderFrameSize { get; protected set; }
-
-        public abstract Texture MirrorTexture { get; protected set; }
+        public abstract Size2 ActualRenderFrameSize { get; }
 
         public abstract float RenderFrameScaling { get; set; }
 
@@ -37,8 +33,6 @@ namespace Xenko.VirtualReality
         public abstract TouchController LeftHand { get; }
 
         public abstract TouchController RightHand { get; }
-
-        public abstract TrackedItem[] TrackedItems { get; }
 
         public abstract ulong PoseCount { get; }
 
