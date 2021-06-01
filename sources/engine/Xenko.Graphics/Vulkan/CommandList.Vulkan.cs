@@ -310,26 +310,6 @@ namespace Xenko.Graphics
             vkAllocateDescriptorSets(GraphicsDevice.NativeDevice, &allocateInfo, &localDescriptorSet);
             this.descriptorSet = localDescriptorSet;
 
-#if !XENKO_GRAPHICS_NO_DESCRIPTOR_COPIES
-            copies.Clear(true);
-
-            foreach (var mapping in activePipeline.DescriptorBindingMapping)
-            {
-                copies.Add(new VkCopyDescriptorSet
-                {
-                    sType = VkStructureType.CopyDescriptorSet,
-                    srcSet = boundDescriptorSets[mapping.SourceSet],
-                    srcBinding = (uint)mapping.SourceBinding,
-                    srcArrayElement = 0,
-                    dstSet = localDescriptorSet,
-                    dstBinding = (uint)mapping.DestinationBinding,
-                    dstArrayElement = 0,
-                    descriptorCount = 1
-                });
-            }
-
-            GraphicsDevice.NativeDevice.UpdateDescriptorSets(0, null, (uint)copies.Count, copies.Count > 0 ? (CopyDescriptorSet*)Interop.Fixed(copies.Items) : null);
-#else
             var bindingCount = activePipeline.DescriptorBindingMapping.Count;
             var writes = stackalloc VkWriteDescriptorSet[bindingCount];
             var descriptorDatas = stackalloc DescriptorData[bindingCount];
@@ -385,7 +365,6 @@ namespace Xenko.Graphics
             }
 
             vkUpdateDescriptorSets(GraphicsDevice.NativeDevice, (uint)bindingCount, writes, 0, null);
-#endif
             vkCmdBindDescriptorSets(currentCommandList.NativeCommandBuffer, VkPipelineBindPoint.Graphics, activePipeline.NativeLayout, 0, 1, &localDescriptorSet, 0, null);
         }
 
@@ -500,11 +479,7 @@ namespace Xenko.Graphics
             }
         }
 
-#if !XENKO_GRAPHICS_NO_DESCRIPTOR_COPIES
-        private readonly FastList<SharpVulkan.DescriptorSet> boundDescriptorSets = new FastList<SharpVulkan.DescriptorSet>();
-#else
         private readonly FastList<DescriptorSet> boundDescriptorSets = new FastList<DescriptorSet>();
-#endif
 
         public void SetDescriptorSets(int index, DescriptorSet[] descriptorSets)
         {
@@ -514,11 +489,7 @@ namespace Xenko.Graphics
             boundDescriptorSets.Clear(true);
             for (int i = 0; i < descriptorSets.Length; i++)
             {
-#if !XENKO_GRAPHICS_NO_DESCRIPTOR_COPIES
-                boundDescriptorSets.Add(descriptorSets[i].NativeDescriptorSet);
-#else
                 boundDescriptorSets.Add(descriptorSets[i]);
-#endif
             }
         }
 

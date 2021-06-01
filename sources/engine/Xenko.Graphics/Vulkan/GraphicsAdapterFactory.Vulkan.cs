@@ -106,7 +106,6 @@ namespace Xenko.Graphics
                 sType = VkStructureType.ApplicationInfo,
                 apiVersion = new VkVersion(1, 0, 0),
                 pEngineName = (byte*)Marshal.StringToHGlobalAnsi("Focus"),
-                //EngineVersion = new SharpVulkan.Version()
             };
 
             IntPtr[] enabledLayerNames = new IntPtr[0];

@@ -22,29 +22,12 @@
           <RelativePath>%(RecursiveDir)%(Filename)%(Extension)</RelativePath>
           <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </XenkoNativeLib>
+        <XenkoNativeLib Include="..\..\..\deps\OpenXR\openxr_loader.dll">
+          <Link>%(RecursiveDir)%(Filename)%(Extension)</Link>
+          <RelativePath>%(RecursiveDir)%(Filename)%(Extension)</RelativePath>
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </XenkoNativeLib>
       </ItemGroup>
-    </When>
-  </Choose>
-  <Choose>
-    <When Condition=" '$(XenkoGraphicsApi)' == 'Vulkan' ">
-      <Choose>
-        <When Condition=" '$(XenkoPlatform)' == 'Windows' Or '$(XenkoPlatform)' == 'macOS' ">
-          <ItemGroup>
-            <Reference Include="SharpVulkan">
-              <SpecificVersion>False</SpecificVersion>
-              <HintPath>$(XenkoDependenciesDir)\SharpVulkan\$(XenkoPlatform)\SharpVulkan.dll</HintPath>
-            </Reference>
-          </ItemGroup>
-        </When>
-        <Otherwise>
-          <ItemGroup>
-            <Reference Include="SharpVulkan">
-              <SpecificVersion>False</SpecificVersion>
-              <HintPath>$(XenkoDependenciesDir)\SharpVulkan\Other\SharpVulkan.dll</HintPath>
-            </Reference>
-          </ItemGroup>
-        </Otherwise>
-      </Choose>
     </When>
   </Choose>
   <ItemGroup>
