@@ -219,7 +219,6 @@ namespace Xenko.VirtualReality
                 m_pQueue = baseGame.GraphicsDevice.NativeCommandQueue.Handle, // struct VkQueue_T *
                 m_nQueueFamilyIndex = 0 // 0 is hardcoded index during vulkan creation
             };
-            Valve.VR.OpenVR.Compositor.SetExplicitTimingMode(EVRCompositorTimingMode.Explicit_ApplicationPerformsPostPresentHandoff);
             return true;
         }
 #endif
@@ -270,7 +269,6 @@ namespace Xenko.VirtualReality
                 handle = (IntPtr)(&vkTexDataCopy),
                 eColorSpace = EColorSpace.Auto
             };
-            Valve.VR.OpenVR.Compositor.SubmitExplicitTimingData();
             return Valve.VR.OpenVR.Compositor.Submit(eyeIndex == 0 ? EVREye.Eye_Left : EVREye.Eye_Right, ref tex, ref bounds, EVRSubmitFlags.Submit_Default) == EVRCompositorError.None;
 #elif XENKO_GRAPHICS_API_DIRECT3D11
             var tex = new Texture_t {
@@ -303,7 +301,6 @@ namespace Xenko.VirtualReality
 
         public static void UpdatePoses()
         {
-            Valve.VR.OpenVR.Compositor.PostPresentHandoff();
             Valve.VR.OpenVR.Compositor.WaitGetPoses(DevicePoses, GamePoses);
         }
 

@@ -111,6 +111,7 @@ namespace Xenko.VirtualReality
         {
             OpenVR.Submit(0, renderFrame, ref leftView);
             OpenVR.Submit(1, renderFrame, ref rightView);
+            Valve.VR.OpenVR.Compositor.PostPresentHandoff();
         }
         public override void Recenter()
         {
