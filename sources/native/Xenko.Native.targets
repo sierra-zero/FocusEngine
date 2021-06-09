@@ -88,7 +88,7 @@
     <ItemGroup>
       <XenkoNativeOutput Include="@(_XenkoNativeOutput->'$(XenkoNativeOutputPath)%(Identity)')"/>
       <XenkoNativeOutput>
-        <Link>$([MSBuild]::MakeRelative('$(_OutputPathRelative)', '$(XenkoNativeOutputPath)'))%(RelativePath)</Link>
+        <Link>$([MSBuild]::MakeRelative('$(_OutputPathRelative)', '$(XenkoNativeOutputPath)'))\%(RelativePath)</Link>        
       </XenkoNativeOutput>
       <XenkoNativeLib Include="@(XenkoNativeOutput)"/>
     </ItemGroup>
