@@ -152,6 +152,7 @@ namespace Xenko.Graphics
             desiredExtensionNames.Add("VK_KHR_external_semaphore");
             desiredExtensionNames.Add("VK_KHR_surface");
             desiredExtensionNames.Add("VK_KHR_win32_surface"); // windows
+            desiredExtensionNames.Add("VK_KHR_image_format_list"); // openxr
             desiredExtensionNames.Add("VK_KHR_android_surface"); // android
             desiredExtensionNames.Add("VK_KHR_xlib_surface"); // linux
             desiredExtensionNames.Add("VK_KHR_xcb_surface"); // linux

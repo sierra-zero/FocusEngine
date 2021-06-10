@@ -7,15 +7,122 @@ using Xenko.Graphics;
 using Silk.NET.OpenXR;
 using System.Runtime.InteropServices;
 using System.Linq;
+using Silk.NET.Core;
+using System.Diagnostics;
 using Silk.NET.Core.Native;
 
 namespace Xenko.VirtualReality
 {
     public class OpenXRHmd : VRDevice
     {
+        // API Objects for accessing OpenXR and OpenGL
+        public XR Xr;
+
+        // ExtDebugUtils is a handy OpenXR debugging extension which we'll enable if available unless told otherwise.
+        public bool? IsDebugUtilsSupported;
+
+        // Hooking OpenXR up to graphics APIs requires specialized extensions. OpenGL and OpenGLES have separate ones,
+        // but we'll make variables for both so we can support both.
+        public bool UseMinimumVersion;
+
+        // Maintain a list of extensions we're using. Both for sanity and so we can tell OpenXR about them when creating
+        // the instance.
+        protected List<string> Extensions = new();
+
+        // OpenXR handles
+        public Instance Instance;
+        public DebugUtilsMessengerEXT MessengerExt;
+        public ulong system_id = 0;
+
+        // Misc
+        private bool _unmanagedResourcesFreed;
+
+        /// <summary>
+        /// A simple function which throws an exception if the given OpenXR result indicates an error has been raised.
+        /// </summary>
+        /// <param name="result">The OpenXR result in question.</param>
+        /// <returns>
+        /// The same result passed in, just in case it's meaningful and we just want to use this to filter out errors.
+        /// </returns>
+        /// <exception cref="Exception">An exception for the given result if it indicates an error.</exception>
+        [DebuggerHidden]
+        [DebuggerStepThrough]
+        internal static Result CheckResult(Result result)
+        {
+            if ((int)result < 0)
+            {
+                throw new($"OpenXR raised an error! Code: {result} ({result:X})");
+            }
+
+            return result;
+        }
+
+        private unsafe void Prepare()
+        {
+            // Create our API object for OpenXR.
+            Xr = XR.GetApi();
+
+            Extensions.Add("XR_KHR_vulkan_enable");
+
+            InstanceCreateInfo instanceCreateInfo;
+
+            var appInfo = new ApplicationInfo()
+            {
+                ApiVersion = new Version64(1, 0, 9)
+            };
+
+            // We've got to marshal our strings and put them into global, immovable memory. To do that, we use
+            // SilkMarshal.
+            Span<byte> appName = new Span<byte>(appInfo.ApplicationName, 128);
+            Span<byte> engName = new Span<byte>(appInfo.EngineName, 128);
+            SilkMarshal.StringIntoSpan("FEGame", appName);
+            SilkMarshal.StringIntoSpan("FocusEngine", engName);
+
+            var requestedExtensions = SilkMarshal.StringArrayToPtr(Extensions);
+            instanceCreateInfo = new InstanceCreateInfo
+            (
+                applicationInfo: appInfo,
+                enabledExtensionCount: (uint)Extensions.Count,
+                enabledExtensionNames: (byte**)requestedExtensions
+            );
+
+            // Now we're ready to make our instance!
+            CheckResult(Xr.CreateInstance(in instanceCreateInfo, ref Instance));
+
+            // For our benefit, let's log some information about the instance we've just created.
+            InstanceProperties properties = new();
+            CheckResult(Xr.GetInstanceProperties(Instance, ref properties));
+
+            var runtimeName = SilkMarshal.PtrToString((nint)properties.RuntimeName);
+            var runtimeVersion = ((Version)(Version64)properties.RuntimeVersion).ToString(3);
+
+            Console.WriteLine($"[INFO] Application: Using OpenXR Runtime \"{runtimeName}\" v{runtimeVersion}");
+
+            // We're creating a head-mounted-display (HMD, i.e. a VR headset) example, so we ask for a runtime which
+            // supports that form factor. The response we get is a ulong that is the System ID.
+            var getInfo = new SystemGetInfo(formFactor: FormFactor.HeadMountedDisplay);
+            CheckResult(Xr.GetSystem(Instance, in getInfo, ref system_id));
+
+            // Get the appropriate enabling extension, or fail if we can't.
+            //if (!Xr.TryGetInstanceExtension(null, Instance, out VulkanEnable))
+            //{
+            //    throw new("Failed to get the graphics binding extension!");
+            //}
+        }
+
+        private void ReleaseUnmanagedResources()
+        {
+            if (_unmanagedResourcesFreed)
+            {
+                return;
+            }
+
+            CheckResult(Xr.DestroyInstance(Instance));
+            _unmanagedResourcesFreed = true;
+        }
+
         private GameBase baseGame;
 
-        private XR XRApi;
         private CompositionLayerProjectionView[] ProjectionViews;
         private Size2 renderSize;
 
@@ -35,7 +142,7 @@ namespace Xenko.VirtualReality
         {
             get
             {
-                if (XRApi == null) return DeviceState.Invalid;
+                if (Xr == null) return DeviceState.Invalid;
                 return DeviceState.Valid;
             }
         }
@@ -85,10 +192,6 @@ namespace Xenko.VirtualReality
             ReferenceSpaceType play_space_type = ReferenceSpaceType.Local; //XR_REFERENCE_SPACE_TYPE_LOCAL;
             Space play_space;
 
-            // the instance handle can be thought of as the basic connection to the OpenXR runtime
-            Instance instance;
-            // the system represents an (opaque) set of XR devices in use, managed by the runtime
-            ulong system_id = 0;
             // the session deals with the renderloop submitting frames to the runtime
             Session session;
 
@@ -137,10 +240,7 @@ namespace Xenko.VirtualReality
             // The function will write the required amount into CountOutput. We then have
             // to allocate an array to hold CountOutput elements and call the function
             // with CountOutput as CapacityInput.
-            uint ext_count = 0;
-            Span<ExtensionProperties> props = new Span<ExtensionProperties>(new ExtensionProperties[128]);
-            XRApi = XR.GetApi();
-            result = XRApi.EnumerateInstanceExtensionProperties(0, ref ext_count, props);
+            Prepare();
 
             // TODO: instance null will not be able to convert XrResult to string
             /*if (!xr_check(NULL, result, "Failed to enumerate number of extension properties"))
@@ -184,47 +284,11 @@ namespace Xenko.VirtualReality
                 return 1;
             }*/
 
-
-            // --- Create XrInstance
-            uint enabled_ext_count = 2;
-            List<string> enabled_exts = new List<string>() { "XR_KHR_vulkan_enable", "VK_KHR_image_format_list" };
-            //string
-            // same can be done for API layers, but API layers can also be enabled by env var
-
-            var enabledExtensionNames = enabled_exts.Select(Marshal.StringToHGlobalAnsi).ToArray();
-
-            fixed (void* enabledExtensionNamesPointer = &enabledExtensionNames[0])
-            {
-                InstanceCreateInfo instance_create_info = new InstanceCreateInfo()
-                {
-                    Type = StructureType.TypeInstanceCreateInfo,
-                    Next = (void*)0,
-                    CreateFlags = 0,
-                    EnabledExtensionCount = enabled_ext_count,
-                    EnabledExtensionNames = (byte**)enabledExtensionNamesPointer,
-                    EnabledApiLayerCount = 0,
-                    EnabledApiLayerNames = (byte**)0,
-                    ApplicationInfo = new ApplicationInfo(),
-                };
-
-                result = XRApi.CreateInstance(&instance_create_info, &instance);
-            }
-
-            // --- Get XrSystemId
-            SystemGetInfo system_get_info = new SystemGetInfo() {
-	            Type = StructureType.TypeSystemGetInfo,
-                FormFactor = form_factor
+            SystemProperties system_props = new SystemProperties() {
+		        Type = StructureType.TypeSystemProperties,
             };
 
-            result = XRApi.GetSystem(instance, &system_get_info, ref system_id);
-
-            {
-                SystemProperties system_props = new SystemProperties() {
-		            Type = StructureType.TypeSystemProperties,
-                };
-
-                result = XRApi.GetSystemProperties(instance, system_id, &system_props);
-            }
+            result = Xr.GetSystemProperties(Instance, system_id, &system_props);
 
             ViewConfigurationView vcv = new ViewConfigurationView()
             {
@@ -233,7 +297,7 @@ namespace Xenko.VirtualReality
 
             viewconfig_views = new ViewConfigurationView[128];
             fixed (ViewConfigurationView* viewspnt = &viewconfig_views[0])
-                result = XRApi.EnumerateViewConfigurationView(instance, system_id, view_type, 0, ref view_count, viewspnt);
+                result = Xr.EnumerateViewConfigurationView(Instance, system_id, view_type, 0, ref view_count, viewspnt);
             Array.Resize<ViewConfigurationView>(ref viewconfig_views, (int)view_count);
 
             // get size
@@ -249,9 +313,9 @@ namespace Xenko.VirtualReality
             // this function pointer was loaded with xrGetInstanceProcAddr
             Silk.NET.Core.PfnVoidFunction func = new Silk.NET.Core.PfnVoidFunction();
             GraphicsRequirementsVulkanKHR vulk = new GraphicsRequirementsVulkanKHR();
-            result = XRApi.GetInstanceProcAddr(instance, "pfnGetVulkanGraphicsRequirementsKHR", ref func);
+            result = Xr.GetInstanceProcAddr(Instance, "pfnGetVulkanGraphicsRequirementsKHR", ref func);
             Delegate vulk_req = Marshal.GetDelegateForFunctionPointer((IntPtr)func.Handle, typeof(pfnGetVulkanGraphicsRequirementsKHR));
-            vulk_req.DynamicInvoke(instance, system_id, (ulong)&vulk);
+            vulk_req.DynamicInvoke(Instance, system_id, (ulong)&vulk);
 
             // Checking opengl_reqs.minApiVersionSupported and opengl_reqs.maxApiVersionSupported
             // is not very useful, compatibility will depend on the OpenGL implementation and the
@@ -279,7 +343,7 @@ namespace Xenko.VirtualReality
                 SystemId = system_id
             };
 
-            result = XRApi.CreateSession(instance, &session_create_info, &session);
+            result = Xr.CreateSession(Instance, &session_create_info, &session);
 
             // Many runtimes support at least STAGE and LOCAL but not all do.
             // Sophisticated apps might check with xrEnumerateReferenceSpaces() if the
@@ -292,7 +356,7 @@ namespace Xenko.VirtualReality
                 PoseInReferenceSpace = new Posef(new Quaternionf(0f, 0f, 0f, 1f), new Vector3f(0f, 0f, 0f))
             };
 
-            result = XRApi.CreateReferenceSpace(session, &play_space_create_info, &play_space);
+            result = Xr.CreateReferenceSpace(session, &play_space_create_info, &play_space);
 
             // --- Create Swapchains
             /*uint32_t swapchain_format_count;
@@ -343,7 +407,7 @@ namespace Xenko.VirtualReality
                     };
 
                     fixed (Swapchain* scp = &swapchains[i])
-                        result = XRApi.CreateSwapchain(session, &swapchain_create_info, scp);
+                        result = Xr.CreateSwapchain(session, &swapchain_create_info, scp);
 
                     // The runtime controls how many textures we have to be able to render to
                     // (e.g. "triple buffering")
@@ -362,7 +426,7 @@ namespace Xenko.VirtualReality
                     fixed (uint* lenp = &swapchain_lengths[i]) {
                         fixed (void* sibhp = &images[i][0]) {
                         result =
-                            XRApi.EnumerateSwapchainImages(swapchains[i], swapchain_lengths[i], lenp, (SwapchainImageBaseHeader*)sibhp);
+                            Xr.EnumerateSwapchainImages(swapchains[i], swapchain_lengths[i], lenp, (SwapchainImageBaseHeader*)sibhp);
                         }
                     }
                     Array.Resize(ref images[i], (int)swapchain_lengths[i]);
