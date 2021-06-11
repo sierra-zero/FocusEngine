@@ -10,6 +10,7 @@ using System.Linq;
 using Silk.NET.Core;
 using System.Diagnostics;
 using Silk.NET.Core.Native;
+using Xenko.Graphics.SDL;
 
 namespace Xenko.VirtualReality
 {
@@ -51,7 +52,7 @@ namespace Xenko.VirtualReality
         {
             if ((int)result < 0)
             {
-                throw new($"OpenXR raised an error! Code: {result} ({result:X})");
+                Window.GenerateGenericError(null, $"OpenXR raised an error! Code: {result} ({result:X})\n\nStack Trace: " + (new StackTrace()).ToString());
             }
 
             return result;
@@ -128,6 +129,9 @@ namespace Xenko.VirtualReality
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
         private unsafe delegate Result pfnGetVulkanGraphicsRequirementsKHR(Instance instance, ulong sys_id, GraphicsRequirementsVulkanKHR* req);
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private unsafe delegate Result pfnGetVulkanGraphicsDeviceKHR(Instance instance, ulong systemId, VkHandle vkInstance, VkHandle* vkPhysicalDevice);
 
         public OpenXRHmd(GameBase game)
         {
@@ -297,48 +301,47 @@ namespace Xenko.VirtualReality
 
             viewconfig_views = new ViewConfigurationView[128];
             fixed (ViewConfigurationView* viewspnt = &viewconfig_views[0])
-                result = Xr.EnumerateViewConfigurationView(Instance, system_id, view_type, 0, ref view_count, viewspnt);
+                result = Xr.EnumerateViewConfigurationView(Instance, system_id, view_type, (uint)viewconfig_views.Length, ref view_count, viewspnt);
             Array.Resize<ViewConfigurationView>(ref viewconfig_views, (int)view_count);
 
             // get size
             renderSize.Height = (int)viewconfig_views[0].RecommendedImageRectHeight;
             renderSize.Width = (int)viewconfig_views[0].RecommendedImageRectWidth;
 
-            // OpenXR requires checking graphics requirements before creating a session.
-            GraphicsRequirementsOpenGLKHR opengl_reqs = new GraphicsRequirementsOpenGLKHR()
-            {
-                Type = StructureType.TypeGraphicsRequirementsVulkanKhr
-            };
-
+#if XENKO_GRAPHICS_API_VULKAN
             // this function pointer was loaded with xrGetInstanceProcAddr
             Silk.NET.Core.PfnVoidFunction func = new Silk.NET.Core.PfnVoidFunction();
             GraphicsRequirementsVulkanKHR vulk = new GraphicsRequirementsVulkanKHR();
-            result = Xr.GetInstanceProcAddr(Instance, "pfnGetVulkanGraphicsRequirementsKHR", ref func);
+            result = Xr.GetInstanceProcAddr(Instance, "xrGetVulkanGraphicsRequirementsKHR", ref func);
             Delegate vulk_req = Marshal.GetDelegateForFunctionPointer((IntPtr)func.Handle, typeof(pfnGetVulkanGraphicsRequirementsKHR));
-            vulk_req.DynamicInvoke(Instance, system_id, (ulong)&vulk);
+            vulk_req.DynamicInvoke(Instance, system_id, new System.IntPtr(&vulk));
 
-            // Checking opengl_reqs.minApiVersionSupported and opengl_reqs.maxApiVersionSupported
-            // is not very useful, compatibility will depend on the OpenGL implementation and the
-            // OpenXR runtime much more than the OpenGL version.
-            // Other APIs have more useful verifiable requirements.
+            /* xrGetVulkanGraphicsDeviceKHR(
+                XrInstance                                  instance,
+                XrSystemId                                  systemId,
+                VkInstance                                  vkInstance,
+                VkPhysicalDevice*                           vkPhysicalDevice) */
+            VkHandle physicalDevice = new VkHandle();
+            result = Xr.GetInstanceProcAddr(Instance, "xrGetVulkanGraphicsDeviceKHR", ref func);
+            Delegate vulk_dev = Marshal.GetDelegateForFunctionPointer((IntPtr)func.Handle, typeof(pfnGetVulkanGraphicsDeviceKHR));
+            vulk_dev.DynamicInvoke(Instance, system_id, new VkHandle((nint)device.NativeInstance.Handle), new System.IntPtr(&physicalDevice));
 
-#if XENKO_GRAPHICS_API_VULKAN
             // --- Create session
-            var graphics_binding_vulkan = new GraphicsBindingVulkanKHR(){
-	            Type = StructureType.TypeGraphicsBindingVulkanKhr,
+            var graphics_binding_vulkan = new GraphicsBindingVulkanKHR()
+            {
+                Type = StructureType.TypeGraphicsBindingVulkanKhr,
                 Device = new VkHandle((nint)device.NativeDevice.Handle),
                 Instance = new VkHandle((nint)device.NativeInstance.Handle),
-                PhysicalDevice = new VkHandle((nint)device.NativePhysicalDevice.Handle),
+                PhysicalDevice = physicalDevice,
                 QueueFamilyIndex = 0,
                 QueueIndex = 0,
-	        };
+            };
 #else
             GraphicsBindingVulkanKHR graphics_binding_vulkan = new GraphicsBindingVulkanKHR();
             throw new Exception("OpenXR is only compatible with Vulkan");
 #endif
 
             SessionCreateInfo session_create_info = new SessionCreateInfo() {
-	            Type = StructureType.TypeSessionCreateInfo,
                 Next = &graphics_binding_vulkan,
                 SystemId = system_id
             };
@@ -397,8 +400,8 @@ namespace Xenko.VirtualReality
 			            Type = StructureType.TypeSwapchainCreateInfo,
 			            UsageFlags = SwapchainUsageFlags.SwapchainUsageSampledBit | SwapchainUsageFlags.SwapchainUsageColorAttachmentBit, //XR_SWAPCHAIN_USAGE_SAMPLED_BIT | XR_SWAPCHAIN_USAGE_COLOR_ATTACHMENT_BIT,
 			            CreateFlags = 0,
-			            Format = (long)PixelFormat.R8G8B8A8_UNorm_SRgb,
-			            SampleCount = viewconfig_views[i].RecommendedSwapchainSampleCount,
+			            Format = (long)43, // VK_FORMAT_R8G8B8A8_SRGB
+                        SampleCount = viewconfig_views[i].RecommendedSwapchainSampleCount,
 			            Width = viewconfig_views[i].RecommendedImageRectWidth,
 			            Height = viewconfig_views[i].RecommendedImageRectHeight,
 			            FaceCount = 1,
