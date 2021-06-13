@@ -16,24 +16,31 @@ namespace Xenko.VirtualReality
 {
     public class OpenXRHmd : VRDevice
     {
-        // API Objects for accessing OpenXR and OpenGL
+        // API Objects for accessing OpenXR
         public XR Xr;
 
         // ExtDebugUtils is a handy OpenXR debugging extension which we'll enable if available unless told otherwise.
         public bool? IsDebugUtilsSupported;
 
-        // Hooking OpenXR up to graphics APIs requires specialized extensions. OpenGL and OpenGLES have separate ones,
-        // but we'll make variables for both so we can support both.
-        public bool UseMinimumVersion;
-
-        // Maintain a list of extensions we're using. Both for sanity and so we can tell OpenXR about them when creating
-        // the instance.
-        protected List<string> Extensions = new();
-
         // OpenXR handles
         public Instance Instance;
-        public DebugUtilsMessengerEXT MessengerExt;
         public ulong system_id = 0;
+
+        // input stuff
+        private enum HAND_PATHS
+        {
+            Hand = 0,
+            TriggerValue = 1,
+            ThumbstickY = 2,
+            ThumbstickX = 3,
+            TrackpadX = 4,
+            TrackpadY = 5,
+            GripValue = 6,
+            Button1 = 7,
+            Button2 = 8,
+            Menu = 9,
+        }
+        private ulong[,] hand_paths = new ulong[2, 10];
 
         // Misc
         private bool _unmanagedResourcesFreed;
@@ -58,12 +65,16 @@ namespace Xenko.VirtualReality
             return result;
         }
 
+        private List<string> Extensions = new List<string>();
+
         private unsafe void Prepare()
         {
             // Create our API object for OpenXR.
             Xr = XR.GetApi();
 
+            Extensions.Clear();
             Extensions.Add("XR_KHR_vulkan_enable");
+            Extensions.Add("XR_EXT_hp_mixed_reality_controller");
 
             InstanceCreateInfo instanceCreateInfo;
 
@@ -227,8 +238,6 @@ namespace Xenko.VirtualReality
             uint[] depth_swapchain_lengths;
             SwapchainImageVulkanKHR[][] depth_images;
 
-            //Path hand_paths[HAND_COUNT];
-
             /*struct
             {
                 // supporting depth layers is *optional* for runtimes
@@ -341,7 +350,11 @@ namespace Xenko.VirtualReality
             throw new Exception("OpenXR is only compatible with Vulkan");
 #endif
 
+            if (graphics_binding_vulkan.PhysicalDevice.Handle == 0)
+                Window.GenerateGenericError(null, "OpenXR couldn't find a physical device.\n\nIs an OpenXR runtime running (e.g. SteamVR)?");
+
             SessionCreateInfo session_create_info = new SessionCreateInfo() {
+                Type = StructureType.TypeSessionCreateInfo,
                 Next = &graphics_binding_vulkan,
                 SystemId = system_id
             };
@@ -536,34 +549,26 @@ namespace Xenko.VirtualReality
 
             // --- Set up input (actions)
 
-            /*xrStringToPath(instance, "/user/hand/left", &hand_paths[HAND_LEFT_INDEX]);
-            xrStringToPath(instance, "/user/hand/right", &hand_paths[HAND_RIGHT_INDEX]);
+            Xr.StringToPath(Instance, "/user/hand/left", ref hand_paths[(int)TouchControllerHand.Left, (int)HAND_PATHS.Hand]);
+            Xr.StringToPath(Instance, "/user/hand/right", ref hand_paths[(int)TouchControllerHand.Right, (int)HAND_PATHS.Hand]);
 
-            XrPath select_click_path[HAND_COUNT];
-            xrStringToPath(instance, "/user/hand/left/input/select/click",
-                           &select_click_path[HAND_LEFT_INDEX]);
-            xrStringToPath(instance, "/user/hand/right/input/select/click",
-                           &select_click_path[HAND_RIGHT_INDEX]);
+            Xr.StringToPath(Instance, "/user/hand/left/input/trigger/value",
+                            ref hand_paths[(int)TouchControllerHand.Left, (int)HAND_PATHS.TriggerValue]);
+            Xr.StringToPath(Instance, "/user/hand/right/input/trigger/value",
+                            ref hand_paths[(int)TouchControllerHand.Right, (int)HAND_PATHS.TriggerValue]);
 
-            XrPath trigger_value_path[HAND_COUNT];
-            xrStringToPath(instance, "/user/hand/left/input/trigger/value",
-                           &trigger_value_path[HAND_LEFT_INDEX]);
-            xrStringToPath(instance, "/user/hand/right/input/trigger/value",
-                           &trigger_value_path[HAND_RIGHT_INDEX]);
+            /*Xr.StringToPath(Instance, "/user/hand/left/input/thumbstick/y",
+                            ref thumbstick_y_path[(int)TouchControllerHand.Left]);
+            Xr.StringToPath(Instance, "/user/hand/right/input/thumbstick/y",
+                            ref thumbstick_y_path[(int)TouchControllerHand.Right]);
 
-            XrPath thumbstick_y_path[HAND_COUNT];
-            xrStringToPath(instance, "/user/hand/left/input/thumbstick/y",
-                           &thumbstick_y_path[HAND_LEFT_INDEX]);
-            xrStringToPath(instance, "/user/hand/right/input/thumbstick/y",
-                           &thumbstick_y_path[HAND_RIGHT_INDEX]);
-
-            XrPath grip_pose_path[HAND_COUNT];
-            xrStringToPath(instance, "/user/hand/left/input/grip/pose", &grip_pose_path[HAND_LEFT_INDEX]);
-            xrStringToPath(instance, "/user/hand/right/input/grip/pose", &grip_pose_path[HAND_RIGHT_INDEX]);
+            /XrPath grip_pose_path[HAND_COUNT];
+            Xr.StringToPath(Instance, "/user/hand/left/input/grip/pose", &grip_pose_path[(int)TouchControllerHand.Left]);
+            Xr.StringToPath(Instance, "/user/hand/right/input/grip/pose", &grip_pose_path[(int)TouchControllerHand.Right]);
 
             XrPath haptic_path[HAND_COUNT];
-            xrStringToPath(instance, "/user/hand/left/output/haptic", &haptic_path[HAND_LEFT_INDEX]);
-            xrStringToPath(instance, "/user/hand/right/output/haptic", &haptic_path[HAND_RIGHT_INDEX]);
+            Xr.StringToPath(Instance, "/user/hand/left/output/haptic", &haptic_path[(int)TouchControllerHand.Left]);
+            Xr.StringToPath(Instance, "/user/hand/right/output/haptic", &haptic_path[(int)TouchControllerHand.Right]);
 
 
             XrActionSetCreateInfo gameplay_actionset_info = {
