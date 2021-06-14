@@ -36,11 +36,12 @@ namespace Xenko.VirtualReality
             TrackpadX = 4,
             TrackpadY = 5,
             GripValue = 6,
-            Button1 = 7,
-            Button2 = 8,
+            Button1 = 7, // x on left, a on right (or either index)
+            Button2 = 8, // y on left, b on right (or either index)
             Menu = 9,
+            System = 10, // may be inaccessible
         }
-        private ulong[,] hand_paths = new ulong[2, 10];
+        private ulong[,] hand_paths = new ulong[2, 11];
 
         // Misc
         private bool _unmanagedResourcesFreed;
