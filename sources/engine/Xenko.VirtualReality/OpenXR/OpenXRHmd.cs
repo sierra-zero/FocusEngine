@@ -188,12 +188,12 @@ namespace Xenko.VirtualReality
 
         public override void Commit(CommandList commandList, Texture renderFrame)
         {
-            throw new NotImplementedException();
+            // submit textures
         }
 
         public override void Draw(GameTime gameTime)
         {
-            throw new NotImplementedException();
+            // need to get poses (e.g. headPos, headRot...)
         }
 
         public override unsafe void Enable(GraphicsDevice device, GraphicsDeviceManager graphicsDeviceManager, bool requireMirror)
@@ -715,15 +715,16 @@ namespace Xenko.VirtualReality
             }
 
 
-            // --- Begin session
-            XrSessionBeginInfo session_begin_info = {
-	                .type = XR_TYPE_SESSION_BEGIN_INFO, .next = NULL, .primaryViewConfigurationType = view_type};
-            result = xrBeginSession(session, &session_begin_info);
-            if (!xr_check(instance, result, "Failed to begin session!"))
-                return 1;
-            printf("Session started!\n");
+            // --- Begin session */
+            SessionBeginInfo session_begin_info = new SessionBeginInfo()
+            {
+                Type = StructureType.TypeSessionBeginInfo,
+                PrimaryViewConfigurationType = view_type
+            };
 
-            XrSessionActionSetsAttachInfo actionset_attach_info = {
+            CheckResult(Xr.BeginSession(session, &session_begin_info));
+
+            /*XrSessionActionSetsAttachInfo actionset_attach_info = {
 	                .type = XR_TYPE_SESSION_ACTION_SETS_ATTACH_INFO,
 	                .next = NULL,
 	                .countActionSets = 1,
@@ -731,8 +732,6 @@ namespace Xenko.VirtualReality
             result = xrAttachSessionActionSets(session, &actionset_attach_info);
             if (!xr_check(instance, result, "failed to attach action set"))
                 return 1;
-
-            *
             */
         }
 
@@ -745,7 +744,7 @@ namespace Xenko.VirtualReality
 
         public override void Update(GameTime gameTime)
         {
-            //TODO
+            // update controller positions (should this be part of draw...?)
         }
     }
 }
