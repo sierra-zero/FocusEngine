@@ -18,6 +18,8 @@ namespace Xenko.VirtualReality
     {
         // API Objects for accessing OpenXR
         public XR Xr;
+        public Session globalSession;
+        public Space globalPlaySpace;
 
         // ExtDebugUtils is a handy OpenXR debugging extension which we'll enable if available unless told otherwise.
         public bool? IsDebugUtilsSupported;
@@ -163,6 +165,7 @@ namespace Xenko.VirtualReality
             }
         }
 
+        private Matrix currentHead;
         private Vector3 headPos;
         public override Vector3 HeadPosition => headPos;
 
@@ -189,11 +192,48 @@ namespace Xenko.VirtualReality
         public override void Commit(CommandList commandList, Texture renderFrame)
         {
             // submit textures
+            // https://github.com/dotnet/Silk.NET/blob/b0b31779ce4db9b68922977fa11772b95f506e09/examples/CSharp/OpenGL%20Demos/OpenGL%20VR%20Demo/OpenXR/Renderer.cs#L507
         }
 
-        public override void Draw(GameTime gameTime)
+        public override unsafe void Draw(GameTime gameTime)
         {
-            // need to get poses (e.g. headPos, headRot...)
+            // wait get poses (headPos etc.)
+            // --- Wait for our turn to do head-pose dependent computation and render a frame
+            FrameState frame_state = new FrameState()
+            {
+                Type = StructureType.TypeFrameState
+            };
+
+            FrameWaitInfo frame_wait_info = new FrameWaitInfo()
+            {
+                Type = StructureType.TypeFrameWaitInfo,
+            };
+
+            CheckResult(Xr.WaitFrame(globalSession, &frame_wait_info, &frame_state));
+
+            // --- Create projection matrices and view matrices for each eye
+            ViewLocateInfo view_locate_info = new ViewLocateInfo()
+            {
+                Type = StructureType.TypeViewLocateInfo,
+                ViewConfigurationType = ViewConfigurationType.PrimaryStereo,
+		        DisplayTime = frame_state.PredictedDisplayTime,
+		        Space = globalPlaySpace
+            };
+
+            /*ViewState view_state = {.type = XR_TYPE_VIEW_STATE, .next = NULL };
+            result = xrLocateViews(session, &view_locate_info, &view_state, view_count, &view_count, views);
+            if (!xr_check(instance, result, "Could not locate views"))
+                break;
+            */
+
+            // --- Begin frame (does it go here?)
+            /*
+            XrFrameBeginInfo frame_begin_info = {.type = XR_TYPE_FRAME_BEGIN_INFO, .next = NULL };
+
+            result = xrBeginFrame(session, &frame_begin_info);
+            if (!xr_check(instance, result, "failed to begin frame!"))
+                break;*/
+
         }
 
         public override unsafe void Enable(GraphicsDevice device, GraphicsDeviceManager graphicsDeviceManager, bool requireMirror)
@@ -361,6 +401,7 @@ namespace Xenko.VirtualReality
             };
 
             result = Xr.CreateSession(Instance, &session_create_info, &session);
+            globalSession = session;
 
             // Many runtimes support at least STAGE and LOCAL but not all do.
             // Sophisticated apps might check with xrEnumerateReferenceSpaces() if the
@@ -374,6 +415,7 @@ namespace Xenko.VirtualReality
             };
 
             result = Xr.CreateReferenceSpace(session, &play_space_create_info, &play_space);
+            globalPlaySpace = play_space;
 
             // --- Create Swapchains
             /*uint32_t swapchain_format_count;
@@ -737,14 +779,118 @@ namespace Xenko.VirtualReality
 
         public override void ReadEyeParameters(Eyes eye, float near, float far, ref Vector3 cameraPosition, ref Matrix cameraRotation, bool ignoreHeadRotation, bool ignoreHeadPosition, out Matrix view, out Matrix projection)
         {
-            //TODO
-            view = Matrix.Identity;
-            projection = Matrix.Identity;
+            Matrix eyeMat, rot;
+            Vector3 pos, scale;
+
+            OpenVR.GetEyeToHead(eye == Eyes.Left ? 0 : 1, out eyeMat);
+            OpenVR.GetProjection(eye == Eyes.Left ? 0 : 1, near, far, out projection);
+
+            var adjustedHeadMatrix = currentHead;
+            if (ignoreHeadPosition)
+            {
+                adjustedHeadMatrix.TranslationVector = Vector3.Zero;
+            }
+            if (ignoreHeadRotation)
+            {
+                // keep the scale just in case
+                adjustedHeadMatrix.Row1 = new Vector4(adjustedHeadMatrix.Row1.Length(), 0, 0, 0);
+                adjustedHeadMatrix.Row2 = new Vector4(0, adjustedHeadMatrix.Row2.Length(), 0, 0);
+                adjustedHeadMatrix.Row3 = new Vector4(0, 0, adjustedHeadMatrix.Row3.Length(), 0);
+            }
+
+            eyeMat = eyeMat * adjustedHeadMatrix * Matrix.Scaling(BodyScaling) * cameraRotation * Matrix.Translation(cameraPosition);
+            eyeMat.Decompose(out scale, out rot, out pos);
+            var finalUp = Vector3.TransformCoordinate(new Vector3(0, 1, 0), rot);
+            var finalForward = Vector3.TransformCoordinate(new Vector3(0, 0, -1), rot);
+            view = Matrix.LookAtRH(pos, pos + finalForward, finalUp);
         }
 
         public override void Update(GameTime gameTime)
         {
             // update controller positions (should this be part of draw...?)
+            //! @todo Move this action processing to before xrWaitFrame, probably.
+            /*
+            const XrActiveActionSet active_actionsets[] = {
+            {.actionSet = gameplay_actionset, .subactionPath = XR_NULL_PATH}};
+
+            XrActionsSyncInfo actions_sync_info = {
+		    .type = XR_TYPE_ACTIONS_SYNC_INFO,
+		    .countActiveActionSets = sizeof(active_actionsets) / sizeof(active_actionsets[0]),
+		    .activeActionSets = active_actionsets,
+        };
+            result = xrSyncActions(session, &actions_sync_info);
+            xr_check(instance, result, "failed to sync actions!");
+
+            // query each value / location with a subaction path != XR_NULL_PATH
+            // resulting in individual values per hand/.
+            XrActionStateFloat grab_value[HAND_COUNT];
+            XrSpaceLocation hand_locations[HAND_COUNT];
+
+            for (int i = 0; i < HAND_COUNT; i++)
+            {
+                XrActionStatePose hand_pose_state = {.type = XR_TYPE_ACTION_STATE_POSE, .next = NULL };
+                {
+                    XrActionStateGetInfo get_info = {.type = XR_TYPE_ACTION_STATE_GET_INFO,
+				                                 .next = NULL,
+				                                 .action = hand_pose_action,
+				                                 .subactionPath = hand_paths[i]};
+                    result = xrGetActionStatePose(session, &get_info, &hand_pose_state);
+                    xr_check(instance, result, "failed to get pose value!");
+                }
+                // printf("Hand pose %d active: %d\n", i, poseState.isActive);
+
+                hand_locations[i].type = XR_TYPE_SPACE_LOCATION;
+                hand_locations[i].next = NULL;
+
+                result = xrLocateSpace(hand_pose_spaces[i], play_space, frame_state.predictedDisplayTime,
+                                       &hand_locations[i]);
+                xr_check(instance, result, "failed to locate space %d!", i);
+
+                /*
+                printf("Pose %d valid %d: %f %f %f %f, %f %f %f\n", i,
+                spaceLocationValid[i], spaceLocation[0].pose.orientation.x,
+                spaceLocation[0].pose.orientation.y, spaceLocation[0].pose.orientation.z,
+                spaceLocation[0].pose.orientation.w, spaceLocation[0].pose.position.x,
+                spaceLocation[0].pose.position.y, spaceLocation[0].pose.position.z
+                );
+
+                grab_value[i].type = XR_TYPE_ACTION_STATE_FLOAT;
+                grab_value[i].next = NULL;
+                {
+                    XrActionStateGetInfo get_info = {.type = XR_TYPE_ACTION_STATE_GET_INFO,
+				                                 .next = NULL,
+				                                 .action = grab_action_float,
+				                                 .subactionPath = hand_paths[i]};
+
+                    result = xrGetActionStateFloat(session, &get_info, &grab_value[i]);
+                    xr_check(instance, result, "failed to get grab value!");
+                }
+
+                // printf("Grab %d active %d, current %f, changed %d\n", i,
+                // grabValue[i].isActive, grabValue[i].currentState,
+                // grabValue[i].changedSinceLastSync);
+
+                if (grab_value[i].isActive && grab_value[i].currentState > 0.75)
+                {
+                    XrHapticVibration vibration = {.type = XR_TYPE_HAPTIC_VIBRATION,
+				                               .next = NULL,
+				                               .amplitude = 0.5,
+				                               .duration = XR_MIN_HAPTIC_DURATION,
+				                               .frequency = XR_FREQUENCY_UNSPECIFIED};
+
+                    XrHapticActionInfo haptic_action_info = {.type = XR_TYPE_HAPTIC_ACTION_INFO,
+				                                         .next = NULL,
+				                                         .action = haptic_action,
+				                                         .subactionPath = hand_paths[i]};
+                    result = xrApplyHapticFeedback(session, &haptic_action_info,
+                                                   (const XrHapticBaseHeader*)&vibration);
+            xr_check(instance, result, "failed to apply haptic feedback!");
+            // printf("Sent haptic output to hand %d\n", i);
+        }
+        };
+
+            */
+
         }
     }
 }
