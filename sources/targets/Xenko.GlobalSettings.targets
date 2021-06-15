@@ -38,7 +38,7 @@
     <!-- Compute list of runtime identifiers based on platforms and graphics platforms -->
     <RuntimeIdentifiers></RuntimeIdentifiers>
     <RuntimeIdentifiers Condition="$(_XenkoPlatforms.Contains(';Windows;')) And ($(TargetFramework.StartsWith('net4')) Or '$(TargetFramework)' == 'netstandard2.0') And $(_XenkoGraphicsApisWindows.Contains(';Direct3D11;'))">$(RuntimeIdentifiers);win</RuntimeIdentifiers>
-    <RuntimeIdentifiers Condition="$(_XenkoPlatforms.Contains(';Windows;')) And ($(TargetFramework.StartsWith('net4')) Or '$(TargetFramework)' == 'netstandard2.0') And $(_XenkoGraphicsApisWindows.Contains(';Vulkan;'))">$(RuntimeIdentifiers);win-vulkan</RuntimeIdentifiers>
+    <RuntimeIdentifiers Condition="$(_XenkoPlatforms.Contains(';Windows;')) And ($(TargetFramework.StartsWith('net4')) Or '$(TargetFramework)' == 'netstandard2.0') And $(_XenkoGraphicsApisWindows.Contains(';Vulkan;'))">$(RuntimeIdentifiers);win-x64</RuntimeIdentifiers>
     <RuntimeIdentifiers Condition="$(_XenkoPlatforms.Contains(';Linux;')) And '$(TargetFramework)' == 'netstandard2.0' And $(_XenkoGraphicsApisLinux.Contains(';Vulkan;'))">$(RuntimeIdentifiers);linux</RuntimeIdentifiers>
     <RuntimeIdentifiers Condition="$(_XenkoPlatforms.Contains(';macOS;')) And '$(TargetFramework)' == 'netstandard2.0'">$(RuntimeIdentifiers);osx</RuntimeIdentifiers>
     
@@ -55,12 +55,12 @@
     <!-- Compute RuntimeIdentifier (it might be different if passed from a ProjectReference) -->
     <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == '' And '$(RuntimeIdentifierDefault)' != ''">$(RuntimeIdentifierDefault)</RuntimeIdentifier>
     <!-- Properly setup RuntimeIdentifier if it was not a Graphics-API-specific one -->
-    <RuntimeIdentifier Condition="'$(XenkoPlatform)' == 'Windows' And '$(RuntimeIdentifier)' != 'win' And '$(RuntimeIdentifier)' != 'win-vulkan'">$(RuntimeIdentifierDefault)</RuntimeIdentifier>
+    <RuntimeIdentifier Condition="'$(XenkoPlatform)' == 'Windows' And '$(RuntimeIdentifier)' != 'win' And '$(RuntimeIdentifier)' != 'win-x64'">$(RuntimeIdentifierDefault)</RuntimeIdentifier>
     <RuntimeIdentifier Condition="'$(XenkoPlatform)' == 'Linux' And '$(RuntimeIdentifier)' != 'linux'">$(RuntimeIdentifierDefault)</RuntimeIdentifier>
     <RuntimeIdentifier Condition="'$(XenkoPlatform)' == 'macOS' And '$(RuntimeIdentifier)' != 'osx'">$(RuntimeIdentifierDefault)</RuntimeIdentifier>
 
     <XenkoGraphicsApi Condition="'$(RuntimeIdentifier)' == 'win'">Direct3D11</XenkoGraphicsApi>
-    <XenkoGraphicsApi Condition="'$(RuntimeIdentifier)' == 'win-vulkan'">Vulkan</XenkoGraphicsApi>
+    <XenkoGraphicsApi Condition="'$(RuntimeIdentifier)' == 'win-x64'">Vulkan</XenkoGraphicsApi>
 
     <XenkoGraphicsApi Condition="'$(RuntimeIdentifier)' == 'linux'">Vulkan</XenkoGraphicsApi>
 
