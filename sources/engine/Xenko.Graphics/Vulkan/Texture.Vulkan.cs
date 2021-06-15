@@ -78,7 +78,7 @@ namespace Xenko.Graphics
             return InitializeFrom(description);
         }
 
-        internal void SetNativeHandles(VkImage image, VkImageView attachmentView)
+        public void SetNativeHandles(VkImage image, VkImageView attachmentView)
         {
             NativeImage = image;
             NativeColorAttachmentView = attachmentView;

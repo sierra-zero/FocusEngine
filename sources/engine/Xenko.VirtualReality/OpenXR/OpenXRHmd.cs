@@ -11,6 +11,7 @@ using Silk.NET.Core;
 using System.Diagnostics;
 using Silk.NET.Core.Native;
 using Xenko.Graphics.SDL;
+using Vortice.Vulkan;
 
 namespace Xenko.VirtualReality
 {
@@ -19,7 +20,18 @@ namespace Xenko.VirtualReality
         // API Objects for accessing OpenXR
         public XR Xr;
         public Session globalSession;
+        public Swapchain globalSwapchain;
         public Space globalPlaySpace;
+        public FrameState globalFrameState;
+        public ReferenceSpaceType play_space_type = ReferenceSpaceType.Stage; //XR_REFERENCE_SPACE_TYPE_LOCAL;
+        public SwapchainImageVulkanKHR[] images;
+        public SwapchainImageVulkanKHR[] depth_images;
+
+        // array of view_count containers for submitting swapchains with rendered VR frames
+        CompositionLayerProjectionView[] projection_views;
+
+        // array of view_count views, filled by the runtime with current HMD display pose
+        View[] views;
 
         // ExtDebugUtils is a handy OpenXR debugging extension which we'll enable if available unless told otherwise.
         public bool? IsDebugUtilsSupported;
@@ -69,6 +81,20 @@ namespace Xenko.VirtualReality
         }
 
         private List<string> Extensions = new List<string>();
+
+        public unsafe ulong GetSwapchainImage()
+        {
+            // Get the swapchain image
+            var swapchainIndex = 0u;
+            var acquireInfo = new SwapchainImageAcquireInfo();
+            CheckResult(Xr.AcquireSwapchainImage(globalSwapchain, in acquireInfo, ref swapchainIndex));
+
+            var waitInfo = new SwapchainImageWaitInfo(timeout: long.MaxValue);
+            CheckResult(Xr.WaitSwapchainImage(globalSwapchain, in waitInfo));
+
+            return images[swapchainIndex].Image;
+        }
+
 
         private unsafe void Prepare()
         {
@@ -138,7 +164,6 @@ namespace Xenko.VirtualReality
 
         private GameBase baseGame;
 
-        private CompositionLayerProjectionView[] ProjectionViews;
         private Size2 renderSize;
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
@@ -165,7 +190,6 @@ namespace Xenko.VirtualReality
             }
         }
 
-        private Matrix currentHead;
         private Vector3 headPos;
         public override Vector3 HeadPosition => headPos;
 
@@ -189,10 +213,53 @@ namespace Xenko.VirtualReality
 
         public override bool CanInitialize => true;
 
-        public override void Commit(CommandList commandList, Texture renderFrame)
+        internal Texture swapTexture;
+
+        public override unsafe void Commit(CommandList commandList, Texture renderFrame)
         {
             // submit textures
             // https://github.com/dotnet/Silk.NET/blob/b0b31779ce4db9b68922977fa11772b95f506e09/examples/CSharp/OpenGL%20Demos/OpenGL%20VR%20Demo/OpenXR/Renderer.cs#L507
+            var frameEndInfo = new FrameEndInfo()
+            {
+                DisplayTime = globalFrameState.PredictedDisplayTime,
+                EnvironmentBlendMode = EnvironmentBlendMode.Opaque
+            };
+
+#if XENKO_GRAPHICS_API_VULKAN
+            // copy texture to swapchain image
+            swapTexture.SetNativeHandles(new VkImage(GetSwapchainImage()), VkImageView.Null);
+            commandList.Copy(renderFrame, swapTexture);
+#endif
+
+            fixed (CompositionLayerProjectionView* ptr = &projection_views[0])
+            {
+                if ((Bool32)globalFrameState.ShouldRender)
+                {
+                    var projectionLayer = new CompositionLayerProjection
+                    (
+                        viewCount: 2,
+                        views: ptr,
+                        space: globalPlaySpace
+                    );
+
+                    var layerPointer = (CompositionLayerBaseHeader*)&projectionLayer;
+                    for (var eye = 0; eye < 2; eye++)
+                    {
+                        ref var layerView = ref projection_views[eye];
+                        layerView.Fov = views[eye].Fov;
+                        layerView.Pose = views[eye].Pose;
+                    }
+
+                    frameEndInfo.LayerCount = 1;
+                    frameEndInfo.Layers = &layerPointer;
+                }
+
+                CheckResult(Xr.EndFrame(globalSession, in frameEndInfo));
+            }
+
+            // Release the swapchain image
+            var releaseInfo = new SwapchainImageReleaseInfo();
+            CheckResult(Xr.ReleaseSwapchainImage(globalSwapchain, in releaseInfo));
         }
 
         public override unsafe void Draw(GameTime gameTime)
@@ -210,6 +277,7 @@ namespace Xenko.VirtualReality
             };
 
             CheckResult(Xr.WaitFrame(globalSession, &frame_wait_info, &frame_state));
+            globalFrameState = frame_state;
 
             // --- Create projection matrices and view matrices for each eye
             ViewLocateInfo view_locate_info = new ViewLocateInfo()
@@ -220,32 +288,42 @@ namespace Xenko.VirtualReality
 		        Space = globalPlaySpace
             };
 
-            /*ViewState view_state = {.type = XR_TYPE_VIEW_STATE, .next = NULL };
-            result = xrLocateViews(session, &view_locate_info, &view_state, view_count, &view_count, views);
-            if (!xr_check(instance, result, "Could not locate views"))
-                break;
-            */
+            ViewState view_state = new ViewState()
+            {
+                Type = StructureType.TypeViewState
+            };
+
+            uint view_count;
+            Xr.LocateView(globalSession, &view_locate_info, &view_state, 2, &view_count, views);
+
+            // get head rotation
+            headRot.W = views[0].Pose.Orientation.W;
+            headRot.X = views[0].Pose.Orientation.X;
+            headRot.Y = views[0].Pose.Orientation.Y;
+            headRot.Z = views[0].Pose.Orientation.Z;
+
+            // since we got eye positions, our head is between our eyes
+            headPos.X = (views[0].Pose.Position.X + views[1].Pose.Position.X) * 0.5f;
+            headPos.Y = (views[0].Pose.Position.Y + views[1].Pose.Position.Y) * 0.5f;
+            headPos.Z = (views[0].Pose.Position.Z + views[1].Pose.Position.Z) * 0.5f;
 
             // --- Begin frame (does it go here?)
-            /*
-            XrFrameBeginInfo frame_begin_info = {.type = XR_TYPE_FRAME_BEGIN_INFO, .next = NULL };
+            FrameBeginInfo frame_begin_info = new FrameBeginInfo()
+            {
+                Type = StructureType.TypeFrameBeginInfo,                 
+            };
 
-            result = xrBeginFrame(session, &frame_begin_info);
-            if (!xr_check(instance, result, "failed to begin frame!"))
-                break;*/
+            Xr.BeginFrame(globalSession, &frame_begin_info);
 
+            poseCount++;
         }
 
         public override unsafe void Enable(GraphicsDevice device, GraphicsDeviceManager graphicsDeviceManager, bool requireMirror)
         {            
-            // Changing to HANDHELD_DISPLAY or a future form factor may work, but has not been tested.
-            FormFactor form_factor = FormFactor.HeadMountedDisplay;
-
             // Changing the form_factor may require changing the view_type too.
             ViewConfigurationType view_type = ViewConfigurationType.PrimaryStereo;
 
             // Typically STAGE for room scale/standing, LOCAL for seated
-            ReferenceSpaceType play_space_type = ReferenceSpaceType.Local; //XR_REFERENCE_SPACE_TYPE_LOCAL;
             Space play_space;
 
             // the session deals with the renderloop submitting frames to the runtime
@@ -259,26 +337,17 @@ namespace Xenko.VirtualReality
             // the viewconfiguration views contain information like resolution about each view
             ViewConfigurationView[] viewconfig_views;
 
-            // array of view_count containers for submitting swapchains with rendered VR frames
-            CompositionLayerProjectionView[] projection_views;
-            // array of view_count views, filled by the runtime with current HMD display pose
-            View[] views;
-
             // array of view_count handles for swapchains.
             // it is possible to use imageRect to render all views to different areas of the
             // same texture, but in this example we use one swapchain per view
-            Swapchain[] swapchains;
+            Swapchain swapchain;
             // array of view_count ints, storing the length of swapchains
             uint[] swapchain_lengths;
-            // array of view_count array of swapchain_length containers holding an OpenGL texture
-            // that is allocated by the runtime
-            SwapchainImageVulkanKHR[][] images;
 
             // depth swapchain equivalent to the VR color swapchains
-            Swapchain[] depth_swapchains;
+            Swapchain depth_swapchains;
             uint[] depth_swapchain_lengths;
-            SwapchainImageVulkanKHR[][] depth_images;
-
+ 
             /*struct
             {
                 // supporting depth layers is *optional* for runtimes
@@ -355,8 +424,8 @@ namespace Xenko.VirtualReality
             Array.Resize<ViewConfigurationView>(ref viewconfig_views, (int)view_count);
 
             // get size
-            renderSize.Height = (int)viewconfig_views[0].RecommendedImageRectHeight;
-            renderSize.Width = (int)viewconfig_views[0].RecommendedImageRectWidth;
+            renderSize.Height = (int)Math.Round(viewconfig_views[0].RecommendedImageRectHeight * RenderFrameScaling);
+            renderSize.Width = (int)Math.Round(viewconfig_views[0].RecommendedImageRectWidth * RenderFrameScaling) * 2; // 2 views in one frame
 
 #if XENKO_GRAPHICS_API_VULKAN
             // this function pointer was loaded with xrGetInstanceProcAddr
@@ -447,49 +516,59 @@ namespace Xenko.VirtualReality
             // --- Create swapchain for main VR rendering
             {
                 // In the frame loop we render into OpenGL textures we receive from the runtime here.
-                swapchains = new Swapchain[view_count]; //malloc(sizeof(XrSwapchain) * view_count);
-                swapchain_lengths = new uint[view_count]; //malloc(sizeof(uint32_t) * view_count);
-                images = new SwapchainImageVulkanKHR[view_count][]; //malloc(sizeof(SwapchainImageVulkanKHR*) * view_count);
-                for (int i = 0; i < view_count; i++)
+                swapchain = new Swapchain();
+                swapchain_lengths = new uint[1];
+                SwapchainCreateInfo swapchain_create_info = new SwapchainCreateInfo() {
+			        Type = StructureType.TypeSwapchainCreateInfo,
+			        UsageFlags = SwapchainUsageFlags.SwapchainUsageSampledBit | SwapchainUsageFlags.SwapchainUsageColorAttachmentBit, //XR_SWAPCHAIN_USAGE_SAMPLED_BIT | XR_SWAPCHAIN_USAGE_COLOR_ATTACHMENT_BIT,
+			        CreateFlags = 0,
+			        Format = (long)43, // VK_FORMAT_R8G8B8A8_SRGB
+                    SampleCount = viewconfig_views[0].RecommendedSwapchainSampleCount,
+			        Width = (uint)renderSize.Width,
+			        Height = (uint)renderSize.Height,
+			        FaceCount = 1,
+			        ArraySize = 1,
+			        MipCount = 1,
+                };
+
+                result = Xr.CreateSwapchain(session, &swapchain_create_info, &swapchain);
+                globalSwapchain = swapchain;
+
+                swapTexture = new Texture(baseGame.GraphicsDevice, new TextureDescription()
                 {
-                    SwapchainCreateInfo swapchain_create_info = new SwapchainCreateInfo() {
-			            Type = StructureType.TypeSwapchainCreateInfo,
-			            UsageFlags = SwapchainUsageFlags.SwapchainUsageSampledBit | SwapchainUsageFlags.SwapchainUsageColorAttachmentBit, //XR_SWAPCHAIN_USAGE_SAMPLED_BIT | XR_SWAPCHAIN_USAGE_COLOR_ATTACHMENT_BIT,
-			            CreateFlags = 0,
-			            Format = (long)43, // VK_FORMAT_R8G8B8A8_SRGB
-                        SampleCount = viewconfig_views[i].RecommendedSwapchainSampleCount,
-			            Width = viewconfig_views[i].RecommendedImageRectWidth,
-			            Height = viewconfig_views[i].RecommendedImageRectHeight,
-			            FaceCount = 1,
-			            ArraySize = 1,
-			            MipCount = 1,
-                    };
+                    ArraySize = 1,
+                    Depth = 1,
+                    Dimension = TextureDimension.Texture2D,
+                    Flags = TextureFlags.RenderTarget,
+                    Format = (PixelFormat)43,
+                    Height = renderSize.Height,
+                    MipLevels = 1,
+                    MultisampleCount = MultisampleCount.None,
+                    Options = TextureOptions.None,
+                    Usage = GraphicsResourceUsage.Default,
+                    Width = renderSize.Height,
+                });
 
-                    fixed (Swapchain* scp = &swapchains[i])
-                        result = Xr.CreateSwapchain(session, &swapchain_create_info, scp);
+                // The runtime controls how many textures we have to be able to render to
+                // (e.g. "triple buffering")
+                /*result = xrEnumerateSwapchainImages(swapchains[i], 0, &swapchain_lengths[i], NULL);
+                if (!xr_check(instance, result, "Failed to enumerate swapchains"))
+                    return 1;
 
-                    // The runtime controls how many textures we have to be able to render to
-                    // (e.g. "triple buffering")
-                    /*result = xrEnumerateSwapchainImages(swapchains[i], 0, &swapchain_lengths[i], NULL);
-                    if (!xr_check(instance, result, "Failed to enumerate swapchains"))
-                        return 1;
+                images[i] = malloc(sizeof(XrSwapchainImageOpenGLKHR) * swapchain_lengths[i]);
+                for (uint32_t j = 0; j < swapchain_lengths[i]; j++)
+                {
+                    images[i][j].type = XR_TYPE_SWAPCHAIN_IMAGE_OPENGL_KHR;
+                    images[i][j].next = NULL;
+                }*/
 
-                    images[i] = malloc(sizeof(XrSwapchainImageOpenGLKHR) * swapchain_lengths[i]);
-                    for (uint32_t j = 0; j < swapchain_lengths[i]; j++)
-                    {
-                        images[i][j].type = XR_TYPE_SWAPCHAIN_IMAGE_OPENGL_KHR;
-                        images[i][j].next = NULL;
-                    }*/
-                    images[i] = new SwapchainImageVulkanKHR[32];
+                images = new SwapchainImageVulkanKHR[32];
+                uint img_count = 0;
 
-                    fixed (uint* lenp = &swapchain_lengths[i]) {
-                        fixed (void* sibhp = &images[i][0]) {
-                        result =
-                            Xr.EnumerateSwapchainImages(swapchains[i], swapchain_lengths[i], lenp, (SwapchainImageBaseHeader*)sibhp);
-                        }
-                    }
-                    Array.Resize(ref images[i], (int)swapchain_lengths[i]);
+                fixed (void* sibhp = &images[0]) {
+                    CheckResult(Xr.EnumerateSwapchainImages(swapchain, (uint)images.Length, ref img_count, (SwapchainImageBaseHeader*)sibhp));
                 }
+                Array.Resize(ref images, (int)img_count);
             }
 
             // --- Create swapchain for depth buffers if supported (//TODO support depth buffering)
@@ -550,13 +629,12 @@ namespace Xenko.VirtualReality
             for (int i = 0; i < view_count; i++)
             {
                 projection_views[i].Type = StructureType.TypeCompositionLayerProjectionView; //XR_TYPE_COMPOSITION_LAYER_PROJECTION_VIEW;
-
-                projection_views[i].SubImage.Swapchain = swapchains[i];
+                projection_views[i].SubImage.Swapchain = swapchain;
                 projection_views[i].SubImage.ImageArrayIndex = 0;
-                projection_views[i].SubImage.ImageRect.Offset.X = 0;
+                projection_views[i].SubImage.ImageRect.Offset.X = (renderSize.Width * i) / 2;
                 projection_views[i].SubImage.ImageRect.Offset.Y = 0;
-                projection_views[i].SubImage.ImageRect.Extent.Width = (int)viewconfig_views[i].RecommendedImageRectWidth;
-                projection_views[i].SubImage.ImageRect.Extent.Height = (int)viewconfig_views[i].RecommendedImageRectHeight;
+                projection_views[i].SubImage.ImageRect.Extent.Width = renderSize.Width / 2;
+                projection_views[i].SubImage.ImageRect.Extent.Height = renderSize.Height;
 
                 // projection_views[i].{pose, fov} have to be filled every frame in frame loop
             };
@@ -777,15 +855,93 @@ namespace Xenko.VirtualReality
             */
         }
 
+        internal Matrix createViewMatrix (Vector3 translation, Quaternion rotation)
+        {
+            Matrix rotationMatrix = Matrix.RotationQuaternion(rotation);
+            Matrix translationMatrix = Matrix.Translation(translation);
+            Matrix viewMatrix = translationMatrix * rotationMatrix;
+            viewMatrix.Invert();
+            return viewMatrix;
+        }
+
+        internal Matrix createProjectionFov(Fovf fov, float nearZ, float farZ)
+        {
+            Matrix result = Matrix.Identity;
+
+            float tanAngleLeft = (float)Math.Tan(fov.AngleLeft);
+            float tanAngleRight = (float)Math.Tan(fov.AngleRight);
+
+            float tanAngleDown = (float)Math.Tan(fov.AngleDown);
+            float tanAngleUp = (float)Math.Tan(fov.AngleUp);
+
+            float tanAngleWidth = tanAngleRight - tanAngleLeft;
+
+            // Set to tanAngleDown - tanAngleUp for a clip space with positive Y
+            // down (Vulkan). Set to tanAngleUp - tanAngleDown for a clip space with
+            // positive Y up (OpenGL / D3D / Metal).
+            float tanAngleHeight = (tanAngleDown - tanAngleUp);
+
+            // Set to nearZ for a [-1,1] Z clip space (OpenGL / OpenGL ES).
+            // Set to zero for a [0,1] Z clip space (Vulkan / D3D / Metal).
+            float offsetZ = 0;
+
+	        if (farZ <= nearZ) {    
+		        // place the far plane at infinity
+		        result[0] = 2 / tanAngleWidth;
+		        result[4] = 0;
+		        result[8] = (tanAngleRight + tanAngleLeft) / tanAngleWidth;
+		        result[12] = 0;
+
+		        result[1] = 0;
+		        result[5] = 2 / tanAngleHeight;
+		        result[9] = (tanAngleUp + tanAngleDown) / tanAngleHeight;
+		        result[13] = 0;
+
+		        result[2] = 0;
+		        result[6] = 0;
+		        result[10] = -1;
+		        result[14] = -(nearZ + offsetZ);
+
+		        result[3] = 0;
+		        result[7] = 0;
+		        result[11] = -1;
+		        result[15] = 0;
+	        } else {
+		        // normal projection
+		        result[0] = 2 / tanAngleWidth;
+		        result[4] = 0;
+		        result[8] = (tanAngleRight + tanAngleLeft) / tanAngleWidth;
+		        result[12] = 0;
+
+		        result[1] = 0;
+		        result[5] = 2 / tanAngleHeight;
+		        result[9] = (tanAngleUp + tanAngleDown) / tanAngleHeight;
+		        result[13] = 0;
+
+		        result[2] = 0;
+		        result[6] = 0;
+		        result[10] = -(farZ + offsetZ) / (farZ - nearZ);
+		        result[14] = -(farZ* (nearZ + offsetZ)) / (farZ - nearZ);
+
+		        result[3] = 0;
+		        result[7] = 0;
+		        result[11] = -1;
+		        result[15] = 0;
+	        }
+
+            return result;
+        }
+
         public override void ReadEyeParameters(Eyes eye, float near, float far, ref Vector3 cameraPosition, ref Matrix cameraRotation, bool ignoreHeadRotation, bool ignoreHeadPosition, out Matrix view, out Matrix projection)
         {
             Matrix eyeMat, rot;
             Vector3 pos, scale;
 
-            OpenVR.GetEyeToHead(eye == Eyes.Left ? 0 : 1, out eyeMat);
-            OpenVR.GetProjection(eye == Eyes.Left ? 0 : 1, near, far, out projection);
+            View eyeview = views[eye == Eyes.Left ? 0 : 1];
 
-            var adjustedHeadMatrix = currentHead;
+            projection = createProjectionFov(eyeview.Fov, near, far);
+            var adjustedHeadMatrix = createViewMatrix(new Vector3(eyeview.Pose.Position.X, eyeview.Pose.Position.Y, eyeview.Pose.Position.Z),
+                                                      new Quaternion(eyeview.Pose.Orientation.X, eyeview.Pose.Orientation.Y, eyeview.Pose.Orientation.Z, eyeview.Pose.Orientation.W)); ;
             if (ignoreHeadPosition)
             {
                 adjustedHeadMatrix.TranslationVector = Vector3.Zero;
@@ -798,7 +954,7 @@ namespace Xenko.VirtualReality
                 adjustedHeadMatrix.Row3 = new Vector4(0, 0, adjustedHeadMatrix.Row3.Length(), 0);
             }
 
-            eyeMat = eyeMat * adjustedHeadMatrix * Matrix.Scaling(BodyScaling) * cameraRotation * Matrix.Translation(cameraPosition);
+            eyeMat = adjustedHeadMatrix * Matrix.Scaling(BodyScaling) * cameraRotation * Matrix.Translation(cameraPosition);
             eyeMat.Decompose(out scale, out rot, out pos);
             var finalUp = Vector3.TransformCoordinate(new Vector3(0, 1, 0), rot);
             var finalForward = Vector3.TransformCoordinate(new Vector3(0, 0, -1), rot);
