@@ -95,7 +95,6 @@ namespace Xenko.VirtualReality
             return images[swapchainIndex].Image;
         }
 
-
         private unsafe void Prepare()
         {
             // Create our API object for OpenXR.
@@ -214,22 +213,36 @@ namespace Xenko.VirtualReality
         public override bool CanInitialize => true;
 
         internal Texture swapTexture;
+        internal bool begunFrame;
 
         public override unsafe void Commit(CommandList commandList, Texture renderFrame)
         {
+            // if we didn't wait a frame, don't commit
+            if (begunFrame == false)
+                return;
+
+            begunFrame = false;
+
             // submit textures
             // https://github.com/dotnet/Silk.NET/blob/b0b31779ce4db9b68922977fa11772b95f506e09/examples/CSharp/OpenGL%20Demos/OpenGL%20VR%20Demo/OpenXR/Renderer.cs#L507
             var frameEndInfo = new FrameEndInfo()
             {
+                Type = StructureType.TypeFrameEndInfo,
                 DisplayTime = globalFrameState.PredictedDisplayTime,
-                EnvironmentBlendMode = EnvironmentBlendMode.Opaque
+                EnvironmentBlendMode = EnvironmentBlendMode.Opaque                
             };
 
 #if XENKO_GRAPHICS_API_VULKAN
             // copy texture to swapchain image
-            swapTexture.SetNativeHandles(new VkImage(GetSwapchainImage()), VkImageView.Null);
-            commandList.Copy(renderFrame, swapTexture);
+            swapTexture.SetFullHandles(new VkImage(GetSwapchainImage()), VkImageView.Null, 
+                                       renderFrame.NativeLayout, renderFrame.NativeAccessMask,
+                                       renderFrame.NativeFormat, renderFrame.NativeImageAspect);
 #endif
+            commandList.Copy(renderFrame, swapTexture);
+
+            // Release the swapchain image
+            var releaseInfo = new SwapchainImageReleaseInfo() { Type = StructureType.TypeSwapchainImageReleaseInfo };
+            CheckResult(Xr.ReleaseSwapchainImage(globalSwapchain, in releaseInfo));
 
             fixed (CompositionLayerProjectionView* ptr = &projection_views[0])
             {
@@ -239,7 +252,7 @@ namespace Xenko.VirtualReality
                     (
                         viewCount: 2,
                         views: ptr,
-                        space: globalPlaySpace
+                        space: globalPlaySpace                 
                     );
 
                     var layerPointer = (CompositionLayerBaseHeader*)&projectionLayer;
@@ -256,10 +269,6 @@ namespace Xenko.VirtualReality
 
                 CheckResult(Xr.EndFrame(globalSession, in frameEndInfo));
             }
-
-            // Release the swapchain image
-            var releaseInfo = new SwapchainImageReleaseInfo();
-            CheckResult(Xr.ReleaseSwapchainImage(globalSwapchain, in releaseInfo));
         }
 
         public override unsafe void Draw(GameTime gameTime)
@@ -307,14 +316,13 @@ namespace Xenko.VirtualReality
             headPos.Y = (views[0].Pose.Position.Y + views[1].Pose.Position.Y) * 0.5f;
             headPos.Z = (views[0].Pose.Position.Z + views[1].Pose.Position.Z) * 0.5f;
 
-            // --- Begin frame (does it go here?)
             FrameBeginInfo frame_begin_info = new FrameBeginInfo()
             {
-                Type = StructureType.TypeFrameBeginInfo,                 
+                Type = StructureType.TypeFrameBeginInfo,
             };
 
-            Xr.BeginFrame(globalSession, &frame_begin_info);
-
+            CheckResult(Xr.BeginFrame(globalSession, &frame_begin_info));
+            begunFrame = true;
             poseCount++;
         }
 
@@ -520,10 +528,12 @@ namespace Xenko.VirtualReality
                 swapchain_lengths = new uint[1];
                 SwapchainCreateInfo swapchain_create_info = new SwapchainCreateInfo() {
 			        Type = StructureType.TypeSwapchainCreateInfo,
-			        UsageFlags = SwapchainUsageFlags.SwapchainUsageSampledBit | SwapchainUsageFlags.SwapchainUsageColorAttachmentBit, //XR_SWAPCHAIN_USAGE_SAMPLED_BIT | XR_SWAPCHAIN_USAGE_COLOR_ATTACHMENT_BIT,
+			        UsageFlags = SwapchainUsageFlags.SwapchainUsageTransferDstBit |
+                                 SwapchainUsageFlags.SwapchainUsageSampledBit |
+                                 SwapchainUsageFlags.SwapchainUsageColorAttachmentBit,
 			        CreateFlags = 0,
-			        Format = (long)43, // VK_FORMAT_R8G8B8A8_SRGB
-                    SampleCount = viewconfig_views[0].RecommendedSwapchainSampleCount,
+			        Format = (long)43, // VK_FORMAT_R8G8B8A8_SRGB = 43
+                    SampleCount = 1, //viewconfig_views[0].RecommendedSwapchainSampleCount,
 			        Width = (uint)renderSize.Width,
 			        Height = (uint)renderSize.Height,
 			        FaceCount = 1,
@@ -539,14 +549,14 @@ namespace Xenko.VirtualReality
                     ArraySize = 1,
                     Depth = 1,
                     Dimension = TextureDimension.Texture2D,
-                    Flags = TextureFlags.RenderTarget,
-                    Format = (PixelFormat)43,
+                    Flags = TextureFlags.RenderTarget | TextureFlags.ShaderResource,
+                    Format = PixelFormat.R8G8B8A8_UNorm_SRgb,
                     Height = renderSize.Height,
                     MipLevels = 1,
                     MultisampleCount = MultisampleCount.None,
                     Options = TextureOptions.None,
                     Usage = GraphicsResourceUsage.Default,
-                    Width = renderSize.Height,
+                    Width = renderSize.Width,
                 });
 
                 // The runtime controls how many textures we have to be able to render to
