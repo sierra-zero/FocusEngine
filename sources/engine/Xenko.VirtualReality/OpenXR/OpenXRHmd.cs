@@ -271,7 +271,7 @@ namespace Xenko.VirtualReality
             }
         }
 
-        public override unsafe void Draw(GameTime gameTime)
+        public override unsafe void UpdatePositions(GameTime gameTime)
         {
             // wait get poses (headPos etc.)
             // --- Wait for our turn to do head-pose dependent computation and render a frame
@@ -293,8 +293,8 @@ namespace Xenko.VirtualReality
             {
                 Type = StructureType.TypeViewLocateInfo,
                 ViewConfigurationType = ViewConfigurationType.PrimaryStereo,
-		        DisplayTime = frame_state.PredictedDisplayTime,
-		        Space = globalPlaySpace
+                DisplayTime = frame_state.PredictedDisplayTime,
+                Space = globalPlaySpace
             };
 
             ViewState view_state = new ViewState()
@@ -323,6 +323,10 @@ namespace Xenko.VirtualReality
 
             CheckResult(Xr.BeginFrame(globalSession, &frame_begin_info));
             begunFrame = true;
+        }
+
+        public override unsafe void Draw(GameTime gameTime)
+        {
             poseCount++;
         }
 
@@ -865,7 +869,7 @@ namespace Xenko.VirtualReality
             */
         }
 
-        internal Matrix createViewMatrix (Vector3 translation, Quaternion rotation)
+        internal Matrix createViewMatrix(Vector3 translation, Quaternion rotation)
         {
             Matrix rotationMatrix = Matrix.RotationQuaternion(rotation);
             Matrix translationMatrix = Matrix.Translation(translation);
@@ -889,7 +893,7 @@ namespace Xenko.VirtualReality
             // Set to tanAngleDown - tanAngleUp for a clip space with positive Y
             // down (Vulkan). Set to tanAngleUp - tanAngleDown for a clip space with
             // positive Y up (OpenGL / D3D / Metal).
-            float tanAngleHeight = (tanAngleDown - tanAngleUp);
+            float tanAngleHeight = (tanAngleUp - tanAngleDown);
 
             // Set to nearZ for a [-1,1] Z clip space (OpenGL / OpenGL ES).
             // Set to zero for a [0,1] Z clip space (Vulkan / D3D / Metal).

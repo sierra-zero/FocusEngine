@@ -321,6 +321,8 @@ namespace Xenko.Rendering.Compositing
                         Vector3 cameraPos, cameraScale;
                         Matrix cameraRot;
 
+                        VRSettings.VRDevice.UpdatePositions(context.Time);
+
                         if (camera.VRHeadSetsTransform)
                         {
                             if (camera.Entity.Transform.Parent != null)

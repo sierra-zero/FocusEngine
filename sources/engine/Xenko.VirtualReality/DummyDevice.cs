@@ -74,6 +74,8 @@ namespace Xenko.VirtualReality
 
         public static Logger Logger = GlobalLogger.GetLogger("DummyVRDevice");
 
+        public override void UpdatePositions(GameTime gameTime) { }
+
         public DummyDevice(IServiceRegistry services)
         {
             VRApi = VRApi.Dummy;

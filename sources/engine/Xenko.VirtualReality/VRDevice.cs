@@ -66,6 +66,8 @@ namespace Xenko.VirtualReality
 
         public abstract void Update(GameTime gameTime);
 
+        public abstract void UpdatePositions(GameTime gameTime);
+
         public abstract void Draw(GameTime gameTime);
     }
 }

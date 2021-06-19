@@ -64,19 +64,24 @@ namespace Xenko.VirtualReality
 #endif
         }
 
-        public override void Draw(GameTime gameTime)
+        public override void UpdatePositions(GameTime gameTime)
         {
             OpenVR.UpdatePoses();
             state = OpenVR.GetHeadPose(out currentHead, out currentHeadLinearVelocity, out currentHeadAngularVelocity);
             Vector3 scale;
             currentHead.Decompose(out scale, out currentHeadRot, out currentHeadPos);
+
+            LeftHand.Update(gameTime);
+            RightHand.Update(gameTime);
+        }
+
+        public override void Draw(GameTime gameTime)
+        {
             poseCount++;
         }
 
         public override void Update(GameTime gameTime)
         {
-            LeftHand.Update(gameTime);
-            RightHand.Update(gameTime);
         }
 
         public override void ReadEyeParameters(Eyes eye, float near, float far, ref Vector3 cameraPosition, ref Matrix cameraRotation, bool ignoreHeadRotation, bool ignoreHeadPosition, out Matrix view, out Matrix projection)
