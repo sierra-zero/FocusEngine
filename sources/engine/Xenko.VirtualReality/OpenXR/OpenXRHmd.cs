@@ -271,6 +271,11 @@ namespace Xenko.VirtualReality
             }
         }
 
+        internal static Quaternion ConvertToFocus(ref Quaternionf quat)
+        {
+            return new Quaternion(-quat.X, -quat.Y, -quat.Z, quat.W);
+        }
+
         public override unsafe void UpdatePositions(GameTime gameTime)
         {
             // wait get poses (headPos etc.)
@@ -306,15 +311,12 @@ namespace Xenko.VirtualReality
             Xr.LocateView(globalSession, &view_locate_info, &view_state, 2, &view_count, views);
 
             // get head rotation
-            headRot.W = views[0].Pose.Orientation.W;
-            headRot.X = views[0].Pose.Orientation.X;
-            headRot.Y = views[0].Pose.Orientation.Y;
-            headRot.Z = views[0].Pose.Orientation.Z;
+            headRot = ConvertToFocus(ref views[0].Pose.Orientation);
 
             // since we got eye positions, our head is between our eyes
-            headPos.X = (views[0].Pose.Position.X + views[1].Pose.Position.X) * 0.5f;
-            headPos.Y = (views[0].Pose.Position.Y + views[1].Pose.Position.Y) * 0.5f;
-            headPos.Z = (views[0].Pose.Position.Z + views[1].Pose.Position.Z) * 0.5f;
+            headPos.X = (views[0].Pose.Position.X + views[1].Pose.Position.X) *  0.5f;
+            headPos.Y = (views[0].Pose.Position.Y + views[1].Pose.Position.Y) * -0.5f;
+            headPos.Z = (views[0].Pose.Position.Z + views[1].Pose.Position.Z) *  0.5f;
 
             FrameBeginInfo frame_begin_info = new FrameBeginInfo()
             {
@@ -889,14 +891,8 @@ namespace Xenko.VirtualReality
             float tanAngleUp = (float)Math.Tan(fov.AngleUp);
 
             float tanAngleWidth = tanAngleRight - tanAngleLeft;
-
-            // Set to tanAngleDown - tanAngleUp for a clip space with positive Y
-            // down (Vulkan). Set to tanAngleUp - tanAngleDown for a clip space with
-            // positive Y up (OpenGL / D3D / Metal).
             float tanAngleHeight = (tanAngleUp - tanAngleDown);
 
-            // Set to nearZ for a [-1,1] Z clip space (OpenGL / OpenGL ES).
-            // Set to zero for a [0,1] Z clip space (Vulkan / D3D / Metal).
             float offsetZ = 0;
 
 	        if (farZ <= nearZ) {    
@@ -951,11 +947,11 @@ namespace Xenko.VirtualReality
             Matrix eyeMat, rot;
             Vector3 pos, scale;
 
-            View eyeview = views[eye == Eyes.Left ? 0 : 1];
+            View eyeview = views[(int)eye];
 
             projection = createProjectionFov(eyeview.Fov, near, far);
-            var adjustedHeadMatrix = createViewMatrix(new Vector3(eyeview.Pose.Position.X, eyeview.Pose.Position.Y, eyeview.Pose.Position.Z),
-                                                      new Quaternion(eyeview.Pose.Orientation.X, eyeview.Pose.Orientation.Y, eyeview.Pose.Orientation.Z, eyeview.Pose.Orientation.W)); ;
+            var adjustedHeadMatrix = createViewMatrix(new Vector3(-eyeview.Pose.Position.X, -eyeview.Pose.Position.Y, -eyeview.Pose.Position.Z),
+                                                      ConvertToFocus(ref eyeview.Pose.Orientation));
             if (ignoreHeadPosition)
             {
                 adjustedHeadMatrix.TranslationVector = Vector3.Zero;
