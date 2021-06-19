@@ -214,6 +214,7 @@ namespace Xenko.VirtualReality
 
         internal Texture swapTexture;
         internal bool begunFrame;
+        internal ulong swapchainPointer;
 
         public override unsafe void Commit(CommandList commandList, Texture renderFrame)
         {
@@ -234,10 +235,11 @@ namespace Xenko.VirtualReality
 
 #if XENKO_GRAPHICS_API_VULKAN
             // copy texture to swapchain image
-            swapTexture.SetFullHandles(new VkImage(GetSwapchainImage()), VkImageView.Null, 
+            swapTexture.SetFullHandles(new VkImage(swapchainPointer), VkImageView.Null, 
                                        renderFrame.NativeLayout, renderFrame.NativeAccessMask,
                                        renderFrame.NativeFormat, renderFrame.NativeImageAspect);
 #endif
+
             commandList.Copy(renderFrame, swapTexture);
 
             // Release the swapchain image
@@ -280,25 +282,19 @@ namespace Xenko.VirtualReality
         {
             // wait get poses (headPos etc.)
             // --- Wait for our turn to do head-pose dependent computation and render a frame
-            FrameState frame_state = new FrameState()
-            {
-                Type = StructureType.TypeFrameState
-            };
-
             FrameWaitInfo frame_wait_info = new FrameWaitInfo()
             {
                 Type = StructureType.TypeFrameWaitInfo,
             };
 
-            CheckResult(Xr.WaitFrame(globalSession, &frame_wait_info, &frame_state));
-            globalFrameState = frame_state;
+            CheckResult(Xr.WaitFrame(globalSession, in frame_wait_info, ref globalFrameState));
 
             // --- Create projection matrices and view matrices for each eye
             ViewLocateInfo view_locate_info = new ViewLocateInfo()
             {
                 Type = StructureType.TypeViewLocateInfo,
                 ViewConfigurationType = ViewConfigurationType.PrimaryStereo,
-                DisplayTime = frame_state.PredictedDisplayTime,
+                DisplayTime = globalFrameState.PredictedDisplayTime,
                 Space = globalPlaySpace
             };
 
@@ -312,7 +308,7 @@ namespace Xenko.VirtualReality
 
             // get head rotation
             headRot = ConvertToFocus(ref views[0].Pose.Orientation);
-
+            
             // since we got eye positions, our head is between our eyes
             headPos.X = (views[0].Pose.Position.X + views[1].Pose.Position.X) *  0.5f;
             headPos.Y = (views[0].Pose.Position.Y + views[1].Pose.Position.Y) * -0.5f;
@@ -324,6 +320,8 @@ namespace Xenko.VirtualReality
             };
 
             CheckResult(Xr.BeginFrame(globalSession, &frame_begin_info));
+
+            swapchainPointer = GetSwapchainImage();
             begunFrame = true;
         }
 
@@ -494,7 +492,7 @@ namespace Xenko.VirtualReality
             {
                 Type = StructureType.TypeReferenceSpaceCreateInfo,
                 ReferenceSpaceType = play_space_type,
-                PoseInReferenceSpace = new Posef(new Quaternionf(0f, 0f, 0f, 1f), new Vector3f(0f, 0f, 0f))
+                PoseInReferenceSpace = new Posef(new Quaternionf(0f, 0f, 0f, 1f), new Vector3f(0f, 0f, 0f))                 
             };
 
             result = Xr.CreateReferenceSpace(session, &play_space_create_info, &play_space);
