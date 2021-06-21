@@ -183,7 +183,7 @@ postswitch:
                     Game.MinimizedMinimumUpdateRate.MinimumElapsedTime = Game.TargetElapsedTime;
 
 #if XENKO_GRAPHICS_API_VULKAN || XENKO_GRAPHICS_API_DIRECT3D11
-                    if (Device is OpenVRHmd)
+                    if (!(Device is DummyDevice))
                     {
                         // WaitGetPoses should throttle our application, so don't do it elsewhere
                         //refreshRate = ((OpenVRHmd)Device).RefreshRate();
