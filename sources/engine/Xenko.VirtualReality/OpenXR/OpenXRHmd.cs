@@ -24,8 +24,8 @@ namespace Xenko.VirtualReality
         public Space globalPlaySpace;
         public FrameState globalFrameState;
         public ReferenceSpaceType play_space_type = ReferenceSpaceType.Stage; //XR_REFERENCE_SPACE_TYPE_LOCAL;
-        public SwapchainImageVulkanKHR[] images;
-        public SwapchainImageVulkanKHR[] depth_images;
+        public SwapchainImageVulkan2KHR[] images;
+        public SwapchainImageVulkan2KHR[] depth_images;
 
         // array of view_count containers for submitting swapchains with rendered VR frames
         CompositionLayerProjectionView[] projection_views;
@@ -101,7 +101,7 @@ namespace Xenko.VirtualReality
             Xr = XR.GetApi();
 
             Extensions.Clear();
-            Extensions.Add("XR_KHR_vulkan_enable");
+            Extensions.Add("XR_KHR_vulkan_enable2");
             Extensions.Add("XR_EXT_hp_mixed_reality_controller");
 
             InstanceCreateInfo instanceCreateInfo;
@@ -166,10 +166,10 @@ namespace Xenko.VirtualReality
         private Size2 renderSize;
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
-        private unsafe delegate Result pfnGetVulkanGraphicsRequirementsKHR(Instance instance, ulong sys_id, GraphicsRequirementsVulkanKHR* req);
+        private unsafe delegate Result pfnGetVulkanGraphicsRequirements2KHR(Instance instance, ulong sys_id, GraphicsRequirementsVulkanKHR* req);
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
-        private unsafe delegate Result pfnGetVulkanGraphicsDeviceKHR(Instance instance, ulong systemId, VkHandle vkInstance, VkHandle* vkPhysicalDevice);
+        private unsafe delegate Result pfnGetVulkanGraphicsDevice2KHR(Instance instance, VulkanGraphicsDeviceGetInfoKHR* getInfo, VkPhysicalDevice* vulkanPhysicalDevice);
 
         public OpenXRHmd(GameBase game)
         {
@@ -248,26 +248,23 @@ namespace Xenko.VirtualReality
 
             fixed (CompositionLayerProjectionView* ptr = &projection_views[0])
             {
-                if ((Bool32)globalFrameState.ShouldRender)
+                var projectionLayer = new CompositionLayerProjection
+                (
+                    viewCount: 2,
+                    views: ptr,
+                    space: globalPlaySpace                 
+                );
+
+                var layerPointer = (CompositionLayerBaseHeader*)&projectionLayer;
+                for (var eye = 0; eye < 2; eye++)
                 {
-                    var projectionLayer = new CompositionLayerProjection
-                    (
-                        viewCount: 2,
-                        views: ptr,
-                        space: globalPlaySpace                 
-                    );
-
-                    var layerPointer = (CompositionLayerBaseHeader*)&projectionLayer;
-                    for (var eye = 0; eye < 2; eye++)
-                    {
-                        ref var layerView = ref projection_views[eye];
-                        layerView.Fov = views[eye].Fov;
-                        layerView.Pose = views[eye].Pose;
-                    }
-
-                    frameEndInfo.LayerCount = 1;
-                    frameEndInfo.Layers = &layerPointer;
+                    ref var layerView = ref projection_views[eye];
+                    layerView.Fov = views[eye].Fov;
+                    layerView.Pose = views[eye].Pose;
                 }
+
+                frameEndInfo.LayerCount = 1;
+                frameEndInfo.Layers = &layerPointer;
 
                 CheckResult(Xr.EndFrame(globalSession, in frameEndInfo));
             }
@@ -305,7 +302,7 @@ namespace Xenko.VirtualReality
 
             uint view_count;
             Xr.LocateView(globalSession, &view_locate_info, &view_state, 2, &view_count, views);
-
+            
             // get head rotation
             headRot = ConvertToFocus(ref views[0].Pose.Orientation);
             
@@ -314,15 +311,18 @@ namespace Xenko.VirtualReality
             headPos.Y = (views[0].Pose.Position.Y + views[1].Pose.Position.Y) * -0.5f;
             headPos.Z = (views[0].Pose.Position.Z + views[1].Pose.Position.Z) *  0.5f;
 
-            FrameBeginInfo frame_begin_info = new FrameBeginInfo()
+            if ((Bool32)globalFrameState.ShouldRender)
             {
-                Type = StructureType.TypeFrameBeginInfo,
-            };
+                FrameBeginInfo frame_begin_info = new FrameBeginInfo()
+                {
+                    Type = StructureType.TypeFrameBeginInfo,
+                };
 
-            CheckResult(Xr.BeginFrame(globalSession, &frame_begin_info));
+                CheckResult(Xr.BeginFrame(globalSession, &frame_begin_info));
 
-            swapchainPointer = GetSwapchainImage();
-            begunFrame = true;
+                swapchainPointer = GetSwapchainImage();
+                begunFrame = true;
+            }
         }
 
         public override unsafe void Draw(GameTime gameTime)
@@ -442,23 +442,26 @@ namespace Xenko.VirtualReality
 #if XENKO_GRAPHICS_API_VULKAN
             // this function pointer was loaded with xrGetInstanceProcAddr
             Silk.NET.Core.PfnVoidFunction func = new Silk.NET.Core.PfnVoidFunction();
-            GraphicsRequirementsVulkanKHR vulk = new GraphicsRequirementsVulkanKHR();
-            result = Xr.GetInstanceProcAddr(Instance, "xrGetVulkanGraphicsRequirementsKHR", ref func);
-            Delegate vulk_req = Marshal.GetDelegateForFunctionPointer((IntPtr)func.Handle, typeof(pfnGetVulkanGraphicsRequirementsKHR));
+            GraphicsRequirementsVulkan2KHR vulk = new GraphicsRequirementsVulkan2KHR();
+            result = Xr.GetInstanceProcAddr(Instance, "xrGetVulkanGraphicsRequirements2KHR", ref func);
+            Delegate vulk_req = Marshal.GetDelegateForFunctionPointer((IntPtr)func.Handle, typeof(pfnGetVulkanGraphicsRequirements2KHR));
             vulk_req.DynamicInvoke(Instance, system_id, new System.IntPtr(&vulk));
 
-            /* xrGetVulkanGraphicsDeviceKHR(
-                XrInstance                                  instance,
-                XrSystemId                                  systemId,
-                VkInstance                                  vkInstance,
-                VkPhysicalDevice*                           vkPhysicalDevice) */
+            VulkanGraphicsDeviceGetInfoKHR vgd = new VulkanGraphicsDeviceGetInfoKHR()
+            {
+                SystemId = system_id,
+                Type = StructureType.TypeVulkanGraphicsDeviceGetInfoKhr,
+                VulkanInstance = new VkHandle((nint)device.NativeInstance.Handle)
+            };
+
             VkHandle physicalDevice = new VkHandle();
-            result = Xr.GetInstanceProcAddr(Instance, "xrGetVulkanGraphicsDeviceKHR", ref func);
-            Delegate vulk_dev = Marshal.GetDelegateForFunctionPointer((IntPtr)func.Handle, typeof(pfnGetVulkanGraphicsDeviceKHR));
-            vulk_dev.DynamicInvoke(Instance, system_id, new VkHandle((nint)device.NativeInstance.Handle), new System.IntPtr(&physicalDevice));
+
+            result = Xr.GetInstanceProcAddr(Instance, "xrGetVulkanGraphicsDevice2KHR", ref func);
+            Delegate vulk_dev = Marshal.GetDelegateForFunctionPointer((IntPtr)func.Handle, typeof(pfnGetVulkanGraphicsDevice2KHR));
+            vulk_dev.DynamicInvoke(Instance, new System.IntPtr(&vgd), new System.IntPtr(&physicalDevice));
 
             // --- Create session
-            var graphics_binding_vulkan = new GraphicsBindingVulkanKHR()
+            var graphics_binding_vulkan = new GraphicsBindingVulkan2KHR()
             {
                 Type = StructureType.TypeGraphicsBindingVulkanKhr,
                 Device = new VkHandle((nint)device.NativeDevice.Handle),
@@ -468,7 +471,7 @@ namespace Xenko.VirtualReality
                 QueueIndex = 0,
             };
 #else
-            GraphicsBindingVulkanKHR graphics_binding_vulkan = new GraphicsBindingVulkanKHR();
+            GraphicsBindingVulkan2KHR graphics_binding_vulkan = new GraphicsBindingVulkan2KHR();
             throw new Exception("OpenXR is only compatible with Vulkan");
 #endif
 
@@ -576,7 +579,7 @@ namespace Xenko.VirtualReality
                     images[i][j].next = NULL;
                 }*/
 
-                images = new SwapchainImageVulkanKHR[32];
+                images = new SwapchainImageVulkan2KHR[32];
                 uint img_count = 0;
 
                 fixed (void* sibhp = &images[0]) {
