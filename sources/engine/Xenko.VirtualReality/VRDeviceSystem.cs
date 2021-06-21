@@ -203,11 +203,7 @@ postswitch:
         {
             if (Device != null)
             {
-                if (!(Device is DummyDevice))
-                {
-                    physicalDeviceInUse = false;
-                }
-
+                physicalDeviceInUse = false;
                 Device.Dispose();
                 Device = null;
             }
