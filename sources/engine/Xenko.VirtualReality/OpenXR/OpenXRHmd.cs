@@ -286,6 +286,20 @@ namespace Xenko.VirtualReality
 
             CheckResult(Xr.WaitFrame(globalSession, in frame_wait_info, ref globalFrameState));
 
+            // steamvr seems to wait at BeginFrame instead, so make sure we do that before getting position information
+            if ((Bool32)globalFrameState.ShouldRender)
+            {
+                FrameBeginInfo frame_begin_info = new FrameBeginInfo()
+                {
+                    Type = StructureType.TypeFrameBeginInfo,
+                };
+
+                CheckResult(Xr.BeginFrame(globalSession, &frame_begin_info));
+
+                swapchainPointer = GetSwapchainImage();
+                begunFrame = true;
+            }
+
             // --- Create projection matrices and view matrices for each eye
             ViewLocateInfo view_locate_info = new ViewLocateInfo()
             {
@@ -310,19 +324,6 @@ namespace Xenko.VirtualReality
             headPos.X = (views[0].Pose.Position.X + views[1].Pose.Position.X) *  0.5f;
             headPos.Y = (views[0].Pose.Position.Y + views[1].Pose.Position.Y) * -0.5f;
             headPos.Z = (views[0].Pose.Position.Z + views[1].Pose.Position.Z) *  0.5f;
-
-            if ((Bool32)globalFrameState.ShouldRender)
-            {
-                FrameBeginInfo frame_begin_info = new FrameBeginInfo()
-                {
-                    Type = StructureType.TypeFrameBeginInfo,
-                };
-
-                CheckResult(Xr.BeginFrame(globalSession, &frame_begin_info));
-
-                swapchainPointer = GetSwapchainImage();
-                begunFrame = true;
-            }
         }
 
         public override unsafe void Draw(GameTime gameTime)
