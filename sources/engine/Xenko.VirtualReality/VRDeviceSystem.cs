@@ -111,11 +111,6 @@ namespace Xenko.VirtualReality
                 {
                     switch (hmdApi)
                     {
-                        case VRApi.Dummy:
-                        {
-                            Device = new DummyDevice(Services);
-                            break;
-                        }
                         case VRApi.OpenXR:
 #if XENKO_GRAPHICS_API_VULKAN
                             Device = new OpenXRHmd(Game);
@@ -182,26 +177,11 @@ postswitch:
                     Game.WindowMinimumUpdateRate.MinimumElapsedTime = Game.TargetElapsedTime;
                     Game.MinimizedMinimumUpdateRate.MinimumElapsedTime = Game.TargetElapsedTime;
 
-#if XENKO_GRAPHICS_API_VULKAN || XENKO_GRAPHICS_API_DIRECT3D11
-                    if (!(Device is DummyDevice))
-                    {
-                        // WaitGetPoses should throttle our application, so don't do it elsewhere
-                        //refreshRate = ((OpenVRHmd)Device).RefreshRate();
-                        Game.TargetElapsedTime = TimeSpan.Zero; //Utilities.FromSecondsPrecise(1.0 / refreshRate);
-                        Game.WindowMinimumUpdateRate.MinimumElapsedTime = TimeSpan.Zero;
-                        Game.MinimizedMinimumUpdateRate.MinimumElapsedTime = TimeSpan.Zero;
-                    }
-#endif
-                }
-                else
-                {
-                    //fallback to dummy device
-                    Device = new DummyDevice(Services)
-                    {
-                        Game = Game,
-                        RenderFrameScaling = 1.0f,
-                    };
-                    Device.Enable(GraphicsDevice, deviceManager, RequireMirror);
+                    // WaitGetPoses should throttle our application, so don't do it elsewhere
+                    //refreshRate = ((OpenVRHmd)Device).RefreshRate();
+                    Game.TargetElapsedTime = TimeSpan.Zero; //Utilities.FromSecondsPrecise(1.0 / refreshRate);
+                    Game.WindowMinimumUpdateRate.MinimumElapsedTime = TimeSpan.Zero;
+                    Game.MinimizedMinimumUpdateRate.MinimumElapsedTime = TimeSpan.Zero;
                 }
 
                 // init virtual buttons for use with VR input
