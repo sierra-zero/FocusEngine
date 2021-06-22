@@ -651,7 +651,7 @@ namespace Xenko.Games
             }
         }
 
-        internal static bool ShouldPresent = false;
+        internal static bool ShouldPresent = false, PauseRendering = false;
         private void TickInternal()
         {
             try
@@ -788,14 +788,11 @@ namespace Xenko.Games
                     {
                         using (Profiler.Begin(GameProfilingKeys.GameEndDraw))
                         {
-                            bool focused = gamePlatform.MainWindow.Focused;
-                            bool minimized = gamePlatform.MainWindow.IsMinimized;
-                            bool visible = minimized == false && gamePlatform.MainWindow.Visible && (gamePlatform.MainWindow.IsFullscreen == false || focused);
-                            EndDraw(visible && ShouldPresent);
+                            bool presenting = ShouldPresent && !PauseRendering;
+                            EndDraw(presenting);
                             if (gamePlatform.IsBlockingRun)
                             {
-                                bool focusMinimized = focused == false && TreatNotFocusedLikeMinimized;
-                                if (visible == false || minimized || focusMinimized)
+                                if (!presenting || TreatNotFocusedLikeMinimized && gamePlatform.MainWindow.Focused == false)
 	                                MinimizedMinimumUpdateRate.Throttle(out _);
 	                            else
 	                                WindowMinimumUpdateRate.Throttle(out _);

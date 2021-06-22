@@ -664,10 +664,12 @@ namespace Xenko.Graphics.SDL
                             break;
 
                         case SDL.SDL_WindowEventID.SDL_WINDOWEVENT_FOCUS_GAINED:
+                            e.window.data1 = IsFullScreen ? 1 : 0;
                             FocusGainedActions?.Invoke(e.window);
                             break;
 
                         case SDL.SDL_WindowEventID.SDL_WINDOWEVENT_FOCUS_LOST:
+                            e.window.data1 = IsFullScreen ? 2 : 0;
                             FocusLostActions?.Invoke(e.window);
                             break;
                     }
