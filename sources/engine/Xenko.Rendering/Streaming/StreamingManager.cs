@@ -366,14 +366,19 @@ namespace Xenko.Streaming
         /// <inheritdoc />
         void ITexturesStreamingProvider.FullyLoadTexture(Texture obj, ref ImageDescription imageDescription, ref ContentStorageHeader storageHeader)
         {
-            using (resourceLocker.ReadLock())
+            StreamingTexture resource;
+
+            using (resourceLocker.UpgradableReadLock())
             {
                 // Get streaming object
-                var resource = CreateStreamingTexture(obj, ref imageDescription, ref storageHeader);
+                resource = CreateStreamingTexture(obj, ref imageDescription, ref storageHeader);
+            }
 
-                // Stream resource to the maximum level
-                FullyLoadResource(resource);
+            // Stream resource to the maximum level
+            FullyLoadResource(resource);
 
+            using (resourceLocker.ReadLock())
+            {
                 // Release streaming object
                 resource.Release();
             }
