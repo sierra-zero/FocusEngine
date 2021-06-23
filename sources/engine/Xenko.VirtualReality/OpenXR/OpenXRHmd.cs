@@ -222,6 +222,21 @@ namespace Xenko.VirtualReality
             if (begunFrame == false)
                 return;
 
+#if XENKO_GRAPHICS_API_VULKAN
+            // copy texture to swapchain image
+            swapTexture.SetFullHandles(new VkImage(swapchainPointer), VkImageView.Null, 
+                                       renderFrame.NativeLayout, renderFrame.NativeAccessMask,
+                                       renderFrame.NativeFormat, renderFrame.NativeImageAspect);
+#endif
+            commandList.Copy(renderFrame, swapTexture);
+        }
+
+        public override unsafe void Flush()
+        {
+            // if we didn't wait a frame, don't commit
+            if (begunFrame == false)
+                return;
+
             begunFrame = false;
 
             // submit textures
@@ -230,17 +245,8 @@ namespace Xenko.VirtualReality
             {
                 Type = StructureType.TypeFrameEndInfo,
                 DisplayTime = globalFrameState.PredictedDisplayTime,
-                EnvironmentBlendMode = EnvironmentBlendMode.Opaque                
+                EnvironmentBlendMode = EnvironmentBlendMode.Opaque
             };
-
-#if XENKO_GRAPHICS_API_VULKAN
-            // copy texture to swapchain image
-            swapTexture.SetFullHandles(new VkImage(swapchainPointer), VkImageView.Null, 
-                                       renderFrame.NativeLayout, renderFrame.NativeAccessMask,
-                                       renderFrame.NativeFormat, renderFrame.NativeImageAspect);
-#endif
-
-            commandList.Copy(renderFrame, swapTexture);
 
             // Release the swapchain image
             var releaseInfo = new SwapchainImageReleaseInfo() { Type = StructureType.TypeSwapchainImageReleaseInfo };
@@ -252,7 +258,7 @@ namespace Xenko.VirtualReality
                 (
                     viewCount: 2,
                     views: ptr,
-                    space: globalPlaySpace                 
+                    space: globalPlaySpace
                 );
 
                 var layerPointer = (CompositionLayerBaseHeader*)&projectionLayer;

@@ -60,6 +60,8 @@ namespace Xenko.VirtualReality
 
         public abstract void Commit(CommandList commandList, Texture renderFrame);
 
+        public virtual void Flush() { }
+
         public virtual void Dispose()
         {           
         }
