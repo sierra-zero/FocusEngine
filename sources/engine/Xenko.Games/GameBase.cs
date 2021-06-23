@@ -53,7 +53,6 @@ namespace Xenko.Games
         private IGraphicsDeviceService graphicsDeviceService;
         protected IGraphicsDeviceManager graphicsDeviceManager;
         private ResumeManager resumeManager;
-        private bool isEndRunRequired;
         private bool isExiting;
         private bool suppressDraw;
         private bool beginDrawOk;
@@ -601,23 +600,11 @@ namespace Xenko.Games
 
                 gamePlatform.Run(Context);
 
-                if (gamePlatform.IsBlockingRun)
-                {
-                    // If the previous call was blocking, then we can call Endrun
-                    EndRun();
-                }
-                else
-                {
-                    // EndRun will be executed on Game.Exit
-                    isEndRunRequired = true;
-                }
+                EndRun();
             }
             finally
             {
-                if (!isEndRunRequired)
-                {
-                    IsRunning = false;
-                }
+                IsRunning = false;
             }
         }
 
@@ -658,10 +645,7 @@ namespace Xenko.Games
             {
                 // If this instance is existing, then don't make any further update/draw
                 if (isExiting)
-                {
-                    CheckEndRun();
                     return;
-                }
 
                 // If this instance is not active, sleep for an inactive sleep time
                 if (!IsActive)
@@ -790,32 +774,19 @@ namespace Xenko.Games
                         {
                             bool presenting = ShouldPresent && !PauseRendering;
                             EndDraw(presenting);
-                            if (gamePlatform.IsBlockingRun)
-                            {
-                                if (!presenting || TreatNotFocusedLikeMinimized && gamePlatform.MainWindow.Focused == false)
-	                                MinimizedMinimumUpdateRate.Throttle(out _);
-	                            else
-	                                WindowMinimumUpdateRate.Throttle(out _);
-	                        }
+
+                            if (!presenting || TreatNotFocusedLikeMinimized && gamePlatform.MainWindow.Focused == false)
+	                            MinimizedMinimumUpdateRate.Throttle(out _);
+	                        else
+	                            WindowMinimumUpdateRate.Throttle(out _);
                         }
                     }
-
-                    CheckEndRun();
                 }
             }
             catch (Exception ex)
             {
                 Log.Error("Unexpected exception", ex);
                 throw;
-            }
-        }
-
-        private void CheckEndRun()
-        {
-            if (isExiting && IsRunning && isEndRunRequired)
-            {
-                EndRun();
-                IsRunning = false;
             }
         }
 
