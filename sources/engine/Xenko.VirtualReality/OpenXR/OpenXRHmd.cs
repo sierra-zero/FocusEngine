@@ -22,6 +22,7 @@ namespace Xenko.VirtualReality
         public Session globalSession;
         public Swapchain globalSwapchain;
         public Space globalPlaySpace;
+        public Silk.NET.OpenXR.Action handPoseAction;
         public FrameState globalFrameState;
         public ReferenceSpaceType play_space_type = ReferenceSpaceType.Stage; //XR_REFERENCE_SPACE_TYPE_LOCAL;
         public SwapchainImageVulkan2KHR[] images;
@@ -40,23 +41,6 @@ namespace Xenko.VirtualReality
         public Instance Instance;
         public ulong system_id = 0;
 
-        // input stuff
-        private enum HAND_PATHS
-        {
-            Hand = 0,
-            TriggerValue = 1,
-            ThumbstickY = 2,
-            ThumbstickX = 3,
-            TrackpadX = 4,
-            TrackpadY = 5,
-            GripValue = 6,
-            Button1 = 7, // x on left, a on right (or either index)
-            Button2 = 8, // y on left, b on right (or either index)
-            Menu = 9,
-            System = 10, // may be inaccessible
-        }
-        private ulong[,] hand_paths = new ulong[2, 11];
-
         // Misc
         private bool _unmanagedResourcesFreed;
 
@@ -70,7 +54,7 @@ namespace Xenko.VirtualReality
         /// <exception cref="Exception">An exception for the given result if it indicates an error.</exception>
         [DebuggerHidden]
         [DebuggerStepThrough]
-        internal static Result CheckResult(Result result)
+        protected internal static Result CheckResult(Result result)
         {
             if ((int)result < 0)
             {
@@ -201,10 +185,10 @@ namespace Xenko.VirtualReality
         private Vector3 headAngVel;
         public override Vector3 HeadAngularVelocity => headAngVel;
 
-        private TouchController leftHand;
+        private OpenXrTouchController leftHand;
         public override TouchController LeftHand => leftHand;
 
-        private TouchController rightHand;
+        private OpenXrTouchController rightHand;
         public override TouchController RightHand => rightHand;
 
         private ulong poseCount;
@@ -330,6 +314,9 @@ namespace Xenko.VirtualReality
             headPos.X = (views[0].Pose.Position.X + views[1].Pose.Position.X) *  0.5f;
             headPos.Y = (views[0].Pose.Position.Y + views[1].Pose.Position.Y) * -0.5f;
             headPos.Z = (views[0].Pose.Position.Z + views[1].Pose.Position.Z) *  0.5f;
+
+            leftHand.Update(gameTime);
+            rightHand.Update(gameTime);
         }
 
         public override unsafe void Draw(GameTime gameTime)
@@ -338,7 +325,7 @@ namespace Xenko.VirtualReality
         }
 
         public override unsafe void Enable(GraphicsDevice device, GraphicsDeviceManager graphicsDeviceManager, bool requireMirror)
-        {            
+        {
             // Changing the form_factor may require changing the view_type too.
             ViewConfigurationType view_type = ViewConfigurationType.PrimaryStereo;
 
@@ -366,7 +353,7 @@ namespace Xenko.VirtualReality
             // depth swapchain equivalent to the VR color swapchains
             Swapchain depth_swapchains;
             uint[] depth_swapchain_lengths;
- 
+
             /*struct
             {
                 // supporting depth layers is *optional* for runtimes
@@ -427,14 +414,14 @@ namespace Xenko.VirtualReality
             }*/
 
             SystemProperties system_props = new SystemProperties() {
-		        Type = StructureType.TypeSystemProperties,
+                Type = StructureType.TypeSystemProperties,
             };
 
             result = Xr.GetSystemProperties(Instance, system_id, &system_props);
 
             ViewConfigurationView vcv = new ViewConfigurationView()
             {
-                Type = StructureType.TypeViewConfigurationView,                 
+                Type = StructureType.TypeViewConfigurationView,
             };
 
             viewconfig_views = new ViewConfigurationView[128];
@@ -502,7 +489,7 @@ namespace Xenko.VirtualReality
             {
                 Type = StructureType.TypeReferenceSpaceCreateInfo,
                 ReferenceSpaceType = play_space_type,
-                PoseInReferenceSpace = new Posef(new Quaternionf(0f, 0f, 0f, 1f), new Vector3f(0f, 0f, 0f))                 
+                PoseInReferenceSpace = new Posef(new Quaternionf(0f, 0f, 0f, 1f), new Vector3f(0f, 0f, 0f))
             };
 
             result = Xr.CreateReferenceSpace(session, &play_space_create_info, &play_space);
@@ -541,18 +528,18 @@ namespace Xenko.VirtualReality
                 swapchain = new Swapchain();
                 swapchain_lengths = new uint[1];
                 SwapchainCreateInfo swapchain_create_info = new SwapchainCreateInfo() {
-			        Type = StructureType.TypeSwapchainCreateInfo,
-			        UsageFlags = SwapchainUsageFlags.SwapchainUsageTransferDstBit |
+                    Type = StructureType.TypeSwapchainCreateInfo,
+                    UsageFlags = SwapchainUsageFlags.SwapchainUsageTransferDstBit |
                                  SwapchainUsageFlags.SwapchainUsageSampledBit |
                                  SwapchainUsageFlags.SwapchainUsageColorAttachmentBit,
-			        CreateFlags = 0,
-			        Format = (long)43, // VK_FORMAT_R8G8B8A8_SRGB = 43
+                    CreateFlags = 0,
+                    Format = (long)43, // VK_FORMAT_R8G8B8A8_SRGB = 43
                     SampleCount = 1, //viewconfig_views[0].RecommendedSwapchainSampleCount,
-			        Width = (uint)renderSize.Width,
-			        Height = (uint)renderSize.Height,
-			        FaceCount = 1,
-			        ArraySize = 1,
-			        MipCount = 1,
+                    Width = (uint)renderSize.Width,
+                    Height = (uint)renderSize.Height,
+                    FaceCount = 1,
+                    ArraySize = 1,
+                    MipCount = 1,
                 };
 
                 result = Xr.CreateSwapchain(session, &swapchain_create_info, &swapchain);
@@ -694,13 +681,8 @@ namespace Xenko.VirtualReality
 
             // --- Set up input (actions)
 
-            Xr.StringToPath(Instance, "/user/hand/left", ref hand_paths[(int)TouchControllerHand.Left, (int)HAND_PATHS.Hand]);
-            Xr.StringToPath(Instance, "/user/hand/right", ref hand_paths[(int)TouchControllerHand.Right, (int)HAND_PATHS.Hand]);
-
-            Xr.StringToPath(Instance, "/user/hand/left/input/trigger/value",
-                            ref hand_paths[(int)TouchControllerHand.Left, (int)HAND_PATHS.TriggerValue]);
-            Xr.StringToPath(Instance, "/user/hand/right/input/trigger/value",
-                            ref hand_paths[(int)TouchControllerHand.Right, (int)HAND_PATHS.TriggerValue]);
+            leftHand = new OpenXrTouchController(this, "/user/hand/left");
+            rightHand = new OpenXrTouchController(this, "/user/hand/right");
 
             /*Xr.StringToPath(Instance, "/user/hand/left/input/thumbstick/y",
                             ref thumbstick_y_path[(int)TouchControllerHand.Left]);
@@ -725,38 +707,49 @@ namespace Xenko.VirtualReality
             result = xrCreateActionSet(instance, &gameplay_actionset_info, &gameplay_actionset);
             if (!xr_check(instance, result, "failed to create actionset"))
                 return 1;
+            */
+            Silk.NET.OpenXR.Action hand_pose_action = new Silk.NET.OpenXR.Action();
+            ulong[] hand_paths = new ulong[2];
+            hand_paths[0] = leftHand.hand_paths[(int)OpenXrTouchController.HAND_PATHS.Hand];
+            hand_paths[1] = rightHand.hand_paths[(int)OpenXrTouchController.HAND_PATHS.Hand];
 
-            XrAction hand_pose_action;
+            ActionSetCreateInfo gameplay_actionset_info = new ActionSetCreateInfo()
             {
-                XrActionCreateInfo action_info = {.type = XR_TYPE_ACTION_CREATE_INFO,
-		                                              .next = NULL,
-		                                              .actionType = XR_ACTION_TYPE_POSE_INPUT,
-		                                              .countSubactionPaths = HAND_COUNT,
-		                                              .subactionPaths = hand_paths};
-                strcpy(action_info.actionName, "handpose");
-                strcpy(action_info.localizedActionName, "Hand Pose");
+                Type = StructureType.TypeActionSetCreateInfo
+            };
 
-                result = xrCreateAction(gameplay_actionset, &action_info, &hand_pose_action);
-                if (!xr_check(instance, result, "failed to create hand pose action"))
-                    return 1;
-            }
-            // poses can't be queried directly, we need to create a space for each
-            XrSpace hand_pose_spaces[HAND_COUNT];
-            for (int hand = 0; hand < HAND_COUNT; hand++)
+            Span<byte> asname = new Span<byte>(gameplay_actionset_info.ActionSetName, 16);
+            Span<byte> lsname = new Span<byte>(gameplay_actionset_info.LocalizedActionSetName, 16);
+            SilkMarshal.StringIntoSpan("actionset\0", asname);
+            SilkMarshal.StringIntoSpan("ActionSet\0", lsname);
+
+            ActionSet gameplay_actionset;
+            CheckResult(Xr.CreateActionSet(Instance, &gameplay_actionset_info, &gameplay_actionset));
+
+            fixed (ulong* ptr = &hand_paths[0])
             {
-                XrActionSpaceCreateInfo action_space_info = {.type = XR_TYPE_ACTION_SPACE_CREATE_INFO,
-		                                                         .next = NULL,
-		                                                         .action = hand_pose_action,
-		                                                         .poseInActionSpace = identity_pose,
-		                                                         .subactionPath = hand_paths[hand]};
+                ActionCreateInfo action_info = new ActionCreateInfo()
+                {
+                    Type = StructureType.TypeActionCreateInfo,
+                    ActionType = ActionType.PoseInput,
+                    CountSubactionPaths = 2,                     
+                    SubactionPaths = ptr,
+                };
 
-                result = xrCreateActionSpace(session, &action_space_info, &hand_pose_spaces[hand]);
-                if (!xr_check(instance, result, "failed to create hand %d pose space", hand))
-                    return 1;
+                Span<byte> aname = new Span<byte>(action_info.ActionName, 16);
+                Span<byte> lname = new Span<byte>(action_info.LocalizedActionName, 16);
+                SilkMarshal.StringIntoSpan("handpose\0", aname);
+                SilkMarshal.StringIntoSpan("HandPose\0", lname);
+
+                CheckResult(Xr.CreateAction(gameplay_actionset, &action_info, &hand_pose_action));
+                handPoseAction = hand_pose_action;
             }
+
+            leftHand.SetupPose();
+            rightHand.SetupPose();
 
             // Grabbing objects is not actually implemented in this demo, it only gives some  haptic feebdack.
-            XrAction grab_action_float;
+            /*XrAction grab_action_float;
             {
                 XrActionCreateInfo action_info = {.type = XR_TYPE_ACTION_CREATE_INFO,
 		                                              .next = NULL,
