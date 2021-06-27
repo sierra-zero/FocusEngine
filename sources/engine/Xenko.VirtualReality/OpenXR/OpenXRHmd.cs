@@ -22,11 +22,11 @@ namespace Xenko.VirtualReality
         public Session globalSession;
         public Swapchain globalSwapchain;
         public Space globalPlaySpace;
-        public Silk.NET.OpenXR.Action handPoseAction;
         public FrameState globalFrameState;
         public ReferenceSpaceType play_space_type = ReferenceSpaceType.Stage; //XR_REFERENCE_SPACE_TYPE_LOCAL;
         public SwapchainImageVulkan2KHR[] images;
         public SwapchainImageVulkan2KHR[] depth_images;
+        public ActionSet globalActionSet;
 
         // array of view_count containers for submitting swapchains with rendered VR frames
         CompositionLayerProjectionView[] projection_views;
@@ -87,6 +87,34 @@ namespace Xenko.VirtualReality
             Extensions.Clear();
             Extensions.Add("XR_KHR_vulkan_enable2");
             Extensions.Add("XR_EXT_hp_mixed_reality_controller");
+            Extensions.Add("XR_HTC_vive_cosmos_controller_interaction");
+            Extensions.Add("XR_MSFT_hand_interaction");
+            Extensions.Add("XR_EXT_samsung_odyssey_controller");
+
+            uint propCount = 0;
+            Xr.EnumerateInstanceExtensionProperties((byte*)null, 0, &propCount, null);
+
+            ExtensionProperties[] props = new ExtensionProperties[propCount];
+            for (int i = 0; i < props.Length; i++) props[i].Type = StructureType.TypeExtensionProperties;
+
+            fixed (ExtensionProperties* pptr = &props[0])
+                Xr.EnumerateInstanceExtensionProperties((byte*)null, propCount, ref propCount, pptr);
+
+            List<string> AvailableExtensions = new List<string>();
+            for (int i = 0; i < props.Length; i++)
+            {
+                fixed (void* nptr = props[i].ExtensionName)
+                    AvailableExtensions.Add(Marshal.PtrToStringAnsi(new System.IntPtr(nptr)));
+            }
+
+            for (int i=0; i<Extensions.Count; i++)
+            {
+                if (AvailableExtensions.Contains(Extensions[i]) == false)
+                {
+                    Extensions.RemoveAt(i);
+                    i--;
+                }
+            }
 
             InstanceCreateInfo instanceCreateInfo;
 
@@ -314,6 +342,32 @@ namespace Xenko.VirtualReality
             headPos.X = (views[0].Pose.Position.X + views[1].Pose.Position.X) *  0.5f;
             headPos.Y = (views[0].Pose.Position.Y + views[1].Pose.Position.Y) * -0.5f;
             headPos.Z = (views[0].Pose.Position.Z + views[1].Pose.Position.Z) *  0.5f;
+
+            //! @todo Move this action processing to before xrWaitFrame, probably.
+            /*const XrActiveActionSet active_actionsets[] = {
+            {.actionSet = gameplay_actionset, .subactionPath = XR_NULL_PATH}};
+
+            XrActionsSyncInfo actions_sync_info = {
+		    .type = XR_TYPE_ACTIONS_SYNC_INFO,
+		    .countActiveActionSets = sizeof(active_actionsets) / sizeof(active_actionsets[0]),
+		    .activeActionSets = active_actionsets,
+        };
+            result = xrSyncActions(session, &actions_sync_info);
+            xr_check(instance, result, "failed to sync actions!");*/
+
+            ActiveActionSet active_actionsets = new ActiveActionSet()
+            {
+                 ActionSet = globalActionSet
+            };
+
+            ActionsSyncInfo actions_sync_info = new ActionsSyncInfo()
+            {
+                Type = StructureType.TypeActionsSyncInfo,
+                CountActiveActionSets = 1,
+                ActiveActionSets = &active_actionsets,
+            };
+
+            Xr.SyncAction(globalSession, &actions_sync_info);
 
             leftHand.Update(gameTime);
             rightHand.Update(gameTime);
@@ -681,8 +735,6 @@ namespace Xenko.VirtualReality
 
             // --- Set up input (actions)
 
-            leftHand = new OpenXrTouchController(this, "/user/hand/left");
-            rightHand = new OpenXrTouchController(this, "/user/hand/right");
 
             /*Xr.StringToPath(Instance, "/user/hand/left/input/thumbstick/y",
                             ref thumbstick_y_path[(int)TouchControllerHand.Left]);
@@ -708,11 +760,6 @@ namespace Xenko.VirtualReality
             if (!xr_check(instance, result, "failed to create actionset"))
                 return 1;
             */
-            Silk.NET.OpenXR.Action hand_pose_action = new Silk.NET.OpenXR.Action();
-            ulong[] hand_paths = new ulong[2];
-            hand_paths[0] = leftHand.hand_paths[(int)OpenXrTouchController.HAND_PATHS.Hand];
-            hand_paths[1] = rightHand.hand_paths[(int)OpenXrTouchController.HAND_PATHS.Hand];
-
             ActionSetCreateInfo gameplay_actionset_info = new ActionSetCreateInfo()
             {
                 Type = StructureType.TypeActionSetCreateInfo
@@ -725,28 +772,14 @@ namespace Xenko.VirtualReality
 
             ActionSet gameplay_actionset;
             CheckResult(Xr.CreateActionSet(Instance, &gameplay_actionset_info, &gameplay_actionset));
+            globalActionSet = gameplay_actionset;
 
-            fixed (ulong* ptr = &hand_paths[0])
-            {
-                ActionCreateInfo action_info = new ActionCreateInfo()
-                {
-                    Type = StructureType.TypeActionCreateInfo,
-                    ActionType = ActionType.PoseInput,
-                    CountSubactionPaths = 2,                     
-                    SubactionPaths = ptr,
-                };
+            OpenXRInput.Initialize(this);
 
-                Span<byte> aname = new Span<byte>(action_info.ActionName, 16);
-                Span<byte> lname = new Span<byte>(action_info.LocalizedActionName, 16);
-                SilkMarshal.StringIntoSpan("handpose\0", aname);
-                SilkMarshal.StringIntoSpan("HandPose\0", lname);
+            leftHand = new OpenXrTouchController(this, OpenXRInput.MappedActions[(int)TouchControllerHand.Left, (int)OpenXRInput.HAND_PATHS.Position]);
+            rightHand = new OpenXrTouchController(this, OpenXRInput.MappedActions[(int)TouchControllerHand.Right, (int)OpenXRInput.HAND_PATHS.Position]);
 
-                CheckResult(Xr.CreateAction(gameplay_actionset, &action_info, &hand_pose_action));
-                handPoseAction = hand_pose_action;
-            }
-
-            leftHand.SetupPose();
-            rightHand.SetupPose();
+            // TODO: need to create a system to autogenerate interaction profiles
 
             // Grabbing objects is not actually implemented in this demo, it only gives some  haptic feebdack.
             /*XrAction grab_action_float;
@@ -861,15 +894,14 @@ namespace Xenko.VirtualReality
 
             CheckResult(Xr.BeginSession(session, &session_begin_info));
 
-            /*XrSessionActionSetsAttachInfo actionset_attach_info = {
-	                .type = XR_TYPE_SESSION_ACTION_SETS_ATTACH_INFO,
-	                .next = NULL,
-	                .countActionSets = 1,
-	                .actionSets = &gameplay_actionset};
-            result = xrAttachSessionActionSets(session, &actionset_attach_info);
-            if (!xr_check(instance, result, "failed to attach action set"))
-                return 1;
-            */
+            SessionActionSetsAttachInfo actionset_attach_info = new SessionActionSetsAttachInfo()
+            {
+	            Type = StructureType.TypeSessionActionSetsAttachInfo,
+	            CountActionSets = 1,
+	            ActionSets = &gameplay_actionset
+            };
+
+            CheckResult(Xr.AttachSessionActionSets(session, &actionset_attach_info));
         }
 
         internal Matrix createViewMatrix(Vector3 translation, Quaternion rotation)
@@ -972,25 +1004,14 @@ namespace Xenko.VirtualReality
             view = Matrix.LookAtRH(pos, pos + finalForward, finalUp);
         }
 
-        public override void Update(GameTime gameTime)
+        public override unsafe void Update(GameTime gameTime)
         {
             // update controller positions (should this be part of draw...?)
             //! @todo Move this action processing to before xrWaitFrame, probably.
-            /*
-            const XrActiveActionSet active_actionsets[] = {
-            {.actionSet = gameplay_actionset, .subactionPath = XR_NULL_PATH}};
-
-            XrActionsSyncInfo actions_sync_info = {
-		    .type = XR_TYPE_ACTIONS_SYNC_INFO,
-		    .countActiveActionSets = sizeof(active_actionsets) / sizeof(active_actionsets[0]),
-		    .activeActionSets = active_actionsets,
-        };
-            result = xrSyncActions(session, &actions_sync_info);
-            xr_check(instance, result, "failed to sync actions!");
 
             // query each value / location with a subaction path != XR_NULL_PATH
             // resulting in individual values per hand/.
-            XrActionStateFloat grab_value[HAND_COUNT];
+            /*XrActionStateFloat grab_value[HAND_COUNT];
             XrSpaceLocation hand_locations[HAND_COUNT];
 
             for (int i = 0; i < HAND_COUNT; i++)

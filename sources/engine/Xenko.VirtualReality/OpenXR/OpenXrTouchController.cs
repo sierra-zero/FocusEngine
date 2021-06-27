@@ -13,48 +13,25 @@ namespace Xenko.VirtualReality
         private OpenXRHmd baseHMD;
         private SpaceLocation handLocation;
 
-        // input stuff
-        public enum HAND_PATHS
-        {
-            Hand = 0,
-            TriggerValue = 1,
-            ThumbstickY = 2,
-            ThumbstickX = 3,
-            TrackpadX = 4,
-            TrackpadY = 5,
-            GripValue = 6,
-            Button1 = 7, // x on left, a on right (or either index)
-            Button2 = 8, // y on left, b on right (or either index)
-            Menu = 9,
-            System = 10, // may be inaccessible
-        }
-        public ulong[] hand_paths = new ulong[11];
+        public ulong[] hand_paths = new ulong[12];
 
-        public Space myHand;
+        public Space myHandSpace;
+        public Silk.NET.OpenXR.Action myHandAction;
 
-        public OpenXrTouchController(OpenXRHmd hmd, string baseHandPath)
+        public OpenXrTouchController(OpenXRHmd hmd, Silk.NET.OpenXR.Action handPoseAction)
         {
-            this.baseHandPath = baseHandPath;
             baseHMD = hmd;
-
             handLocation.Type = StructureType.TypeSpaceLocation;
+            myHandAction = handPoseAction;
 
-            baseHMD.Xr.StringToPath(baseHMD.Instance, baseHandPath, ref hand_paths[(int)HAND_PATHS.Hand]);
-            baseHMD.Xr.StringToPath(baseHMD.Instance, baseHandPath + "/input/trigger/value",
-                                    ref hand_paths[(int)HAND_PATHS.TriggerValue]);
-        }
-
-        public void SetupPose()
-        {
             ActionSpaceCreateInfo action_space_info = new ActionSpaceCreateInfo()
             {
                 Type = StructureType.TypeActionSpaceCreateInfo,
-                Action = baseHMD.handPoseAction,
+                Action = myHandAction,
                 PoseInActionSpace = new Posef(new Quaternionf(0f, 0f, 0f, 1f), new Vector3f(0f, 0f, 0f)),
-                SubactionPath = hand_paths[0]
             };
 
-            OpenXRHmd.CheckResult(baseHMD.Xr.CreateActionSpace(baseHMD.globalSession, in action_space_info, ref myHand));
+            OpenXRHmd.CheckResult(baseHMD.Xr.CreateActionSpace(baseHMD.globalSession, in action_space_info, ref myHandSpace));
         }
 
         private Vector3 currentPos;
@@ -144,21 +121,23 @@ namespace Xenko.VirtualReality
 
             ActionStateGetInfo get_info = new ActionStateGetInfo()
             {
-                Type = StructureType.TypeActionStateGetInfo,
-				Action = baseHMD.handPoseAction,                     
-				SubactionPath = hand_paths[0]
+                Type = StructureType.TypeActionStateGetInfo,                 
+				Action = myHandAction,                 
             };
 
             baseHMD.Xr.GetActionStatePose(baseHMD.globalSession, in get_info, ref hand_pose_state);
 
-            baseHMD.Xr.LocateSpace(myHand, baseHMD.globalPlaySpace, baseHMD.globalFrameState.PredictedDisplayTime,
+            baseHMD.Xr.LocateSpace(myHandSpace, baseHMD.globalPlaySpace, baseHMD.globalFrameState.PredictedDisplayTime,
                                    ref handLocation);
 
-            currentPos.X =  handLocation.Pose.Position.X;
-            currentPos.Y = -handLocation.Pose.Position.Y;
-            currentPos.Z =  handLocation.Pose.Position.Z;
+            currentPos.X = handLocation.Pose.Position.X;
+            currentPos.Y = handLocation.Pose.Position.Y;
+            currentPos.Z = handLocation.Pose.Position.Z;
 
-            currentRot = OpenXRHmd.ConvertToFocus(ref handLocation.Pose.Orientation);
+            currentRot.X = handLocation.Pose.Orientation.X;
+            currentRot.Y = handLocation.Pose.Orientation.Y;
+            currentRot.Z = handLocation.Pose.Orientation.Z;
+            currentRot.W = handLocation.Pose.Orientation.W;
         }
     }
 }
