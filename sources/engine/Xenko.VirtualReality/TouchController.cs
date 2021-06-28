@@ -40,7 +40,7 @@ namespace Xenko.VirtualReality
 
         public abstract bool ThumbResting { get; }
 
-        public abstract Vector2 ThumbAxis { get; }
+        public abstract Vector2 TouchpadAxis { get; }
 
         public abstract Vector2 ThumbstickAxis { get; }
 

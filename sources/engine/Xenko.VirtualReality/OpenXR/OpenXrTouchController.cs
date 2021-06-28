@@ -12,17 +12,19 @@ namespace Xenko.VirtualReality
         private string baseHandPath;
         private OpenXRHmd baseHMD;
         private SpaceLocation handLocation;
+        private TouchControllerHand myHand;
 
         public ulong[] hand_paths = new ulong[12];
 
         public Space myHandSpace;
         public Silk.NET.OpenXR.Action myHandAction;
 
-        public OpenXrTouchController(OpenXRHmd hmd, Silk.NET.OpenXR.Action handPoseAction)
+        public OpenXrTouchController(OpenXRHmd hmd, TouchControllerHand whichHand)
         {
             baseHMD = hmd;
             handLocation.Type = StructureType.TypeSpaceLocation;
-            myHandAction = handPoseAction;
+            myHand = whichHand;
+            myHandAction = OpenXRInput.MappedActions[(int)myHand, (int)OpenXRInput.HAND_PATHS.Position];
 
             ActionSpaceCreateInfo action_space_info = new ActionSpaceCreateInfo()
             {
@@ -49,11 +51,24 @@ namespace Xenko.VirtualReality
         public override DeviceState State => (handLocation.LocationFlags & SpaceLocationFlags.SpaceLocationPositionValidBit) != 0 ? DeviceState.Valid : DeviceState.OutOfRange;
 
         public override bool SwapTouchpadJoystick { get; set; }
-        public override float HoldAngleOffset { get; set; }
 
-        public override float Trigger => 0f;
+        private Quaternion? holdOffset;
+        private float _holdoffset;
 
-        public override float Grip => 0f;
+        public override float HoldAngleOffset
+        {
+            get => _holdoffset;
+            set
+            {
+                _holdoffset = value;
+
+                holdOffset = Quaternion.RotationXDeg(_holdoffset);
+            }
+        }
+
+        public override float Trigger => OpenXRInput.GetActionFloat(myHand, TouchControllerButton.Trigger, out _);
+
+        public override float Grip => OpenXRInput.GetActionFloat(myHand, TouchControllerButton.Grip, out _);
 
         public override bool IndexPointing => false;
 
@@ -63,9 +78,9 @@ namespace Xenko.VirtualReality
 
         public override bool ThumbResting => false;
 
-        public override Vector2 ThumbAxis => new Vector2(0f, 0f);
+        public override Vector2 TouchpadAxis => GetAxis((int)TouchControllerButton.Touchpad);
 
-        public override Vector2 ThumbstickAxis => new Vector2(0f, 0f);
+        public override Vector2 ThumbstickAxis => GetAxis((int)TouchControllerButton.Thumbstick);
 
         public override string DebugControllerState()
         {
@@ -74,42 +89,104 @@ namespace Xenko.VirtualReality
 
         public override Vector2 GetAxis(int index)
         {
-            return new Vector2(0f, 0f);
+            if (SwapTouchpadJoystick) index ^= 1;
+
+            TouchControllerButton button = index == 0 ? TouchControllerButton.Thumbstick : TouchControllerButton.Touchpad;
+
+            return new Vector2(OpenXRInput.GetActionFloat(myHand, button, out _, false),
+                               OpenXRInput.GetActionFloat(myHand, button, out _, true));
         }
 
         public override bool IsPressed(TouchControllerButton button)
         {
-            return false;
+            if (SwapTouchpadJoystick)
+            {
+                switch (button)
+                {
+                    case TouchControllerButton.Thumbstick:
+                        button = TouchControllerButton.Touchpad;
+                        break;
+                    case TouchControllerButton.Touchpad:
+                        button = TouchControllerButton.Thumbstick;
+                        break;
+                }
+            }
+
+            return OpenXRInput.GetActionBool(myHand, button, out _);
         }
 
         public override bool IsPressedDown(TouchControllerButton button)
         {
-            return false;
+            if (SwapTouchpadJoystick)
+            {
+                switch (button)
+                {
+                    case TouchControllerButton.Thumbstick:
+                        button = TouchControllerButton.Touchpad;
+                        break;
+                    case TouchControllerButton.Touchpad:
+                        button = TouchControllerButton.Thumbstick;
+                        break;
+                }
+            }
+
+            bool isDownNow = OpenXRInput.GetActionBool(myHand, button, out bool changed);
+            return isDownNow && changed;
         }
 
         public override bool IsPressReleased(TouchControllerButton button)
         {
-            return false;
+            if (SwapTouchpadJoystick)
+            {
+                switch (button)
+                {
+                    case TouchControllerButton.Thumbstick:
+                        button = TouchControllerButton.Touchpad;
+                        break;
+                    case TouchControllerButton.Touchpad:
+                        button = TouchControllerButton.Thumbstick;
+                        break;
+                }
+            }
+
+            bool isDownNow = OpenXRInput.GetActionBool(myHand, button, out bool changed);
+            return !isDownNow && changed;
         }
 
         public override bool IsTouched(TouchControllerButton button)
         {
+            // unsupported right now
             return false;
         }
 
         public override bool IsTouchedDown(TouchControllerButton button)
         {
+            // unsupported right now
             return false;
         }
 
         public override bool IsTouchReleased(TouchControllerButton button)
         {
+            // unsupported right now
             return false;
         }
 
-        public override bool Vibrate(float amount = 1)
+        public override unsafe bool Vibrate(float amount = 1)
         {
-            return false;
+            HapticActionInfo hai = new HapticActionInfo()
+            {
+                Action = OpenXRInput.MappedActions[(int)myHand, (int)OpenXRInput.HAND_PATHS.HapticOut],
+                Type = StructureType.TypeHapticActionInfo
+            };
+
+            HapticVibration hv = new HapticVibration()
+            {
+                Amplitude = 1f,
+                Duration = (long)Math.Round(1000f * amount),
+                Type = StructureType.TypeHapticVibration
+            };
+
+            return baseHMD.Xr.ApplyHapticFeedback(baseHMD.globalSession, &hai, (HapticBaseHeader*)&hv) == Result.Success;
         }
 
         public override void Update(GameTime time)
@@ -134,10 +211,21 @@ namespace Xenko.VirtualReality
             currentPos.Y = handLocation.Pose.Position.Y;
             currentPos.Z = handLocation.Pose.Position.Z;
 
-            currentRot.X = handLocation.Pose.Orientation.X;
-            currentRot.Y = handLocation.Pose.Orientation.Y;
-            currentRot.Z = handLocation.Pose.Orientation.Z;
-            currentRot.W = handLocation.Pose.Orientation.W;
+            currentPos *= HostDevice.BodyScaling;
+
+            if (holdOffset.HasValue)
+            {
+                Quaternion orig = new Quaternion(handLocation.Pose.Orientation.X, handLocation.Pose.Orientation.Y,
+                                                 handLocation.Pose.Orientation.Z, handLocation.Pose.Orientation.W);
+                currentRot = holdOffset.Value * orig;
+            }
+            else
+            {
+                currentRot.X = handLocation.Pose.Orientation.X;
+                currentRot.Y = handLocation.Pose.Orientation.Y;
+                currentRot.Z = handLocation.Pose.Orientation.Z;
+                currentRot.W = handLocation.Pose.Orientation.W;
+            }
         }
     }
 }

@@ -8,7 +8,7 @@ namespace Xenko.VirtualReality
 {
     class OpenXRInput
     {
-        // input stuff
+        // different types of input we are interested in
         public enum HAND_PATHS
         {
             BaseIndex = 0,
@@ -29,6 +29,7 @@ namespace Xenko.VirtualReality
         }
         public const int HAND_PATH_COUNT = 15;
 
+        // most likely matches for input types above
         private static List<string>[] PathPriorities =
         {
             new List<string>() { "" }, // BaseIndex 0
@@ -69,6 +70,7 @@ namespace Xenko.VirtualReality
             }
         }
 
+        private static OpenXRHmd baseHMD;
         internal static Silk.NET.OpenXR.Action[,] MappedActions = new Silk.NET.OpenXR.Action[2, HAND_PATH_COUNT];
 
         public static string[] InteractionProfiles =
@@ -101,8 +103,73 @@ namespace Xenko.VirtualReality
             return hmd.Xr.SuggestInteractionProfileBinding(hmd.Instance, &suggested_bindings) == Result.Success;
         }
 
+        public static Silk.NET.OpenXR.Action GetAction(TouchControllerHand hand, TouchControllerButton button, bool YAxis = false)
+        {
+            switch (button)
+            {
+                case TouchControllerButton.Button1:
+                    return MappedActions[(int)hand, (int)HAND_PATHS.Button1];
+                case TouchControllerButton.Button2:
+                    return MappedActions[(int)hand, (int)HAND_PATHS.Button2];
+                case TouchControllerButton.Grip:
+                    return MappedActions[(int)hand, (int)HAND_PATHS.GripValue];
+                case TouchControllerButton.Menu:
+                    return MappedActions[(int)hand, (int)HAND_PATHS.Menu];
+                case TouchControllerButton.System:
+                    return MappedActions[(int)hand, (int)HAND_PATHS.System];
+                case TouchControllerButton.Trigger:
+                    return MappedActions[(int)hand, (int)HAND_PATHS.TriggerValue];
+                case TouchControllerButton.Thumbstick:
+                    return MappedActions[(int)hand, YAxis ? (int)HAND_PATHS.ThumbstickY : (int)HAND_PATHS.ThumbstickX];
+                case TouchControllerButton.Touchpad:
+                    return MappedActions[(int)hand, YAxis ? (int)HAND_PATHS.TrackpadY : (int)HAND_PATHS.TrackpadX];
+                default:
+                    throw new ArgumentException("Don't know button: " + button);
+            }
+        }
+
+        public static bool GetActionBool(TouchControllerHand hand, TouchControllerButton button, out bool wasChangedSinceLast)
+        {
+            ActionStateGetInfo getbool = new ActionStateGetInfo()
+            {
+                Action = GetAction(hand, button),
+                Type = StructureType.TypeActionStateGetInfo
+            };
+
+            ActionStateBoolean boolresult = new ActionStateBoolean()
+            {
+                Type = StructureType.TypeActionStateBoolean
+            };
+
+            baseHMD.Xr.GetActionStateBoolean(baseHMD.globalSession, in getbool, ref boolresult);
+
+            wasChangedSinceLast = boolresult.ChangedSinceLastSync == 1;
+            return boolresult.CurrentState == 1;
+        }
+
+        public static float GetActionFloat(TouchControllerHand hand, TouchControllerButton button, out bool wasChangedSinceLast, bool YAxis = false)
+        {
+            ActionStateGetInfo getfloat = new ActionStateGetInfo()
+            {
+                Action = GetAction(hand, button, YAxis),
+                Type = StructureType.TypeActionStateGetInfo
+            };
+
+            ActionStateFloat floatresult = new ActionStateFloat()
+            {
+                Type = StructureType.TypeActionStateFloat
+            };
+
+            baseHMD.Xr.GetActionStateFloat(baseHMD.globalSession, in getfloat, ref floatresult);
+
+            wasChangedSinceLast = floatresult.ChangedSinceLastSync == 1;
+            return floatresult.CurrentState;
+        }
+
         public static unsafe void Initialize(OpenXRHmd hmd)
         {
+            baseHMD = hmd;
+
             // make actions
             for (int i=0; i<HAND_PATH_COUNT; i++)
             {

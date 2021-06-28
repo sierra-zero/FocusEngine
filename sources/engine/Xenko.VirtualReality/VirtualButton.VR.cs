@@ -12,9 +12,11 @@ namespace Xenko.VirtualReality
     {
         public static readonly VirtualButton RightTrigger = new VRButtons("RightTrigger", (int)TouchControllerButton.Trigger | (1 << 16));
 
-        public static readonly VirtualButton RightXA = new VRButtons("RightXA", (int)TouchControllerButton.X | (1 << 16));
+        public static readonly VirtualButton RightXA = new VRButtons("RightXA", (int)TouchControllerButton.Button1 | (1 << 16));
 
-        public static readonly VirtualButton RightBYMenu = new VRButtons("RightBYMenu", (int)TouchControllerButton.Menu | (1 << 16));
+        public static readonly VirtualButton RightYB = new VRButtons("RightYB", (int)TouchControllerButton.Button2 | (1 << 16));
+
+        public static readonly VirtualButton RightMenu = new VRButtons("RightMenu", (int)TouchControllerButton.Menu | (1 << 16));
 
         public static readonly VirtualButton RightGrip = new VRButtons("RightGrip", (int)TouchControllerButton.Grip | (1 << 16));
 
@@ -40,9 +42,11 @@ namespace Xenko.VirtualReality
 
         public static readonly VirtualButton LeftTrigger = new VRButtons("LeftTrigger", (int)TouchControllerButton.Trigger);
 
-        public static readonly VirtualButton LeftXA = new VRButtons("LeftXA", (int)TouchControllerButton.X);
+        public static readonly VirtualButton LeftXA = new VRButtons("LeftXA", (int)TouchControllerButton.Button1);
 
-        public static readonly VirtualButton LeftBYMenu = new VRButtons("LeftBYMenu", (int)TouchControllerButton.Menu);
+        public static readonly VirtualButton LeftYB = new VRButtons("LeftYB", (int)TouchControllerButton.Button2);
+
+        public static readonly VirtualButton LeftMenu = new VRButtons("LeftMenu", (int)TouchControllerButton.Menu);
 
         public static readonly VirtualButton LeftGrip = new VRButtons("LeftGrip", (int)TouchControllerButton.Grip);
 
@@ -85,7 +89,7 @@ namespace Xenko.VirtualReality
                 case TouchControllerButton.Thumbstick:
                     return (Index & (1 << 17)) != 0 ? tc.ThumbstickAxis.Y : tc.ThumbstickAxis.X;
                 case TouchControllerButton.Touchpad:
-                    return (Index & (1 << 17)) != 0 ? tc.ThumbAxis.Y : tc.ThumbAxis.X;
+                    return (Index & (1 << 17)) != 0 ? tc.TouchpadAxis.Y : tc.TouchpadAxis.X;
                 case TouchControllerButton.Trigger:
                     return tc.Trigger;
                 default:
@@ -108,7 +112,7 @@ namespace Xenko.VirtualReality
                     axis = tc.ThumbstickAxis;
                     break;
                 case TouchControllerButton.Touchpad:
-                    axis = tc.ThumbAxis;
+                    axis = tc.TouchpadAxis;
                     break;
             }
             switch (Index >> 17)
@@ -142,7 +146,7 @@ namespace Xenko.VirtualReality
                     axis = tc.ThumbstickAxis;
                     break;
                 case TouchControllerButton.Touchpad:
-                    axis = tc.ThumbAxis;
+                    axis = tc.TouchpadAxis;
                     break;
             }
             switch (Index >> 17)
@@ -176,7 +180,7 @@ namespace Xenko.VirtualReality
                     axis = tc.ThumbstickAxis;
                     break;
                 case TouchControllerButton.Touchpad:
-                    axis = tc.ThumbAxis;
+                    axis = tc.TouchpadAxis;
                     break;
             }
             switch (Index >> 17)

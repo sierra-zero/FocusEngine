@@ -776,8 +776,8 @@ namespace Xenko.VirtualReality
 
             OpenXRInput.Initialize(this);
 
-            leftHand = new OpenXrTouchController(this, OpenXRInput.MappedActions[(int)TouchControllerHand.Left, (int)OpenXRInput.HAND_PATHS.Position]);
-            rightHand = new OpenXrTouchController(this, OpenXRInput.MappedActions[(int)TouchControllerHand.Right, (int)OpenXRInput.HAND_PATHS.Position]);
+            leftHand = new OpenXrTouchController(this, TouchControllerHand.Left);
+            rightHand = new OpenXrTouchController(this, TouchControllerHand.Right);
 
             // TODO: need to create a system to autogenerate interaction profiles
 
