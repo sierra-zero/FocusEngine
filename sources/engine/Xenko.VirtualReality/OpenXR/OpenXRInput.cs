@@ -21,8 +21,8 @@ namespace Xenko.VirtualReality
             TrackpadY = 7,
             TrackpadClick = 8,
             GripValue = 9,
-            Button1 = 10, // x on left, a on right (or either index)
-            Button2 = 11, // y on left, b on right (or either index)
+            ButtonXA = 10, // x on left, a on right (or either index)
+            ButtonYB = 11, // y on left, b on right (or either index)
             Menu = 12,
             System = 13, // may be inaccessible
             HapticOut = 14
@@ -107,10 +107,10 @@ namespace Xenko.VirtualReality
         {
             switch (button)
             {
-                case TouchControllerButton.Button1:
-                    return MappedActions[(int)hand, (int)HAND_PATHS.Button1];
-                case TouchControllerButton.Button2:
-                    return MappedActions[(int)hand, (int)HAND_PATHS.Button2];
+                case TouchControllerButton.ButtonXA:
+                    return MappedActions[(int)hand, (int)HAND_PATHS.ButtonXA];
+                case TouchControllerButton.ButtonYB:
+                    return MappedActions[(int)hand, (int)HAND_PATHS.ButtonYB];
                 case TouchControllerButton.Grip:
                     return MappedActions[(int)hand, (int)HAND_PATHS.GripValue];
                 case TouchControllerButton.Menu:

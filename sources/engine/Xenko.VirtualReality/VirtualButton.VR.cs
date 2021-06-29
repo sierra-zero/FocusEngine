@@ -12,9 +12,9 @@ namespace Xenko.VirtualReality
     {
         public static readonly VirtualButton RightTrigger = new VRButtons("RightTrigger", (int)TouchControllerButton.Trigger | (1 << 16));
 
-        public static readonly VirtualButton RightXA = new VRButtons("RightXA", (int)TouchControllerButton.Button1 | (1 << 16));
+        public static readonly VirtualButton RightXA = new VRButtons("RightXA", (int)TouchControllerButton.ButtonXA | (1 << 16));
 
-        public static readonly VirtualButton RightYB = new VRButtons("RightYB", (int)TouchControllerButton.Button2 | (1 << 16));
+        public static readonly VirtualButton RightYB = new VRButtons("RightYB", (int)TouchControllerButton.ButtonYB | (1 << 16));
 
         public static readonly VirtualButton RightMenu = new VRButtons("RightMenu", (int)TouchControllerButton.Menu | (1 << 16));
 
@@ -42,9 +42,9 @@ namespace Xenko.VirtualReality
 
         public static readonly VirtualButton LeftTrigger = new VRButtons("LeftTrigger", (int)TouchControllerButton.Trigger);
 
-        public static readonly VirtualButton LeftXA = new VRButtons("LeftXA", (int)TouchControllerButton.Button1);
+        public static readonly VirtualButton LeftXA = new VRButtons("LeftXA", (int)TouchControllerButton.ButtonXA);
 
-        public static readonly VirtualButton LeftYB = new VRButtons("LeftYB", (int)TouchControllerButton.Button2);
+        public static readonly VirtualButton LeftYB = new VRButtons("LeftYB", (int)TouchControllerButton.ButtonYB);
 
         public static readonly VirtualButton LeftMenu = new VRButtons("LeftMenu", (int)TouchControllerButton.Menu);
 

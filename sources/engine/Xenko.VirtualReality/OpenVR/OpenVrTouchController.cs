@@ -121,7 +121,7 @@ namespace Xenko.VirtualReality
             {
                 case TouchControllerButton.Thumbstick:
                     return SwapTouchpadJoystick ? OpenVR.Controller.ButtonId.ButtonSteamVrTouchpad : OpenVR.Controller.ButtonId.ButtonAxis2;
-                case TouchControllerButton.Button1:
+                case TouchControllerButton.ButtonXA:
                     return OpenVR.Controller.ButtonId.ButtonA;
                 case TouchControllerButton.Touchpad:
                     return SwapTouchpadJoystick ? OpenVR.Controller.ButtonId.ButtonAxis2 : OpenVR.Controller.ButtonId.ButtonSteamVrTouchpad;              
@@ -129,7 +129,7 @@ namespace Xenko.VirtualReality
                     return OpenVR.Controller.ButtonId.ButtonSteamVrTrigger;
                 case TouchControllerButton.Grip:
                     return OpenVR.Controller.ButtonId.ButtonGrip;
-                case TouchControllerButton.Button2:
+                case TouchControllerButton.ButtonYB:
                 case TouchControllerButton.Menu:
                     return OpenVR.Controller.ButtonId.ButtonApplicationMenu;
                 case TouchControllerButton.System:

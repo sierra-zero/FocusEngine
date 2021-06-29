@@ -6,8 +6,8 @@ namespace Xenko.VirtualReality
     {
         Thumbstick,
         Touchpad,
-        Button1,
-        Button2,
+        ButtonXA,
+        ButtonYB,
         Trigger,
         Grip,
         Menu,
