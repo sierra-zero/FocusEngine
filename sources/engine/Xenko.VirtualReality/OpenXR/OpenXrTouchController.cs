@@ -189,7 +189,7 @@ namespace Xenko.VirtualReality
             return baseHMD.Xr.ApplyHapticFeedback(baseHMD.globalSession, &hai, (HapticBaseHeader*)&hv) == Result.Success;
         }
 
-        public override void Update(GameTime time)
+        public override unsafe void Update(GameTime time)
         {
             ActionStatePose hand_pose_state = new ActionStatePose()
             {
@@ -198,9 +198,16 @@ namespace Xenko.VirtualReality
 
             ActionStateGetInfo get_info = new ActionStateGetInfo()
             {
-                Type = StructureType.TypeActionStateGetInfo,                 
-				Action = myHandAction,                 
+                Type = StructureType.TypeActionStateGetInfo,
+                Action = myHandAction,
             };
+
+            SpaceVelocity sv = new SpaceVelocity()
+            {
+                Type = StructureType.TypeSpaceVelocity
+            };
+
+            handLocation.Next = &sv;
 
             baseHMD.Xr.GetActionStatePose(baseHMD.globalSession, in get_info, ref hand_pose_state);
 
@@ -211,6 +218,15 @@ namespace Xenko.VirtualReality
             currentPos.Y = handLocation.Pose.Position.Y;
             currentPos.Z = handLocation.Pose.Position.Z;
 
+            currentVel.X = sv.LinearVelocity.X;
+            currentVel.Y = sv.LinearVelocity.Y;
+            currentVel.Z = sv.LinearVelocity.Z;
+
+            currentAngVel.X = sv.AngularVelocity.X;
+            currentAngVel.Y = sv.AngularVelocity.Y;
+            currentAngVel.Z = sv.AngularVelocity.Z;
+
+            currentVel *= HostDevice.BodyScaling;
             currentPos *= HostDevice.BodyScaling;
 
             if (holdOffset.HasValue)
