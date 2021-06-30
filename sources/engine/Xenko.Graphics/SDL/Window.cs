@@ -93,6 +93,15 @@ namespace Xenko.Graphics.SDL
             return modeList;
         }
 
+        internal static void GenerateGenericError(Exception e = null, string msg = null)
+        {
+            string error = msg ?? "There was an error!";
+            if (e != null) error += "\n\nException: " + e.ToString();
+            SDL.SDL_ShowSimpleMessageBox(SDL.SDL_MessageBoxFlags.SDL_MESSAGEBOX_ERROR, "Error in Application", error, IntPtr.Zero);
+            Console.Error.WriteLine(error);
+            throw new Exception(error);
+        }
+
         internal static void GenerateCreationError(Exception e = null)
         {
             string error = "There was an error making the game window. Does your video card support Vulkan?\nMake sure your video drivers are up to date and check Vulkan compatibility.\n\nError: " + SDL.SDL_GetError();
@@ -655,10 +664,12 @@ namespace Xenko.Graphics.SDL
                             break;
 
                         case SDL.SDL_WindowEventID.SDL_WINDOWEVENT_FOCUS_GAINED:
+                            e.window.data1 = IsFullScreen ? 1 : 0;
                             FocusGainedActions?.Invoke(e.window);
                             break;
 
                         case SDL.SDL_WindowEventID.SDL_WINDOWEVENT_FOCUS_LOST:
+                            e.window.data1 = IsFullScreen ? 2 : 0;
                             FocusLostActions?.Invoke(e.window);
                             break;
                     }

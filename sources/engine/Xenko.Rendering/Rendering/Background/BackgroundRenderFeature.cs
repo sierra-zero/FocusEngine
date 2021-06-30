@@ -47,7 +47,7 @@ namespace Xenko.Rendering.Background
                 var renderNode = GetRenderNode(renderNodeReference);
                 var renderBackground = (RenderBackground)renderNode.RenderObject;
 
-                if (renderBackground.Texture == null)
+                if (renderBackground?.Texture == null)
                     continue;
                     
                 if (renderBackground.Is2D)

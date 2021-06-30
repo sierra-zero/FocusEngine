@@ -71,9 +71,8 @@ namespace Xenko.Graphics
         internal Buffer EmptyTexelBuffer;
         internal Texture EmptyTexture;
 
-        internal VkPhysicalDevice NativePhysicalDevice => Adapter.GetPhysicalDevice(IsDebugMode);
-
-        internal VkInstance NativeInstance => GraphicsAdapterFactory.GetInstance(IsDebugMode).NativeInstance;
+        public VkPhysicalDevice NativePhysicalDevice => Adapter.GetPhysicalDevice(IsDebugMode);
+        public VkInstance NativeInstance => GraphicsAdapterFactory.GetInstance(IsDebugMode).NativeInstance;
 
         internal struct BufferInfo
         {

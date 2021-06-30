@@ -431,6 +431,14 @@ namespace Xenko.Graphics
         {
         }
 
+        public Texture(GraphicsDevice device, TextureDescription fromDescription) : base(device)
+        {
+            textureDescription = fromDescription;
+            ViewWidth = textureDescription.Width;
+            ViewHeight = textureDescription.Height;
+            ViewDepth = textureDescription.Depth;
+        }
+
         protected override void Destroy()
         {
             base.Destroy();

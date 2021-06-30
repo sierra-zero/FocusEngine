@@ -111,7 +111,7 @@ namespace Xenko.VirtualReality
 
         public override bool ThumbResting => controller?.GetTouch(OpenVR.Controller.ButtonId.ButtonSteamVrTouchpad) ?? false;
 
-        public override Vector2 ThumbAxis => controller?.GetAxis(SwapTouchpadJoystick ? OpenVR.Controller.ButtonId.ButtonAxis2 : OpenVR.Controller.ButtonId.ButtonAxis0) ?? Vector2.Zero;
+        public override Vector2 TouchpadAxis => controller?.GetAxis(SwapTouchpadJoystick ? OpenVR.Controller.ButtonId.ButtonAxis2 : OpenVR.Controller.ButtonId.ButtonAxis0) ?? Vector2.Zero;
 
         public override Vector2 ThumbstickAxis => controller?.GetAxis(SwapTouchpadJoystick ? OpenVR.Controller.ButtonId.ButtonAxis0 : OpenVR.Controller.ButtonId.ButtonAxis2) ?? Vector2.Zero;
 
@@ -121,8 +121,7 @@ namespace Xenko.VirtualReality
             {
                 case TouchControllerButton.Thumbstick:
                     return SwapTouchpadJoystick ? OpenVR.Controller.ButtonId.ButtonSteamVrTouchpad : OpenVR.Controller.ButtonId.ButtonAxis2;
-                case TouchControllerButton.A:
-                case TouchControllerButton.X:
+                case TouchControllerButton.ButtonXA:
                     return OpenVR.Controller.ButtonId.ButtonA;
                 case TouchControllerButton.Touchpad:
                     return SwapTouchpadJoystick ? OpenVR.Controller.ButtonId.ButtonAxis2 : OpenVR.Controller.ButtonId.ButtonSteamVrTouchpad;              
@@ -130,10 +129,11 @@ namespace Xenko.VirtualReality
                     return OpenVR.Controller.ButtonId.ButtonSteamVrTrigger;
                 case TouchControllerButton.Grip:
                     return OpenVR.Controller.ButtonId.ButtonGrip;
-                case TouchControllerButton.B:
-                case TouchControllerButton.Y:
+                case TouchControllerButton.ButtonYB:
                 case TouchControllerButton.Menu:
                     return OpenVR.Controller.ButtonId.ButtonApplicationMenu;
+                case TouchControllerButton.System:
+                    return OpenVR.Controller.ButtonId.ButtonSystem;
                 default:
                     return OpenVR.Controller.ButtonId.ButtonMax;
             }

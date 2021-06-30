@@ -111,13 +111,8 @@ namespace Xenko.VirtualReality
                 {
                     switch (hmdApi)
                     {
-                        case VRApi.Dummy:
-                        {
-                            Device = new DummyDevice(Services);
-                            break;
-                        }
                         case VRApi.OpenXR:
-#if XENKO_GRAPHICS_API_VULKAN || XENKO_GRAPHICS_API_DIRECT3D11
+#if XENKO_GRAPHICS_API_VULKAN
                             Device = new OpenXRHmd(Game);
 #endif
                             break;
@@ -128,20 +123,6 @@ namespace Xenko.VirtualReality
 #endif
                             break;
                         }
-                        //case VRApi.Fove:
-                        //{
-                        //#if XENKO_GRAPHICS_API_DIRECT3D11
-                        //    Device = new FoveHmd();
-                        //#endif
-                        //break;
-                        //}
-                        //case VRApi.Google:
-                        //{
-                        //#if XENKO_PLATFORM_IOS || XENKO_PLATFORM_ANDROID
-                        //    VRDevice = new GoogleVrHmd();
-                        //#endif
-                        //    break;
-                        //}
                         default:
                             throw new ArgumentOutOfRangeException();
                     }
@@ -177,31 +158,10 @@ postswitch:
                     Device.SetTrackingSpace(TrackingSpace.Standing);
                     physicalDeviceInUse = true;
 
-                    // default values
-                    Game.TargetElapsedTime = Utilities.FromSecondsPrecise(1.0 / refreshRate);
-                    Game.WindowMinimumUpdateRate.MinimumElapsedTime = Game.TargetElapsedTime;
-                    Game.MinimizedMinimumUpdateRate.MinimumElapsedTime = Game.TargetElapsedTime;
-
-#if XENKO_GRAPHICS_API_VULKAN || XENKO_GRAPHICS_API_DIRECT3D11
-                    if (Device is OpenVRHmd)
-                    {
-                        // WaitGetPoses should throttle our application, so don't do it elsewhere
-                        //refreshRate = ((OpenVRHmd)Device).RefreshRate();
-                        Game.TargetElapsedTime = TimeSpan.Zero; //Utilities.FromSecondsPrecise(1.0 / refreshRate);
-                        Game.WindowMinimumUpdateRate.MinimumElapsedTime = TimeSpan.Zero;
-                        Game.MinimizedMinimumUpdateRate.MinimumElapsedTime = TimeSpan.Zero;
-                    }
-#endif
-                }
-                else
-                {
-                    //fallback to dummy device
-                    Device = new DummyDevice(Services)
-                    {
-                        Game = Game,
-                        RenderFrameScaling = 1.0f,
-                    };
-                    Device.Enable(GraphicsDevice, deviceManager, RequireMirror);
+                    // WaitGetPoses should throttle our application, so don't do it elsewhere
+                    Game.TargetElapsedTime = TimeSpan.Zero;
+                    Game.WindowMinimumUpdateRate.MinimumElapsedTime = TimeSpan.Zero;
+                    Game.MinimizedMinimumUpdateRate.MinimumElapsedTime = TimeSpan.Zero;
                 }
 
                 // init virtual buttons for use with VR input
@@ -223,11 +183,7 @@ postswitch:
         {
             if (Device != null)
             {
-                if (!(Device is DummyDevice))
-                {
-                    physicalDeviceInUse = false;
-                }
-
+                physicalDeviceInUse = false;
                 Device.Dispose();
                 Device = null;
             }

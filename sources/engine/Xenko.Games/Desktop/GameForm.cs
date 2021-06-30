@@ -215,6 +215,7 @@ namespace Xenko.Games
         /// <param name="e">The <see cref="System.EventArgs"/> instance containing the event data.</param>
         private void OnPauseRendering(EventArgs e)
         {
+            GameBase.PauseRendering = true;
             PauseRendering?.Invoke(this, e);
         }
 
@@ -224,6 +225,7 @@ namespace Xenko.Games
         /// <param name="e">The <see cref="System.EventArgs"/> instance containing the event data.</param>
         private void OnResumeRendering(EventArgs e)
         {
+            GameBase.PauseRendering = false;
             ResumeRendering?.Invoke(this, e);
         }
 

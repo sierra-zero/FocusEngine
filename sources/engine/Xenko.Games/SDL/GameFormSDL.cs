@@ -36,6 +36,8 @@ namespace Xenko.Games
             MinimizedActions += GameForm_MinimizedActions;
             MaximizedActions += GameForm_MaximizedActions;
             RestoredActions += GameForm_RestoredActions;
+            FocusLostActions += GameForm_FocusEvent;
+            FocusGainedActions += GameForm_FocusEvent;
         }
 #endregion
 
@@ -73,16 +75,27 @@ namespace Xenko.Games
         //private DisplayMonitor monitor;
         private bool isUserResizing;
 
+        private void GameForm_FocusEvent(SDL.SDL_WindowEvent e)
+        {
+            if (e.data1 == 0) return; // make no change
+
+            GameBase.PauseRendering = e.data1 == 2;
+        }
+
         private void GameForm_MinimizedActions(SDL.SDL_WindowEvent e)
         {
             previousWindowState = FormWindowState.Minimized;
+            GameBase.PauseRendering = true;
             PauseRendering?.Invoke(this, EventArgs.Empty);
         }
 
         private void GameForm_MaximizedActions(SDL.SDL_WindowEvent e)
         {
             if (previousWindowState == FormWindowState.Minimized)
+            {
+                GameBase.PauseRendering = false;
                 ResumeRendering?.Invoke(this, EventArgs.Empty);
+            }
 
             previousWindowState = FormWindowState.Maximized;
 
@@ -95,6 +108,7 @@ namespace Xenko.Games
         {
             if (previousWindowState == FormWindowState.Minimized)
             {
+                GameBase.PauseRendering = false;
                 ResumeRendering?.Invoke(this, EventArgs.Empty);
             }
             previousWindowState = FormWindowState.Normal;
@@ -139,6 +153,7 @@ namespace Xenko.Games
                 }
 
                 isUserResizing = false;
+                GameBase.PauseRendering = false;
                 ResumeRendering?.Invoke(this, EventArgs.Empty);
             }
         }

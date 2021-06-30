@@ -255,6 +255,14 @@ namespace Xenko.Engine
             AutoLoadDefaultSettings = true;
         }
 
+        protected override void EndDraw(bool present)
+        {
+            base.EndDraw(present);
+
+            if (VRDeviceSystem.Device != null)
+                VRDeviceSystem.Device.Flush();
+        }
+
         /// <inheritdoc/>
         protected override void Destroy()
         {

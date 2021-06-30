@@ -366,14 +366,16 @@ namespace Xenko.Streaming
         /// <inheritdoc />
         void ITexturesStreamingProvider.FullyLoadTexture(Texture obj, ref ImageDescription imageDescription, ref ContentStorageHeader storageHeader)
         {
+            StreamingTexture resource;
+
+            // Get streaming object
+            resource = CreateStreamingTexture(obj, ref imageDescription, ref storageHeader);
+
+            // Stream resource to the maximum level
+            FullyLoadResource(resource);
+
             using (resourceLocker.ReadLock())
             {
-                // Get streaming object
-                var resource = CreateStreamingTexture(obj, ref imageDescription, ref storageHeader);
-
-                // Stream resource to the maximum level
-                FullyLoadResource(resource);
-
                 // Release streaming object
                 resource.Release();
             }
@@ -382,10 +384,7 @@ namespace Xenko.Streaming
         /// <inheritdoc />
         void ITexturesStreamingProvider.RegisterTexture(Texture obj, ref ImageDescription imageDescription, ref ContentStorageHeader storageHeader)
         {
-            using (resourceLocker.UpgradableReadLock())
-            {
-                CreateStreamingTexture(obj, ref imageDescription, ref storageHeader);
-            }
+            CreateStreamingTexture(obj, ref imageDescription, ref storageHeader);
         }
 
         /// <inheritdoc />
@@ -393,10 +392,14 @@ namespace Xenko.Streaming
         {
             Debug.Assert(obj != null, "obj != null");
 
-            using (resourceLocker.ReadLock())
+            var resource = Get(obj);
+
+            if (resource != null)
             {
-                var resource = Get(obj);
-                resource?.Release();
+                using (resourceLocker.ReadLock())
+                {
+                    resource.Release();
+                }
             }
         }
 
@@ -454,37 +457,43 @@ namespace Xenko.Streaming
                     testQuality = Math.Max(testQuality - 5, 0);
                 }
 #endif
-                using (resourceLocker.ReadLock())
+                var now = DateTime.UtcNow;
+                int toUpdate = -1;
+
+                do
                 {
+                    if (HasActiveTaskSlotFree == false) goto skip;
 
-                    int resourcesCount = Resources.Count;
-                    if (resourcesCount > 0)
+                    StreamableResource resource = null;
+
+                    using (resourceLocker.ReadLock())
                     {
-                        var now = DateTime.UtcNow;
-                        var resourcesChecks = resourcesCount;
+                        int cnt = Resources.Count;
+                        if (cnt == 0) goto skip;
+                        if (toUpdate == -1)
+                            toUpdate = cnt - 1;
+                        else
+                            toUpdate--;
 
-                        while (resourcesChecks-- > 0 && HasActiveTaskSlotFree)
-                        {
-                            // Move forward
-                            // Note: we update resources like in a ring buffer
-                            lastUpdateResourcesIndex++;
-                            if (lastUpdateResourcesIndex >= resourcesCount)
-                                lastUpdateResourcesIndex = 0;
+                        // Move forward
+                        // Note: we update resources like in a ring buffer
+                        lastUpdateResourcesIndex++;
+                        if (lastUpdateResourcesIndex >= cnt)
+                            lastUpdateResourcesIndex = 0;
 
-                            // Update resource
-                            var resource = resources[lastUpdateResourcesIndex];
-                            var ignoreResource = resource.StreamingOptions?.IgnoreResource ?? false;
-                            if (resource.CanBeUpdated && !ignoreResource)
-                            {
-                                Update(resource, ref now);
-                            }
-                        }
-                        // TODO: add StreamingManager stats, update time per frame, updates per frame, etc.
+                        // Update resource
+                        resource = resources[lastUpdateResourcesIndex];
                     }
-                }
+
+                    var ignoreResource = resource.StreamingOptions?.IgnoreResource ?? false;
+                    if (resource.CanBeUpdated && !ignoreResource)
+                    {
+                        Update(resource, ref now);
+                    }
+                } while (toUpdate > 0);
             }
 
-            ContentStreaming.Update();
+            skip: ContentStreaming.Update();
 
             frameIndex++;
 
@@ -551,7 +560,11 @@ namespace Xenko.Streaming
 
         private Task StreamAsync(StreamableResource resource, int residency)
         {
-            activeStreaming.Add(resource);
+            using (resourceLocker.WriteLock())
+            {
+                activeStreaming.Add(resource);
+            }
+
             var task = resource.StreamAsyncInternal(residency);
             task.Start();
 
